@@ -1,0 +1,60 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: fun-campus-gateway
+  # SpringCloud 2021版本之后，需要用以下方式导入nacos的配置文件
+  config:
+    import: nacos:fun-campus-gateway.yml
+  cloud:
+    nacos:
+      config:
+        server-addr: 127.0.0.1:8848
+        group: DEFAULT_GROUP
+        refresh-enabled: true
+    gateway:
+      # 路由数组：指当请求满足什么样的断言时，转发到哪个服务上
+      routes:
+        # 路由标识，要求唯一，名称任意
+        - id: system-security
+          # 请求最终被转发到的目标地址
+          uri: http://localhost:8082
+          # 设置断言
+          predicates:
+            # Path Route Predicate Factory 断言，满足 /gateway/provider/** 路径的请求都会被路由到 http://localhost:9024 这个uri中
+            - Path=/security/**
+            # Weight Route Predicate Factory 断言，同一分组按照权重进行分配流量，这里分配了80%
+            # 第一个group1是分组名，第二个参数是权重
+            # - Weight=group1, 8
+          # 配置过滤器（局部）
+          filters:
+            # StripPrefix：去除原始请求路径中的前1级路径，即/gateway
+            - StripPrefix=1
+
+        - id: system-main
+          uri: http://localhost:8081
+          # 设置断言
+          predicates:
+            - Path=/main/**
+            # Weight Route Predicate Factory，同一分组按照权重进行分配流量，这里分配了20%
+            #- Weight=group1, 2
+          # 配置过滤器（局部）
+          filters:
+            # StripPrefix：去除原始请求路径中的前1级路径，即/gateway
+            - StripPrefix=1
+#            - Authorize=true
+  profiles:
+    active: dev
+dubbo:
+  application:
+    name: fun-campus-security
+    qosEnable: false
+  protocol:
+    name: dubbo
+    port: -1
+  registry:
+    address: nacos://127.0.0.1:8848
+    id: nacos-registry
+  consumer:
+    timeout: 50000

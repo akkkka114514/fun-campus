@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.akkkka.funcampusmain.mapper.ActivityMapper">
+    <select id="listByUserId" parameterType="Integer" resultType="com.akkkka.funcampusmainmodel.entity.Activity">
+        SELECT
+            a.id,
+            a.title,
+            a.status,
+            a.enroll_start_time,
+            a.id,
+            a.title,
+            a.status,
+            a.enroll_start_time,
+            a.enroll_end_time,
+            a.activity_start_time,
+            a.activity_end_time,
+            a.activity_position,
+            a.score_can_get,
+            a.enroll_num_limit,
+            s.school_name,
+            o.organizer_name
+        FROM activity AS a
+                 INNER JOIN
+             activity_user_map AS aum
+             ON aum.activity_id = a.id
+                 INNER JOIN
+             school AS s
+             ON s.id = a.activity_school_id
+                 INNER JOIN
+             organizer AS o
+             ON o.id = a.activity_organizer_id
+        where user_id=#{id};
+    </select>
+    <select id="page" resultType="com.akkkka.funcampusmainmodel.entity.Activity">
+        SELECT
+            a.id,
+            a.title,
+            a.status,
+            a.enroll_start_time,
+            a.id,
+            a.title,
+            a.status,
+            a.enroll_start_time,
+            a.enroll_end_time,
+            a.activity_start_time,
+            a.activity_end_time,
+            a.activity_position,
+            a.score_can_get,
+            a.enroll_num_limit
+        FROM activity AS a
+        limit #{pageNum},#{pageSize};
+    </select>
+    <select id="pageBySchool" resultType="com.akkkka.funcampusmainmodel.entity.Activity">
+        select * from activity
+            where activity_school_id=#{schoolId}
+    </select>
+
+</mapper>

@@ -1,0 +1,37 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: fun-campus-main
+  # SpringCloud 2021版本之后，需要用以下方式导入nacos的配置文件
+  datasource:
+    url: jdbc:mysql://localhost:3306/fun_campus?useSSL=false&serverTimezone=UTC&useUnicode=true&characterEncoding=utf8&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  cloud:
+    nacos:
+      config:
+        server-addr: 127.0.0.1:8848
+        group: DEFAULT_GROUP
+        refresh-enabled: true
+  config:
+    import: nacos:fun-campus-main.yml
+  profiles:
+    active: dev
+
+dubbo:
+  application:
+    name: fun-campus-main
+  registry:
+    address: nacos://127.0.0.1:8848 #注册地址
+  protocol:
+    name: dubbo #dubbo协议
+    port: -1 #协议端口
+  scan:
+    base-packages: com.akkkka.funcampusmain.service.impl #扫包范围
+  config-center:
+    address: nacos://127.0.0.1:8848
+  provider:
+    timeout: 50000

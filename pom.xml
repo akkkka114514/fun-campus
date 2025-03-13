@@ -25,17 +25,19 @@
         <sa-token.version>1.37.0</sa-token.version>
         <quartz.version>2.3.0</quartz.version>
         <spring.cloud.version>2021.0.5</spring.cloud.version>
+        <com.amdelamar.version>2.2.0</com.amdelamar.version>
+        <com.baomidou.version>3.5.10.1</com.baomidou.version>
+        <hutool.version>5.8.36</hutool.version>
+        <springfox.version>2.9.2</springfox.version>
+        <hibernate-validator.version>9.0.0.CR1</hibernate-validator.version>
+        <mysql-connector-java.version>8.0.29</mysql-connector-java.version>
     </properties>
 
     <packaging>pom</packaging>
     <modules>
-        <module>fun-campus-main</module>
-        <module>fun-campus-security</module>
+        <module>fun-campus-portal</module>
         <module>fun-campus-util</module>
         <module>fun-campus-gateway</module>
-        <module>fun-campus-main-api</module>
-        <module>fun-campus-main-model</module>
-        <module>fun-campus-security-api</module>
     </modules>
 
     <dependencyManagement>
@@ -62,45 +64,20 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
-                <groupId>cn.hutool</groupId>
-                <artifactId>hutool-all</artifactId>
-                <version>${hutool.version}</version>
-                <type>jar</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>cn.dev33</groupId>
-                <artifactId>sa-token-spring-boot3-starter</artifactId>
-                <version>${sa-token.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>cn.dev33</groupId>
-                <artifactId>sa-token-sso</artifactId>
-                <version>${sa-token.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>cn.dev33</groupId>
-                <artifactId>sa-token-redis-jackson</artifactId>
-                <version>${sa-token.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>cn.dev33</groupId>
-                <artifactId>sa-token-alone-redis</artifactId>
-                <version>${sa-token.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
                 <groupId>org.apache.dubbo</groupId>
                 <artifactId>dubbo-spring-boot-starter</artifactId>
                 <version>${spring.cloud.dubbo.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
+            <dependency>
+                <groupId>org.hibernate.validator</groupId>
+                <artifactId>hibernate-validator</artifactId>
+                <version>${hibernate-validator.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
     <build>

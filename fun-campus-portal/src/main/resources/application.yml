@@ -1,0 +1,14 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: fun-campus-portal
+  # SpringCloud 2021版本之后，需要用以下方式导入nacos的配置文件
+  datasource:
+    url: jdbc:mysql://localhost:3306/fun_campus?useSSL=false&serverTimezone=UTC&useUnicode=true&characterEncoding=utf8&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  profiles:
+    active: dev

@@ -4,7 +4,7 @@ import com.akkkka.funcampusportal.domain.Activity;
 import com.akkkka.funcampusportal.domain.scope.ScopeInsert;
 import com.akkkka.funcampusportal.domain.scope.ScopeUpdate;
 import com.akkkka.funcampusportal.service.IActivityService;
-import com.akkkka.funcampusutil.util.CommonResponse;
+import com.akkkka.common.core.domain.R;
 import com.akkkka.funcampusutil.constant.ResponseEnum;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -39,9 +39,9 @@ public class ActivityController {
     @RequestMapping("/create")
     @Validated(ScopeInsert.class)
     @ApiOperation(value = "create activity")
-    public CommonResponse<Void> create(@RequestBody @Valid Activity activity){
+    public R<Void> create(@RequestBody @Valid Activity activity){
         activityService.add(activity);
-        return CommonResponse.success();
+        return R.ok();
     }
 
     /**
@@ -50,9 +50,9 @@ public class ActivityController {
     @RequestMapping("/update")
     @Validated(ScopeUpdate.class)
     @ApiOperation(value = "update activity")
-    public CommonResponse<Void> update(@RequestBody @Valid Activity activity){
+    public R<Void> update(@RequestBody @Valid Activity activity){
         activityService.update(activity);
-        return CommonResponse.success();
+        return R.ok();
     }
 
     /**
@@ -60,94 +60,94 @@ public class ActivityController {
      * */
     @RequestMapping("/delete")
     @ApiOperation(value = "delete activity")
-    public CommonResponse<Void> delete(@RequestParam("id") Integer id){
+    public R<Void> delete(@RequestParam("id") Integer id){
         if(id == null || id < 0){
-            return CommonResponse.fail(ResponseEnum.PARAM_NOT_VALIDATE);
+            return R.fail(ResponseEnum.PARAM_NOT_VALIDATE);
         }
         activityService.delete(id);
-        return CommonResponse.success();
+        return R.ok();
     }
 
     @RequestMapping("/get")
     @ApiOperation(value = "get activity")
-    public CommonResponse<Activity> get(@RequestParam("id") Integer id){
+    public R<Activity> get(@RequestParam("id") Integer id){
         if(id == null || id < 0){
-            return CommonResponse.fail(ResponseEnum.PARAM_NOT_VALIDATE);
+            return R.fail(ResponseEnum.PARAM_NOT_VALIDATE);
         }
         Activity activity = activityService.getById(id);
         if(activity == null){
-            return CommonResponse.fail(ResponseEnum.NO_SUCH_RECORD_IN_DB);
+            return R.fail(ResponseEnum.NO_SUCH_RECORD_IN_DB);
         }
-        return CommonResponse.success(activity);
+        return R.ok(activity);
     }
 
 //    @RequestMapping("/list")
-//    public CommonResponse<Page<Activity>> list(@RequestParam("page") Integer page, @RequestParam("size") Integer size){
+//    public R<Page<Activity>> list(@RequestParam("page") Integer page, @RequestParam("size") Integer size){
 //        if( page == null || page < 0 || size == null || size < 0){
-//            return CommonResponse.fail(ResponseEnum.PARAM_NOT_VALIDATE);
+//            return R.fail(ResponseEnum.PARAM_NOT_VALIDATE);
 //        }
 //        Page<Activity> pageList = activityService.page(new Page<>(page, size));
-//        return CommonResponse.success(pageList);
+//        return R.ok(pageList);
 //    }
 
     @RequestMapping("/listByUser")
     @ApiOperation(value = "list activity by user id")
-    public CommonResponse<List<Activity>> listByUserId(@RequestParam("userId") Integer userId){
+    public R<List<Activity>> listByUserId(@RequestParam("userId") Integer userId){
         if(userId == null || userId < 0){
-            return CommonResponse.fail(ResponseEnum.PARAM_NOT_VALIDATE);
+            return R.fail(ResponseEnum.PARAM_NOT_VALIDATE);
         }
         List<Activity> list = activityService.listByUserId(userId);
-        return CommonResponse.success(list);
+        return R.ok(list);
     }
     @RequestMapping("/enroll")
     @ApiOperation(value = "enroll activity")
-    public CommonResponse<Void> enroll(@RequestParam("userId") Integer userId, @RequestParam("activityId") Integer activityId) {
+    public R<Void> enroll(@RequestParam("userId") Integer userId, @RequestParam("activityId") Integer activityId) {
         if(userId == null || userId < 0 || activityId == null || activityId < 0){
-            return CommonResponse.fail(ResponseEnum.PARAM_NOT_VALIDATE);
+            return R.fail(ResponseEnum.PARAM_NOT_VALIDATE);
         }
         activityService.enroll(userId, activityId);
-        return CommonResponse.success();
+        return R.ok();
     }
 
     @RequestMapping("/sign-in")
     @ApiOperation(value = "sign in activity")
-    public CommonResponse<Void> signIn(@RequestParam Integer userId, @RequestParam Integer activityId){
+    public R<Void> signIn(@RequestParam Integer userId, @RequestParam Integer activityId){
         if(userId == null || userId < 0 || activityId == null || activityId < 0){
-            return CommonResponse.fail(ResponseEnum.PARAM_NOT_VALIDATE);
+            return R.fail(ResponseEnum.PARAM_NOT_VALIDATE);
         }
         activityService.signIn(activityId, userId);
-        return CommonResponse.success();
+        return R.ok();
     }
 
     @RequestMapping("/page")
     @ApiOperation(value = "page activity")
-    public CommonResponse<IPage<Activity>> page(@RequestParam(defaultValue = "1") Integer pageNum,
+    public R<IPage<Activity>> page(@RequestParam(defaultValue = "1") Integer pageNum,
                                                 @RequestParam(defaultValue = "10") Integer pageSize){
         if(pageNum == null || pageNum < 0 || pageSize == null || pageSize < 0){
-            return CommonResponse.fail(ResponseEnum.PARAM_NOT_VALIDATE);
+            return R.fail(ResponseEnum.PARAM_NOT_VALIDATE);
         }
         IPage<Activity> page = new Page<>(pageNum, pageSize);
         page = activityService.page(page);
-        return CommonResponse.success(page);
+        return R.ok(page);
     }
     @RequestMapping("/pageBySchool")
     @ApiOperation(value = "page activity by school id")
-    public CommonResponse<IPage<Activity>> pageBySchool(@RequestParam(defaultValue = "1") Integer pageNum,
+    public R<IPage<Activity>> pageBySchool(@RequestParam(defaultValue = "1") Integer pageNum,
                                                         @RequestParam(defaultValue = "10") Integer pageSize,
                                                         @RequestParam Integer schoolId){
         if(pageNum == null || pageNum < 0 || pageSize == null || pageSize < 0 || schoolId == null || schoolId < 0){
-            return CommonResponse.fail(ResponseEnum.PARAM_NOT_VALIDATE);
+            return R.fail(ResponseEnum.PARAM_NOT_VALIDATE);
         }
-        return CommonResponse.success(activityService.pageBySchoolId(pageNum, pageSize, schoolId));
+        return R.ok(activityService.pageBySchoolId(pageNum, pageSize, schoolId));
     }
 
     @RequestMapping("/cancelEnroll")
     @ApiOperation(value = "cancel enroll activity")
-    public CommonResponse<Void> cancelEnroll(@RequestParam Integer userId, @RequestParam Integer activityId){
+    public R<Void> cancelEnroll(@RequestParam Integer userId, @RequestParam Integer activityId){
         if(userId == null || userId < 0 || activityId == null || activityId < 0){
-            return CommonResponse.fail(ResponseEnum.PARAM_NOT_VALIDATE);
+            return R.fail(ResponseEnum.PARAM_NOT_VALIDATE);
         }
         activityService.cancelEnroll(userId, activityId);
-        return CommonResponse.success();
+        return R.ok();
     }
 }

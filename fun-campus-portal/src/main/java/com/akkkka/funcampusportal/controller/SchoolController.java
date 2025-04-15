@@ -3,7 +3,7 @@ package com.akkkka.funcampusportal.controller;
 import com.akkkka.funcampusportal.domain.School;
 import com.akkkka.funcampusportal.domain.scope.ScopeInsert;
 import com.akkkka.funcampusportal.service.ISchoolService;
-import com.akkkka.funcampusutil.util.CommonResponse;
+import com.akkkka.common.core.domain.R;
 import com.akkkka.funcampusutil.util.ExceptionUtil;
 import javax.annotation.Resource;
 import javax.validation.Valid;
@@ -39,23 +39,23 @@ public class SchoolController {
     @Validated(ScopeInsert.class)
     @RequestMapping("/add")
     @ApiOperation(value = "add school")
-    public CommonResponse<Void> add(@RequestBody @Valid School school) {
+    public R<Void> add(@RequestBody @Valid School school) {
         schoolService.add(school);
-        return CommonResponse.success();
+        return R.ok();
     }
 
     @RequestMapping("/update")
     @ApiOperation(value = "update school")
-    public CommonResponse<Void> update(@RequestBody @Valid School school) {
+    public R<Void> update(@RequestBody @Valid School school) {
         schoolService.update(school);
-        return CommonResponse.success();
+        return R.ok();
     }
 
     @RequestMapping("/delete")
     @ApiOperation(value = "delete school")
-    public CommonResponse<Void> delete(@RequestParam Integer id) {
+    public R<Void> delete(@RequestParam Integer id) {
         ExceptionUtil.throwIfIdNotValid(id);
         schoolService.delete(id);
-        return CommonResponse.success();
+        return R.ok();
     }
 }

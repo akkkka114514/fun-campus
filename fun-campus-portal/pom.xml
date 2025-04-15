@@ -37,11 +37,6 @@
             <artifactId>lettuce-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.akkkka</groupId>
-            <artifactId>fun-campus-util</artifactId>
-            <version>${fun-campus.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.quartz-scheduler</groupId>
             <artifactId>quartz</artifactId>
         </dependency>
@@ -89,6 +84,11 @@
         <dependency>
             <groupId>org.hibernate.validator</groupId>
             <artifactId>hibernate-validator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.akkkka</groupId>
+            <artifactId>fun-campus-common-core</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
         </dependency>
     </dependencies>
     <dependencyManagement>

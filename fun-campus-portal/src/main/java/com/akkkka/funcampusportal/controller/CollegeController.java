@@ -4,7 +4,7 @@ package com.akkkka.funcampusportal.controller;
 import com.akkkka.funcampusportal.domain.College;
 import com.akkkka.funcampusportal.domain.scope.ScopeInsert;
 import com.akkkka.funcampusportal.service.ICollegeService;
-import com.akkkka.funcampusutil.util.CommonResponse;
+import com.akkkka.common.core.domain.R;
 import com.akkkka.funcampusutil.constant.ResponseEnum;
 import com.akkkka.funcampusutil.util.ExceptionUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -39,9 +39,9 @@ public class CollegeController {
     @RequestMapping("/add")
     @Validated(ScopeInsert.class)
     @ApiOperation(value = "add college")
-    public CommonResponse<Void> add(@RequestBody @Valid College college) {
+    public R<Void> add(@RequestBody @Valid College college) {
         collegeService.add(college);
-        return CommonResponse.success();
+        return R.ok();
     }
 
     /**
@@ -49,35 +49,35 @@ public class CollegeController {
      * */
     @RequestMapping("/update")
     @ApiOperation(value = "update college")
-    public CommonResponse<Void> update(@RequestBody @Valid College college) {
+    public R<Void> update(@RequestBody @Valid College college) {
         collegeService.update(college);
-        return CommonResponse.success();
+        return R.ok();
     }
 
     @RequestMapping("/delete")
     @ApiOperation(value = "delete college")
-    public CommonResponse<Void> delete(@RequestParam Integer id) {
+    public R<Void> delete(@RequestParam Integer id) {
         ExceptionUtil.throwIfIdNotValid(id);
         collegeService.delete(id);
-        return CommonResponse.success();
+        return R.ok();
     }
 
     @RequestMapping("/get")
     @ApiOperation(value = "get college")
-    public CommonResponse<College> get(@RequestParam Integer id) {
+    public R<College> get(@RequestParam Integer id) {
         if(id == null || id < 0){
-            return CommonResponse.fail(ResponseEnum.PARAM_NOT_VALIDATE);
+            return R.fail(ResponseEnum.PARAM_NOT_VALIDATE);
         }
-        return CommonResponse.success(collegeService.getById(id));
+        return R.ok(collegeService.getById(id));
     }
 
     @RequestMapping("/list")
     @ApiOperation(value = "list college")
-    public CommonResponse<Page<College>> list(@RequestParam Integer page, @RequestParam Integer size) {
+    public R<Page<College>> list(@RequestParam Integer page, @RequestParam Integer size) {
         if (page == null || page < 0 || size == null || size < 0){
-            return CommonResponse.fail(ResponseEnum.PARAM_NOT_VALIDATE);
+            return R.fail(ResponseEnum.PARAM_NOT_VALIDATE);
         }
-        return CommonResponse.success(
+        return R.ok(
                 collegeService.page(
                         new Page<>(page, size),
                         new QueryWrapper<College>().eq("is_deleted",0)

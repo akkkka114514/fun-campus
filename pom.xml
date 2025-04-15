@@ -50,7 +50,6 @@
     <packaging>pom</packaging>
     <modules>
         <module>fun-campus-portal</module>
-        <module>fun-campus-util</module>
         <module>fun-campus-gateway</module>
         <module>fun-campus-auth</module>
         <module>fun-campus-visual</module>

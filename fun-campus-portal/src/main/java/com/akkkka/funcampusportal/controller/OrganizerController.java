@@ -3,7 +3,7 @@ package com.akkkka.funcampusportal.controller;
 import com.akkkka.funcampusportal.domain.Organizer;
 import com.akkkka.funcampusportal.domain.scope.ScopeInsert;
 import com.akkkka.funcampusportal.service.IOrganizerService;
-import com.akkkka.funcampusutil.util.CommonResponse;
+import com.akkkka.common.core.domain.R;
 import com.akkkka.funcampusutil.util.ExceptionUtil;
 import javax.annotation.Resource;
 import javax.validation.Valid;
@@ -29,26 +29,26 @@ public class OrganizerController {
     @RequestMapping("/add")
     @Validated(ScopeInsert.class)
     @ApiOperation(value = "add organizer")
-    public CommonResponse<Void> add(@RequestBody @Valid Organizer organizer) {
+    public R<Void> add(@RequestBody @Valid Organizer organizer) {
         organizerService.add(organizer);
-        return CommonResponse.success();
+        return R.ok();
     }
 
     @RequestMapping("/update")
     @Validated(ScopeInsert.class)
     @ApiOperation(value = "update organizer")
-    public CommonResponse<Void> update(@RequestBody @Valid Organizer organizer) {
+    public R<Void> update(@RequestBody @Valid Organizer organizer) {
         organizerService.update(organizer);
-        return CommonResponse.success();
+        return R.ok();
     }
 
     @RequestMapping("/delete")
     @Validated(ScopeInsert.class)
     @ApiOperation(value = "delete organizer")
-    public CommonResponse<Void> delete(@RequestParam Integer id) {
+    public R<Void> delete(@RequestParam Integer id) {
         ExceptionUtil.throwIfIdNotValid(id);
         organizerService.delete(id);
-        return CommonResponse.success();
+        return R.ok();
     }
 
 }

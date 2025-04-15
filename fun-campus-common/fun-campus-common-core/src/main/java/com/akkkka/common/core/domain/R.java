@@ -110,6 +110,6 @@ public class R<T> implements Serializable
 
     public static <T> Boolean isSuccess(R<T> ret)
     {
-        return R.SUCCESS == ret.getCode();
+        return R.ok == ret.getCode();
     }
 }

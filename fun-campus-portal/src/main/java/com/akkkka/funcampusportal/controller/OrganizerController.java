@@ -4,6 +4,7 @@ import com.akkkka.funcampusportal.domain.Organizer;
 import com.akkkka.funcampusportal.domain.scope.ScopeInsert;
 import com.akkkka.funcampusportal.service.IOrganizerService;
 import com.akkkka.common.core.domain.R;
+import com.akkkka.funcampusportal.util.ParamCheckUtil;
 import com.akkkka.funcampusutil.util.ExceptionUtil;
 import javax.annotation.Resource;
 import javax.validation.Valid;
@@ -46,7 +47,7 @@ public class OrganizerController {
     @Validated(ScopeInsert.class)
     @ApiOperation(value = "delete organizer")
     public R<Void> delete(@RequestParam Integer id) {
-        ExceptionUtil.throwIfIdNotValid(id);
+        ParamCheckUtil.checkPositiveInteger(id);
         organizerService.delete(id);
         return R.ok();
     }

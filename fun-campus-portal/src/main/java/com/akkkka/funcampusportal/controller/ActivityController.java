@@ -1,11 +1,12 @@
 package com.akkkka.funcampusportal.controller;
 
+import com.akkkka.common.core.enums.ResponseEnum;
 import com.akkkka.funcampusportal.domain.Activity;
 import com.akkkka.funcampusportal.domain.scope.ScopeInsert;
 import com.akkkka.funcampusportal.domain.scope.ScopeUpdate;
 import com.akkkka.funcampusportal.service.IActivityService;
 import com.akkkka.common.core.domain.R;
-import com.akkkka.funcampusutil.constant.ResponseEnum;
+import com.akkkka.funcampusportal.util.ParamCheckUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.annotations.Api;
@@ -61,9 +62,7 @@ public class ActivityController {
     @RequestMapping("/delete")
     @ApiOperation(value = "delete activity")
     public R<Void> delete(@RequestParam("id") Integer id){
-        if(id == null || id < 0){
-            return R.fail(ResponseEnum.PARAM_NOT_VALIDATE);
-        }
+        ParamCheckUtil.checkPositiveInteger(id);
         activityService.delete(id);
         return R.ok();
     }
@@ -71,9 +70,7 @@ public class ActivityController {
     @RequestMapping("/get")
     @ApiOperation(value = "get activity")
     public R<Activity> get(@RequestParam("id") Integer id){
-        if(id == null || id < 0){
-            return R.fail(ResponseEnum.PARAM_NOT_VALIDATE);
-        }
+        ParamCheckUtil.checkPositiveInteger(id);
         Activity activity = activityService.getById(id);
         if(activity == null){
             return R.fail(ResponseEnum.NO_SUCH_RECORD_IN_DB);
@@ -93,18 +90,14 @@ public class ActivityController {
     @RequestMapping("/listByUser")
     @ApiOperation(value = "list activity by user id")
     public R<List<Activity>> listByUserId(@RequestParam("userId") Integer userId){
-        if(userId == null || userId < 0){
-            return R.fail(ResponseEnum.PARAM_NOT_VALIDATE);
-        }
+        ParamCheckUtil.checkPositiveInteger(userId);
         List<Activity> list = activityService.listByUserId(userId);
         return R.ok(list);
     }
     @RequestMapping("/enroll")
     @ApiOperation(value = "enroll activity")
     public R<Void> enroll(@RequestParam("userId") Integer userId, @RequestParam("activityId") Integer activityId) {
-        if(userId == null || userId < 0 || activityId == null || activityId < 0){
-            return R.fail(ResponseEnum.PARAM_NOT_VALIDATE);
-        }
+        ParamCheckUtil.checkPositiveInteger(userId, activityId);
         activityService.enroll(userId, activityId);
         return R.ok();
     }
@@ -112,9 +105,7 @@ public class ActivityController {
     @RequestMapping("/sign-in")
     @ApiOperation(value = "sign in activity")
     public R<Void> signIn(@RequestParam Integer userId, @RequestParam Integer activityId){
-        if(userId == null || userId < 0 || activityId == null || activityId < 0){
-            return R.fail(ResponseEnum.PARAM_NOT_VALIDATE);
-        }
+        ParamCheckUtil.checkPositiveInteger(userId, activityId);
         activityService.signIn(activityId, userId);
         return R.ok();
     }
@@ -123,9 +114,7 @@ public class ActivityController {
     @ApiOperation(value = "page activity")
     public R<IPage<Activity>> page(@RequestParam(defaultValue = "1") Integer pageNum,
                                                 @RequestParam(defaultValue = "10") Integer pageSize){
-        if(pageNum == null || pageNum < 0 || pageSize == null || pageSize < 0){
-            return R.fail(ResponseEnum.PARAM_NOT_VALIDATE);
-        }
+        ParamCheckUtil.checkPositiveInteger(pageNum, pageSize);
         IPage<Activity> page = new Page<>(pageNum, pageSize);
         page = activityService.page(page);
         return R.ok(page);
@@ -135,18 +124,14 @@ public class ActivityController {
     public R<IPage<Activity>> pageBySchool(@RequestParam(defaultValue = "1") Integer pageNum,
                                                         @RequestParam(defaultValue = "10") Integer pageSize,
                                                         @RequestParam Integer schoolId){
-        if(pageNum == null || pageNum < 0 || pageSize == null || pageSize < 0 || schoolId == null || schoolId < 0){
-            return R.fail(ResponseEnum.PARAM_NOT_VALIDATE);
-        }
+        ParamCheckUtil.checkPositiveInteger(pageNum,pageSize, schoolId);
         return R.ok(activityService.pageBySchoolId(pageNum, pageSize, schoolId));
     }
 
     @RequestMapping("/cancelEnroll")
     @ApiOperation(value = "cancel enroll activity")
     public R<Void> cancelEnroll(@RequestParam Integer userId, @RequestParam Integer activityId){
-        if(userId == null || userId < 0 || activityId == null || activityId < 0){
-            return R.fail(ResponseEnum.PARAM_NOT_VALIDATE);
-        }
+        ParamCheckUtil.checkPositiveInteger(userId, activityId);
         activityService.cancelEnroll(userId, activityId);
         return R.ok();
     }

@@ -4,6 +4,7 @@ import com.akkkka.funcampusportal.domain.School;
 import com.akkkka.funcampusportal.domain.scope.ScopeInsert;
 import com.akkkka.funcampusportal.service.ISchoolService;
 import com.akkkka.common.core.domain.R;
+import com.akkkka.funcampusportal.util.ParamCheckUtil;
 import com.akkkka.funcampusutil.util.ExceptionUtil;
 import javax.annotation.Resource;
 import javax.validation.Valid;
@@ -54,7 +55,7 @@ public class SchoolController {
     @RequestMapping("/delete")
     @ApiOperation(value = "delete school")
     public R<Void> delete(@RequestParam Integer id) {
-        ExceptionUtil.throwIfIdNotValid(id);
+        ParamCheckUtil.checkPositiveInteger(id);
         schoolService.delete(id);
         return R.ok();
     }

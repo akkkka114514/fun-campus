@@ -1,10 +1,9 @@
 package com.akkkka.funcampusportal.controller;
 
-import cn.hutool.core.lang.Validator;
+import com.akkkka.common.core.enums.ResponseEnum;
 import com.akkkka.funcampusportal.domain.User;
 import com.akkkka.funcampusportal.service.IUserService;
 import com.akkkka.common.core.domain.R;
-import com.akkkka.funcampusutil.constant.ResponseEnum;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import javax.annotation.Resource;
 
@@ -28,21 +27,21 @@ public class UserController {
     @Resource
     private IUserService userService;
 
-    @GetMapping("/registerOrLogin")
-    public R<User> registerOrLogin(@RequestParam String phone,
-                                                @RequestParam String smsCode) {
-        if (!Validator.isMobile(phone)){
-            return R.fail(ResponseEnum.PARAM_NOT_VALIDATE);
-        }
-        User user = new User();
-        user.setPhone(phone);
-        //return R.ok(smsUserService.registerOrLogin(user,smsCode));
-        return null;
-    }
+//    @GetMapping("/registerOrLogin")
+//    public R<User> registerOrLogin(@RequestParam String phone,
+//                                                @RequestParam String smsCode) {
+//        if (!Validator.isMobile(phone)){
+//            return R.fail(ResponseEnum.PARAM_NOT_VALIDATE);
+//        }
+//        User user = new User();
+//        user.setPhone(phone);
+//        //return R.ok(smsUserService.registerOrLogin(user,smsCode));
+//        return null;
+//    }
 
     @GetMapping("/getByName")
     public R<User> getByName(@RequestParam String username) {
-        if (username == null || username.isEmpty()){
+        if (username.isEmpty()){
             return R.fail(ResponseEnum.PARAM_NOT_VALIDATE);
         }
         return R.ok(userService.getOne(

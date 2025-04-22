@@ -5,6 +5,7 @@ import com.akkkka.funcampusportal.domain.College;
 import com.akkkka.funcampusportal.domain.scope.ScopeInsert;
 import com.akkkka.funcampusportal.service.ICollegeService;
 import com.akkkka.common.core.domain.R;
+import com.akkkka.funcampusportal.util.ParamCheckUtil;
 import com.akkkka.funcampusutil.constant.ResponseEnum;
 import com.akkkka.funcampusutil.util.ExceptionUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -57,7 +58,7 @@ public class CollegeController {
     @RequestMapping("/delete")
     @ApiOperation(value = "delete college")
     public R<Void> delete(@RequestParam Integer id) {
-        ExceptionUtil.throwIfIdNotValid(id);
+        ParamCheckUtil.checkPositiveInteger(id);
         collegeService.delete(id);
         return R.ok();
     }
@@ -65,18 +66,14 @@ public class CollegeController {
     @RequestMapping("/get")
     @ApiOperation(value = "get college")
     public R<College> get(@RequestParam Integer id) {
-        if(id == null || id < 0){
-            return R.fail(ResponseEnum.PARAM_NOT_VALIDATE);
-        }
+        ParamCheckUtil.checkPositiveInteger(id);
         return R.ok(collegeService.getById(id));
     }
 
     @RequestMapping("/list")
     @ApiOperation(value = "list college")
     public R<Page<College>> list(@RequestParam Integer page, @RequestParam Integer size) {
-        if (page == null || page < 0 || size == null || size < 0){
-            return R.fail(ResponseEnum.PARAM_NOT_VALIDATE);
-        }
+        ParamCheckUtil.checkPositiveInteger(page, size);
         return R.ok(
                 collegeService.page(
                         new Page<>(page, size),

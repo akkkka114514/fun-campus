@@ -13,7 +13,7 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @SpringBootApplication
 @MapperScan("com.akkkka.funcampusportal.mapper")
 @EnableTransactionManagement
-@EnableSwagger2
+@Enable
 public class FunCampusMainApplication {
 
     public static void main(String[] args) {

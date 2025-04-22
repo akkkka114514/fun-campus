@@ -5,12 +5,11 @@ import com.akkkka.funcampusportal.domain.scope.ScopeInsert;
 import com.akkkka.funcampusportal.service.IOrganizerService;
 import com.akkkka.common.core.domain.R;
 import com.akkkka.funcampusportal.util.ParamCheckUtil;
-import com.akkkka.funcampusutil.util.ExceptionUtil;
 import javax.annotation.Resource;
 import javax.validation.Valid;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,14 +21,14 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/organizer")
-@Api(tags = "organizer")
+@Tag(name = "organizer")
 public class OrganizerController {
     @Resource
     private IOrganizerService organizerService;
 
     @RequestMapping("/add")
     @Validated(ScopeInsert.class)
-    @ApiOperation(value = "add organizer")
+    @Operation(description = "add organizer")
     public R<Void> add(@RequestBody @Valid Organizer organizer) {
         organizerService.add(organizer);
         return R.ok();
@@ -37,7 +36,7 @@ public class OrganizerController {
 
     @RequestMapping("/update")
     @Validated(ScopeInsert.class)
-    @ApiOperation(value = "update organizer")
+    @Operation(description = "update organizer")
     public R<Void> update(@RequestBody @Valid Organizer organizer) {
         organizerService.update(organizer);
         return R.ok();
@@ -45,7 +44,7 @@ public class OrganizerController {
 
     @RequestMapping("/delete")
     @Validated(ScopeInsert.class)
-    @ApiOperation(value = "delete organizer")
+    @Operation(description = "delete organizer")
     public R<Void> delete(@RequestParam Integer id) {
         ParamCheckUtil.checkPositiveInteger(id);
         organizerService.delete(id);

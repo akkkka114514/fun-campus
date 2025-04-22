@@ -5,12 +5,11 @@ import com.akkkka.funcampusportal.domain.scope.ScopeInsert;
 import com.akkkka.funcampusportal.service.ISchoolService;
 import com.akkkka.common.core.domain.R;
 import com.akkkka.funcampusportal.util.ParamCheckUtil;
-import com.akkkka.funcampusutil.util.ExceptionUtil;
 import javax.annotation.Resource;
 import javax.validation.Valid;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/school")
-@Api(tags = "school")
+@Tag(name = "school")
 public class SchoolController {
     @Resource
     private ISchoolService schoolService;
@@ -39,21 +38,21 @@ public class SchoolController {
      */
     @Validated(ScopeInsert.class)
     @RequestMapping("/add")
-    @ApiOperation(value = "add school")
+    @Operation(description = "add school")
     public R<Void> add(@RequestBody @Valid School school) {
         schoolService.add(school);
         return R.ok();
     }
 
     @RequestMapping("/update")
-    @ApiOperation(value = "update school")
+    @Operation(description = "update school")
     public R<Void> update(@RequestBody @Valid School school) {
         schoolService.update(school);
         return R.ok();
     }
 
     @RequestMapping("/delete")
-    @ApiOperation(value = "delete school")
+    @Operation(description = "delete school")
     public R<Void> delete(@RequestParam Integer id) {
         ParamCheckUtil.checkPositiveInteger(id);
         schoolService.delete(id);

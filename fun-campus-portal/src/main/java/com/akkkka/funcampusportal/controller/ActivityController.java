@@ -9,8 +9,9 @@ import com.akkkka.common.core.domain.R;
 import com.akkkka.funcampusportal.util.ParamCheckUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,7 +32,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/activity")
-@Api(tags = "activity")
+@Tag(name = "activity")
 public class ActivityController {
 
     @Resource
@@ -39,7 +40,7 @@ public class ActivityController {
 
     @RequestMapping("/create")
     @Validated(ScopeInsert.class)
-    @ApiOperation(value = "create activity")
+    @Operation(description = "create activity")
     public R<Void> create(@RequestBody @Valid Activity activity){
         activityService.add(activity);
         return R.ok();
@@ -50,7 +51,7 @@ public class ActivityController {
      * */
     @RequestMapping("/update")
     @Validated(ScopeUpdate.class)
-    @ApiOperation(value = "update activity")
+    @Operation(description = "update activity")
     public R<Void> update(@RequestBody @Valid Activity activity){
         activityService.update(activity);
         return R.ok();
@@ -60,7 +61,7 @@ public class ActivityController {
      * of course, delete activity logically
      * */
     @RequestMapping("/delete")
-    @ApiOperation(value = "delete activity")
+    @Operation(description = "delete activity")
     public R<Void> delete(@RequestParam("id") Integer id){
         ParamCheckUtil.checkPositiveInteger(id);
         activityService.delete(id);
@@ -68,7 +69,7 @@ public class ActivityController {
     }
 
     @RequestMapping("/get")
-    @ApiOperation(value = "get activity")
+    @Operation(description = "get activity")
     public R<Activity> get(@RequestParam("id") Integer id){
         ParamCheckUtil.checkPositiveInteger(id);
         Activity activity = activityService.getById(id);
@@ -88,14 +89,14 @@ public class ActivityController {
 //    }
 
     @RequestMapping("/listByUser")
-    @ApiOperation(value = "list activity by user id")
+    @Operation(description = "list activity by user id")
     public R<List<Activity>> listByUserId(@RequestParam("userId") Integer userId){
         ParamCheckUtil.checkPositiveInteger(userId);
         List<Activity> list = activityService.listByUserId(userId);
         return R.ok(list);
     }
     @RequestMapping("/enroll")
-    @ApiOperation(value = "enroll activity")
+    @Operation(description = "enroll activity")
     public R<Void> enroll(@RequestParam("userId") Integer userId, @RequestParam("activityId") Integer activityId) {
         ParamCheckUtil.checkPositiveInteger(userId, activityId);
         activityService.enroll(userId, activityId);
@@ -103,7 +104,7 @@ public class ActivityController {
     }
 
     @RequestMapping("/sign-in")
-    @ApiOperation(value = "sign in activity")
+    @Operation(description = "sign in activity")
     public R<Void> signIn(@RequestParam Integer userId, @RequestParam Integer activityId){
         ParamCheckUtil.checkPositiveInteger(userId, activityId);
         activityService.signIn(activityId, userId);
@@ -111,7 +112,7 @@ public class ActivityController {
     }
 
     @RequestMapping("/page")
-    @ApiOperation(value = "page activity")
+    @Operation(description = "page activity")
     public R<IPage<Activity>> page(@RequestParam(defaultValue = "1") Integer pageNum,
                                                 @RequestParam(defaultValue = "10") Integer pageSize){
         ParamCheckUtil.checkPositiveInteger(pageNum, pageSize);
@@ -120,7 +121,7 @@ public class ActivityController {
         return R.ok(page);
     }
     @RequestMapping("/pageBySchool")
-    @ApiOperation(value = "page activity by school id")
+    @Operation(description = "page activity by school id")
     public R<IPage<Activity>> pageBySchool(@RequestParam(defaultValue = "1") Integer pageNum,
                                                         @RequestParam(defaultValue = "10") Integer pageSize,
                                                         @RequestParam Integer schoolId){
@@ -129,7 +130,7 @@ public class ActivityController {
     }
 
     @RequestMapping("/cancelEnroll")
-    @ApiOperation(value = "cancel enroll activity")
+    @Operation(description = "cancel enroll activity")
     public R<Void> cancelEnroll(@RequestParam Integer userId, @RequestParam Integer activityId){
         ParamCheckUtil.checkPositiveInteger(userId, activityId);
         activityService.cancelEnroll(userId, activityId);

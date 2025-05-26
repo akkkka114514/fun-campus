@@ -1,9 +1,10 @@
 package com.akkkka.funcampusportal.service.impl;
 
+import com.akkkka.common.core.enums.ResponseEnum;
+import com.akkkka.common.core.exception.GlobalException;
 import com.akkkka.funcampusportal.domain.ActivityUserMap;
 import com.akkkka.funcampusportal.mapper.ActivityUserMapMapper;
 import com.akkkka.funcampusportal.service.IActivityUserMapService;
-import com.akkkka.funcampusutil.util.ExceptionUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -42,7 +43,10 @@ public class ActivityUserMapServiceImpl extends ServiceImpl<ActivityUserMapMappe
 
     @Override
     public void update(ActivityUserMap aum) {
-        ExceptionUtil.throwIfNullInDb(this.get(aum.getUserId(),aum.getActivityId()),":activityUserMap");
+        ActivityUserMap activityUserMap = this.get(aum.getUserId(),aum.getActivityId());
+        if(activityUserMap==null){
+            throw new GlobalException(ResponseEnum.NO_SUCH_RECORD_IN_DB,"activityUserMap");
+        }
 
         this.update(aum,
                 new UpdateWrapper<ActivityUserMap>()

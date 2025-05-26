@@ -5,8 +5,10 @@ import com.akkkka.funcampusportal.domain.scope.ScopeUpdate;
 import com.baomidou.mybatisplus.annotation.TableName;
 import javax.validation.constraints.*;
 import lombok.*;
+import lombok.experimental.Accessors;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 /**
  * <p>
@@ -19,7 +21,7 @@ import java.io.Serializable;
 @Getter
 @Setter
 @ToString
-@Builder
+@Accessors(chain = true)
 @TableName("activity_user_map")
 @AllArgsConstructor
 @NoArgsConstructor
@@ -45,4 +47,13 @@ public class ActivityUserMap implements Serializable {
     @Max(1)
     @NotNull(groups = {ScopeInsert.class})
     private Integer isSignIn;
+
+    @NotNull(groups = ScopeInsert.class)
+    @FutureOrPresent
+    private LocalDateTime createTime;
+
+
+    @NotNull(groups = ScopeUpdate.class)
+    @FutureOrPresent
+    private LocalDateTime updateTime;
 }

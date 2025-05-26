@@ -30,4 +30,9 @@ public class GlobalException extends RuntimeException {
         super(responseEnum.getMessage());
         this.code = responseEnum.getCode();
     }
+    public GlobalException(ResponseEnum responseEnum, String detail) {
+        super(responseEnum.getMessage());
+        this.code = responseEnum.getCode();
+        this.detail = detail;
+    }
 }

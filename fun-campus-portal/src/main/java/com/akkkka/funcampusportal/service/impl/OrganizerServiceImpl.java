@@ -1,14 +1,18 @@
 package com.akkkka.funcampusportal.service.impl;
 
+import com.akkkka.common.core.enums.ResponseEnum;
+import com.akkkka.common.core.exception.GlobalException;
 import com.akkkka.funcampusportal.domain.College;
 import com.akkkka.funcampusportal.domain.Organizer;
 import com.akkkka.funcampusportal.mapper.OrganizerMapper;
 import com.akkkka.funcampusportal.service.ICollegeService;
 import com.akkkka.funcampusportal.service.IOrganizerService;
-import com.akkkka.funcampusutil.util.ExceptionUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import javax.annotation.Resource;
 import org.springframework.stereotype.Service;
+
+import java.util.Objects;
+
 /**
  * @author akkkka
  */
@@ -26,8 +30,12 @@ public class OrganizerServiceImpl extends ServiceImpl<OrganizerMapper, Organizer
         College college=null;
         if(organizer.getCollegeId()!=null) {
             college = collegeService.getById(organizer.getCollegeId());
-            ExceptionUtil.throwIfNullInDb(college,":college");
-            ExceptionUtil.throwIfNotCorrespondToRecordInDb(organizer.getSchoolId(),college.getSchoolId(),":school and college");
+            if(college==null){
+                throw new GlobalException(ResponseEnum.NO_SUCH_RECORD_IN_DB,"College");
+            }
+            if(!Objects.equals(organizer.getSchoolId(), college.getSchoolId())){
+                throw new GlobalException(ResponseEnum.NOT_CORRESPOND_TO_RECORD_IN_DB);
+            }
         }
         organizer.setId(null);
         organizer.setIsDeleted((byte)0);
@@ -38,8 +46,12 @@ public class OrganizerServiceImpl extends ServiceImpl<OrganizerMapper, Organizer
     public void update(Organizer organizer) {
         Organizer toCheck = this.getById(organizer.getId());
 
-        ExceptionUtil.throwIfNullInDb(toCheck,":organizer");
-        ExceptionUtil.throwIfIsDeletedInDb(toCheck.getIsDeleted(),"organizer");
+        if(toCheck==null){
+            throw new GlobalException(ResponseEnum.NO_SUCH_RECORD_IN_DB,"organizer");
+        }
+        if(toCheck.getIsDeleted()==1){
+            throw new GlobalException(ResponseEnum.RECORD_DELETED_LOGICALLY,"organizer");
+        }
 
         organizer.setSchoolId(null);
         this.updateById(organizer);

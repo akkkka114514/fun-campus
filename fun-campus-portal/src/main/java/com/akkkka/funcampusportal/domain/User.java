@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import lombok.*;
+import lombok.experimental.Accessors;
 
 import javax.validation.constraints.*;
 import java.io.Serializable;
@@ -23,7 +24,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @ToString
-@Builder
+@Accessors(chain = true)
 @AllArgsConstructor
 @NoArgsConstructor
 public class User implements Serializable {
@@ -94,4 +95,5 @@ public class User implements Serializable {
     @Min(0)
     @Max(1)
     private byte isDeleted;
+
 }

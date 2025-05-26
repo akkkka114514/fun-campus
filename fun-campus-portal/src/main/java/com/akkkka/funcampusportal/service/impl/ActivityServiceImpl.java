@@ -1,14 +1,13 @@
 package com.akkkka.funcampusportal.service.impl;
 
 
+import com.akkkka.common.core.enums.ResponseEnum;
+import com.akkkka.common.core.exception.GlobalException;
 import com.akkkka.funcampusportal.domain.*;
 import com.akkkka.funcampusportal.mapper.ActivityMapper;
 import com.akkkka.funcampusportal.event.AddActivityEvent;
 import com.akkkka.funcampusportal.quatz.ChangeActivityStatusJob;
 import com.akkkka.funcampusportal.service.*;
-import com.akkkka.funcampusutil.constant.ResponseEnum;
-import com.akkkka.funcampusutil.util.CustomException;
-import com.akkkka.funcampusutil.util.ExceptionUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -57,13 +56,20 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
         School toCheckSchool = schoolService.getById(activity.getActivitySchoolId());
         Organizer toCheckOrganizer = organizerService.getById(activity.getActivityOrganizerId());
 
-        ExceptionUtil.throwIfNullInDb(toCheckSchool,":school");
-        ExceptionUtil.throwIfNullInDb(toCheckOrganizer,":organizer");
+        if(toCheckSchool==null){
+            throw new GlobalException(ResponseEnum.NO_SUCH_RECORD_IN_DB,"school");
+        }else if(toCheckSchool.getIsDeleted()==1){
+            throw new GlobalException(ResponseEnum.RECORD_DELETED_LOGICALLY,"school");
+        }
+        if(toCheckOrganizer==null){
+            throw new GlobalException(ResponseEnum.NO_SUCH_RECORD_IN_DB,"organizer");
+        }else if(toCheckOrganizer.getIsDeleted()==1){
+            throw new GlobalException(ResponseEnum.RECORD_DELETED_LOGICALLY,"organizer");
+        }
 
-        ExceptionUtil.throwIfIsDeletedInDb(toCheckSchool.getIsDeleted(),":school");
-        ExceptionUtil.throwIfIsDeletedInDb(toCheckOrganizer.getIsDeleted(),":organizer");
-
-        ExceptionUtil.throwIfNotCorrespondToRecordInDb(toCheckOrganizer.getSchoolId(), toCheckSchool.getId(),":school and organizer");
+        if(!Objects.equals(toCheckOrganizer.getSchoolId(), toCheckSchool.getId())){
+            throw new GlobalException(ResponseEnum.NOT_CORRESPOND_TO_RECORD_IN_DB,"school and organizer");
+        }
 
         this.save(activity);
         Integer activityId = this.getByTitle(activity.getTitle()).getId();
@@ -80,8 +86,11 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
     public void update(Activity activity) {
         Activity toCheckActivity = this.getById(activity.getId());
 
-        ExceptionUtil.throwIfNullInDb(toCheckActivity,":activity");
-        ExceptionUtil.throwIfIsDeletedInDb(toCheckActivity.getIsDeleted(),":activity");
+        if(toCheckActivity==null){
+            throw new GlobalException(ResponseEnum.NO_SUCH_RECORD_IN_DB,"activity");
+        }else if(toCheckActivity.getIsDeleted()==1){
+            throw new GlobalException(ResponseEnum.RECORD_DELETED_LOGICALLY,"activity");
+        }
 
         //不允许更改活动学校和活动主办方
         activity.setActivitySchoolId(null);
@@ -114,32 +123,44 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
         User user = this.userService.getById(userId);
         Activity activity = this.getById(activityId);
         //判空
-        ExceptionUtil.throwIfNullInDb(user,":user");
-        ExceptionUtil.throwIfNullInDb(activity,":activity");
+        if(user==null){
+            throw new GlobalException(ResponseEnum.NO_SUCH_RECORD_IN_DB,"user");
+        }
+        if(activity == null){
+            throw new GlobalException(ResponseEnum.NO_SUCH_RECORD_IN_DB,"activity");
+        }
 
         Integer enrollNum = activity.getEnrollNum();
 
         log.info("查看活动是否在等待报名状态");
         if (activity.getStatus()!=1){
-            throw new CustomException(ResponseEnum.NOT_ENROLL_TIME,":activity");
+            throw new GlobalException(ResponseEnum.NOT_ENROLL_TIME,":activity");
         }
 
         log.info("查看操作的user和activity是否已被逻辑删除");
-        ExceptionUtil.throwIfIsDeletedInDb(user.getIsDeleted(),":user");
-        ExceptionUtil.throwIfIsDeletedInDb(activity.getIsDeleted(),":activity");
+        if(user.getIsDeleted()==1){
+            throw new GlobalException(ResponseEnum.RECORD_DELETED_LOGICALLY,"user");
+        }
+        if(activity.getIsDeleted()==1){
+            throw new GlobalException(ResponseEnum.RECORD_DELETED_LOGICALLY,"activity");
+        }
 
         log.info("查看报名人数是否达到上限");
         if (enrollNum >= activity.getEnrollNumLimit()){
-            throw new CustomException(ResponseEnum.GOT_ENROLL_NUM_MAX,"activity");
+            throw new GlobalException(ResponseEnum.GOT_ENROLL_NUM_MAX,"activity");
         }
 
         log.info("查看是否已报名过");
         if (!activityUserMapService.checkUnique(userId, activityId)){
-            throw new CustomException(ResponseEnum.EXISTS_IN_DB,"activityUserMap");
+            throw new GlobalException(ResponseEnum.EXISTS_IN_DB,"activityUserMap");
         }
 
         Organizer organizer=organizerService.getById(activity.getActivityOrganizerId());
-        ExceptionUtil.throwIfNullInDb(organizer);
+
+        if(organizer==null){
+            throw new GlobalException(ResponseEnum.NO_SUCH_RECORD_IN_DB,"organizer");
+        }
+
         log.info("判断是否在活动所属学校或活动所属学院内");
         boolean isBelongToSchool = Objects.equals(activity.getActivitySchoolId(), user.getSchoolId());
         log.info("活动组织者是否是学院");
@@ -150,10 +171,12 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
             log.info("user not in school or college:");
             log.info("activity.id={},activity.schoolId={},activity.college.organizer.collegeId={}",activityId,activity.getActivitySchoolId(),organizer.getCollegeId());
             log.info("user.id={},user.schoolId={},user.collegeId={}",userId,user.getSchoolId(),user.getCollegeId());
-            throw new CustomException(ResponseEnum.NOT_IN_THE_SCHOOL_OR_COLLEGE);
+            throw new GlobalException(ResponseEnum.NOT_IN_THE_SCHOOL_OR_COLLEGE);
         }
         log.info("报名人数+1");
-        this.updateById(Activity.builder().id(activityId).enrollNum(enrollNum+1).build());
+
+
+        this.updateById(Activity.setId(activityId).enrollNum(enrollNum+1).build());
         //添加报名关系
         activityUserMapService.save(new ActivityUserMap(activityId,userId,0));
 
@@ -200,10 +223,12 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
     public void signIn(Integer activityId, Integer userId) {
         ActivityUserMap aum = activityUserMapService.get(activityId,userId);
 
-        ExceptionUtil.throwIfNullInDb(aum);
+        if(aum==null){
+            throw new GlobalException(ResponseEnum.NO_SUCH_RECORD_IN_DB);
+        }
         if (aum.getIsSignIn()==1){
             //检查是否重复签到
-            throw new CustomException(ResponseEnum.ALREADY_SIGN_IN);
+            throw new GlobalException(ResponseEnum.ALREADY_SIGN_IN);
         }
 
         aum.setIsSignIn(1);
@@ -222,21 +247,31 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
     public void cancelEnroll(Integer userId, Integer activityId) {
         log.info("获取活动信息");
         Activity activity = this.getById(activityId);
-        ExceptionUtil.throwIfNullInDb(activity);
+        if(activity==null){
+            throw new GlobalException(ResponseEnum.NO_SUCH_RECORD_IN_DB,"activity");
+        }
         log.info("检查活动是否逻辑删除");
-        ExceptionUtil.throwIfIsDeletedInDb(activity.getIsDeleted(),"activity");
+        if(activity.getIsDeleted()==1){
+            throw new GlobalException(ResponseEnum.RECORD_DELETED_LOGICALLY,"activity");
+        }
         log.info("检查活动是否是等待签到状态，即status-2");
         if(!Objects.equals((byte)2,activity.getStatus())){
-            throw new CustomException(ResponseEnum.ACTIVITY_NOT_IN_CORRECT_STATUS);
+            throw new GlobalException(ResponseEnum.ACTIVITY_NOT_IN_CORRECT_STATUS);
         }
         log.info("获取用户信息");
         User user = userService.getById(userId);
-        ExceptionUtil.throwIfNullInDb(user);
+        if(user==null){
+            throw new GlobalException(ResponseEnum.NO_SUCH_RECORD_IN_DB,"user");
+        }
         log.info("检查用户是否逻辑删除");
-        ExceptionUtil.throwIfIsDeletedInDb(user.getIsDeleted(),"user");
+        if(user.getIsDeleted()==1){
+            throw new GlobalException(ResponseEnum.RECORD_DELETED_LOGICALLY,"user");
+        }
         log.info("获取activityUserMap");
         ActivityUserMap aum = activityUserMapService.get(userId,activityId);
-        ExceptionUtil.throwIfNullInDb(aum);
+        if(aum==null){
+            throw new GlobalException(ResponseEnum.NO_SUCH_RECORD_IN_DB,"activityUserMap");
+        }
         log.info("删除该activityUserMap");
         activityUserMapService.remove(new QueryWrapper<ActivityUserMap>()
                 .eq("user_id",userId)

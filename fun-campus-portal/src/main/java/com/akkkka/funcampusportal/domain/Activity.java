@@ -5,6 +5,8 @@ import com.akkkka.funcampusportal.domain.scope.ScopeUpdate;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import lombok.*;
+import lombok.experimental.Accessors;
+
 
 import javax.validation.constraints.*;
 import java.io.Serializable;
@@ -21,7 +23,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @ToString
-@Builder
+@Accessors(chain = true)
 @AllArgsConstructor
 @NoArgsConstructor
 public class Activity implements Serializable {
@@ -125,4 +127,13 @@ public class Activity implements Serializable {
     @Min(0)
     @Max(Integer.MAX_VALUE)
     private Integer enrollNum;
+
+    @NotNull(groups = ScopeInsert.class)
+    @FutureOrPresent
+    private LocalDateTime createTime;
+
+
+    @NotNull(groups = ScopeUpdate.class)
+    @FutureOrPresent
+    private LocalDateTime updateTime;
 }

@@ -2,6 +2,8 @@ package com.akkkka.common.core.enums;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+
 /**
  * @author akkkka
  */

@@ -1,9 +1,10 @@
 package com.akkkka.funcampusportal.service.impl;
 
+import com.akkkka.common.core.enums.ResponseEnum;
+import com.akkkka.common.core.exception.GlobalException;
 import com.akkkka.funcampusportal.domain.School;
 import com.akkkka.funcampusportal.mapper.SchoolMapper;
 import com.akkkka.funcampusportal.service.ISchoolService;
-import com.akkkka.funcampusutil.util.ExceptionUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
@@ -26,7 +27,9 @@ public class SchoolServiceImpl extends ServiceImpl<SchoolMapper, School> impleme
                 )
         );
 
-        ExceptionUtil.throwIfExistsInDb(toCheckSchool);
+        if(toCheckSchool!=null){
+            throw new GlobalException(ResponseEnum.EXISTS_IN_DB,"school");
+        }
         school.setIsDeleted((byte)0);
         this.save(school);
     }
@@ -35,8 +38,12 @@ public class SchoolServiceImpl extends ServiceImpl<SchoolMapper, School> impleme
     public void update(School school) {
         School toCheck = this.getById(school.getId());
 
-        ExceptionUtil.throwIfNullInDb(toCheck,":school");
-        ExceptionUtil.throwIfIsDeletedInDb(toCheck.getIsDeleted(),":school");
+        if(toCheck==null){
+            throw new GlobalException(ResponseEnum.NO_SUCH_RECORD_IN_DB,"school");
+        }
+        if(toCheck.getIsDeleted()==1){
+            throw new GlobalException(ResponseEnum.RECORD_DELETED_LOGICALLY,"school");
+        }
 
         this.updateById(school);
     }

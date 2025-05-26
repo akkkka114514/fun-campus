@@ -6,8 +6,10 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import javax.validation.constraints.*;
 import lombok.*;
+import lombok.experimental.Accessors;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 /**
  * <p>
@@ -20,7 +22,7 @@ import java.io.Serializable;
 @Getter
 @Setter
 @ToString
-@Builder
+@Accessors(chain = true)
 @AllArgsConstructor
 @NoArgsConstructor
 public class School implements Serializable {
@@ -44,4 +46,13 @@ public class School implements Serializable {
     @Min(0)
     @Max(1)
     private byte isDeleted;
+
+    @NotNull(groups = ScopeInsert.class)
+    @FutureOrPresent
+    private LocalDateTime createTime;
+
+
+    @NotNull(groups = ScopeUpdate.class)
+    @FutureOrPresent
+    private LocalDateTime updateTime;
 }

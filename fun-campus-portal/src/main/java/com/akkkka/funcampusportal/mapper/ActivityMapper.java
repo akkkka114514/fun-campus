@@ -3,6 +3,7 @@ package com.akkkka.funcampusportal.mapper;
 import com.akkkka.funcampusportal.domain.Activity;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 
 import java.util.List;
 
@@ -20,4 +21,6 @@ public interface ActivityMapper extends BaseMapper<Activity> {
     Page<Activity> page(Integer pageNum, Integer pageSize);
 
     Page<Activity> pageBySchool(Page<Activity> page, Integer schoolId);
+
+    void IncreaseEnrollNum(Integer  activityId);
 }

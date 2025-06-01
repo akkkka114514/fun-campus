@@ -1,8 +1,9 @@
 package com.akkkka.funcampusportal.quatz;
 
+import com.akkkka.common.core.enums.ResponseEnum;
+import com.akkkka.common.core.exception.GlobalException;
 import com.akkkka.funcampusportal.domain.Activity;
 import com.akkkka.funcampusportal.service.IActivityService;
-import com.akkkka.funcampusutil.util.ExceptionUtil;
 
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.*;
@@ -19,8 +20,12 @@ public class ChangeActivityStatusJob implements Job {
 
         Activity activity = activityService.getById(activityId);
 
-        ExceptionUtil.throwIfNullInDb(activity);
-        ExceptionUtil.throwIfIsDeletedInDb(activity.getIsDeleted());
+        if(activity==null){
+            throw new GlobalException(ResponseEnum.NO_SUCH_RECORD_IN_DB);
+        }
+        if(activity.getIsDeleted()==1){
+            throw new GlobalException(ResponseEnum.RECORD_DELETED_LOGICALLY);
+        }
 
         if (activity.getStatus() == 1 && activity.getEnrollEndTime().isBefore(LocalDateTime.now())){
             activity.setStatus((byte) 2);

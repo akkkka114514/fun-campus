@@ -44,10 +44,10 @@ public class Activity implements Serializable {
     private String title;
 
     /**
-     * 1->等待报名，2->等待签到,3->活动结束
+     * 1->等待报名，2->报名结束，3->等待签到,4->活动结束
      */
     @Min(1)
-    @Max(3)
+    @Max(4)
     private Byte status;
 
     /**

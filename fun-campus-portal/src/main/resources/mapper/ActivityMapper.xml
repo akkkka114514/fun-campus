@@ -55,4 +55,10 @@
             where activity_school_id=#{schoolId}
     </select>
 
+    <update id="increaseEnrollNum">
+        UPDATE activity
+        SET enroll_num=enroll_num+1
+        WHERE id=#{id} AND status=1 and is_deleted=0
+          and enroll_num &lt; enroll_num_limit;
+    </update>
 </mapper>

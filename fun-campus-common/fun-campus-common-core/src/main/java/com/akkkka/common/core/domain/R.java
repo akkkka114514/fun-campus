@@ -31,7 +31,12 @@ public class R<T> implements Serializable
         return restResult(data,ResponseEnum.SUCCESS.getCode(), ResponseEnum.SUCCESS.getMessage());
     }
 
-
+    public static <T> R<T> fail(T data, String code, String msg){
+        return restResult(data, code, msg);
+    }
+    public static <Void> R<Void> fail(String code, String msg){
+        return fail(null, code, msg);
+    }
     public static <T> R<T> fail(ResponseEnum fail)
     {
         return restResult(null, fail.getCode(), fail.getMessage());

@@ -28,6 +28,6 @@ springdoc:
     # 开启api-docs
     enabled: true
   # 配置需要生成接口文档的扫描包路径
-  packages-to-scan: com.akkkka.controller
+  packages-to-scan: com.akkkka.funcampusportal.controller
   # 配置需要生成接口文档的接口路径
   paths-to-match:  /test/**,/user/**

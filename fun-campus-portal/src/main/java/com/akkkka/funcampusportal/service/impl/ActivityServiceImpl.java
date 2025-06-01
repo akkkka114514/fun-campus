@@ -17,10 +17,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -175,10 +177,10 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
         }
         log.info("报名人数+1");
 
-
+/*
         this.updateById(Activity.setId(activityId).enrollNum(enrollNum+1).build());
         //添加报名关系
-        activityUserMapService.save(new ActivityUserMap(activityId,userId,0));
+        activityUserMapService.save(new ActivityUserMap(activityId,userId,0));*/
 
         log.info("用户[{}]报名活动[{}]", user.getUsername(), activity.getTitle());
     }
@@ -324,4 +326,10 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
         );
     }
 
+    private Integer enrollNumIncrease(Integer activityId){
+        Activity activity = new Activity();
+        activity.setId(activityId);
+        this.getBaseMapper().IncreaseEnrollNum(activityId);
+        return 1;
+    }
 }

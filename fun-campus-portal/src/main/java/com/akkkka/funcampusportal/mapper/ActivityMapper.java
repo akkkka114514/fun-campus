@@ -22,5 +22,5 @@ public interface ActivityMapper extends BaseMapper<Activity> {
 
     Page<Activity> pageBySchool(Page<Activity> page, Integer schoolId);
 
-    void IncreaseEnrollNum(Integer  activityId);
+    int increaseEnrollNum(Integer  activityId);
 }

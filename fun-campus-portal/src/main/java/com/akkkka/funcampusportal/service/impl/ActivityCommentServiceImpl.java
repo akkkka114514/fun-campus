@@ -9,6 +9,7 @@ import com.akkkka.funcampusportal.vo.ActivityCommentRootVO;
 import com.akkkka.funcampusportal.vo.SimpleUserVO;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.*;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 *@create: 2025-04-23 07:38
 *@description: 
 */
+@Service
 public class ActivityCommentServiceImpl extends ServiceImpl<ActivityCommentMapper, ActivityComment> implements IActivityCommentService{
 
     @Resource

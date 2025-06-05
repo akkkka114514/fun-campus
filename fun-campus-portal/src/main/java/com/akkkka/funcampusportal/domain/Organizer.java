@@ -14,7 +14,6 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @ToString
-@Accessors(chain = true)
 @AllArgsConstructor
 @NoArgsConstructor
 public class Organizer implements Serializable {

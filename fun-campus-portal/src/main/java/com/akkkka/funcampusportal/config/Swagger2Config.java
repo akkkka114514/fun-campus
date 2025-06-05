@@ -1,40 +1,60 @@
 package com.akkkka.funcampusportal.config;
 
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import springfox.documentation.builders.ApiInfoBuilder;
-import springfox.documentation.builders.PathSelectors;
-import springfox.documentation.builders.RequestHandlerSelectors;
-import springfox.documentation.service.ApiInfo;
-import springfox.documentation.spi.DocumentationType;
-import springfox.documentation.spring.web.plugins.Docket;
-import springfox.documentation.swagger2.annotations.EnableSwagger2;
+import org.springframework.lang.NonNull;
+import org.springframework.util.ReflectionUtils;
+import org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMapping;
+import springfox.documentation.spring.web.plugins.WebFluxRequestHandlerProvider;
+import springfox.documentation.spring.web.plugins.WebMvcRequestHandlerProvider;
+
+import java.lang.reflect.Field;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
- * @author: Zoe Wu
- * @create: 2025-03-12 22:40
- * @Description:
+ * swagger config
+ *
+ * @author zxl
+ * @date 2023-05-16
  */
-
 @Configuration
-@EnableSwagger2
 public class Swagger2Config {
 
     @Bean
-    public Docket api() {
-        return new Docket(DocumentationType.SWAGGER_2)
-                .apiInfo(apiInfo())
-                .select()
-                .apis(RequestHandlerSelectors.basePackage("org.example.testdoc.controller"))
-                .paths(PathSelectors.any())
-                .build();
-    }
+    public BeanPostProcessor springfoxHandlerProviderBeanPostProcessor() {
+        return new BeanPostProcessor() {
 
-    private ApiInfo apiInfo() {
-        return new ApiInfoBuilder()
-                .title("Springfox Swagger2 Example")
-                .description("This is an example of using Springfox Swagger2 to generate API documentation.")
-                .version("1.0")
-                .build();
+            @Override
+            public Object postProcessAfterInitialization(@NonNull  Object bean, @NonNull String beanName) throws BeansException {
+                if (bean instanceof WebMvcRequestHandlerProvider || bean instanceof WebFluxRequestHandlerProvider) {
+                    customizeSpringfoxHandlerMappings(getHandlerMappings(bean));
+                }
+                return bean;
+            }
+
+            private <T extends RequestMappingInfoHandlerMapping> void customizeSpringfoxHandlerMappings(List<T> mappings) {
+                List<T> copy = mappings.stream()
+                        .filter(mapping -> mapping.getPatternParser() == null)
+                        .collect(Collectors.toList());
+                mappings.clear();
+                mappings.addAll(copy);
+            }
+
+            @SuppressWarnings("unchecked")
+            private List<RequestMappingInfoHandlerMapping> getHandlerMappings(Object bean) {
+                try {
+                    Field field = ReflectionUtils.findField(bean.getClass(), "handlerMappings");
+                    assert field != null;
+                    field.setAccessible(true);
+                    return (List<RequestMappingInfoHandlerMapping>) field.get(bean);
+                } catch (IllegalArgumentException | IllegalAccessException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+        };
     }
 }
+

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.akkkka.funcampusportal.mapper.ActivityMapper">
-    <select id="listByUserId" parameterType="Integer" resultType="com.akkkka.funcampusmainmodel.domain.Activity">
+    <select id="listByUserId" parameterType="Integer" resultType="com.akkkka.funcampusportal.domain.Activity">
         SELECT
             a.id,
             a.title,
@@ -31,7 +31,7 @@
              ON o.id = a.activity_organizer_id
         where user_id=#{id};
     </select>
-    <select id="page" resultType="com.akkkka.funcampusmainmodel.domain.Activity">
+    <select id="page" resultType="com.akkkka.funcampusportal.domain.Activity">
         SELECT
             a.id,
             a.title,
@@ -50,15 +50,15 @@
         FROM activity AS a
         limit #{pageNum},#{pageSize};
     </select>
-    <select id="pageBySchool" resultType="com.akkkka.funcampusmainmodel.domain.Activity">
+    <select id="pageBySchool" resultType="com.akkkka.funcampusportal.domain.Activity">
         select * from activity
             where activity_school_id=#{schoolId}
     </select>
 
-    <update id="increaseEnrollNum">
+    <update id="increaseEnrollNum" useGeneratedKeys="false">
         UPDATE activity
         SET enroll_num=enroll_num+1
         WHERE id=#{id} AND status=1 and is_deleted=0
-          and enroll_num &lt; enroll_num_limit;
+          and enroll_num&lt;enroll_num_limit;
     </update>
 </mapper>

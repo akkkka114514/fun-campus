@@ -8,6 +8,7 @@ import com.akkkka.funcampusportal.mapper.ActivityMapper;
 import com.akkkka.funcampusportal.event.AddActivityEvent;
 import com.akkkka.funcampusportal.quatz.ChangeActivityStatusJob;
 import com.akkkka.funcampusportal.service.*;
+import com.akkkka.funcampusportal.service.constants.ActivityStatus;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -175,12 +176,16 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
             log.info("user.id={},user.schoolId={},user.collegeId={}",userId,user.getSchoolId(),user.getCollegeId());
             throw new GlobalException(ResponseEnum.NOT_IN_THE_SCHOOL_OR_COLLEGE);
         }
-        log.info("报名人数+1");
 
-/*
-        this.updateById(Activity.setId(activityId).enrollNum(enrollNum+1).build());
-        //添加报名关系
-        activityUserMapService.save(new ActivityUserMap(activityId,userId,0));*/
+        //本体逻辑
+        if(this.enrollNumIncrease(activityId)==1) {
+            log.info("activity:{}报名人数+1", activity.getTitle());
+        }else{
+            log.info("activity:{}报名人数已满", activity.getTitle());
+            activity.setStatus(ActivityStatus.END_ENROLL);
+            this.updateById(activity);
+            throw new GlobalException(ResponseEnum.GOT_ENROLL_NUM_MAX,"activity");
+        }
 
         log.info("用户[{}]报名活动[{}]", user.getUsername(), activity.getTitle());
     }
@@ -325,11 +330,21 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
                 new QueryWrapper<Activity>().eq("title",title)
         );
     }
-
+    /**
+    * <p>
+    * description:
+    * </p>
+    *
+    * @param activityId
+    * @return:
+    * @author: akkkka114514
+    * @date: 16:09:23 2025-06-05
+    */
     private Integer enrollNumIncrease(Integer activityId){
         Activity activity = new Activity();
         activity.setId(activityId);
-        this.getBaseMapper().IncreaseEnrollNum(activityId);
-        return 1;
+        //返回影响行数
+        return this.getBaseMapper().increaseEnrollNum(activityId);
     }
+
 }

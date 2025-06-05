@@ -21,7 +21,6 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @ToString
-@Accessors(chain = true)
 @TableName("activity_user_map")
 @AllArgsConstructor
 @NoArgsConstructor

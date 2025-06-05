@@ -4,7 +4,7 @@ import com.akkkka.funcampusportal.domain.scope.ScopeInsert;
 import com.akkkka.funcampusportal.domain.scope.ScopeUpdate;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
-import lombok.Data;
+import lombok.*;
 import lombok.experimental.Accessors;
 
 import javax.validation.constraints.*;
@@ -16,8 +16,11 @@ import java.time.LocalDateTime;
  * @create: 2025-04-23 07:20
  * @description:
  */
-@Data
-@Accessors(chain = true)
+@Getter
+@Setter
+@ToString
+@AllArgsConstructor
+@NoArgsConstructor
 public class ActivityComment implements Serializable {
 
     private static final long serialVersionUID = 1L;

@@ -12,7 +12,6 @@ import lombok.NoArgsConstructor;
 public enum ResponseEnum {
     SUCCESS("00000","成功"),
     PARAM_NOT_VALIDATE("10000","Controller层字段校验异常"),
-    NO_SUCH_USER("10001","根据字段查不到该用户"),
     NOT_FOUND_IN_REDIS("10002","所查找的redis中的对象已过期或不存在"),
     SMS_CODE_WRONG("10003","验证码错误"),
     EXISTS_IN_DB("10004","数据库中已存在该记录"),

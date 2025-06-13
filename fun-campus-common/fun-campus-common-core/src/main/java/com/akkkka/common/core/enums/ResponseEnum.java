@@ -29,7 +29,8 @@ public enum ResponseEnum {
     PASSWORD_WRONG("10015","密码错误"),
     ACTIVITY_NOT_IN_CORRECT_STATUS("10016","活动状态不正确"),
     OPERATION_DUPLICATED("10017","操作重复"),
-    PERMISSION_DENIED("10018","操作失败，没有该操作权限");
+    PERMISSION_DENIED("10018","操作失败，没有该操作权限"),
+    SQL_FAILED("10019","数据库操作失败");
 
     private final String code;
     private final String message;

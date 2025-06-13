@@ -23,4 +23,6 @@ public interface ActivityMapper extends BaseMapper<Activity> {
     Page<Activity> pageBySchool(Page<Activity> page, Integer schoolId);
 
     int increaseEnrollNum(Integer  activityId);
+
+    int decreaseEnrollNum(Integer  activityId);
 }

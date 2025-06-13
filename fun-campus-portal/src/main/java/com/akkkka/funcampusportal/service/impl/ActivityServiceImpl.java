@@ -14,12 +14,16 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import javax.annotation.Resource;
+
+import io.swagger.models.auth.In;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
 import java.util.Objects;
@@ -48,6 +52,8 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
     private ISchoolService schoolService;
     @Resource
     private ApplicationEventPublisher applicationEventPublisher;
+    @Resource
+    private TransactionTemplate transactionTemplate;
 
     @Override
     public void add(Activity activity) {
@@ -159,11 +165,9 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
         }
 
         Organizer organizer=organizerService.getById(activity.getActivityOrganizerId());
-
         if(organizer==null){
             throw new GlobalException(ResponseEnum.NO_SUCH_RECORD_IN_DB,"organizer");
         }
-
         log.info("判断是否在活动所属学校或活动所属学院内");
         boolean isBelongToSchool = Objects.equals(activity.getActivitySchoolId(), user.getSchoolId());
         log.info("活动组织者是否是学院");
@@ -176,18 +180,30 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
             log.info("user.id={},user.schoolId={},user.collegeId={}",userId,user.getSchoolId(),user.getCollegeId());
             throw new GlobalException(ResponseEnum.NOT_IN_THE_SCHOOL_OR_COLLEGE);
         }
+        transactionTemplate.execute(status -> {
+            try {
+                if (this.enrollNumIncrease(activity.getId()) == 1) {
+                    ActivityUserMap aum = new ActivityUserMap();
+                    aum.setActivityId(activity.getId());
+                    aum.setUserId(user.getId());
+                    aum.setIsSignIn(0);
 
-        //本体逻辑
-        if(this.enrollNumIncrease(activityId)==1) {
-            log.info("activity:{}报名人数+1", activity.getTitle());
-        }else{
-            log.info("activity:{}报名人数已满", activity.getTitle());
-            activity.setStatus(ActivityStatus.END_ENROLL);
-            this.updateById(activity);
-            throw new GlobalException(ResponseEnum.GOT_ENROLL_NUM_MAX,"activity");
-        }
-
-        log.info("用户[{}]报名活动[{}]", user.getUsername(), activity.getTitle());
+                    if (!activityUserMapService.save(aum)) {
+                        throw new GlobalException(ResponseEnum.SQL_FAILED);
+                    }
+                } else {
+                    log.info("activity:{}报名人数已满", activity.getTitle());
+                    activity.setStatus(ActivityStatus.END_ENROLL);
+                    this.updateById(activity);
+                    throw new GlobalException(ResponseEnum.GOT_ENROLL_NUM_MAX, "activity");
+                }
+                log.info("用户[{}]报名活动[{}]", user.getUsername(), activity.getTitle());
+                return null;
+            } catch (Exception e) {
+                status.setRollbackOnly(); // 手动回滚
+                throw e;
+            }
+        });
     }
     /**
      * 定时任务改变活动状态
@@ -261,8 +277,8 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
         if(activity.getIsDeleted()==1){
             throw new GlobalException(ResponseEnum.RECORD_DELETED_LOGICALLY,"activity");
         }
-        log.info("检查活动是否是等待签到状态，即status-2");
-        if(!Objects.equals((byte)2,activity.getStatus())){
+        log.info("检查活动是否是等待报名状态，即status-2");
+        if(!Objects.equals(ActivityStatus.WAIT_ENROLL,activity.getStatus())){
             throw new GlobalException(ResponseEnum.ACTIVITY_NOT_IN_CORRECT_STATUS);
         }
         log.info("获取用户信息");
@@ -280,9 +296,23 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
             throw new GlobalException(ResponseEnum.NO_SUCH_RECORD_IN_DB,"activityUserMap");
         }
         log.info("删除该activityUserMap");
-        activityUserMapService.remove(new QueryWrapper<ActivityUserMap>()
-                .eq("user_id",userId)
-                .eq("activityId",activityId));
+        transactionTemplate.execute(status -> {
+            try{
+                boolean i = activityUserMapService.remove(new QueryWrapper<ActivityUserMap>()
+                        .eq("user_id", userId)
+                        .eq("activityId", activityId));
+                if(!i){
+                    throw new GlobalException(ResponseEnum.SQL_FAILED);
+                }
+                if(this.enrollNumDecrease(activityId)!=1){
+                    throw new GlobalException(ResponseEnum.SQL_FAILED);
+                }
+                return null;
+            }catch (Exception e){
+                status.setRollbackOnly();
+                throw e;
+            }
+        });
     }
 
     /**
@@ -346,5 +376,13 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
         //返回影响行数
         return this.getBaseMapper().increaseEnrollNum(activityId);
     }
+
+    private Integer enrollNumDecrease(Integer activityId){
+        Activity activity = new Activity();
+        activity.setId(activityId);
+        //返回影响行数
+        return this.getBaseMapper().decreaseEnrollNum(activityId);
+    }
+
 
 }

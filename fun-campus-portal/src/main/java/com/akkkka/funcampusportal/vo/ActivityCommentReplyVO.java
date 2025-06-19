@@ -14,27 +14,7 @@ import java.util.List;
  * @description:
  */
 @NoArgsConstructor
-@Data
-public class ActivityCommentReplyVO implements Serializable {
-    private Integer id;
-
-    private Integer activityId;
-
-    /**
-     * 评论用户信息
-     */
-    private SimpleUserVO userInfo;
-
-    private Integer toCommentId;
-
-    private Integer rootId;
-
-    private String content;
-
-    private Integer hot;
-
-
-    private LocalDateTime createTime;
+public class ActivityCommentReplyVO extends ActivityCommentBaseVO implements Serializable {
 
     public ActivityCommentReplyVO(ActivityComment comment, SimpleUserVO userInfo, SimpleUserVO replyUserInfo, List<ActivityCommentReplyVO> replyList) {
         this.id = comment.getId();
@@ -52,7 +32,11 @@ public class ActivityCommentReplyVO implements Serializable {
         this.userInfo = null;
         this.toCommentId = comment.getToCommentId();
         this.rootId = comment.getRootId();
-        this.content = comment.getContent();
+        if(comment.getIsDeleted()==1){
+            this.content="此评论已被删除";
+        }else {
+            this.content = comment.getContent();
+        }
         this.hot = comment.getHot();
         this.createTime = comment.getCreateTime();
     }

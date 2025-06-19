@@ -72,4 +72,12 @@ public class ActivityComment implements Serializable {
     @Max(Integer.MAX_VALUE)
     @Null(groups = ScopeUpdate.class)
     private Integer rootId;
+
+    @Min(0)
+    @Max(1)
+    private Byte isDeleted;
+
+    @NotNull(groups = ScopeUpdate.class)
+    @FutureOrPresent
+    private LocalDateTime updateTime;
 }

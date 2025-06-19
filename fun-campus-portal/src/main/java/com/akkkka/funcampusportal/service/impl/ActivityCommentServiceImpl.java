@@ -1,9 +1,13 @@
 package com.akkkka.funcampusportal.service.impl;
 
+import com.akkkka.common.core.enums.ResponseEnum;
+import com.akkkka.common.core.exception.GlobalException;
 import com.akkkka.funcampusportal.domain.ActivityComment;
 import com.akkkka.funcampusportal.mapper.ActivityCommentMapper;
 import com.akkkka.funcampusportal.service.IActivityCommentService;
+import com.akkkka.funcampusportal.service.IActivityService;
 import com.akkkka.funcampusportal.service.IUserService;
+import com.akkkka.funcampusportal.vo.ActivityCommentBaseVO;
 import com.akkkka.funcampusportal.vo.ActivityCommentReplyVO;
 import com.akkkka.funcampusportal.vo.ActivityCommentRootVO;
 import com.akkkka.funcampusportal.vo.SimpleUserVO;
@@ -25,6 +29,8 @@ public class ActivityCommentServiceImpl extends ServiceImpl<ActivityCommentMappe
 
     @Resource
     private IUserService userService;
+    @Resource
+    private IActivityService activityService;
     @Override
     public List<ActivityCommentRootVO> getByActivityId(Integer activityId) {
         //获取一个activity下的所有评论，包括根评论和子评论
@@ -75,4 +81,66 @@ public class ActivityCommentServiceImpl extends ServiceImpl<ActivityCommentMappe
         }
         return result;
     }
+    /** 
+    * <p>
+    * description: 
+    * </p>
+    *
+    * @param commentVO
+    * @return:  
+    * @author: akkkka114514
+    * @date: 15:15:33 2025-06-19 
+    */ 
+    @Override
+    public void addComment(ActivityCommentBaseVO commentVO) {
+        ActivityComment comment = commentVO.toActivityComment();
+        if(activityService.getById(comment.getActivityId())==null){
+            throw new GlobalException(ResponseEnum.NO_SUCH_RECORD_IN_DB,"activity");
+        }
+        if(userService.getById(comment.getUserId())==null){
+            throw new GlobalException(ResponseEnum.NO_SUCH_RECORD_IN_DB,"user");
+        }
+        this.save(comment);
+    }
+    /** 
+    * <p>
+    * description: 
+    * </p>
+    *
+    * @param activityId
+    * @return:  
+    * @author: akkkka114514
+    * @date: 18:41:22 2025-06-19 
+    */ 
+    @Override
+    public Integer getActivityCommentCount(Integer activityId) {
+        if(activityService.getById(activityId)==null){
+            throw new GlobalException(ResponseEnum.NO_SUCH_RECORD_IN_DB,"activity");
+        }
+        LambdaQueryWrapper<ActivityComment> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+        return Math.toIntExact(this.count(lambdaQueryWrapper.eq(ActivityComment::getActivityId, activityId)));
+    }
+    /**
+    * <p>
+    * description:
+    * </p>
+    *
+    * @param commentId
+    * @return:
+    * @author: akkkka114514
+    * @date: 18:52:18 2025-06-19
+    */
+    @Override
+    public void deleteComment(Integer commentId) {
+        ActivityComment comment = this.getById(commentId);
+        if(comment==null){
+            throw new GlobalException(ResponseEnum.NO_SUCH_RECORD_IN_DB,"comment");
+        }
+        if(comment.getIsDeleted()!=1){
+            comment.setIsDeleted((byte) 1);
+            this.updateById(comment);
+        }
+    }
+
+
 }

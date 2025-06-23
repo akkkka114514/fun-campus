@@ -9,6 +9,8 @@ import com.akkkka.common.core.utils.ip.IpUtils;
 import com.akkkka.system.api.RemoteLogService;
 import com.akkkka.system.api.domain.SysLogininfor;
 
+import javax.annotation.Resource;
+
 /**
  * 记录日志方法
  * 
@@ -17,7 +19,7 @@ import com.akkkka.system.api.domain.SysLogininfor;
 @Component
 public class SysRecordLogService
 {
-    @Autowired
+    @Resource
     private RemoteLogService remoteLogService;
 
     /**

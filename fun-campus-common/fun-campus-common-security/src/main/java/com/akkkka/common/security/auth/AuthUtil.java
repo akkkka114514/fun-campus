@@ -164,4 +164,53 @@ public class AuthUtil
     {
         authLogic.checkPermiOr(permissions);
     }
+    /**
+    * <p>
+    * description: 开启二级认证
+    * </p>
+    *
+    * @param
+    * @return:
+    * @author: akkkka114514
+    * @date: 15:28:39 2025-06-23
+    */
+    public static void openStepUpAuth()
+    {
+        authLogic.openStepUpAuth();
+    }
+    /**
+    * <p>
+    * description: 二级认证过程（密码认证）
+    * </p>
+    *
+    * @param encryptPassword
+    * @return:
+    * @author: akkkka114514
+    * @date: 15:29:23 2025-06-23
+    */
+    public static void verifyStepUpAuthPassword(String encryptPassword)
+    {
+        authLogic.verifyStepUpAuthPassword(encryptPassword);
+    }
+    /**
+    * <p>
+    * description: 完成二级认证开启安全模式
+    * </p>
+    *
+    * @param
+    * @return:
+    * @author: akkkka114514
+    * @date: 15:29:46 2025-06-23
+    */
+    public static void enableSafe()
+    {
+        authLogic.enableSafe();
+    }
+
+    public static void checkSafe() {
+        authLogic.checkSafe();
+    }
+    public static String getStepUpAuthRedisKeyPrefix() {
+        return authLogic.getStepUpAuthRedisKeyPrefix();
+    }
 }

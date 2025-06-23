@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletResponse;
+
+import com.akkkka.common.core.enums.ResponseEnum;
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
@@ -121,7 +123,7 @@ public class SysUserController extends BaseController
         SysUser sysUser = userService.selectUserByUserName(username);
         if (StringUtils.isNull(sysUser))
         {
-            return R.fail("用户名或密码错误");
+            return R.fail(ResponseEnum.AUTHENTICATION_FAILED);
         }
         // 角色集合
         Set<String> roles = permissionService.getRolePermission(sysUser);

@@ -4,6 +4,7 @@ import com.akkkka.funcampusportal.domain.ActivityComment;
 import com.akkkka.funcampusportal.service.IActivityCommentService;
 import com.akkkka.funcampusportal.util.ParamCheckUtil;
 import com.akkkka.funcampusportal.vo.ActivityCommentRootVO;
+import io.swagger.models.auth.In;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
@@ -42,6 +43,12 @@ public class ActivityCommentController {
     @Operation(description = "update")
     public void update(@Valid @RequestBody ActivityComment activityComment){
         activityCommentService.updateById(activityComment);
+    }
+
+    @GetMapping("/delete")
+    @Operation(description = "delete")
+    public void delete(@RequestParam("commentId")Integer id){
+        activityCommentService.deleteComment(id);
     }
 
 }

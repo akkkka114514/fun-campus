@@ -141,6 +141,4 @@ public class ActivityCommentServiceImpl extends ServiceImpl<ActivityCommentMappe
             this.updateById(comment);
         }
     }
-
-
 }

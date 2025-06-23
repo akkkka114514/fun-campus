@@ -1,8 +1,12 @@
 package com.akkkka.common.security.auth;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+
+import com.akkkka.common.core.enums.ResponseEnum;
+import com.akkkka.common.core.exception.GlobalException;
+import com.akkkka.common.redis.service.RedisService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.PatternMatchUtils;
 import com.akkkka.common.core.context.SecurityContextHolder;
 import com.akkkka.common.core.exception.auth.NotLoginException;
@@ -31,7 +35,14 @@ public class AuthLogic
     /** 管理员角色权限标识 */
     private static final String SUPER_ADMIN = "admin";
 
+    private static final String STEP_UP_AUTHING_SAVE_KEY = "STEP_UP_AUTHING_SAVE_KEY_";
+    private static final String STEP_UP_AUTHING_SAVE_VALUE = "STEP_UP_AUTHING_SAVE_VALUE";
+    private static final String STEP_UP_AUTHED_SAVE_KEY = "STEP_UP_AUTHED_SAVE_KEY_";
+    private static final String STEP_UP_AUTHED_SAVE_VALUE = "STEP_UP_AUTHED_SAVE_VALUE";
+
     public TokenService tokenService = SpringUtils.getBean(TokenService.class);
+
+    public RedisService redis = SpringUtils.getBean(RedisService.class);
 
     /**
      * 会话注销
@@ -369,5 +380,82 @@ public class AuthLogic
     {
         return roles.stream().filter(StringUtils::hasText)
                 .anyMatch(x -> SUPER_ADMIN.equals(x) || PatternMatchUtils.simpleMatch(x, role));
+    }
+    /**
+    * <p>
+    * description: 开始二级认证
+    * </p>
+    *
+    * @param
+    * @return:
+    * @author: akkkka114514
+    * @date: 18:23:12 2025-06-22
+    */
+    public void openStepUpAuth(){
+        String token = SecurityUtils.getToken();
+        if (token == null) {
+            throw new NotLoginException("未提供token");
+        }
+        LoginUser loginUser = SecurityUtils.getLoginUser();
+        if (loginUser == null) {
+            throw new NotLoginException("无效的token");
+        }
+        redis.setCacheObject(STEP_UP_AUTHING_SAVE_KEY + token, STEP_UP_AUTHING_SAVE_VALUE,120L, TimeUnit.SECONDS);
+    }
+    /**
+    * <p>
+    * description: 二级认证验证密码
+    * </p>
+    *
+    * @param encryptPassword
+    * @return:
+    * @author: akkkka114514
+    * @date: 18:23:30 2025-06-22
+    */
+    public void verifyStepUpAuthPassword(String encryptPassword){
+        this.checkLogin();
+        //TODO 校验身份权限
+        //密码为空或密码错误
+        if(encryptPassword.isEmpty()||
+                !encryptPassword.equals(SecurityUtils.getLoginUser().getSysUser().getPassword())){
+            throw new GlobalException(ResponseEnum.PASSWORD_WRONG);
+        }
+        if (redis.getCacheObject(STEP_UP_AUTHING_SAVE_KEY + SecurityUtils.getToken()) == null){
+            throw new GlobalException(ResponseEnum.NO_SUCH_RECORD_IN_DB);
+        }
+        redis.deleteObject(STEP_UP_AUTHING_SAVE_KEY + SecurityUtils.getToken());
+    }
+    /**
+    * <p>
+    * description: 二级认证完成后可以进行安全的敏感操作
+    * </p>
+    *
+    * @param
+    * @return:
+    * @author: akkkka114514
+    * @date: 18:26:47 2025-06-22
+    */
+    public void enableSafe(){
+        String token = SecurityUtils.getToken();
+        redis.setCacheObject(STEP_UP_AUTHED_SAVE_KEY + token, STEP_UP_AUTHED_SAVE_VALUE,120L, TimeUnit.SECONDS);
+    }
+
+    public void checkSafe(){
+        String token = SecurityUtils.getToken();
+        if (token == null) {
+            throw new NotLoginException("未提供token");
+        }
+        LoginUser loginUser = SecurityUtils.getLoginUser();
+        if (loginUser == null) {
+            throw new NotLoginException("无效的token");
+        }
+        String safeToken = redis.getCacheObject(STEP_UP_AUTHED_SAVE_KEY + token);
+        if(safeToken.isEmpty()){
+            throw new GlobalException(ResponseEnum.AUTHENTICATION_FAILED);
+        }
+    }
+
+    public String getStepUpAuthRedisKeyPrefix(){
+        return STEP_UP_AUTHED_SAVE_KEY;
     }
 }

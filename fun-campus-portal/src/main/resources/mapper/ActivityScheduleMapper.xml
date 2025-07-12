@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.akkkka.funcampusnotice.mapper.ActivityScheduleMapper">
+    
+    <resultMap type="ActivitySchedule" id="ActivityScheduleResult">
+        <result property="activityUid"    column="activity_uid"    />
+        <result property="enrollStartTime"    column="enroll_start_time"    />
+        <result property="enrollEndTime"    column="enroll_end_time"    />
+        <result property="activityStartTime"    column="activity_start_time"    />
+        <result property="activityEndTime"    column="activity_end_time"    />
+        <result property="signinStartTime"    column="signin_start_time"    />
+        <result property="signinEndTime"    column="signin_end_time"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateTime"    column="update_time"    />
+    </resultMap>
+
+    <sql id="selectActivityScheduleVo">
+        select activity_uid, enroll_start_time, enroll_end_time, activity_start_time, activity_end_time, signin_start_time, signin_end_time, create_time, update_time from activity_schedule
+    </sql>
+
+    <select id="selectActivityScheduleList" parameterType="ActivitySchedule" resultMap="ActivityScheduleResult">
+        <include refid="selectActivityScheduleVo"/>
+        <where>  
+            <if test="enrollStartTime != null "> and enroll_start_time = #{enrollStartTime}</if>
+            <if test="enrollEndTime != null "> and enroll_end_time = #{enrollEndTime}</if>
+            <if test="activityStartTime != null "> and activity_start_time = #{activityStartTime}</if>
+            <if test="activityEndTime != null "> and activity_end_time = #{activityEndTime}</if>
+            <if test="signinStartTime != null "> and signin_start_time = #{signinStartTime}</if>
+            <if test="signinEndTime != null "> and signin_end_time = #{signinEndTime}</if>
+        </where>
+    </select>
+    
+    <select id="selectActivityScheduleByActivityUid" parameterType="String" resultMap="ActivityScheduleResult">
+        <include refid="selectActivityScheduleVo"/>
+        where activity_uid = #{activityUid}
+    </select>
+
+    <insert id="insertActivitySchedule" parameterType="ActivitySchedule">
+        insert into activity_schedule
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="activityUid != null">activity_uid,</if>
+            <if test="enrollStartTime != null">enroll_start_time,</if>
+            <if test="enrollEndTime != null">enroll_end_time,</if>
+            <if test="activityStartTime != null">activity_start_time,</if>
+            <if test="activityEndTime != null">activity_end_time,</if>
+            <if test="signinStartTime != null">signin_start_time,</if>
+            <if test="signinEndTime != null">signin_end_time,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateTime != null">update_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="activityUid != null">#{activityUid},</if>
+            <if test="enrollStartTime != null">#{enrollStartTime},</if>
+            <if test="enrollEndTime != null">#{enrollEndTime},</if>
+            <if test="activityStartTime != null">#{activityStartTime},</if>
+            <if test="activityEndTime != null">#{activityEndTime},</if>
+            <if test="signinStartTime != null">#{signinStartTime},</if>
+            <if test="signinEndTime != null">#{signinEndTime},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateActivitySchedule" parameterType="ActivitySchedule">
+        update activity_schedule
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="enrollStartTime != null">enroll_start_time = #{enrollStartTime},</if>
+            <if test="enrollEndTime != null">enroll_end_time = #{enrollEndTime},</if>
+            <if test="activityStartTime != null">activity_start_time = #{activityStartTime},</if>
+            <if test="activityEndTime != null">activity_end_time = #{activityEndTime},</if>
+            <if test="signinStartTime != null">signin_start_time = #{signinStartTime},</if>
+            <if test="signinEndTime != null">signin_end_time = #{signinEndTime},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where activity_uid = #{activityUid}
+    </update>
+
+    <delete id="deleteActivityScheduleByActivityUid" parameterType="String">
+        delete from activity_schedule where activity_uid = #{activityUid}
+    </delete>
+
+    <delete id="deleteActivityScheduleByActivityUids" parameterType="String">
+        delete from activity_schedule where activity_uid in 
+        <foreach item="activityUid" collection="array" open="(" separator="," close=")">
+            #{activityUid}
+        </foreach>
+    </delete>
+</mapper>

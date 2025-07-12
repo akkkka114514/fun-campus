@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.akkkka.funcampusnotice.mapper.StudentUserMapper">
+    
+    <resultMap type="StudentUser" id="StudentUserResult">
+        <result property="uid"    column="uid"    />
+        <result property="username"    column="username"    />
+        <result property="password"    column="password"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="deleted"    column="deleted"    />
+        <result property="funScore"    column="fun_score"    />
+        <result property="schoolUid"    column="school_uid"    />
+        <result property="collegeUid"    column="college_uid"    />
+    </resultMap>
+
+    <sql id="selectStudentUserVo">
+        select uid, username, password, create_time, update_time, deleted, fun_score, school_uid, college_uid from student_user
+    </sql>
+
+    <select id="selectStudentUserList" parameterType="StudentUser" resultMap="StudentUserResult">
+        <include refid="selectStudentUserVo"/>
+        <where>  
+            <if test="username != null  and username != ''"> and username like concat('%', #{username}, '%')</if>
+            <if test="password != null  and password != ''"> and password = #{password}</if>
+            <if test="deleted != null "> and deleted = #{deleted}</if>
+            <if test="funScore != null "> and fun_score = #{funScore}</if>
+            <if test="schoolUid != null  and schoolUid != ''"> and school_uid = #{schoolUid}</if>
+            <if test="collegeUid != null  and collegeUid != ''"> and college_uid = #{collegeUid}</if>
+        </where>
+    </select>
+    
+    <select id="selectStudentUserByUid" parameterType="String" resultMap="StudentUserResult">
+        <include refid="selectStudentUserVo"/>
+        where uid = #{uid}
+    </select>
+
+    <insert id="insertStudentUser" parameterType="StudentUser">
+        insert into student_user
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="uid != null">uid,</if>
+            <if test="username != null and username != ''">username,</if>
+            <if test="password != null and password != ''">password,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="deleted != null">deleted,</if>
+            <if test="funScore != null">fun_score,</if>
+            <if test="schoolUid != null and schoolUid != ''">school_uid,</if>
+            <if test="collegeUid != null and collegeUid != ''">college_uid,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="uid != null">#{uid},</if>
+            <if test="username != null and username != ''">#{username},</if>
+            <if test="password != null and password != ''">#{password},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="deleted != null">#{deleted},</if>
+            <if test="funScore != null">#{funScore},</if>
+            <if test="schoolUid != null and schoolUid != ''">#{schoolUid},</if>
+            <if test="collegeUid != null and collegeUid != ''">#{collegeUid},</if>
+         </trim>
+    </insert>
+
+    <update id="updateStudentUser" parameterType="StudentUser">
+        update student_user
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="username != null and username != ''">username = #{username},</if>
+            <if test="password != null and password != ''">password = #{password},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="deleted != null">deleted = #{deleted},</if>
+            <if test="funScore != null">fun_score = #{funScore},</if>
+            <if test="schoolUid != null and schoolUid != ''">school_uid = #{schoolUid},</if>
+            <if test="collegeUid != null and collegeUid != ''">college_uid = #{collegeUid},</if>
+        </trim>
+        where uid = #{uid}
+    </update>
+
+    <delete id="deleteStudentUserByUid" parameterType="String">
+        delete from student_user where uid = #{uid}
+    </delete>
+
+    <delete id="deleteStudentUserByUids" parameterType="String">
+        delete from student_user where uid in 
+        <foreach item="uid" collection="array" open="(" separator="," close=")">
+            #{uid}
+        </foreach>
+    </delete>
+</mapper>

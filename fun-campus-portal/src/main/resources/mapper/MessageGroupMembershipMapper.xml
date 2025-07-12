@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.akkkka.funcampusnotice.mapper.MessageGroupMembershipMapper">
+    
+    <resultMap type="MessageGroupMembership" id="MessageGroupMembershipResult">
+        <result property="uid"    column="uid"    />
+        <result property="groupUid"    column="group_uid"    />
+        <result property="studentUid"    column="student_uid"    />
+        <result property="deleted"    column="deleted"    />
+    </resultMap>
+
+    <sql id="selectMessageGroupMembershipVo">
+        select uid, group_uid, student_uid, deleted from message_group_membership
+    </sql>
+
+    <select id="selectMessageGroupMembershipList" parameterType="MessageGroupMembership" resultMap="MessageGroupMembershipResult">
+        <include refid="selectMessageGroupMembershipVo"/>
+        <where>  
+            <if test="groupUid != null  and groupUid != ''"> and group_uid = #{groupUid}</if>
+            <if test="studentUid != null  and studentUid != ''"> and student_uid = #{studentUid}</if>
+            <if test="deleted != null "> and deleted = #{deleted}</if>
+        </where>
+    </select>
+    
+    <select id="selectMessageGroupMembershipByUid" parameterType="String" resultMap="MessageGroupMembershipResult">
+        <include refid="selectMessageGroupMembershipVo"/>
+        where uid = #{uid}
+    </select>
+
+    <insert id="insertMessageGroupMembership" parameterType="MessageGroupMembership">
+        insert into message_group_membership
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="uid != null">uid,</if>
+            <if test="groupUid != null and groupUid != ''">group_uid,</if>
+            <if test="studentUid != null and studentUid != ''">student_uid,</if>
+            <if test="deleted != null">deleted,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="uid != null">#{uid},</if>
+            <if test="groupUid != null and groupUid != ''">#{groupUid},</if>
+            <if test="studentUid != null and studentUid != ''">#{studentUid},</if>
+            <if test="deleted != null">#{deleted},</if>
+         </trim>
+    </insert>
+
+    <update id="updateMessageGroupMembership" parameterType="MessageGroupMembership">
+        update message_group_membership
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="groupUid != null and groupUid != ''">group_uid = #{groupUid},</if>
+            <if test="studentUid != null and studentUid != ''">student_uid = #{studentUid},</if>
+            <if test="deleted != null">deleted = #{deleted},</if>
+        </trim>
+        where uid = #{uid}
+    </update>
+
+    <delete id="deleteMessageGroupMembershipByUid" parameterType="String">
+        delete from message_group_membership where uid = #{uid}
+    </delete>
+
+    <delete id="deleteMessageGroupMembershipByUids" parameterType="String">
+        delete from message_group_membership where uid in 
+        <foreach item="uid" collection="array" open="(" separator="," close=")">
+            #{uid}
+        </foreach>
+    </delete>
+</mapper>

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.akkkka.funcampusnotice.mapper.MessageGroupMapper">
+    
+    <resultMap type="MessageGroup" id="MessageGroupResult">
+        <result property="uid"    column="uid"    />
+        <result property="name"    column="name"    />
+        <result property="description"    column="description"    />
+        <result property="deleted"    column="deleted"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateTime"    column="update_time"    />
+    </resultMap>
+
+    <sql id="selectMessageGroupVo">
+        select uid, name, description, deleted, create_time, update_time from message_group
+    </sql>
+
+    <select id="selectMessageGroupList" parameterType="MessageGroup" resultMap="MessageGroupResult">
+        <include refid="selectMessageGroupVo"/>
+        <where>  
+            <if test="name != null  and name != ''"> and name like concat('%', #{name}, '%')</if>
+            <if test="description != null  and description != ''"> and description = #{description}</if>
+            <if test="deleted != null "> and deleted = #{deleted}</if>
+        </where>
+    </select>
+    
+    <select id="selectMessageGroupByUid" parameterType="String" resultMap="MessageGroupResult">
+        <include refid="selectMessageGroupVo"/>
+        where uid = #{uid}
+    </select>
+
+    <insert id="insertMessageGroup" parameterType="MessageGroup">
+        insert into message_group
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="uid != null">uid,</if>
+            <if test="name != null and name != ''">name,</if>
+            <if test="description != null and description != ''">description,</if>
+            <if test="deleted != null">deleted,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateTime != null">update_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="uid != null">#{uid},</if>
+            <if test="name != null and name != ''">#{name},</if>
+            <if test="description != null and description != ''">#{description},</if>
+            <if test="deleted != null">#{deleted},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateMessageGroup" parameterType="MessageGroup">
+        update message_group
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="name != null and name != ''">name = #{name},</if>
+            <if test="description != null and description != ''">description = #{description},</if>
+            <if test="deleted != null">deleted = #{deleted},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where uid = #{uid}
+    </update>
+
+    <delete id="deleteMessageGroupByUid" parameterType="String">
+        delete from message_group where uid = #{uid}
+    </delete>
+
+    <delete id="deleteMessageGroupByUids" parameterType="String">
+        delete from message_group where uid in 
+        <foreach item="uid" collection="array" open="(" separator="," close=")">
+            #{uid}
+        </foreach>
+    </delete>
+</mapper>

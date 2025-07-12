@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.akkkka.funcampusnotice.mapper.NoticeMessageMapper">
+    
+    <resultMap type="NoticeMessage" id="NoticeMessageResult">
+        <result property="uid"    column="uid"    />
+        <result property="origin"    column="origin"    />
+        <result property="target"    column="target"    />
+        <result property="content"    column="content"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="recall"    column="recall"    />
+        <result property="updateTime"    column="update_time"    />
+    </resultMap>
+
+    <sql id="selectNoticeMessageVo">
+        select uid, origin, target, content, create_time, recall, update_time from notice_message
+    </sql>
+
+    <select id="selectNoticeMessageList" parameterType="NoticeMessage" resultMap="NoticeMessageResult">
+        <include refid="selectNoticeMessageVo"/>
+        <where>  
+            <if test="origin != null  and origin != ''"> and origin = #{origin}</if>
+            <if test="target != null  and target != ''"> and target = #{target}</if>
+            <if test="content != null  and content != ''"> and content = #{content}</if>
+            <if test="recall != null "> and recall = #{recall}</if>
+        </where>
+    </select>
+    
+    <select id="selectNoticeMessageByUid" parameterType="String" resultMap="NoticeMessageResult">
+        <include refid="selectNoticeMessageVo"/>
+        where uid = #{uid}
+    </select>
+
+    <insert id="insertNoticeMessage" parameterType="NoticeMessage">
+        insert into notice_message
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="uid != null">uid,</if>
+            <if test="origin != null and origin != ''">origin,</if>
+            <if test="target != null and target != ''">target,</if>
+            <if test="content != null and content != ''">content,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="recall != null">recall,</if>
+            <if test="updateTime != null">update_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="uid != null">#{uid},</if>
+            <if test="origin != null and origin != ''">#{origin},</if>
+            <if test="target != null and target != ''">#{target},</if>
+            <if test="content != null and content != ''">#{content},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="recall != null">#{recall},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateNoticeMessage" parameterType="NoticeMessage">
+        update notice_message
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="origin != null and origin != ''">origin = #{origin},</if>
+            <if test="target != null and target != ''">target = #{target},</if>
+            <if test="content != null and content != ''">content = #{content},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="recall != null">recall = #{recall},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where uid = #{uid}
+    </update>
+
+    <delete id="deleteNoticeMessageByUid" parameterType="String">
+        delete from notice_message where uid = #{uid}
+    </delete>
+
+    <delete id="deleteNoticeMessageByUids" parameterType="String">
+        delete from notice_message where uid in 
+        <foreach item="uid" collection="array" open="(" separator="," close=")">
+            #{uid}
+        </foreach>
+    </delete>
+</mapper>

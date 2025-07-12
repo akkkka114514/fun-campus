@@ -1,37 +1,61 @@
-package com.akkkka.funcampusportal.service;
-
-import com.akkkka.funcampusportal.domain.Activity;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.service.IService;
+package com.akkkka.funcampusnotice.service;
 
 import java.util.List;
+import com.akkkka.funcampusnotice.domain.Activity;
 
 /**
- * @author: Zoe Wu
- * @create: 2025-03-07 21:40
- * @Description:
+ * 【请填写功能名称】Service接口
+ * 
+ * @author akkkka
+ * @date 2025-07-11
  */
-public interface IActivityService extends IService<Activity> {
+public interface IActivityService 
+{
+    /**
+     * 查询【请填写功能名称】
+     * 
+     * @param uid 【请填写功能名称】主键
+     * @return 【请填写功能名称】
+     */
+    public Activity selectActivityByUid(String uid);
 
-    void add(Activity activity);
+    /**
+     * 查询【请填写功能名称】列表
+     * 
+     * @param activity 【请填写功能名称】
+     * @return 【请填写功能名称】集合
+     */
+    public List<Activity> selectActivityList(Activity activity);
 
-    void update(Activity activity);
+    /**
+     * 新增【请填写功能名称】
+     * 
+     * @param activity 【请填写功能名称】
+     * @return 结果
+     */
+    public int insertActivity(Activity activity);
 
-    void delete(Integer activityId);
+    /**
+     * 修改【请填写功能名称】
+     * 
+     * @param activity 【请填写功能名称】
+     * @return 结果
+     */
+    public int updateActivity(Activity activity);
 
-    List<Activity> listByUserId(Integer userId);
+    /**
+     * 批量删除【请填写功能名称】
+     * 
+     * @param uids 需要删除的【请填写功能名称】主键集合
+     * @return 结果
+     */
+    public int deleteActivityByUids(String[] uids);
 
-    void enroll(Integer userId, Integer activityId);
-
-    void changeStatusOnTime(Integer activityId) throws Exception;
-
-    void signIn(Integer activityId, Integer userId);
-
-    void cancelEnroll(Integer userId, Integer activityId);
-
-    void allGiveScore(Integer activityId);
-
-    Activity getByTitle(String title);
-
-    IPage<Activity> pageBySchoolId(Integer pageNum, Integer pageSize, Integer schoolId);
+    /**
+     * 删除【请填写功能名称】信息
+     * 
+     * @param uid 【请填写功能名称】主键
+     * @return 结果
+     */
+    public int deleteActivityByUid(String uid);
 }

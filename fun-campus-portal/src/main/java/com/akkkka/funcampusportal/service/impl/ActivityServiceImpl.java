@@ -1,388 +1,96 @@
-package com.akkkka.funcampusportal.service.impl;
-
-
-import com.akkkka.common.core.enums.ResponseEnum;
-import com.akkkka.common.core.exception.GlobalException;
-import com.akkkka.funcampusportal.domain.*;
-import com.akkkka.funcampusportal.mapper.ActivityMapper;
-import com.akkkka.funcampusportal.event.AddActivityEvent;
-import com.akkkka.funcampusportal.quatz.ChangeActivityStatusJob;
-import com.akkkka.funcampusportal.service.*;
-import com.akkkka.funcampusportal.service.constants.ActivityStatus;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import javax.annotation.Resource;
-
-import io.swagger.models.auth.In;
-import lombok.extern.slf4j.Slf4j;
-import org.quartz.*;
-import org.quartz.impl.StdSchedulerFactory;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionTemplate;
+package com.akkkka.funcampusnotice.service.impl;
 
 import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
+import com.akkkka.common.core.utils.DateUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import com.akkkka.funcampusnotice.mapper.ActivityMapper;
+import com.akkkka.funcampusnotice.domain.Activity;
+import com.akkkka.funcampusnotice.service.IActivityService;
 
 /**
- * <p>
- *  服务实现类
- * </p>
- *
+ * 【请填写功能名称】Service业务层处理
+ * 
  * @author akkkka
- * @since 2023-10-03
+ * @date 2025-07-11
  */
 @Service
-@Slf4j
-public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> implements IActivityService {
+public class ActivityServiceImpl implements IActivityService 
+{
+    @Autowired
+    private ActivityMapper activityMapper;
 
-    @Resource
-    private IUserService userService;
-    @Resource
-    private IOrganizerService organizerService;
-    @Resource
-    private IActivityUserMapService activityUserMapService;
-    @Resource
-    private ISchoolService schoolService;
-    @Resource
-    private ApplicationEventPublisher applicationEventPublisher;
-    @Resource
-    private TransactionTemplate transactionTemplate;
-
+    /**
+     * 查询【请填写功能名称】
+     * 
+     * @param uid 【请填写功能名称】主键
+     * @return 【请填写功能名称】
+     */
     @Override
-    public void add(Activity activity) {
-        activity.setId(null);
-        activity.setStatus((byte)1);
-        activity.setIsDeleted((byte)0);
-        activity.setEnrollNum(0);
-
-        School toCheckSchool = schoolService.getById(activity.getActivitySchoolId());
-        Organizer toCheckOrganizer = organizerService.getById(activity.getActivityOrganizerId());
-
-        if(toCheckSchool==null){
-            throw new GlobalException(ResponseEnum.NO_SUCH_RECORD_IN_DB,"school");
-        }else if(toCheckSchool.getIsDeleted()==1){
-            throw new GlobalException(ResponseEnum.RECORD_DELETED_LOGICALLY,"school");
-        }
-        if(toCheckOrganizer==null){
-            throw new GlobalException(ResponseEnum.NO_SUCH_RECORD_IN_DB,"organizer");
-        }else if(toCheckOrganizer.getIsDeleted()==1){
-            throw new GlobalException(ResponseEnum.RECORD_DELETED_LOGICALLY,"organizer");
-        }
-
-        if(!Objects.equals(toCheckOrganizer.getSchoolId(), toCheckSchool.getId())){
-            throw new GlobalException(ResponseEnum.NOT_CORRESPOND_TO_RECORD_IN_DB,"school and organizer");
-        }
-
-        this.save(activity);
-        Integer activityId = this.getByTitle(activity.getTitle()).getId();
-
-        /*
-         * 向活动的定时任务发布事件
-         * @see {changeStatusOnTime(Integer activityId)}
-         * */
-
-        applicationEventPublisher.publishEvent(new AddActivityEvent("add-activity-event"+activityId,activityId));
-    }
-
-    @Override
-    public void update(Activity activity) {
-        Activity toCheckActivity = this.getById(activity.getId());
-
-        if(toCheckActivity==null){
-            throw new GlobalException(ResponseEnum.NO_SUCH_RECORD_IN_DB,"activity");
-        }else if(toCheckActivity.getIsDeleted()==1){
-            throw new GlobalException(ResponseEnum.RECORD_DELETED_LOGICALLY,"activity");
-        }
-
-        //不允许更改活动学校和活动主办方
-        activity.setActivitySchoolId(null);
-        activity.setActivityOrganizerId(null);
-        activity.setStatus(null);
-        activity.setIsDeleted(null);
-
-        this.updateById(activity);
-    }
-
-    @Override
-    public void delete(Integer activityId) {
-        Activity activity = new Activity();
-        activity.setId(activityId);
-        activity.setIsDeleted((byte)1);
-
-        this.updateById(activity);
-    }
-
-    @Override
-    public List<Activity> listByUserId(Integer userId) {
-        return this.getBaseMapper().listByUserId(userId);
+    public Activity selectActivityByUid(String uid)
+    {
+        return activityMapper.selectActivityByUid(uid);
     }
 
     /**
-     * 报名活动
-     * */
+     * 查询【请填写功能名称】列表
+     * 
+     * @param activity 【请填写功能名称】
+     * @return 【请填写功能名称】
+     */
     @Override
-    public void enroll(Integer userId, Integer activityId) {
-        User user = this.userService.getById(userId);
-        Activity activity = this.getById(activityId);
-        //判空
-        if(user==null){
-            throw new GlobalException(ResponseEnum.NO_SUCH_RECORD_IN_DB,"user");
-        }
-        if(activity == null){
-            throw new GlobalException(ResponseEnum.NO_SUCH_RECORD_IN_DB,"activity");
-        }
-
-        Integer enrollNum = activity.getEnrollNum();
-
-        log.info("查看活动是否在等待报名状态");
-        if (activity.getStatus()!=1){
-            throw new GlobalException(ResponseEnum.NOT_ENROLL_TIME,":activity");
-        }
-
-        log.info("查看操作的user和activity是否已被逻辑删除");
-        if(user.getIsDeleted()==1){
-            throw new GlobalException(ResponseEnum.RECORD_DELETED_LOGICALLY,"user");
-        }
-        if(activity.getIsDeleted()==1){
-            throw new GlobalException(ResponseEnum.RECORD_DELETED_LOGICALLY,"activity");
-        }
-
-        log.info("查看报名人数是否达到上限");
-        if (enrollNum >= activity.getEnrollNumLimit()){
-            throw new GlobalException(ResponseEnum.GOT_ENROLL_NUM_MAX,"activity");
-        }
-
-        log.info("查看是否已报名过");
-        if (!activityUserMapService.checkUnique(userId, activityId)){
-            throw new GlobalException(ResponseEnum.EXISTS_IN_DB,"activityUserMap");
-        }
-
-        Organizer organizer=organizerService.getById(activity.getActivityOrganizerId());
-        if(organizer==null){
-            throw new GlobalException(ResponseEnum.NO_SUCH_RECORD_IN_DB,"organizer");
-        }
-        log.info("判断是否在活动所属学校或活动所属学院内");
-        boolean isBelongToSchool = Objects.equals(activity.getActivitySchoolId(), user.getSchoolId());
-        log.info("活动组织者是否是学院");
-        boolean organizerIsCollege = organizer.getCollegeId() != null;
-        log.info("活动所属学院与报名人所属学院不一致");
-        boolean isBelongToCollege = organizerIsCollege && Objects.equals(organizer.getCollegeId(), user.getCollegeId());
-        if (!isBelongToCollege && !isBelongToSchool){
-            log.info("user not in school or college:");
-            log.info("activity.id={},activity.schoolId={},activity.college.organizer.collegeId={}",activityId,activity.getActivitySchoolId(),organizer.getCollegeId());
-            log.info("user.id={},user.schoolId={},user.collegeId={}",userId,user.getSchoolId(),user.getCollegeId());
-            throw new GlobalException(ResponseEnum.NOT_IN_THE_SCHOOL_OR_COLLEGE);
-        }
-        transactionTemplate.execute(status -> {
-            try {
-                if (this.enrollNumIncrease(activity.getId()) == 1) {
-                    ActivityUserMap aum = new ActivityUserMap();
-                    aum.setActivityId(activity.getId());
-                    aum.setUserId(user.getId());
-                    aum.setIsSignIn(0);
-
-                    if (!activityUserMapService.save(aum)) {
-                        throw new GlobalException(ResponseEnum.SQL_FAILED);
-                    }
-                } else {
-                    log.info("activity:{}报名人数已满", activity.getTitle());
-                    activity.setStatus(ActivityStatus.END_ENROLL);
-                    this.updateById(activity);
-                    throw new GlobalException(ResponseEnum.GOT_ENROLL_NUM_MAX, "activity");
-                }
-                log.info("用户[{}]报名活动[{}]", user.getUsername(), activity.getTitle());
-                return null;
-            } catch (Exception e) {
-                status.setRollbackOnly(); // 手动回滚
-                throw e;
-            }
-        });
-    }
-    /**
-     * 定时任务改变活动状态
-     * */
-    @Override
-    public void changeStatusOnTime(Integer activityId) throws SchedulerException {
-        // JobDetail 把 Job 进一步包装成 JobDetail
-        JobDetail jobDetail = JobBuilder.newJob(ChangeActivityStatusJob.class)
-                // 必须要指定 JobName 和 groupName，两个合起来是唯一标识符
-                .withIdentity("changeActivityJob"+activityId, "activity")
-                // 任务名 + 任务组 同一个组中包含许多任务
-                // 可以携带 KV 的数据（JobDataMap），用于扩展属性，在运行的时候可以从 context获取到
-                .usingJobData("activityId",activityId)
-                // 添加额外自定义参数
-                .build();
-
-        // Trigger
-        Trigger trigger = TriggerBuilder.newTrigger()
-                .withIdentity("changeActivityTrigger", "activity")
-                // 定义trigger名 + 组名
-                .startNow()
-                .withSchedule(SimpleScheduleBuilder.simpleSchedule()
-                        // 简单触发器
-                        .withIntervalInSeconds(40)
-                        // 40秒一次
-                        .repeatForever()) // 持续不断执行
-                .build();
-
-        // SchedulerFactory
-        SchedulerFactory factory = new StdSchedulerFactory();
-        // Scheduler 一定是单例的
-        Scheduler scheduler = factory.getScheduler();
-        // 绑定关系是1：N ，把 JobDetail 和 Trigger绑定，注册到容器中
-        scheduler.scheduleJob(jobDetail, trigger);
-        // Scheduler 先启动后启动无所谓，只要有 Trigger 到达触发条件，就会执行任务
-        scheduler.start();
-    }
-
-    @Override
-    public void signIn(Integer activityId, Integer userId) {
-        ActivityUserMap aum = activityUserMapService.get(activityId,userId);
-
-        if(aum==null){
-            throw new GlobalException(ResponseEnum.NO_SUCH_RECORD_IN_DB);
-        }
-        if (aum.getIsSignIn()==1){
-            //检查是否重复签到
-            throw new GlobalException(ResponseEnum.ALREADY_SIGN_IN);
-        }
-
-        aum.setIsSignIn(1);
-        activityUserMapService.update(aum);
-    }
-
-    @Override
-    public IPage<Activity> pageBySchoolId(Integer pageNum, Integer pageSize, Integer schoolId) {
-        IPage<Activity> page = new Page<>(pageNum,pageSize);
-        return this.baseMapper.selectPage(page,
-                new QueryWrapper<Activity>().eq("activity_school_id",schoolId)
-        );
-    }
-
-    @Override
-    public void cancelEnroll(Integer userId, Integer activityId) {
-        log.info("获取活动信息");
-        Activity activity = this.getById(activityId);
-        if(activity==null){
-            throw new GlobalException(ResponseEnum.NO_SUCH_RECORD_IN_DB,"activity");
-        }
-        log.info("检查活动是否逻辑删除");
-        if(activity.getIsDeleted()==1){
-            throw new GlobalException(ResponseEnum.RECORD_DELETED_LOGICALLY,"activity");
-        }
-        log.info("检查活动是否是等待报名状态，即status-2");
-        if(!Objects.equals(ActivityStatus.WAIT_ENROLL,activity.getStatus())){
-            throw new GlobalException(ResponseEnum.ACTIVITY_NOT_IN_CORRECT_STATUS);
-        }
-        log.info("获取用户信息");
-        User user = userService.getById(userId);
-        if(user==null){
-            throw new GlobalException(ResponseEnum.NO_SUCH_RECORD_IN_DB,"user");
-        }
-        log.info("检查用户是否逻辑删除");
-        if(user.getIsDeleted()==1){
-            throw new GlobalException(ResponseEnum.RECORD_DELETED_LOGICALLY,"user");
-        }
-        log.info("获取activityUserMap");
-        ActivityUserMap aum = activityUserMapService.get(userId,activityId);
-        if(aum==null){
-            throw new GlobalException(ResponseEnum.NO_SUCH_RECORD_IN_DB,"activityUserMap");
-        }
-        log.info("删除该activityUserMap");
-        transactionTemplate.execute(status -> {
-            try{
-                boolean i = activityUserMapService.remove(new QueryWrapper<ActivityUserMap>()
-                        .eq("user_id", userId)
-                        .eq("activityId", activityId));
-                if(!i){
-                    throw new GlobalException(ResponseEnum.SQL_FAILED);
-                }
-                if(this.enrollNumDecrease(activityId)!=1){
-                    throw new GlobalException(ResponseEnum.SQL_FAILED);
-                }
-                return null;
-            }catch (Exception e){
-                status.setRollbackOnly();
-                throw e;
-            }
-        });
+    public List<Activity> selectActivityList(Activity activity)
+    {
+        return activityMapper.selectActivityList(activity);
     }
 
     /**
-     * 活动签到后给分
-     * */
-//    @Override
-//    public void giveScore(Integer activityId, Integer userId) {
-//        ActivityUserMap aum = activityUserMapService.get(userId,activityId);
-//        Activity activity = this.getById(activityId);
-//        User user = userService.getById(userId);
-//
-//        //未签到不能给分
-//        if (aum.getIsSignIn()==0){
-//            throw ExceptionUtil.customException(ResponseEnum.NOT_SIGN_IN);
-//        }
-//        float userScore = user.getFunScore() + activity.getScoreCanGet();
-//        user.setFunScore(userScore);
-//        userService.updateById(user);
-//    }
-
+     * 新增【请填写功能名称】
+     * 
+     * @param activity 【请填写功能名称】
+     * @return 结果
+     */
     @Override
-    public void allGiveScore(Integer activityId) {
-        float scoreCanGet = this.getById(activityId).getScoreCanGet();
-
-        List<ActivityUserMap> aums = activityUserMapService.list(
-                activityUserMapService.query().eq("activity_id",activityId)
-        );
-        List<Integer> userIds = aums.stream()
-                .filter(aum -> aum.getIsSignIn()==1) //排除没有签到的人
-                .map(ActivityUserMap::getUserId)
-                .collect(Collectors.toList());
-
-        List<User> users = userService.listByIds(userIds);
-        //赋分
-        users.forEach(
-                user -> user.setFunScore(user.getFunScore() + scoreCanGet)
-        );
-        //更新到数据库
-        userService.updateBatchById(users);
+    public int insertActivity(Activity activity)
+    {
+        activity.setCreateTime(DateUtils.getNowDate());
+        return activityMapper.insertActivity(activity);
     }
 
-    @Override
-    public Activity getByTitle(String title) {
-        return this.getOne(
-                new QueryWrapper<Activity>().eq("title",title)
-        );
-    }
     /**
-    * <p>
-    * description:
-    * </p>
-    *
-    * @param activityId
-    * @return:
-    * @author: akkkka114514
-    * @date: 16:09:23 2025-06-05
-    */
-    private Integer enrollNumIncrease(Integer activityId){
-        Activity activity = new Activity();
-        activity.setId(activityId);
-        //返回影响行数
-        return this.getBaseMapper().increaseEnrollNum(activityId);
+     * 修改【请填写功能名称】
+     * 
+     * @param activity 【请填写功能名称】
+     * @return 结果
+     */
+    @Override
+    public int updateActivity(Activity activity)
+    {
+        activity.setUpdateTime(DateUtils.getNowDate());
+        return activityMapper.updateActivity(activity);
     }
 
-    private Integer enrollNumDecrease(Integer activityId){
-        Activity activity = new Activity();
-        activity.setId(activityId);
-        //返回影响行数
-        return this.getBaseMapper().decreaseEnrollNum(activityId);
+    /**
+     * 批量删除【请填写功能名称】
+     * 
+     * @param uids 需要删除的【请填写功能名称】主键
+     * @return 结果
+     */
+    @Override
+    public int deleteActivityByUids(String[] uids)
+    {
+        return activityMapper.deleteActivityByUids(uids);
     }
 
-
+    /**
+     * 删除【请填写功能名称】信息
+     * 
+     * @param uid 【请填写功能名称】主键
+     * @return 结果
+     */
+    @Override
+    public int deleteActivityByUid(String uid)
+    {
+        return activityMapper.deleteActivityByUid(uid);
+    }
 }

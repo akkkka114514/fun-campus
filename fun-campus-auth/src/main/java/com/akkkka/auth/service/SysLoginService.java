@@ -19,6 +19,8 @@ import com.akkkka.system.api.RemoteUserService;
 import com.akkkka.system.api.domain.SysUser;
 import com.akkkka.system.api.model.LoginUser;
 
+import javax.annotation.Resource;
+
 /**
  * 登录校验方法
  * 
@@ -27,16 +29,16 @@ import com.akkkka.system.api.model.LoginUser;
 @Component
 public class SysLoginService
 {
-    @Autowired
+    @Resource
     private RemoteUserService remoteUserService;
 
-    @Autowired
+    @Resource
     private SysPasswordService passwordService;
 
-    @Autowired
+    @Resource
     private SysRecordLogService recordLogService;
 
-    @Autowired
+    @Resource
     private RedisService redisService;
 
     /**
@@ -73,11 +75,6 @@ public class SysLoginService
         }
         // 查询用户信息
         R<LoginUser> userResult = remoteUserService.getUserInfo(username, SecurityConstants.INNER);
-
-        if (R.FAIL == userResult.getCode())
-        {
-            throw new ServiceException(userResult.getMsg());
-        }
 
         LoginUser userInfo = userResult.getData();
         SysUser user = userResult.getData().getSysUser();
@@ -146,10 +143,6 @@ public class SysLoginService
         sysUser.setPassword(SecurityUtils.encryptPassword(password));
         R<?> registerResult = remoteUserService.registerUserInfo(sysUser, SecurityConstants.INNER);
 
-        if (R.FAIL == registerResult.getCode())
-        {
-            throw new ServiceException(registerResult.getMsg());
-        }
         recordLogService.recordLogininfor(username, Constants.REGISTER, "注册成功");
     }
 }

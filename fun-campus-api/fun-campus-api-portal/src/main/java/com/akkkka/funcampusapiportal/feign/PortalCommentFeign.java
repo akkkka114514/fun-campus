@@ -1,9 +1,7 @@
-package com.akkkka.system.feign;
+package com.akkkka.funcampusapiportal.feign;
 
-import com.akkkka.funcampusportal.domain.ActivityComment;
-import com.akkkka.funcampusportal.util.ParamCheckUtil;
-import com.akkkka.funcampusportal.vo.ActivityCommentRootVO;
-import io.swagger.v3.oas.annotations.Operation;
+import com.akkkka.funcampusapiportal.domain.ActivityComment;
+import com.akkkka.funcampusapiportal.vo.ActivityCommentRootVO;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;

@@ -30,8 +30,8 @@ module.exports = {
   transpileDependencies: ['quill'],
   // webpack-dev-server 相关配置
   devServer: {
-    host: '0.0.0.0',
-    port: port,
+    host: '127.0.0.1',
+    port: 8084,
     open: true,
     proxy: {
       // detail: https://cli.vuejs.org/config/#devserver-proxy

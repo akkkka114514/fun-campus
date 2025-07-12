@@ -31,7 +31,9 @@ public enum ResponseEnum {
     OPERATION_DUPLICATED("10017","操作重复"),
     PERMISSION_DENIED("10018","操作失败，没有该操作权限"),
     SQL_FAILED("10019","数据库操作失败"),
-    UPLOAD_FAILED("10020","上传失败"),;
+    UPLOAD_FAILED("10020","上传失败"),
+    SAVE_LOG_FAIL("10021","保存操作日志失败"),
+    UPLOAD_FILE_FAIL("10022","上传文件失败"),;
 
     private final String code;
     private final String message;

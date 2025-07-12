@@ -13,6 +13,7 @@
         <module>fun-campus-gen</module>
         <module>fun-campus-job</module>
         <module>fun-campus-file</module>
+        <module>fun-campus-notice</module>
     </modules>
 
     <artifactId>fun-campus-modules</artifactId>

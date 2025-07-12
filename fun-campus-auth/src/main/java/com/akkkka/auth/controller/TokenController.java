@@ -2,6 +2,8 @@ package com.akkkka.auth.controller;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+
+import com.akkkka.common.log.annotation.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -33,10 +35,13 @@ public class TokenController
     private SysLoginService sysLoginService;
 
     @PostMapping("login")
+    @Log
     public R<?> login(@RequestBody LoginBody form)
     {
         // 用户登录
         LoginUser userInfo = sysLoginService.login(form.getUsername(), form.getPassword());
+
+        String token = tokenService.createToken(userInfo).toString();
         // 获取登录token
         return R.ok(tokenService.createToken(userInfo));
     }

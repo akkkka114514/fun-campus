@@ -1,6 +1,7 @@
 package com.akkkka.system.controller;
 
 import java.util.List;
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
@@ -32,7 +33,7 @@ import com.akkkka.system.service.ISysConfigService;
 @RequestMapping("/config")
 public class SysConfigController extends BaseController
 {
-    @Autowired
+    @Resource
     private ISysConfigService configService;
 
     /**

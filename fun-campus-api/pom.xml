@@ -10,6 +10,7 @@
 
     <modules>
         <module>fun-campus-api-system</module>
+        <module>fun-campus-api-portal</module>
     </modules>
 
     <artifactId>fun-campus-api</artifactId>

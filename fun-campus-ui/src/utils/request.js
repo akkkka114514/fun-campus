@@ -81,6 +81,10 @@ service.interceptors.response.use(res => {
     if (res.request.responseType ===  'blob' || res.request.responseType ===  'arraybuffer') {
       return res.data
     }
+    if(code==="00000"){
+      console.log("aaa")
+      return res.data
+    }
     if (code === 401) {
       if (!isRelogin.show) {
         isRelogin.show = true;
@@ -101,7 +105,7 @@ service.interceptors.response.use(res => {
       Message({ message: msg, type: 'warning' })
       return Promise.reject('error')
     } else if (code !== 200) {
-      Notification.error({ title: msg })
+      Notification.error({title: msg})
       return Promise.reject('error')
     } else {
       return res.data

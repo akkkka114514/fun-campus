@@ -86,14 +86,14 @@ export default {
         password: [
           { required: true, trigger: "blur", message: "请输入您的密码" }
         ],
-        code: [{ required: true, trigger: "change", message: "请输入验证码" }]
+        code: [{ required: false, trigger: "change", message: "请输入验证码" }]
       },
       loading: false,
       // 验证码开关
       captchaEnabled: true,
       // 注册开关
       register: false,
-      redirect: undefined
+      redirect: "index"
     };
   },
   watch: {
@@ -142,7 +142,8 @@ export default {
             Cookies.remove('rememberMe');
           }
           this.$store.dispatch("Login", this.loginForm).then(() => {
-            this.$router.push({ path: this.redirect || "/" }).catch(()=>{});
+            this.$router.push({ path: this.redirect || "/" }).catch(()=>{
+            });
           }).catch(() => {
             this.loading = false;
             if (this.captchaEnabled) {

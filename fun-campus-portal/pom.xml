@@ -47,41 +47,7 @@
             <artifactId>mysql-connector-java</artifactId>
             <version>${mysql-connector-java.version}</version>
         </dependency>
-        <dependency>
-            <groupId>cn.dev33</groupId>
-            <artifactId>sa-token-spring-boot-starter</artifactId>
-            <version>1.42.0</version>
-            <optional>true</optional>
-        </dependency>
-        <!-- Sa-Token 整合redis (使用jackson序列化方式) -->
-        <dependency>
-            <groupId>cn.dev33</groupId>
-            <artifactId>sa-token-redis-jackson</artifactId>
-            <version>1.42.0</version>
-            <optional>true</optional>
-        </dependency>
-        <!-- Sa-Token插件：权限缓存与业务缓存分离 -->
-        <dependency>
-            <groupId>cn.dev33</groupId>
-            <artifactId>sa-token-alone-redis</artifactId>
-            <version>1.42.0</version>
-            <optional>true</optional>
-        </dependency>
-        <!--更安全的密码加密算法-->
-        <dependency>
-            <groupId>com.amdelamar</groupId>
-            <artifactId>jhash</artifactId>
-            <version>${com.amdelamar.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-boot-starter</artifactId>
-            <version>${com.baomidou.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.hibernate.validator</groupId>
-            <artifactId>hibernate-validator</artifactId>
-        </dependency>
+
         <dependency>
             <groupId>com.akkkka</groupId>
             <artifactId>fun-campus-common-core</artifactId>

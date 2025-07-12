@@ -1,5 +1,91 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.akkkka.funcampusportal.mapper.ActivityCommentMapper">
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.akkkka.funcampusnotice.mapper.ActivityCommentMapper">
+    
+    <resultMap type="ActivityComment" id="ActivityCommentResult">
+        <result property="uid"    column="uid"    />
+        <result property="userUid"    column="user_uid"    />
+        <result property="activityUid"    column="activity_uid"    />
+        <result property="toCommentUid"    column="to_comment_uid"    />
+        <result property="content"    column="content"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="rootUid"    column="root_uid"    />
+        <result property="deleted"    column="deleted"    />
+        <result property="updateTime"    column="update_time"    />
+    </resultMap>
 
+    <sql id="selectActivityCommentVo">
+        select uid, user_uid, activity_uid, to_comment_uid, content, create_time, root_uid, deleted, update_time from activity_comment
+    </sql>
+
+    <select id="selectActivityCommentList" parameterType="ActivityComment" resultMap="ActivityCommentResult">
+        <include refid="selectActivityCommentVo"/>
+        <where>  
+            <if test="userUid != null  and userUid != ''"> and user_uid = #{userUid}</if>
+            <if test="activityUid != null  and activityUid != ''"> and activity_uid = #{activityUid}</if>
+            <if test="toCommentUid != null  and toCommentUid != ''"> and to_comment_uid = #{toCommentUid}</if>
+            <if test="content != null  and content != ''"> and content = #{content}</if>
+            <if test="rootUid != null  and rootUid != ''"> and root_uid = #{rootUid}</if>
+            <if test="deleted != null "> and deleted = #{deleted}</if>
+        </where>
+    </select>
+    
+    <select id="selectActivityCommentByUid" parameterType="String" resultMap="ActivityCommentResult">
+        <include refid="selectActivityCommentVo"/>
+        where uid = #{uid}
+    </select>
+
+    <insert id="insertActivityComment" parameterType="ActivityComment">
+        insert into activity_comment
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="uid != null">uid,</if>
+            <if test="userUid != null and userUid != ''">user_uid,</if>
+            <if test="activityUid != null and activityUid != ''">activity_uid,</if>
+            <if test="toCommentUid != null">to_comment_uid,</if>
+            <if test="content != null and content != ''">content,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="rootUid != null">root_uid,</if>
+            <if test="deleted != null">deleted,</if>
+            <if test="updateTime != null">update_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="uid != null">#{uid},</if>
+            <if test="userUid != null and userUid != ''">#{userUid},</if>
+            <if test="activityUid != null and activityUid != ''">#{activityUid},</if>
+            <if test="toCommentUid != null">#{toCommentUid},</if>
+            <if test="content != null and content != ''">#{content},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="rootUid != null">#{rootUid},</if>
+            <if test="deleted != null">#{deleted},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateActivityComment" parameterType="ActivityComment">
+        update activity_comment
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="userUid != null and userUid != ''">user_uid = #{userUid},</if>
+            <if test="activityUid != null and activityUid != ''">activity_uid = #{activityUid},</if>
+            <if test="toCommentUid != null">to_comment_uid = #{toCommentUid},</if>
+            <if test="content != null and content != ''">content = #{content},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="rootUid != null">root_uid = #{rootUid},</if>
+            <if test="deleted != null">deleted = #{deleted},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where uid = #{uid}
+    </update>
+
+    <delete id="deleteActivityCommentByUid" parameterType="String">
+        delete from activity_comment where uid = #{uid}
+    </delete>
+
+    <delete id="deleteActivityCommentByUids" parameterType="String">
+        delete from activity_comment where uid in 
+        <foreach item="uid" collection="array" open="(" separator="," close=")">
+            #{uid}
+        </foreach>
+    </delete>
 </mapper>

@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>fun-campus-modules-file</artifactId>
+    <artifactId>fun-campus-file</artifactId>
 
     <description>
         fun-campus-modules-file文件服务
@@ -65,7 +65,10 @@
             <groupId>com.akkkka</groupId>
             <artifactId>fun-campus-api-system</artifactId>
         </dependency>
-        
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-bootstrap</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

@@ -1,5 +1,6 @@
 package com.akkkka.system.api.factory;
 
+import com.akkkka.common.core.enums.ResponseEnum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.openfeign.FallbackFactory;
@@ -28,7 +29,7 @@ public class RemoteFileFallbackFactory implements FallbackFactory<RemoteFileServ
             @Override
             public R<SysFile> upload(MultipartFile file)
             {
-                return R.fail("上传文件失败:" + throwable.getMessage());
+                return R.fail(ResponseEnum.UPLOAD_FILE_FAIL);
             }
         };
     }

@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>fun-campus-modules-job</artifactId>
+    <artifactId>fun-campus-job</artifactId>
 
     <description>
         fun-campus-modules-job定时任务
@@ -70,7 +70,10 @@
             <groupId>com.akkkka</groupId>
             <artifactId>fun-campus-common-swagger</artifactId>
         </dependency>
-        
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-bootstrap</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

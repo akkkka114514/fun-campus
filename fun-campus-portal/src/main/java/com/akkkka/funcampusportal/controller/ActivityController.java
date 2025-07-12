@@ -1,139 +1,105 @@
-package com.akkkka.funcampusportal.controller;
+package com.akkkka.funcampusnotice.controller;
 
-import com.akkkka.common.core.enums.ResponseEnum;
-import com.akkkka.funcampusportal.domain.Activity;
-import com.akkkka.funcampusportal.domain.scope.ScopeInsert;
-import com.akkkka.funcampusportal.domain.scope.ScopeUpdate;
-import com.akkkka.funcampusportal.service.IActivityService;
-import com.akkkka.common.core.domain.R;
-import com.akkkka.funcampusportal.util.ParamCheckUtil;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.validation.annotation.Validated;
+import java.util.List;
+import java.io.IOException;
+import javax.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import javax.annotation.Resource;
-import javax.validation.Valid;
-import java.util.List;
+import com.akkkka.common.log.annotation.Log;
+import com.akkkka.common.log.enums.BusinessType;
+import com.akkkka.common.security.annotation.RequiresPermissions;
+import com.akkkka.funcampusnotice.domain.Activity;
+import com.akkkka.funcampusnotice.service.IActivityService;
+import com.akkkka.common.core.web.controller.BaseController;
+import com.akkkka.common.core.web.domain.AjaxResult;
+import com.akkkka.common.core.utils.poi.ExcelUtil;
+import com.akkkka.common.core.web.page.TableDataInfo;
 
 /**
- * <p>
- *  前端控制器
- * </p>
- *
+ * 【请填写功能名称】Controller
+ * 
  * @author akkkka
- * @since 2023-10-03
+ * @date 2025-07-11
  */
 @RestController
 @RequestMapping("/activity")
-@Tag(name = "activity")
-public class ActivityController {
-
-    @Resource
+public class ActivityController extends BaseController
+{
+    @Autowired
     private IActivityService activityService;
 
-    @RequestMapping("/create")
-    @Validated(ScopeInsert.class)
-    @Operation(description = "create activity")
-    public R<Void> create(@RequestBody @Valid Activity activity){
-        activityService.add(activity);
-        return R.ok();
+    /**
+     * 查询【请填写功能名称】列表
+     */
+    @RequiresPermissions("funcampusnotice:activity:list")
+    @GetMapping("/list")
+    public TableDataInfo list(Activity activity)
+    {
+        startPage();
+        List<Activity> list = activityService.selectActivityList(activity);
+        return getDataTable(list);
     }
 
     /**
-     * update activity info by id
-     * */
-    @RequestMapping("/update")
-    @Validated(ScopeUpdate.class)
-    @Operation(description = "update activity")
-    public R<Void> update(@RequestBody @Valid Activity activity){
-        activityService.update(activity);
-        return R.ok();
+     * 导出【请填写功能名称】列表
+     */
+    @RequiresPermissions("funcampusnotice:activity:export")
+    @Log(title = "【请填写功能名称】", businessType = BusinessType.EXPORT)
+    @PostMapping("/export")
+    public void export(HttpServletResponse response, Activity activity)
+    {
+        List<Activity> list = activityService.selectActivityList(activity);
+        ExcelUtil<Activity> util = new ExcelUtil<Activity>(Activity.class);
+        util.exportExcel(response, list, "【请填写功能名称】数据");
     }
 
     /**
-     * of course, delete activity logically
-     * */
-    @RequestMapping("/delete")
-    @Operation(description = "delete activity")
-    public R<Void> delete(@RequestParam("id") Integer id){
-        ParamCheckUtil.checkPositiveInteger(id);
-        activityService.delete(id);
-        return R.ok();
+     * 获取【请填写功能名称】详细信息
+     */
+    @RequiresPermissions("funcampusnotice:activity:query")
+    @GetMapping(value = "/{uid}")
+    public AjaxResult getInfo(@PathVariable("uid") String uid)
+    {
+        return success(activityService.selectActivityByUid(uid));
     }
 
-    @RequestMapping("/get")
-    @Operation(description = "get activity")
-    public R<Activity> get(@RequestParam("id") Integer id){
-        ParamCheckUtil.checkPositiveInteger(id);
-        Activity activity = activityService.getById(id);
-        if(activity == null){
-            return R.fail(ResponseEnum.NO_SUCH_RECORD_IN_DB);
-        }
-        return R.ok(activity);
+    /**
+     * 新增【请填写功能名称】
+     */
+    @RequiresPermissions("funcampusnotice:activity:add")
+    @Log(title = "【请填写功能名称】", businessType = BusinessType.INSERT)
+    @PostMapping
+    public AjaxResult add(@RequestBody Activity activity)
+    {
+        return toAjax(activityService.insertActivity(activity));
     }
 
-//    @RequestMapping("/list")
-//    public R<Page<Activity>> list(@RequestParam("page") Integer page, @RequestParam("size") Integer size){
-//        if( page == null || page < 0 || size == null || size < 0){
-//            return R.fail(ResponseEnum.PARAM_NOT_VALIDATE);
-//        }
-//        Page<Activity> pageList = activityService.page(new Page<>(page, size));
-//        return R.ok(pageList);
-//    }
-
-    @RequestMapping("/listByUser")
-    @Operation(description = "list activity by user id")
-    public R<List<Activity>> listByUserId(@RequestParam("userId") Integer userId){
-        ParamCheckUtil.checkPositiveInteger(userId);
-        List<Activity> list = activityService.listByUserId(userId);
-        return R.ok(list);
-    }
-    @RequestMapping("/enroll")
-    @Operation(description = "enroll activity")
-    public R<Void> enroll(@RequestParam("userId") Integer userId, @RequestParam("activityId") Integer activityId) {
-        ParamCheckUtil.checkPositiveInteger(userId, activityId);
-        activityService.enroll(userId, activityId);
-        return R.ok();
+    /**
+     * 修改【请填写功能名称】
+     */
+    @RequiresPermissions("funcampusnotice:activity:edit")
+    @Log(title = "【请填写功能名称】", businessType = BusinessType.UPDATE)
+    @PutMapping
+    public AjaxResult edit(@RequestBody Activity activity)
+    {
+        return toAjax(activityService.updateActivity(activity));
     }
 
-    @RequestMapping("/sign-in")
-    @Operation(description = "sign in activity")
-    public R<Void> signIn(@RequestParam Integer userId, @RequestParam Integer activityId){
-        ParamCheckUtil.checkPositiveInteger(userId, activityId);
-        activityService.signIn(activityId, userId);
-        return R.ok();
-    }
-
-    @RequestMapping("/page")
-    @Operation(description = "page activity")
-    public R<IPage<Activity>> page(@RequestParam(defaultValue = "1") Integer pageNum,
-                                                @RequestParam(defaultValue = "10") Integer pageSize){
-        ParamCheckUtil.checkPositiveInteger(pageNum, pageSize);
-        IPage<Activity> page = new Page<>(pageNum, pageSize);
-        page = activityService.page(page);
-        return R.ok(page);
-    }
-    @RequestMapping("/pageBySchool")
-    @Operation(description = "page activity by school id")
-    public R<IPage<Activity>> pageBySchool(@RequestParam(defaultValue = "1") Integer pageNum,
-                                                        @RequestParam(defaultValue = "10") Integer pageSize,
-                                                        @RequestParam Integer schoolId){
-        ParamCheckUtil.checkPositiveInteger(pageNum,pageSize, schoolId);
-        return R.ok(activityService.pageBySchoolId(pageNum, pageSize, schoolId));
-    }
-
-    @RequestMapping("/cancelEnroll")
-    @Operation(description = "cancel enroll activity")
-    public R<Void> cancelEnroll(@RequestParam Integer userId, @RequestParam Integer activityId){
-        ParamCheckUtil.checkPositiveInteger(userId, activityId);
-        activityService.cancelEnroll(userId, activityId);
-        return R.ok();
+    /**
+     * 删除【请填写功能名称】
+     */
+    @RequiresPermissions("funcampusnotice:activity:remove")
+    @Log(title = "【请填写功能名称】", businessType = BusinessType.DELETE)
+	@DeleteMapping("/{uids}")
+    public AjaxResult remove(@PathVariable String[] uids)
+    {
+        return toAjax(activityService.deleteActivityByUids(uids));
     }
 }

@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="net.lab1024.sa.admin.module.system.role.dao.RoleBackendUserDao">
+
+
+    <resultMap id="BackendUserVO"
+               type="net.lab1024.sa.admin.module.system.backendUser.domain.vo.BackendUserVO"></resultMap>
+
+
+    <select id="selectRoleByBackendUserId" resultType="net.lab1024.sa.admin.module.system.role.domain.vo.RoleVO">
+        SELECT t_role.*
+        FROM t_role_user
+        left join t_role on t_role_user.role_id = t_role.role_id
+        WHERE t_role_user.user_id = #{userId}
+    </select>
+
+    <select id="selectRoleIdByBackendUserId" resultType="java.lang.Long">
+        SELECT ru.role_id
+        FROM t_role_user ru
+        WHERE ru.user_id = #{userId}
+    </select>
+
+
+    <select id="selectRoleBackendUserByName" resultMap="BackendUserVO">
+        SELECT
+        backend_user.id,
+        backend_user.username,
+        backend_user.password,
+        backend_user.disabled_flag,
+        backend_user.update_time,
+        backend_user.create_time
+        FROM
+        t_role_user
+        left join backend_user  on t_role_user.id = backend_user.id
+        left join t_role  on t_role_user.role_id = t_role.role_id
+        <where>
+            <if test="queryForm.keywords != null and queryForm.keywords!= ''">
+                AND INSTR(backend_user.username,#{queryForm.keywords})
+            </if>
+            <if test="queryForm.roleId != null">
+                AND t_role_user.role_id = #{queryForm.roleId}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectBackendUserByRoleId" resultMap="BackendUserVO">
+        SELECT backend_user.id,
+               backend_user.username,
+               backend_user.password,
+               backend_user.disabled_flag,
+               backend_user.update_time,
+               backend_user.create_time
+        FROM t_role_user
+        left join backend_user  on t_role_user.user_id = backend_user.id
+        WHERE t_role_user.role_id = #{roleId}
+    </select>
+
+    <select id="selectBackendUserIdByRoleIdList" resultType="java.lang.Long">
+        SELECT
+        id
+        FROM
+        t_role_user
+        WHERE
+        role_id in
+        <foreach collection="roleIdList" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+    <select id="selectRoleIdByBackendUserIdList"
+            resultType="net.lab1024.sa.admin.module.system.role.domain.entity.RoleBackendUserEntity">
+        SELECT
+        *
+        FROM
+        t_role_user
+        WHERE
+        id in
+        <foreach collection="backendUserIdList" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="selectRoleByBackendUserIdList"
+            resultType="net.lab1024.sa.admin.module.system.role.domain.vo.RoleBackendUserVO">
+        SELECT
+        t_role_user.role_id,
+        t_role_user.id,
+        t_role.role_name
+        FROM
+        t_role_user
+        LEFT JOIN t_role  ON t_role.role_id = t_role_user.role_id
+        WHERE
+        id in
+        <foreach collection="backendUserIdList" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+
+
+
+    <delete id="deleteByBackendUserId">
+        DELETE
+        FROM t_role_user
+        WHERE user_id = #{userId}
+    </delete>
+
+
+    <delete id="deleteByRoleId">
+        DELETE
+        FROM t_role_user
+        WHERE role_id = #{roleId}
+    </delete>
+
+    <delete id="deleteByBackendUserIdRoleId">
+        DELETE
+        FROM t_role_user
+        WHERE role_id = #{roleId}
+          and user_id = #{userId}
+    </delete>
+
+
+    <delete id="batchDeleteBackendUserRole">
+        DELETE FROM t_role_user
+        WHERE role_id = #{roleId} and user_id in
+        <foreach collection="backendUserIds" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </delete>
+
+    <select id="existsByRoleId" resultType="java.lang.Integer">
+        SELECT 1
+        FROM t_role_user er
+        WHERE er.role_id = #{roleId}
+        LIMIT 1
+    </select>
+
+</mapper>

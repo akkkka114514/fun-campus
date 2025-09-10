@@ -53,16 +53,16 @@ export const enterpriseApi = {
         return postRequest('/oa/enterprise/employee/list', param);
     },
     // 分页查询企业员工List @author 卓大
-    queryPageEmployeeList: (param) => {
+    queryPageBackendUserList: (param) => {
         return postRequest('/oa/enterprise/employee/queryPage', param);
     },
     // 添加员工 @author yandy
-    addEmployee: (param) => {
+    addBackendUser: (param) => {
         return postRequest('/oa/enterprise/employee/add', param);
     },
 
     // 删除员工 @author yandy
-    deleteEmployee: (param) => {
+    deleteBackendUser: (param) => {
         return postRequest('/oa/enterprise/employee/delete', param);
     },
 

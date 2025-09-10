@@ -5,10 +5,10 @@ import jakarta.annotation.Resource;
 import net.lab1024.sa.admin.module.system.datascope.constant.DataScopeTypeEnum;
 import net.lab1024.sa.admin.module.system.datascope.constant.DataScopeViewTypeEnum;
 import net.lab1024.sa.admin.module.system.department.service.DepartmentService;
-import net.lab1024.sa.admin.module.system.employee.dao.EmployeeDao;
-import net.lab1024.sa.admin.module.system.employee.domain.entity.EmployeeEntity;
+import net.lab1024.sa.admin.module.system.employee.dao.BackendUserDao;
+import net.lab1024.sa.admin.module.system.employee.domain.entity.BackendUserEntity;
 import net.lab1024.sa.admin.module.system.role.dao.RoleDataScopeDao;
-import net.lab1024.sa.admin.module.system.role.dao.RoleEmployeeDao;
+import net.lab1024.sa.admin.module.system.role.dao.RoleBackendUserDao;
 import net.lab1024.sa.admin.module.system.role.domain.entity.RoleDataScopeEntity;
 import net.lab1024.sa.base.common.util.SmartEnumUtil;
 import org.apache.commons.collections4.CollectionUtils;
@@ -32,13 +32,13 @@ import java.util.stream.Collectors;
 public class DataScopeViewService {
 
     @Resource
-    private RoleEmployeeDao roleEmployeeDao;
+    private RoleBackendUserDao roleBackendUserDao;
 
     @Resource
     private RoleDataScopeDao roleDataScopeDao;
 
     @Resource
-    private EmployeeDao employeeDao;
+    private BackendUserDao employeeDao;
 
     @Resource
     private DepartmentService departmentService;
@@ -46,15 +46,15 @@ public class DataScopeViewService {
     /**
      * 获取某人可以查看的所有人员数据
      */
-    public List<Long> getCanViewEmployeeId(DataScopeViewTypeEnum viewType, Long employeeId) {
+    public List<Long> getCanViewBackendUserId(DataScopeViewTypeEnum viewType, Long employeeId) {
         if (DataScopeViewTypeEnum.ME == viewType) {
-            return this.getMeEmployeeIdList(employeeId);
+            return this.getMeBackendUserIdList(employeeId);
         }
         if (DataScopeViewTypeEnum.DEPARTMENT == viewType) {
-            return this.getDepartmentEmployeeIdList(employeeId);
+            return this.getDepartmentBackendUserIdList(employeeId);
         }
         if (DataScopeViewTypeEnum.DEPARTMENT_AND_SUB == viewType) {
-            return this.getDepartmentAndSubEmployeeIdList(employeeId);
+            return this.getDepartmentAndSubBackendUserIdList(employeeId);
         }
         // 可以查看所有员工数据
         return Lists.newArrayList();
@@ -79,21 +79,21 @@ public class DataScopeViewService {
     }
 
     public List<Long> getMeDepartmentIdList(Long employeeId) {
-        EmployeeEntity employeeEntity = employeeDao.selectById(employeeId);
+        BackendUserEntity employeeEntity = employeeDao.selectById(employeeId);
         return Lists.newArrayList(employeeEntity.getDepartmentId());
     }
 
     public List<Long> getDepartmentAndSubIdList(Long employeeId) {
-        EmployeeEntity employeeEntity = employeeDao.selectById(employeeId);
+        BackendUserEntity employeeEntity = employeeDao.selectById(employeeId);
         return departmentService.selfAndChildrenIdList(employeeEntity.getDepartmentId());
     }
 
     /**
      * 根据员工id 获取各数据范围最大的可见范围 map<dataScopeType,viewType></>
      */
-    public DataScopeViewTypeEnum getEmployeeDataScopeViewType(DataScopeTypeEnum dataScopeTypeEnum, Long employeeId) {
-        EmployeeEntity employeeEntity = employeeDao.selectById(employeeId);
-        if (employeeEntity == null || employeeEntity.getEmployeeId() == null) {
+    public DataScopeViewTypeEnum getBackendUserDataScopeViewType(DataScopeTypeEnum dataScopeTypeEnum, Long employeeId) {
+        BackendUserEntity employeeEntity = employeeDao.selectById(employeeId);
+        if (employeeEntity == null || employeeEntity.getBackendUserId() == null) {
             return DataScopeViewTypeEnum.ME;
         }
 
@@ -102,7 +102,7 @@ public class DataScopeViewService {
             return DataScopeViewTypeEnum.ALL;
         }
 
-        List<Long> roleIdList = roleEmployeeDao.selectRoleIdByEmployeeId(employeeId);
+        List<Long> roleIdList = roleBackendUserDao.selectRoleIdByBackendUserId(employeeId);
         //未设置角色 默认本人
         if (CollectionUtils.isEmpty(roleIdList)) {
             return DataScopeViewTypeEnum.ME;
@@ -124,23 +124,23 @@ public class DataScopeViewService {
     /**
      * 获取本人相关 可查看员工id
      */
-    private List<Long> getMeEmployeeIdList(Long employeeId) {
+    private List<Long> getMeBackendUserIdList(Long employeeId) {
         return Lists.newArrayList(employeeId);
     }
 
     /**
      * 获取本部门相关 可查看员工id
      */
-    private List<Long> getDepartmentEmployeeIdList(Long employeeId) {
-        EmployeeEntity employeeEntity = employeeDao.selectById(employeeId);
-        return employeeDao.getEmployeeIdByDepartmentId(employeeEntity.getDepartmentId(), false);
+    private List<Long> getDepartmentBackendUserIdList(Long employeeId) {
+        BackendUserEntity employeeEntity = employeeDao.selectById(employeeId);
+        return employeeDao.getBackendUserIdByDepartmentId(employeeEntity.getDepartmentId(), false);
     }
 
     /**
      * 获取本部门及下属子部门相关 可查看员工id
      */
-    private List<Long> getDepartmentAndSubEmployeeIdList(Long employeeId) {
+    private List<Long> getDepartmentAndSubBackendUserIdList(Long employeeId) {
         List<Long> allDepartmentIds = getDepartmentAndSubIdList(employeeId);
-        return employeeDao.getEmployeeIdByDepartmentIdList(allDepartmentIds, false);
+        return employeeDao.getBackendUserIdByDepartmentIdList(allDepartmentIds, false);
     }
 }

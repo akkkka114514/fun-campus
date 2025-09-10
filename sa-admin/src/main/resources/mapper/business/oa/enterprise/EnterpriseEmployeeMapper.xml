@@ -1,33 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="net.lab1024.sa.admin.module.business.oa.enterprise.dao.EnterpriseEmployeeDao">
+<mapper namespace="net.lab1024.sa.admin.module.business.oa.enterprise.dao.EnterpriseBackendUserDao">
 
-    <delete id="deleteByEnterpriseAndEmployeeIdList">
+    <delete id="deleteByEnterpriseAndBackendUserIdList">
         delete from t_oa_enterprise_employee where enterprise_id = #{enterpriseId} and employee_id in
         <foreach collection="employeeIdList" item="item" separator="," open="(" close=")">
             #{item}
         </foreach>
     </delete>
 
-    <delete id="deleteByEmployeeId">
+    <delete id="deleteByBackendUserId">
         delete from t_oa_enterprise_employee where employee_id = #{employeeId}
     </delete>
 
     <select id="selectByEnterpriseId"
-            resultType="net.lab1024.sa.admin.module.business.oa.enterprise.domain.entity.EnterpriseEmployeeEntity">
+            resultType="net.lab1024.sa.admin.module.business.oa.enterprise.domain.entity.EnterpriseBackendUserEntity">
         select * from t_oa_enterprise_employee where enterprise_id = #{enterpriseId}
     </select>
 
-    <select id="selectByEnterpriseAndEmployeeIdList"
-            resultType="net.lab1024.sa.admin.module.business.oa.enterprise.domain.entity.EnterpriseEmployeeEntity">
+    <select id="selectByEnterpriseAndBackendUserIdList"
+            resultType="net.lab1024.sa.admin.module.business.oa.enterprise.domain.entity.EnterpriseBackendUserEntity">
         select * from t_oa_enterprise_employee where enterprise_id = #{enterpriseId} and employee_id in
         <foreach collection="employeeIdList" item="item" separator="," open="(" close=")">
             #{item}
         </foreach>
     </select>
 
-    <select id="selectByEmployeeIdList"
-            resultType="net.lab1024.sa.admin.module.business.oa.enterprise.domain.vo.EnterpriseEmployeeVO">
+    <select id="selectByBackendUserIdList"
+            resultType="net.lab1024.sa.admin.module.business.oa.enterprise.domain.vo.EnterpriseBackendUserVO">
         select
         t_oa_enterprise_employee.*,
         t_oa_enterprise.enterprise_name,
@@ -42,7 +42,7 @@
     </select>
 
     <select id="selectByEnterpriseIdList"
-            resultType="net.lab1024.sa.admin.module.business.oa.enterprise.domain.vo.EnterpriseEmployeeVO">
+            resultType="net.lab1024.sa.admin.module.business.oa.enterprise.domain.vo.EnterpriseBackendUserVO">
         select
         t_oa_enterprise_employee.*,
         t_oa_enterprise.enterprise_name,
@@ -57,18 +57,18 @@
         </foreach>
     </select>
 
-    <select id="selectEnterpriseIdByEmployeeId" resultType="java.lang.Long">
+    <select id="selectEnterpriseIdByBackendUserId" resultType="java.lang.Long">
         select enterprise_id from t_oa_enterprise_employee where employee_id = #{employeeId}
     </select>
 
-    <select id="selectEmployeeIdByEnterpriseIdList" resultType="java.lang.Long">
+    <select id="selectBackendUserIdByEnterpriseIdList" resultType="java.lang.Long">
         select employee_id from t_oa_enterprise_employee where enterprise_id in
         <foreach collection="enterpriseIdList" item="item" separator="," open="(" close=")">
             #{item}
         </foreach>
     </select>
-    <select id="queryPageEmployeeList"
-            resultType="net.lab1024.sa.admin.module.business.oa.enterprise.domain.vo.EnterpriseEmployeeVO">
+    <select id="queryPageBackendUserList"
+            resultType="net.lab1024.sa.admin.module.business.oa.enterprise.domain.vo.EnterpriseBackendUserVO">
         select
         t_oa_enterprise_employee.enterprise_id,
         t_oa_enterprise.enterprise_name,

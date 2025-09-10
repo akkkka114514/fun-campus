@@ -151,7 +151,7 @@
 
   async function query(mescroll, isDownFlag, param) {
     try {
-      let res = await noticeApi.queryEmployeeNotice(param);
+      let res = await noticeApi.queryBackendUserNotice(param);
       if (!isDownFlag) {
         noticeListData.value = noticeListData.value.concat(res.data.list);
       } else {

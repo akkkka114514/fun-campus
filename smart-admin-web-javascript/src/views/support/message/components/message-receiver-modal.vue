@@ -109,7 +109,7 @@
   async function queryList() {
     try {
       tableLoading.value = true;
-      let res = await employeeApi.queryEmployee(queryParam);
+      let res = await employeeApi.queryBackendUser(queryParam);
       const list = res.data.list;
       total.value = res.data.total;
       tableData.value = list;

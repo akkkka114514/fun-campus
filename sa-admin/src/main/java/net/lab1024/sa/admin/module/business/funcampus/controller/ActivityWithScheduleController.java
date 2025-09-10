@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import net.lab1024.sa.admin.module.business.funcampus.domain.form.ActivityWithScheduleForm;
 import net.lab1024.sa.admin.module.business.funcampus.service.ActivityWithScheduleService;
 import net.lab1024.sa.base.common.domain.ResponseDTO;
+import net.lab1024.sa.base.module.support.repeatsubmit.annoation.RepeatSubmit;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,8 +27,9 @@ public class ActivityWithScheduleController {
     @Resource
     private ActivityWithScheduleService activityWithScheduleService;
 
-    @Operation(summary = "添加活动和时间表(基于编程式事务) @author akkkka114514")
+    @Operation(summary = "添加活动和时间表 @author akkkka114514")
     @PostMapping("/activityWithSchedule/add")
+    @RepeatSubmit(intervalMilliSecond = 3 * 1000 )
     public ResponseDTO<String> addActivityWithSchedule(@RequestBody @Valid ActivityWithScheduleForm addForm) {
         return activityWithScheduleService.addActivityWithSchedule(addForm);
     }

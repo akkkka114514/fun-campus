@@ -104,7 +104,7 @@ public class DataScopeSqlConfigService {
         }
 
         DataScopeTypeEnum dataScopeTypeEnum = sqlConfigDTO.getDataScopeType();
-        DataScopeViewTypeEnum viewTypeEnum = dataScopeViewService.getEmployeeDataScopeViewType(dataScopeTypeEnum, employeeId);
+        DataScopeViewTypeEnum viewTypeEnum = dataScopeViewService.getBackendUserDataScopeViewType(dataScopeTypeEnum, employeeId);
 
         // 数据权限设置为仅本人可见时 直接返回 create_user_id = employeeId
         if (DataScopeViewTypeEnum.ME == viewTypeEnum) {
@@ -127,11 +127,11 @@ public class DataScopeSqlConfigService {
             return powerStrategy.getCondition(viewTypeEnum, paramMap, sqlConfigDTO);
         }
         if (DataScopeWhereInTypeEnum.EMPLOYEE == sqlConfigDTO.getDataScopeWhereInType()) {
-            List<Long> canViewEmployeeIds = dataScopeViewService.getCanViewEmployeeId(viewTypeEnum, employeeId);
-            if (CollectionUtils.isEmpty(canViewEmployeeIds)) {
+            List<Long> canViewBackendUserIds = dataScopeViewService.getCanViewBackendUserId(viewTypeEnum, employeeId);
+            if (CollectionUtils.isEmpty(canViewBackendUserIds)) {
                 return "";
             }
-            String employeeIds = StringUtils.join(canViewEmployeeIds, ",");
+            String employeeIds = StringUtils.join(canViewBackendUserIds, ",");
             String sql = joinSql.replaceAll(EMPLOYEE_PARAM, employeeIds);
             return sql;
         }

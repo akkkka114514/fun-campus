@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="net.lab1024.sa.admin.module.system.backendUser.dao.BackendUserDao">
+
+    <select id="queryBackendUser" resultType="net.lab1024.sa.admin.module.system.backendUser.domain.vo.BackendUserVO">
+        SELECT
+        backend_user.*,
+        t_department.department_name
+        FROM backend_user
+        LEFT JOIN t_department ON t_department.department_id = backend_user.department_id
+        <where>
+            <if test="queryForm.keyword != null and queryForm.keyword != ''">
+                AND INSTR(backend_user.username,#{queryForm.keyword})
+            </if>
+            <if test="queryForm.disabledFlag != null">
+                AND backend_user.disabled_flag = #{queryForm.disabledFlag}
+            </if>
+            <if test="queryForm.deletedFlag != null">
+                AND backend_user.deleted_flag = #{queryForm.deletedFlag}
+            </if>
+        </where>
+    </select>
+
+    <update id="updateDisableFlag">
+        UPDATE backend_user
+        SET disabled_flag = #{disabledFlag}
+        WHERE id = #{id}
+    </update>
+
+    <select id="getByUsername" resultType="net.lab1024.sa.admin.module.system.backendUser.domain.entity.BackendUserEntity">
+        SELECT *
+        FROM backend_user
+        <where>
+            username = #{username}
+            <if test="deletedFlag != null">
+                AND deleted_flag = #{deletedFlag}
+            </if>
+        </where>
+    </select>
+
+    <select id="getByEmail" resultType="net.lab1024.sa.admin.module.system.backendUser.domain.entity.BackendUserEntity">
+        SELECT *
+        FROM backend_user
+        <where>
+            email = #{email}
+            <if test="deletedFlag != null">
+                AND deleted_flag = #{deletedFlag}
+            </if>
+        </where>
+    </select>
+
+    <select id="listAll" resultType="net.lab1024.sa.admin.module.system.backendUser.domain.vo.BackendUserVO">
+        SELECT *
+        FROM backend_user
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="getBackendUserId" resultType="java.lang.Long">
+        SELECT id
+        FROM backend_user
+        <where>
+            <if test="deletedFlag != null">
+                AND deleted_flag = #{deletedFlag}
+            </if>
+        </where>
+    </select>
+
+    <select id="getBackendUserByIds" resultType="net.lab1024.sa.admin.module.system.backendUser.domain.vo.BackendUserVO">
+        SELECT * FROM backend_user
+        where id IN
+        <foreach collection="ids" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="getBackendUserById" resultType="net.lab1024.sa.admin.module.system.backendUser.domain.vo.BackendUserVO">
+        SELECT backend_user.*,
+               t_department.department_name
+        FROM backend_user
+                 LEFT JOIN t_department ON t_department.department_id = backend_user.department_id
+        where backend_user.id = #{id}
+    </select>
+
+    <select id="selectBackendUserByDisabledAndDeleted" resultType="net.lab1024.sa.admin.module.system.backendUser.domain.vo.BackendUserVO">
+        SELECT
+        backend_user.*,
+        t_department.department_name
+        FROM backend_user
+        LEFT JOIN t_department ON t_department.department_id = backend_user.department_id
+        <where>
+            <if test="disabledFlag != null">
+                AND backend_user.disabled_flag = #{disabledFlag}
+            </if>
+            <if test="deletedFlag != null">
+                AND backend_user.deleted_flag = #{deletedFlag}
+            </if>
+        </where>
+    </select>
+
+    <update id="updatePassword">
+        UPDATE backend_user
+        SET password = #{password}
+        WHERE id = #{id}
+    </update>
+
+
+    <select id="getByFieldExcludingId" resultType="net.lab1024.sa.admin.module.system.backendUser.domain.entity.BackendUserEntity">
+        SELECT *
+        FROM backend_user
+        <where>
+            <if test="field != null">
+                AND ${field} = #{value}
+            </if>
+            <if test="deletedFlag != null">
+                AND deleted_flag = #{deletedFlag}
+            </if>
+            <if test="excludeId != null">
+                AND id != #{excludeId}
+            </if>
+        </where>
+    </select>
+</mapper>

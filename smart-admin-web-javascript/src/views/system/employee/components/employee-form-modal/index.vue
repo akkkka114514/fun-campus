@@ -173,15 +173,15 @@
     }
     SmartLoading.show();
     if (form.employeeId) {
-      await updateEmployee(keepAdding);
+      await updateBackendUser(keepAdding);
     } else {
-      await addEmployee(keepAdding);
+      await addBackendUser(keepAdding);
     }
   }
 
-  async function addEmployee(keepAdding) {
+  async function addBackendUser(keepAdding) {
     try {
-      let { data } = await employeeApi.addEmployee(form);
+      let { data } = await employeeApi.addBackendUser(form);
       message.success('添加成功');
       emit('show-account', form.loginName, data);
       if (keepAdding) {
@@ -196,9 +196,9 @@
       SmartLoading.hide();
     }
   }
-  async function updateEmployee(keepAdding) {
+  async function updateBackendUser(keepAdding) {
     try {
-      let result = await employeeApi.updateEmployee(form);
+      let result = await employeeApi.updateBackendUser(form);
       message.success('更新成功');
       if (keepAdding) {
         reset();

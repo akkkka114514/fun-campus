@@ -11,7 +11,7 @@
   <a-modal title="选择部门" v-model:open="visibleFlag" :maskClosable="false" :width="768" @ok="onSubmit" @cancel="onClose">
     <a-tabs v-model:activeKey="activeKey">
       <a-tab-pane :key="1" tab="选择员工">
-        <NoticeFormVisibleTransferEmployee :employeeList="employeeList" @onChange="onChangeEmployee" />
+        <NoticeFormVisibleTransferBackendUser :employeeList="employeeList" @onChange="onChangeBackendUser" />
       </a-tab-pane>
       <a-tab-pane :key="2" tab="选择部门">
         <NoticeFormVisibleTransferDepartment :departmentList="departmentList" @onChange="onChangeDepartment" />
@@ -24,7 +24,7 @@
 import { reactive, ref, onMounted, watch } from 'vue';
 import { NOTICE_VISIBLE_RANGE_DATA_TYPE_ENUM } from '/@/constants/business/oa/notice-const';
 import NoticeFormVisibleTransferDepartment from './notice-form-visible-transfer-department.vue';
-import NoticeFormVisibleTransferEmployee from './notice-form-visible-transfer-employee.vue';
+import NoticeFormVisibleTransferBackendUser from './notice-form-visible-transfer-employee.vue';
 
 const emits = defineEmits('selectedFinish');
 const visibleFlag = ref(false);
@@ -53,7 +53,7 @@ function onSubmit() {
 }
 
 // 选择员工改变
-function onChangeEmployee({ selectedList }) {
+function onChangeBackendUser({ selectedList }) {
   employeeList.value = selectedList;
 }
 

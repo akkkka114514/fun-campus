@@ -2,7 +2,7 @@ package net.lab1024.sa.admin.module.system.role.service;
 
 import jakarta.annotation.Resource;
 import net.lab1024.sa.admin.module.system.role.dao.RoleDao;
-import net.lab1024.sa.admin.module.system.role.dao.RoleEmployeeDao;
+import net.lab1024.sa.admin.module.system.role.dao.RoleBackendUserDao;
 import net.lab1024.sa.admin.module.system.role.dao.RoleMenuDao;
 import net.lab1024.sa.admin.module.system.role.domain.entity.RoleEntity;
 import net.lab1024.sa.admin.module.system.role.domain.form.RoleAddForm;
@@ -35,7 +35,7 @@ public class RoleService {
     private RoleMenuDao roleMenuDao;
 
     @Resource
-    private RoleEmployeeDao roleEmployeeDao;
+    private RoleBackendUserDao roleBackendUserDao;
 
     /**
      * 新增添加角色
@@ -66,13 +66,13 @@ public class RoleService {
             return ResponseDTO.error(UserErrorCode.DATA_NOT_EXIST);
         }
         // 当没有员工绑定这个角色时才可以删除
-        Integer exists = roleEmployeeDao.existsByRoleId(roleId);
+        Integer exists = roleBackendUserDao.existsByRoleId(roleId);
         if (exists != null) {
             return ResponseDTO.error(UserErrorCode.ALREADY_EXIST, "该角色下存在员工，无法删除");
         }
         roleDao.deleteById(roleId);
         roleMenuDao.deleteByRoleId(roleId);
-        roleEmployeeDao.deleteByRoleId(roleId);
+        roleBackendUserDao.deleteByRoleId(roleId);
         return ResponseDTO.ok();
     }
 

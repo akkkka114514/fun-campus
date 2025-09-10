@@ -33,11 +33,11 @@
   <a-card
     class="smart-margin-top10"
     size="small"
-    v-if="$privilege('oa:enterprise:queryEmployee') || $privilege('oa:bank:query') || $privilege('oa:invoice:query')"
+    v-if="$privilege('oa:enterprise:queryBackendUser') || $privilege('oa:bank:query') || $privilege('oa:invoice:query')"
   >
     <a-tabs>
-      <a-tab-pane key="employee" tab="员工信息" v-if="$privilege('oa:enterprise:queryEmployee')">
-        <EmployeeList :enterpriseId="enterpriseId" />
+      <a-tab-pane key="employee" tab="员工信息" v-if="$privilege('oa:enterprise:queryBackendUser')">
+        <BackendUserList :enterpriseId="enterpriseId" />
       </a-tab-pane>
       <a-tab-pane key="bank" tab="银行信息" v-if="$privilege('oa:bank:query')">
         <BankList :enterpriseId="enterpriseId" />
@@ -58,7 +58,7 @@
   import { computed, onMounted, ref } from 'vue';
   import { useRoute } from 'vue-router';
   import BankList from './components/enterprise-bank-list.vue';
-  import EmployeeList from './components/enterprise-employee-list.vue';
+  import BackendUserList from './components/enterprise-employee-list.vue';
   import InvoiceList from './components/enterprise-invoice-list.vue';
   import EnterpriseOperate from './components/enterprise-operate-modal.vue';
   import { enterpriseApi } from '/@/api/business/oa/enterprise-api';

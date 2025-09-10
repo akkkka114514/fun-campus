@@ -59,7 +59,7 @@
   async function queryNoticeList() {
     try {
       loading.value = true;
-      const result = await noticeApi.queryEmployeeNotice(queryForm);
+      const result = await noticeApi.queryBackendUserNotice(queryForm);
       data.value = result.data.list;
     } catch (err) {
       smartSentry.captureError(err);
@@ -75,7 +75,7 @@
   // 查看更多
   function onMore() {
     router.push({
-      path: '/oa/notice/notice-employee-list',
+      path: '/oa/notice/notice-backendUser-list',
     });
   }
 
@@ -83,7 +83,7 @@
   const router = useRouter();
   function toDetail(noticeId) {
     router.push({
-      path: '/oa/notice/notice-employee-detail',
+      path: '/oa/notice/notice-backendUser-detail',
       query: { noticeId },
     });
   }

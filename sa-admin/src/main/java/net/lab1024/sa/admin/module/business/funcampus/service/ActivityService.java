@@ -1,5 +1,6 @@
 package net.lab1024.sa.admin.module.business.funcampus.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import net.lab1024.sa.admin.module.business.funcampus.dao.ActivityDao;
 import net.lab1024.sa.admin.module.business.funcampus.domain.entity.ActivityEntity;
@@ -7,6 +8,7 @@ import net.lab1024.sa.admin.module.business.funcampus.domain.form.ActivityAddFor
 import net.lab1024.sa.admin.module.business.funcampus.domain.form.ActivityQueryForm;
 import net.lab1024.sa.admin.module.business.funcampus.domain.form.ActivityUpdateForm;
 import net.lab1024.sa.admin.module.business.funcampus.domain.vo.ActivityVO;
+import net.lab1024.sa.admin.module.business.funcampus.manager.ActivityManager;
 import net.lab1024.sa.base.common.util.SmartBeanUtil;
 import net.lab1024.sa.base.common.util.SmartPageUtil;
 import net.lab1024.sa.base.common.domain.ResponseDTO;
@@ -16,6 +18,8 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.Resource;
+
+import static net.lab1024.sa.admin.module.business.funcampus.constant.ActivityStatus.START_ENROLL;
 
 /**
  * 活动管理 Service
@@ -30,6 +34,8 @@ public class ActivityService {
 
     @Resource
     private ActivityDao activityDao;
+    @Resource
+    private ActivityManager activityManager;
 
     /**
      * 分页查询
@@ -44,7 +50,17 @@ public class ActivityService {
      * 添加
      */
     public ResponseDTO<String> add(ActivityAddForm addForm) {
+        Long organizerId = addForm.getActivityOrganizerId();
+        if (null == organizerId){
+            return ResponseDTO.userErrorParam("请选择活动组织");
+        }
+
         ActivityEntity activityEntity = SmartBeanUtil.copy(addForm, ActivityEntity.class);
+        activityEntity.setDeletedFlag(false);
+        activityEntity.setId(null);
+        activityEntity.setCreateTime(LocalDateTime.now());
+        activityEntity.setUpdateTime(LocalDateTime.now());
+        activityEntity.setStatus(START_ENROLL);
         activityDao.insert(activityEntity);
         return ResponseDTO.ok();
     }

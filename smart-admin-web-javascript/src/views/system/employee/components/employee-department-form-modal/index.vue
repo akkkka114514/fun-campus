@@ -36,8 +36,8 @@
   const employeeIdList = ref([]);
 
   //显示
-  async function showModal(selectEmployeeId) {
-    employeeIdList.value = selectEmployeeId;
+  async function showModal(selectBackendUserId) {
+    employeeIdList.value = selectBackendUserId;
     visible.value = true;
   }
 
@@ -63,7 +63,7 @@
         employeeIdList: employeeIdList.value,
         departmentId: departmentId,
       };
-      await employeeApi.batchUpdateDepartmentEmployee(params);
+      await employeeApi.batchUpdateDepartmentBackendUser(params);
       message.success('操作成功');
       emit('refresh');
       closeModal();

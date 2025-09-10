@@ -104,11 +104,11 @@
     </select>
 
     <!-- ================================== 通知公告【员工查看】相关 ================================== -->
-    <select id="queryEmployeeNotice" resultType="net.lab1024.sa.admin.module.business.oa.notice.domain.vo.NoticeEmployeeVO">
+    <select id="queryBackendUserNotice" resultType="net.lab1024.sa.admin.module.business.oa.notice.domain.vo.NoticeBackendUserVO">
         select
         <include refid="base_columns"/>,
         t_notice_type.notice_type_name,
-        (select count(*) from t_notice_view_record where t_notice_view_record.employee_id = #{requestEmployeeId} and
+        (select count(*) from t_notice_view_record where t_notice_view_record.employee_id = #{requestBackendUserId} and
         t_notice_view_record.notice_id = t_notice.notice_id) as viewFlag
         from t_notice
         left join t_notice_type on t_notice.notice_type_id = t_notice_type.notice_type_id
@@ -120,16 +120,16 @@
                 from t_notice_visible_range
                 where
                 ( t_notice_visible_range.data_type = #{departmentDataType}
-                    <if test="requestEmployeeDepartmentIdList != null and requestEmployeeDepartmentIdList.size > 0">
+                    <if test="requestBackendUserDepartmentIdList != null and requestBackendUserDepartmentIdList.size > 0">
                         and
                         t_notice_visible_range.data_id
                         in
-                        <foreach collection="requestEmployeeDepartmentIdList" open="(" close=")" separator="," item="item">
+                        <foreach collection="requestBackendUserDepartmentIdList" open="(" close=")" separator="," item="item">
                             #{item}
                         </foreach>
                     </if>
                     )
-                    or ( t_notice_visible_range.data_type = #{employeeDataType} and t_notice_visible_range.data_id = #{requestEmployeeId} )
+                    or ( t_notice_visible_range.data_type = #{employeeDataType} and t_notice_visible_range.data_id = #{requestBackendUserId} )
                 )
                 or t_notice.all_visible_flag = true
             )
@@ -161,13 +161,13 @@
         </where>
         order by t_notice.publish_time desc
     </select>
-    <select id="queryEmployeeNotViewNotice" resultType="net.lab1024.sa.admin.module.business.oa.notice.domain.vo.NoticeEmployeeVO">
+    <select id="queryBackendUserNotViewNotice" resultType="net.lab1024.sa.admin.module.business.oa.notice.domain.vo.NoticeBackendUserVO">
         select * from
         (
         select
         <include refid="base_columns"/>,
         t_notice_type.notice_type_name,
-        (select count(*) from t_notice_view_record where t_notice_view_record.employee_id = #{requestEmployeeId} and
+        (select count(*) from t_notice_view_record where t_notice_view_record.employee_id = #{requestBackendUserId} and
         t_notice_view_record.notice_id = t_notice.notice_id) as viewFlag
         from t_notice
         left join t_notice_type on t_notice.notice_type_id = t_notice_type.notice_type_id
@@ -178,17 +178,17 @@
                 from t_notice_visible_range
                 where
                 (t_notice_visible_range.data_type = #{departmentDataType}
-                <if test="requestEmployeeDepartmentIdList != null and requestEmployeeDepartmentIdList.size > 0">
+                <if test="requestBackendUserDepartmentIdList != null and requestBackendUserDepartmentIdList.size > 0">
                     and
                     t_notice_visible_range.data_id
                     in
-                    <foreach collection="requestEmployeeDepartmentIdList" open="(" close=")" separator="," item="item">
+                    <foreach collection="requestBackendUserDepartmentIdList" open="(" close=")" separator="," item="item">
                         #{item}
                     </foreach>
                 </if>
                 )
                 or ( t_notice_visible_range.data_type = #{employeeDataType} and t_notice_visible_range.data_id =
-                #{requestEmployeeId} )
+                #{requestBackendUserId} )
                 )
             </if>
             and t_notice.all_visible_flag = true

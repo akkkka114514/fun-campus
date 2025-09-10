@@ -8,7 +8,7 @@
   * @Copyright  1024创新实验室 （ https://1024lab.net ），Since 2012
 -->
 <template>
-  <a-modal v-model:open="visible" :width="900" title="选择人员" @cancel="closeModal" @ok="onSelectEmployee">
+  <a-modal v-model:open="visible" :width="900" title="选择人员" @cancel="closeModal" @ok="onSelectBackendUser">
     <a-form class="smart-query-form">
       <a-row class="smart-query-form-row">
         <a-form-item label="关键字" class="smart-query-form-item">
@@ -70,7 +70,7 @@
         v-model:current="params.pageNum"
         v-model:pageSize="params.pageSize"
         :total="total"
-        @change="queryEmployee"
+        @change="queryBackendUser"
         :show-total="(total) => `共${total}条`"
       />
     </div>
@@ -93,9 +93,9 @@
   // ----------------------- modal  显示与隐藏 ---------------------
 
   const visible = ref(false);
-  async function showModal(selectEmployeeId) {
-    originalRowKeyList.value = selectEmployeeId || [];
-    selectedRowKeyList.value = selectEmployeeId || [];
+  async function showModal(selectBackendUserId) {
+    originalRowKeyList.value = selectBackendUserId || [];
+    selectedRowKeyList.value = selectBackendUserId || [];
     visible.value = true;
     onSearch();
   }
@@ -122,18 +122,18 @@
   const params = reactive({ ...defaultParams });
   function reset() {
     Object.assign(params, defaultParams);
-    queryEmployee();
+    queryBackendUser();
   }
 
   function onSearch() {
     params.pageNum = 1;
-    queryEmployee();
+    queryBackendUser();
   }
 
-  async function queryEmployee() {
+  async function queryBackendUser() {
     tableLoading.value = true;
     try {
-      let res = await employeeApi.queryEmployee(params);
+      let res = await employeeApi.queryBackendUser(params);
       tableData.value = res.data.list;
       total.value = res.data.total;
     } catch (error) {
@@ -152,14 +152,14 @@
     selectedRowKeyList.value = selectedRowKeys;
   }
 
-  function onSelectEmployee() {
+  function onSelectBackendUser() {
     if (!hasSelected.value) {
       message.warning('请选择角色人员');
       return;
     }
     // 过滤出新选择的人员id
-    const newEmployeeIdList = selectedRowKeyList.value.filter((id) => !originalRowKeyList.value.includes(id));
-    emits('selectData', newEmployeeIdList);
+    const newBackendUserIdList = selectedRowKeyList.value.filter((id) => !originalRowKeyList.value.includes(id));
+    emits('selectData', newBackendUserIdList);
     closeModal();
   }
 

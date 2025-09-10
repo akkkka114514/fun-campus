@@ -18,7 +18,7 @@
         <a-input v-model:value.trim="formState.departmentName" placeholder="请输入部门名称" />
       </a-form-item>
       <a-form-item label="部门负责人" name="managerId">
-        <EmployeeSelect ref="employeeSelect" placeholder="请选择部门负责人" width="100%" v-model:value="formState.managerId"
+        <BackendUserSelect ref="employeeSelect" placeholder="请选择部门负责人" width="100%" v-model:value="formState.managerId"
           :leaveFlag="false" />
       </a-form-item>
       <a-form-item label="部门排序 （值越大越靠前！）" name="sort">
@@ -32,7 +32,7 @@
   import { nextTick, reactive, ref } from 'vue';
   import { departmentApi } from '/@/api/system/department-api';
   import DepartmentTreeSelect from '/@/components/system/department-tree-select/index.vue';
-  import EmployeeSelect from '/@/components/system/employee-select/index.vue';
+  import BackendUserSelect from '/@/components/system/employee-select/index.vue';
   import { smartSentry } from '/@/lib/smart-sentry';
   import { SmartLoading } from '/@/components/framework/smart-loading';
 

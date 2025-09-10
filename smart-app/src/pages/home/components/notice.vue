@@ -28,7 +28,7 @@
   async function queryNoticeList() {
     try {
       loading.value = true;
-      const result = await noticeApi.queryEmployeeNotice(queryForm);
+      const result = await noticeApi.queryBackendUserNotice(queryForm);
       data.value = result.data.list;
     } catch (err) {
       smartSentry.captureError(err);

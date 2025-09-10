@@ -16,7 +16,7 @@
 
       <a-col :span="18" class="height100">
         <div class="employee-box height100">
-          <EmployeeList style="flex-grow: 2.5" class="employee" :departmentId="selectedDepartmentId" />
+          <BackendUserList style="flex-grow: 2.5" class="employee" :departmentId="selectedDepartmentId" />
         </div>
       </a-col>
     </a-row>
@@ -26,7 +26,7 @@
   import _ from 'lodash';
   import { computed, ref } from 'vue';
   import DepartmentTree from './components/department-tree/index.vue';
-  import EmployeeList from './components/employee-list/index.vue';
+  import BackendUserList from './components/employee-list/index.vue';
 
   const departmentTree = ref();
 

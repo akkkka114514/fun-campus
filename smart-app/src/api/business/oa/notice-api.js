@@ -22,7 +22,7 @@ export const noticeApi = {
   },
 
   // 通知公告-员工-查询 @author zhuoda
-  queryEmployeeNotice(param) {
+  queryBackendUserNotice(param) {
     return postRequest('/oa/notice/employee/query', param);
   },
 

@@ -66,7 +66,7 @@
       const departmentResult = await departmentApi.queryDepartmentTree();
       const employeeResult = await employeeApi.queryAll();
       const departmentTree = departmentResult.data;
-      buildDepartmentEmployeeTree(departmentTree, employeeResult.data);
+      buildDepartmentBackendUserTree(departmentTree, employeeResult.data);
 
       if (!_.isEmpty(departmentTree)) {
         treeData.value = departmentTree;
@@ -81,7 +81,7 @@
   }
 
   // 递归构建部门员工树
-  function buildDepartmentEmployeeTree(departmentTree, employeeList) {
+  function buildDepartmentBackendUserTree(departmentTree, employeeList) {
     for (const department of departmentTree) {
       if (department.dataType && department.dataType === NOTICE_VISIBLE_RANGE_DATA_TYPE_ENUM.EMPLOYEE.value) {
         continue;
@@ -108,7 +108,7 @@
         department.children = [];
       }
       department.children.push(...employeeChildren);
-      buildDepartmentEmployeeTree(department.children, employeeList);
+      buildDepartmentBackendUserTree(department.children, employeeList);
     }
   }
 

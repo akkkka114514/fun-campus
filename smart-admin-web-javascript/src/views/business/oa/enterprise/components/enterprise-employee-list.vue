@@ -14,11 +14,11 @@
         关键字：
         <a-input style="width: 250px" v-model:value="queryForm.keyword" placeholder="姓名/手机号/登录账号" />
         <a-button class="button-style" type="primary" @click="onSearch">搜索</a-button>
-        <a-button class="button-style" type="default" @click="resetQueryEmployee">重置</a-button>
+        <a-button class="button-style" type="default" @click="resetQueryBackendUser">重置</a-button>
       </div>
       <div>
-        <a-button class="button-style" type="primary" @click="addEmployee" v-privilege="'oa:enterprise:addEmployee'"> 添加员工 </a-button>
-        <a-button class="button-style" type="primary" danger @click="batchDelete" v-privilege="'oa:enterprise:deleteEmployee'"> 批量移除 </a-button>
+        <a-button class="button-style" type="primary" @click="addBackendUser" v-privilege="'oa:enterprise:addBackendUser'"> 添加员工 </a-button>
+        <a-button class="button-style" type="primary" danger @click="batchDelete" v-privilege="'oa:enterprise:deleteBackendUser'"> 批量移除 </a-button>
       </div>
     </div>
     <a-card size="small" :bordered="false" :hoverable="false">
@@ -27,7 +27,7 @@
           class="smart-margin-bottom5"
           v-model="columns"
           :tableId="TABLE_ID_CONST.BUSINESS.OA.ENTERPRISE_EMPLOYEE"
-          :refresh="queryEmployee"
+          :refresh="queryBackendUser"
         />
       </a-row>
       <a-table
@@ -48,7 +48,7 @@
             <span>{{ $smartEnumPlugin.getDescByValue('GENDER_ENUM', text) }}</span>
           </template>
           <template v-if="column.dataIndex === 'operate'">
-            <a-button type="link" @click="deleteEmployee(record.employeeId)" v-privilege="'oa:enterprise:deleteEmployee'">移除</a-button>
+            <a-button type="link" @click="deleteBackendUser(record.employeeId)" v-privilege="'oa:enterprise:deleteBackendUser'">移除</a-button>
           </template>
         </template>
       </a-table>
@@ -62,16 +62,16 @@
           v-model:current="queryForm.pageNum"
           v-model:pageSize="queryForm.pageSize"
           :total="total"
-          @change="queryEmployee"
+          @change="queryBackendUser"
           :show-total="showTableTotal"
         />
       </div>
-      <EmployeeTableSelectModal ref="selectEmployeeModal" @selectData="selectData" />
+      <BackendUserTableSelectModal ref="selectBackendUserModal" @selectData="selectData" />
     </a-card>
   </div>
 </template>
 <script setup>
-  import EmployeeTableSelectModal from '/@/components/system/employee-table-select-modal/index.vue';
+  import BackendUserTableSelectModal from '/@/components/system/employee-table-select-modal/index.vue';
 
   import { message, Modal } from 'ant-design-vue';
   import _ from 'lodash';
@@ -141,21 +141,21 @@
   const tableData = ref([]);
   const tableLoading = ref(false);
 
-  function resetQueryEmployee() {
+  function resetQueryBackendUser() {
     queryForm.keyword = '';
-    queryEmployee();
+    queryBackendUser();
   }
 
   function onSearch() {
     queryForm.pageNum = 1;
-    queryEmployee();
+    queryBackendUser();
   }
 
-  async function queryEmployee() {
+  async function queryBackendUser() {
     try {
       tableLoading.value = true;
       queryForm.enterpriseId = props.enterpriseId;
-      let res = await enterpriseApi.queryPageEmployeeList(queryForm);
+      let res = await enterpriseApi.queryPageBackendUserList(queryForm);
       tableData.value = res.data.list;
       total.value = res.data.total;
     } catch (e) {
@@ -176,9 +176,9 @@
         employeeIdList: list,
         enterpriseId: props.enterpriseId,
       };
-      await enterpriseApi.addEmployee(params);
+      await enterpriseApi.addBackendUser(params);
       message.success('添加成功');
-      await queryEmployee();
+      await queryBackendUser();
     } catch (e) {
       smartSentry.captureError(e);
     } finally {
@@ -189,17 +189,17 @@
   // --------------------------- 添加员工 ---------------------------
 
   // 添加员工
-  const selectEmployeeModal = ref();
-  async function addEmployee() {
+  const selectBackendUserModal = ref();
+  async function addBackendUser() {
     let res = await enterpriseApi.employeeList([props.enterpriseId]);
     let selectedIdList = res.data.map((e) => e.employeeId) || [];
-    selectEmployeeModal.value.showModal(selectedIdList);
+    selectBackendUserModal.value.showModal(selectedIdList);
   }
 
   // --------------------------- 删除 ---------------------------
 
   // 删除员工方法
-  async function deleteEmployee(employeeId) {
+  async function deleteBackendUser(employeeId) {
     Modal.confirm({
       title: '提示',
       content: '确定要删除该企业下的员工么？',
@@ -212,9 +212,9 @@
             employeeIdList: [employeeId],
             enterpriseId: props.enterpriseId,
           };
-          await enterpriseApi.deleteEmployee(param);
+          await enterpriseApi.deleteBackendUser(param);
           message.success('移除成功');
-          await queryEmployee();
+          await queryBackendUser();
         } catch (e) {
           smartSentry.captureError(e);
         } finally {
@@ -251,10 +251,10 @@
             employeeIdList: selectedRowKeyList.value,
             enterpriseId: props.enterpriseId,
           };
-          await enterpriseApi.deleteEmployee(params);
+          await enterpriseApi.deleteBackendUser(params);
           message.success('移除成功');
           selectedRowKeyList.value = [];
-          await queryEmployee();
+          await queryBackendUser();
         } catch (e) {
           smartSentry.captureError(e);
         } finally {
@@ -270,7 +270,7 @@
     () => props.enterpriseId,
     (e) => {
       if (e) {
-        queryEmployee();
+        queryBackendUser();
       }
     },
     { immediate: true }

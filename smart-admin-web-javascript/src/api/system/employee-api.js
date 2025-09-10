@@ -20,19 +20,19 @@ export const employeeApi = {
   /**
    * 员工管理查询
    */
-  queryEmployee: (params) => {
+  queryBackendUser: (params) => {
     return postRequest('/employee/query', params);
   },
   /**
    * 添加员工
    */
-  addEmployee: (params) => {
+  addBackendUser: (params) => {
     return postRequest('/employee/add', params);
   },
   /**
    * 更新员工信息
    */
-  updateEmployee: (params) => {
+  updateBackendUser: (params) => {
     return postRequest('/employee/update', params);
   },
   /**
@@ -50,19 +50,19 @@ export const employeeApi = {
   /**
    * 删除员工
    */
-  deleteEmployee: (employeeId) => {
+  deleteBackendUser: (employeeId) => {
     return getRequest(`/employee/delete/${employeeId}`);
   },
   /**
    * 批量删除员工
    */
-  batchDeleteEmployee: (employeeIdList) => {
+  batchDeleteBackendUser: (employeeIdList) => {
     return postRequest('/employee/update/batch/delete', employeeIdList);
   },
   /**
    * 批量调整员工部门
    */
-  batchUpdateDepartmentEmployee: (updateParam) => {
+  batchUpdateDepartmentBackendUser: (updateParam) => {
     return postRequest('/employee/update/batch/department', updateParam);
   },
   /**
@@ -74,7 +74,7 @@ export const employeeApi = {
   /**
    * 修改密码
    */
-  updateEmployeePassword: (param) => {
+  updateBackendUserPassword: (param) => {
     return postEncryptRequest('/employee/update/password', param);
   },
   /**
@@ -92,7 +92,7 @@ export const employeeApi = {
   /**
    * 查询员工-根据部门id
    */
-  queryEmployeeByDeptId: (departmentId) => {
-    return getRequest(`/employee/getAllEmployeeByDepartmentId/${departmentId}`);
+  queryBackendUserByDeptId: (departmentId) => {
+    return getRequest(`/employee/getAllBackendUserByDepartmentId/${departmentId}`);
   },
 };

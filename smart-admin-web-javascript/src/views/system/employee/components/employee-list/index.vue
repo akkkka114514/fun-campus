@@ -12,12 +12,12 @@
     <div class="header">
       <a-typography-title :level="5">部门人员</a-typography-title>
       <div class="query-operate">
-        <a-radio-group v-model:value="params.disabledFlag" style="margin: 8px; flex-shrink: 0" @change="queryEmployeeByKeyword(false)">
+        <a-radio-group v-model:value="params.disabledFlag" style="margin: 8px; flex-shrink: 0" @change="queryBackendUserByKeyword(false)">
           <a-radio-button :value="undefined">全部</a-radio-button>
           <a-radio-button :value="false">启用</a-radio-button>
           <a-radio-button :value="true">禁用</a-radio-button>
         </a-radio-group>
-        <a-input-search v-model:value.trim="params.keyword" placeholder="姓名/手机号/登录账号" @search="queryEmployeeByKeyword(true)">
+        <a-input-search v-model:value.trim="params.keyword" placeholder="姓名/手机号/登录账号" @search="queryBackendUserByKeyword(true)">
           <template #enterButton>
             <a-button type="primary">
               <template #icon>
@@ -36,12 +36,12 @@
       </div>
     </div>
     <div class="btn-group">
-      <a-button class="btn" type="primary" @click="showDrawer" v-privilege="'system:employee:add'">添加成员</a-button>
-      <a-button class="btn" @click="updateEmployeeDepartment" v-privilege="'system:employee:department:update'">调整部门</a-button>
-      <a-button class="btn" @click="batchDelete" v-privilege="'system:employee:delete'">批量删除</a-button>
+      <a-button class="btn" type="primary" @click="showDrawer" v-privilege="'system:backendUser:add'">添加成员</a-button>
+      <a-button class="btn" @click="updateBackendUserDepartment" v-privilege="'system:backendUser:department:update'">调整部门</a-button>
+      <a-button class="btn" @click="batchDelete" v-privilege="'system:backendUser:delete'">批量删除</a-button>
 
       <span class="smart-table-column-operate">
-        <TableOperator v-model="columns" :tableId="TABLE_ID_CONST.SYSTEM.EMPLOYEE" :refresh="queryEmployee" />
+        <TableOperator v-model="columns" :tableId="TABLE_ID_CONST.SYSTEM.EMPLOYEE" :refresh="queryBackendUser" />
       </span>
     </div>
 
@@ -68,15 +68,15 @@
         </template>
         <template v-else-if="column.dataIndex === 'operate'">
           <div class="smart-table-operate">
-            <a-button v-privilege="'system:employee:update'" type="link" size="small" @click="showDrawer(record)">编辑</a-button>
+            <a-button v-privilege="'system:backendUser:update'" type="link" size="small" @click="showDrawer(record)">编辑</a-button>
             <a-button
-              v-privilege="'system:employee:password:reset'"
+              v-privilege="'system:backendUser:password:reset'"
               type="link"
               size="small"
               @click="resetPassword(record.employeeId, record.loginName)"
               >重置密码</a-button
             >
-            <a-button v-privilege="'system:employee:disabled'" type="link" @click="updateDisabled(record.employeeId, record.disabledFlag)">{{
+            <a-button v-privilege="'system:backendUser:disabled'" type="link" @click="updateDisabled(record.employeeId, record.disabledFlag)">{{
               record.disabledFlag ? '启用' : '禁用'
             }}</a-button>
           </div>
@@ -93,13 +93,13 @@
         v-model:current="params.pageNum"
         v-model:pageSize="params.pageSize"
         :total="total"
-        @change="queryEmployee"
+        @change="queryBackendUser"
         :show-total="showTableTotal"
       />
     </div>
-    <EmployeeFormModal ref="employeeFormModal" @refresh="queryEmployee" @show-account="showAccount" />
-    <EmployeeDepartmentFormModal ref="employeeDepartmentFormModal" @refresh="queryEmployee" />
-    <EmployeePasswordDialog ref="employeePasswordDialog" />
+    <BackendUserFormModal ref="employeeFormModal" @refresh="queryBackendUser" @show-account="showAccount" />
+    <BackendUserDepartmentFormModal ref="employeeDepartmentFormModal" @refresh="queryBackendUser" />
+    <BackendUserPasswordDialog ref="employeePasswordDialog" />
   </a-card>
 </template>
 <script setup>
@@ -110,9 +110,9 @@
   import { employeeApi } from '/@/api/system/employee-api';
   import { PAGE_SIZE } from '/@/constants/common-const';
   import { SmartLoading } from '/@/components/framework/smart-loading';
-  import EmployeeFormModal from '../employee-form-modal/index.vue';
-  import EmployeeDepartmentFormModal from '../employee-department-form-modal/index.vue';
-  import EmployeePasswordDialog from '../employee-password-dialog/index.vue';
+  import BackendUserFormModal from '../employee-form-modal/index.vue';
+  import BackendUserDepartmentFormModal from '../employee-department-form-modal/index.vue';
+  import BackendUserPasswordDialog from '../employee-password-dialog/index.vue';
   import { PAGE_SIZE_OPTIONS, showTableTotal } from '/@/constants/common-const';
   import { smartSentry } from '/@/lib/smart-sentry';
   import TableOperator from '/@/components/support/table-operator/index.vue';
@@ -210,16 +210,16 @@
   // 搜索重置
   function reset() {
     Object.assign(params, defaultParams);
-    queryEmployee();
+    queryBackendUser();
   }
 
   const tableLoading = ref(false);
   // 查询
-  async function queryEmployee() {
+  async function queryBackendUser() {
     tableLoading.value = true;
     try {
       params.departmentId = props.departmentId;
-      let res = await employeeApi.queryEmployee(params);
+      let res = await employeeApi.queryBackendUser(params);
       for (const item of res.data.list) {
         item.roleNameList = _.join(item.roleNameList, ',');
       }
@@ -236,12 +236,12 @@
   }
 
   // 根据关键字 查询
-  async function queryEmployeeByKeyword(allDepartment) {
+  async function queryBackendUserByKeyword(allDepartment) {
     tableLoading.value = true;
     try {
       params.pageNum = 1;
       params.departmentId = allDepartment ? undefined : props.departmentId;
-      let res = await employeeApi.queryEmployee(params);
+      let res = await employeeApi.queryBackendUser(params);
       for (const item of res.data.list) {
         item.roleNameList = _.join(item.roleNameList, ',');
       }
@@ -262,7 +262,7 @@
     () => {
       if (props.departmentId !== params.departmentId) {
         params.pageNum = 1;
-        queryEmployee();
+        queryBackendUser();
       }
     },
     { immediate: true }
@@ -297,9 +297,9 @@
       async onOk() {
         SmartLoading.show();
         try {
-          await employeeApi.batchDeleteEmployee(employeeIdArray);
+          await employeeApi.batchDeleteBackendUser(employeeIdArray);
           message.success('删除成功');
-          queryEmployee();
+          queryBackendUser();
           selectedRowKeys.value = [];
           selectedRows.value = [];
         } catch (error) {
@@ -316,7 +316,7 @@
   // 批量更新员工部门
   const employeeDepartmentFormModal = ref();
 
-  function updateEmployeeDepartment() {
+  function updateBackendUserDepartment() {
     if (!hasSelected.value) {
       message.warning('请选择要调整部门的员工');
       return;
@@ -355,7 +355,7 @@
           let { data: passWord } = await employeeApi.resetPassword(id);
           message.success('重置成功');
           employeePasswordDialog.value.showModal(name, passWord);
-          queryEmployee();
+          queryBackendUser();
         } catch (error) {
           smartSentry.captureError(error);
         } finally {
@@ -380,7 +380,7 @@
         try {
           await employeeApi.updateDisabled(id);
           message.success(`${disabledFlag ? '启用' : '禁用'}成功`);
-          queryEmployee();
+          queryBackendUser();
         } catch (error) {
           smartSentry.captureError(error);
         } finally {

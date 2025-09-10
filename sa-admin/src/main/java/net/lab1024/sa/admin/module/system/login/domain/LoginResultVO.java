@@ -3,7 +3,6 @@ package net.lab1024.sa.admin.module.system.login.domain;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import net.lab1024.sa.admin.module.system.menu.domain.vo.MenuVO;
-import net.minidev.json.annotate.JsonIgnore;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,7 +17,7 @@ import java.util.List;
  * @Copyright  <a href="https://1024lab.net">1024创新实验室</a>
  */
 @Data
-public class LoginResultVO extends RequestEmployee {
+public class LoginResultVO extends RequestBackendUser {
 
     @Schema(description = "token")
     private String token;

@@ -201,7 +201,7 @@
   }
 
   // 更新员工信息
-  async function updateEmployee() {
+  async function updateBackendUser() {
     SmartLoading.show();
     try {
       await employeeApi.updateCenter(form);
@@ -220,7 +220,7 @@
     formRef.value
       .validate()
       .then(() => {
-        updateEmployee();
+        updateBackendUser();
       })
       .catch((error) => {
         console.log('error', error);

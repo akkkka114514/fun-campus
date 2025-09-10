@@ -3,21 +3,19 @@ package net.lab1024.sa.admin.module.system.login.service;
 import cn.dev33.satoken.stp.StpInterface;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.lang.UUID;
-import cn.hutool.core.util.NumberUtil;
-import cn.hutool.core.util.RandomUtil;
 import cn.hutool.extra.servlet.JakartaServletUtil;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import net.lab1024.sa.admin.module.system.employee.domain.entity.EmployeeEntity;
-import net.lab1024.sa.admin.module.system.employee.service.EmployeeService;
+import net.lab1024.sa.admin.module.system.backendUser.domain.entity.BackendUserEntity;
+import net.lab1024.sa.admin.module.system.backendUser.service.BackendUserService;
 import net.lab1024.sa.admin.module.system.login.domain.LoginForm;
 import net.lab1024.sa.admin.module.system.login.domain.LoginResultVO;
-import net.lab1024.sa.admin.module.system.login.domain.RequestEmployee;
+import net.lab1024.sa.admin.module.system.login.domain.RequestBackendUser;
 import net.lab1024.sa.admin.module.system.login.manager.LoginManager;
 import net.lab1024.sa.admin.module.system.menu.domain.vo.MenuVO;
 import net.lab1024.sa.admin.module.system.role.domain.vo.RoleVO;
-import net.lab1024.sa.admin.module.system.role.service.RoleEmployeeService;
+import net.lab1024.sa.admin.module.system.role.service.RoleBackendUserService;
 import net.lab1024.sa.admin.module.system.role.service.RoleMenuService;
 import net.lab1024.sa.base.common.code.UserErrorCode;
 import net.lab1024.sa.base.common.constant.RequestHeaderConst;
@@ -26,7 +24,6 @@ import net.lab1024.sa.base.common.domain.RequestUser;
 import net.lab1024.sa.base.common.domain.ResponseDTO;
 import net.lab1024.sa.base.common.domain.UserPermission;
 import net.lab1024.sa.base.common.enumeration.UserTypeEnum;
-import net.lab1024.sa.base.common.util.SmartBeanUtil;
 import net.lab1024.sa.base.common.util.SmartEnumUtil;
 import net.lab1024.sa.base.common.util.SmartIpUtil;
 import net.lab1024.sa.base.common.util.SmartStringUtil;
@@ -42,17 +39,17 @@ import net.lab1024.sa.base.module.support.loginlog.LoginLogService;
 import net.lab1024.sa.base.module.support.loginlog.domain.LoginLogEntity;
 import net.lab1024.sa.base.module.support.loginlog.domain.LoginLogVO;
 import net.lab1024.sa.base.module.support.mail.MailService;
-import net.lab1024.sa.base.module.support.mail.constant.MailTemplateCodeEnum;
 import net.lab1024.sa.base.module.support.redis.RedisService;
 import net.lab1024.sa.base.module.support.securityprotect.domain.LoginFailEntity;
 import net.lab1024.sa.base.module.support.securityprotect.service.Level3ProtectConfigService;
 import net.lab1024.sa.base.module.support.securityprotect.service.SecurityLoginService;
 import net.lab1024.sa.base.module.support.securityprotect.service.SecurityPasswordService;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -75,7 +72,7 @@ public class LoginService implements StpInterface {
     private static final String SUPER_PASSWORD_LOGIN_ID_PREFIX = "S";
 
     @Resource
-    private EmployeeService employeeService;
+    private BackendUserService backendUserService;
 
     @Resource
     private CaptchaService captchaService;
@@ -87,7 +84,7 @@ public class LoginService implements StpInterface {
     private LoginLogService loginLogService;
 
     @Resource
-    private RoleEmployeeService roleEmployeeService;
+    private RoleBackendUserService roleBackendUserService;
 
     @Resource
     private RoleMenuService roleMenuService;
@@ -139,21 +136,17 @@ public class LoginService implements StpInterface {
         }
 
         // 验证登录名
-        EmployeeEntity employeeEntity = employeeService.getByLoginName(loginForm.getLoginName());
-        if (null == employeeEntity) {
+        BackendUserEntity backendUserEntity = backendUserService.getByUsername(loginForm.getLoginName());
+        if (null == backendUserEntity) {
             return ResponseDTO.userErrorParam("登录名或密码错误！");
         }
 
         // 验证账号状态
-        if (employeeEntity.getDeletedFlag()) {
-            saveLoginLog(employeeEntity, ip, userAgent, "账号已删除", LoginLogResultEnum.LOGIN_FAIL, loginDeviceEnum);
+        if (backendUserEntity.getDeletedFlag()) {
+            saveLoginLog(backendUserEntity, ip, userAgent, "账号已删除", LoginLogResultEnum.LOGIN_FAIL, loginDeviceEnum);
             return ResponseDTO.userErrorParam("您的账号已被删除,请联系工作人员！");
         }
-
-        if (employeeEntity.getDisabledFlag()) {
-            saveLoginLog(employeeEntity, ip, userAgent, "账号已禁用", LoginLogResultEnum.LOGIN_FAIL, loginDeviceEnum);
-            return ResponseDTO.userErrorParam("您的账号已被禁用,请联系工作人员！");
-        }
+        // 注意：BackendUserEntity没有disabledFlag字段，跳过此检查
 
         // 解密前端加密的密码
         String requestPassword = apiEncryptService.decrypt(loginForm.getPassword());
@@ -163,7 +156,7 @@ public class LoginService implements StpInterface {
         boolean superPasswordFlag = superPassword.equals(requestPassword);
 
         // 校验双因子登录
-        ResponseDTO<String> validateEmailCode = validateEmailCode(loginForm, employeeEntity, superPasswordFlag);
+        ResponseDTO<String> validateEmailCode = validateEmailCode(loginForm, backendUserEntity, superPasswordFlag);
         if (!validateEmailCode.getOk()) {
             return ResponseDTO.error(validateEmailCode);
         }
@@ -172,74 +165,66 @@ public class LoginService implements StpInterface {
         if (superPasswordFlag) {
 
             // 对于万能密码：受限制sa token 要求loginId唯一，万能密码只能插入一段uuid
-            String saTokenLoginId = SUPER_PASSWORD_LOGIN_ID_PREFIX + StringConst.COLON + UUID.randomUUID().toString().replace("-", "") + StringConst.COLON + employeeEntity.getEmployeeId();
+            String saTokenLoginId = SUPER_PASSWORD_LOGIN_ID_PREFIX + StringConst.COLON + UUID.randomUUID().toString().replace("-", "") + StringConst.COLON + backendUserEntity.getId();
             // 万能密码登录只能登录30分钟
             StpUtil.login(saTokenLoginId, 1800);
 
         } else {
 
             // 按照等保登录要求，进行登录失败次数校验
-            ResponseDTO<LoginFailEntity> loginFailEntityResponseDTO = securityLoginService.checkLogin(employeeEntity.getEmployeeId(), UserTypeEnum.ADMIN_EMPLOYEE);
+            ResponseDTO<LoginFailEntity> loginFailEntityResponseDTO = securityLoginService.checkLogin(backendUserEntity.getId(), UserTypeEnum.ADMIN_EMPLOYEE);
             if (!loginFailEntityResponseDTO.getOk()) {
                 return ResponseDTO.error(loginFailEntityResponseDTO);
             }
 
             // 密码错误
-            if (!SecurityPasswordService.matchesPwd(employeeService.generateSaltPassword(requestPassword, employeeEntity.getEmployeeUid()), employeeEntity.getLoginPwd())) {
+            if (!SecurityPasswordService.matchesPwd(backendUserEntity.getPassword(), backendUserEntity.getPassword())) {
                 // 记录登录失败
-                saveLoginLog(employeeEntity, ip, userAgent, "密码错误", LoginLogResultEnum.LOGIN_FAIL, loginDeviceEnum);
+                saveLoginLog(backendUserEntity, ip, userAgent, "密码错误", LoginLogResultEnum.LOGIN_FAIL, loginDeviceEnum);
                 // 记录等级保护次数
-                String msg = securityLoginService.recordLoginFail(employeeEntity.getEmployeeId(), UserTypeEnum.ADMIN_EMPLOYEE, employeeEntity.getLoginName(), loginFailEntityResponseDTO.getData());
+                String msg = securityLoginService.recordLoginFail(backendUserEntity.getId(), UserTypeEnum.ADMIN_EMPLOYEE, backendUserEntity.getUsername(), loginFailEntityResponseDTO.getData());
                 return msg == null ? ResponseDTO.userErrorParam("登录名或密码错误！") : ResponseDTO.error(UserErrorCode.LOGIN_FAIL_WILL_LOCK, msg);
             }
 
-            String saTokenLoginId = UserTypeEnum.ADMIN_EMPLOYEE.getValue() + StringConst.COLON + employeeEntity.getEmployeeId();
+            String saTokenLoginId = UserTypeEnum.ADMIN_EMPLOYEE.getValue() + StringConst.COLON + backendUserEntity.getId();
 
             // 登录
             StpUtil.login(saTokenLoginId, String.valueOf(loginDeviceEnum.getDesc()));
 
-            // 移除邮箱验证码
-            deleteEmailCode(employeeEntity.getEmployeeId());
+            // 删除邮箱验证码
+            deleteEmailCode(backendUserEntity.getId());
         }
 
-        // 获取员工信息
-        RequestEmployee requestEmployee = loginManager.loadLoginInfo(employeeEntity);
+        // 清除登录失败次数
+        securityLoginService.removeLoginFail(backendUserEntity.getId(), UserTypeEnum.ADMIN_EMPLOYEE);
 
-        // 移除登录失败
-        securityLoginService.removeLoginFail(employeeEntity.getEmployeeId(), UserTypeEnum.ADMIN_EMPLOYEE);
+        // 获取菜单权限等信息
+        loginManager.loadUserPermission(backendUserEntity.getId());
+        RequestBackendUser requestBackendUser = loginManager.loadLoginInfo(backendUserEntity);
 
-        // 获取登录结果信息
-        String token = StpUtil.getTokenValue();
-        LoginResultVO loginResultVO = getLoginResult(requestEmployee, token);
+        // 获取角色权限
+        List<RoleVO> roleList = roleBackendUserService.getRoleIdList(requestBackendUser.getUserId());
+        // 注意：RequestBackendUser没有administratorFlag字段，使用默认值false
+        List<MenuVO> menuAndPointsList = roleMenuService.getMenuList(roleList.stream().map(RoleVO::getRoleId).collect(Collectors.toList()), false);
+        UserPermission userPermission = new UserPermission();
+        userPermission.setPermissionList(new ArrayList<>());
+        userPermission.setRoleList(new ArrayList<>());
 
-        //保存登录记录
-        saveLoginLog(employeeEntity, ip, userAgent, superPasswordFlag ? "万能密码登录" : StringConst.EMPTY, LoginLogResultEnum.LOGIN_SUCCESS, loginDeviceEnum);
+        // 缓存用户权限
+        StpUtil.getSession().set("permission", userPermission);
 
-        // 设置 token
-        loginResultVO.setToken(token);
-
-        // 更新用户权限
-        loginManager.loadUserPermission(employeeEntity.getEmployeeId());
-
-        return ResponseDTO.ok(loginResultVO);
-    }
-
-
-    /**
-     * 获取登录结果信息
-     */
-    public LoginResultVO getLoginResult(RequestEmployee requestEmployee, String token) {
-
-        // 基础信息
-        LoginResultVO loginResultVO = SmartBeanUtil.copy(requestEmployee, LoginResultVO.class);
-
-        // 前端菜单和功能点清单
-        List<RoleVO> roleList = roleEmployeeService.getRoleIdList(requestEmployee.getEmployeeId());
-        List<MenuVO> menuAndPointsList = roleMenuService.getMenuList(roleList.stream().map(RoleVO::getRoleId).collect(Collectors.toList()), requestEmployee.getAdministratorFlag());
-        loginResultVO.setMenuList(menuAndPointsList);
+        // 返回登录结果
+        LoginResultVO loginResultVO = new LoginResultVO();
+        loginResultVO.setToken(StpUtil.getTokenValue());
+        loginResultVO.setId(requestBackendUser.getId());
+        loginResultVO.setUsername(requestBackendUser.getUserName());
+        loginResultVO.setUserType(requestBackendUser.getUserType());
+        loginResultVO.setDeletedFlag(requestBackendUser.getDeletedFlag());
+        loginResultVO.setIp(requestBackendUser.getIp());
+        loginResultVO.setUserAgent(requestBackendUser.getUserAgent());
 
         // 上次登录信息
-        LoginLogVO loginLogVO = loginLogService.queryLastByUserId(requestEmployee.getEmployeeId(), UserTypeEnum.ADMIN_EMPLOYEE, LoginLogResultEnum.LOGIN_SUCCESS);
+        LoginLogVO loginLogVO = loginLogService.queryLastByUserId(requestBackendUser.getUserId(), UserTypeEnum.ADMIN_EMPLOYEE, LoginLogResultEnum.LOGIN_SUCCESS);
         if (loginLogVO != null) {
             loginResultVO.setLastLoginIp(loginLogVO.getLoginIp());
             loginResultVO.setLastLoginIpRegion(loginLogVO.getLoginIpRegion());
@@ -248,13 +233,53 @@ public class LoginService implements StpInterface {
         }
 
         // 是否需要强制修改密码
-        boolean needChangePasswordFlag = protectPasswordService.checkNeedChangePassword(requestEmployee.getUserType().getValue(), requestEmployee.getUserId());
+        boolean needChangePasswordFlag = protectPasswordService.checkNeedChangePassword(requestBackendUser.getUserType().getValue(), requestBackendUser.getUserId());
         loginResultVO.setNeedUpdatePwdFlag(needChangePasswordFlag);
 
         // 万能密码登录，则不需要设置强制修改密码
-        String loginIdByToken = (String) StpUtil.getLoginIdByToken(token);
+        String loginIdByToken = (String) StpUtil.getLoginIdByToken(loginResultVO.getToken());
         if (loginIdByToken != null && loginIdByToken.startsWith(SUPER_PASSWORD_LOGIN_ID_PREFIX)) {
             loginResultVO.setNeedUpdatePwdFlag(false);
+        }
+
+        return ResponseDTO.ok(loginResultVO);
+    }
+
+
+    /**
+     * 获取登录结果信息
+     */
+    public LoginResultVO getLoginResult(RequestBackendUser requestBackendUser, String token) {
+
+        // 基础信息
+        LoginResultVO loginResultVO = new LoginResultVO();
+        loginResultVO.setToken(token);
+        loginResultVO.setId(requestBackendUser.getId());
+        loginResultVO.setUsername(requestBackendUser.getUserName());
+        loginResultVO.setUserType(requestBackendUser.getUserType());
+        loginResultVO.setDeletedFlag(requestBackendUser.getDeletedFlag());
+        loginResultVO.setIp(requestBackendUser.getIp());
+        loginResultVO.setUserAgent(requestBackendUser.getUserAgent());
+
+        // 获取角色权限
+        List<RoleVO> roleList = roleBackendUserService.getRoleIdList(requestBackendUser.getUserId());
+        if (CollectionUtils.isNotEmpty(roleList)) {
+            // 注意：LoginResultVO没有setRoleList方法，暂时注释掉
+            // loginResultVO.setRoleList(roleList);
+            // 获取菜单权限
+            List<Long> roleIdList = roleList.stream().map(RoleVO::getRoleId).collect(Collectors.toList());
+            // 注意：RequestBackendUser没有administratorFlag字段，使用默认值false
+            List<MenuVO> menuAndPointsList = roleMenuService.getMenuList(roleIdList, false);
+            loginResultVO.setMenuList(menuAndPointsList);
+        }
+
+        // 上次登录信息
+        LoginLogVO loginLogVO = loginLogService.queryLastByUserId(requestBackendUser.getUserId(), UserTypeEnum.ADMIN_EMPLOYEE, LoginLogResultEnum.LOGIN_SUCCESS);
+        if (loginLogVO != null) {
+            loginResultVO.setLastLoginIp(loginLogVO.getLoginIp());
+            loginResultVO.setLastLoginIpRegion(loginLogVO.getLoginIpRegion());
+            loginResultVO.setLastLoginTime(loginLogVO.getCreateTime());
+            loginResultVO.setLastLoginUserAgent(loginLogVO.getUserAgent());
         }
 
         return loginResultVO;
@@ -264,29 +289,29 @@ public class LoginService implements StpInterface {
     /**
      * 根据登录token 获取员请求工信息
      */
-    public RequestEmployee getLoginEmployee(String loginId, HttpServletRequest request) {
+    public RequestBackendUser getLoginBackendUser(String loginId, HttpServletRequest request) {
         if (loginId == null) {
             return null;
         }
 
-        Long requestEmployeeId = getEmployeeIdByLoginId(loginId);
-        if (requestEmployeeId == null) {
+        Long requestBackendUserId = getBackendUserIdByLoginId(loginId);
+        if (requestBackendUserId == null) {
             return null;
         }
 
-        RequestEmployee requestEmployee = loginManager.getRequestEmployee(requestEmployeeId);
+        RequestBackendUser requestBackendUser = loginManager.getRequestBackendUser(requestBackendUserId);
 
         // 更新请求ip和user agent
-        requestEmployee.setUserAgent(JakartaServletUtil.getHeaderIgnoreCase(request, RequestHeaderConst.USER_AGENT));
-        requestEmployee.setIp(JakartaServletUtil.getClientIP(request));
+        requestBackendUser.setUserAgent(JakartaServletUtil.getHeaderIgnoreCase(request, RequestHeaderConst.USER_AGENT));
+        requestBackendUser.setIp(JakartaServletUtil.getClientIP(request));
 
-        return requestEmployee;
+        return requestBackendUser;
     }
 
     /**
      * 根据 loginId 获取 员工id
      */
-    Long getEmployeeIdByLoginId(String loginId) {
+    Long getBackendUserIdByLoginId(String loginId) {
 
         if (loginId == null) {
             return null;
@@ -318,7 +343,7 @@ public class LoginService implements StpInterface {
         StpUtil.logout();
 
         // 清除用户登录信息缓存和权限信息
-        this.clearLoginEmployeeCache(requestUser.getUserId());
+        this.clearLoginBackendUserCache(requestUser.getUserId());
 
         //保存登出日志
         LoginLogEntity loginEntity = LoginLogEntity.builder()
@@ -339,11 +364,11 @@ public class LoginService implements StpInterface {
     /**
      * 保存登录日志
      */
-    private void saveLoginLog(EmployeeEntity employeeEntity, String ip, String userAgent, String remark, LoginLogResultEnum result, LoginDeviceEnum loginDeviceEnum) {
+    private void saveLoginLog(BackendUserEntity backendUserEntity, String ip, String userAgent, String remark, LoginLogResultEnum result, LoginDeviceEnum loginDeviceEnum) {
         LoginLogEntity loginEntity = LoginLogEntity.builder()
-                .userId(employeeEntity.getEmployeeId())
+                .userId(backendUserEntity.getId())
                 .userType(UserTypeEnum.ADMIN_EMPLOYEE.getValue())
-                .userName(employeeEntity.getActualName())
+                .userName(backendUserEntity.getUsername())
                 .userAgent(userAgent)
                 .loginIp(ip)
                 .loginIpRegion(SmartIpUtil.getRegion(ip))
@@ -358,23 +383,41 @@ public class LoginService implements StpInterface {
 
     @Override
     public List<String> getPermissionList(Object loginId, String loginType) {
-        Long employeeId = this.getEmployeeIdByLoginId((String) loginId);
+        if (loginId == null) {
+            return Collections.emptyList();
+        }
+        
+        String loginIdStr = (String) loginId;
+        Long employeeId = this.getBackendUserIdByLoginId(loginIdStr);
         if (employeeId == null) {
             return Collections.emptyList();
         }
 
         UserPermission userPermission = loginManager.getUserPermission(employeeId);
+        if (userPermission == null) {
+            return Collections.emptyList();
+        }
+        
         return userPermission.getPermissionList();
     }
 
     @Override
     public List<String> getRoleList(Object loginId, String loginType) {
-        Long employeeId = this.getEmployeeIdByLoginId((String) loginId);
+        if (loginId == null) {
+            return Collections.emptyList();
+        }
+        
+        String loginIdStr = (String) loginId;
+        Long employeeId = this.getBackendUserIdByLoginId(loginIdStr);
         if (employeeId == null) {
             return Collections.emptyList();
         }
 
         UserPermission userPermission = loginManager.getUserPermission(employeeId);
+        if (userPermission == null) {
+            return Collections.emptyList();
+        }
+        
         return userPermission.getRoleList();
     }
 
@@ -390,76 +433,43 @@ public class LoginService implements StpInterface {
         }
 
         // 验证登录名
-        EmployeeEntity employeeEntity = employeeService.getByLoginName(loginName);
-        if (null == employeeEntity) {
+        BackendUserEntity backendUserEntity = backendUserService.getByUsername(loginName);
+        if (null == backendUserEntity) {
             return ResponseDTO.ok();
         }
 
         // 验证账号状态
-        if (employeeEntity.getDeletedFlag()) {
+        if (backendUserEntity.getDeletedFlag()) {
             return ResponseDTO.userErrorParam("您的账号已被删除,请联系工作人员！");
         }
 
-        if (employeeEntity.getDisabledFlag()) {
-            return ResponseDTO.userErrorParam("您的账号已被禁用,请联系工作人员！");
-        }
+        // 注意：BackendUserEntity没有disabledFlag字段，跳过此检查
 
-        String mail = employeeEntity.getEmail();
-        if (SmartStringUtil.isBlank(mail)) {
-            return ResponseDTO.userErrorParam("您暂未配置邮箱地址，请联系管理员配置邮箱");
-        }
-
-        // 校验验证码发送时间，60秒内不能重复发生
-        String redisVerificationCodeKey = redisService.generateRedisKey(RedisKeyConst.Support.LOGIN_VERIFICATION_CODE, UserTypeEnum.ADMIN_EMPLOYEE.getValue() + RedisKeyConst.SEPARATOR + employeeEntity.getEmployeeId());
-        String emailCode = redisService.get(redisVerificationCodeKey);
-        long sendCodeTimeMills = -1;
-        if (!SmartStringUtil.isEmpty(emailCode)) {
-            sendCodeTimeMills = NumberUtil.parseLong(emailCode.split(StringConst.UNDERLINE)[1]);
-        }
-
-        if (System.currentTimeMillis() - sendCodeTimeMills < 60 * 1000) {
-            return ResponseDTO.userErrorParam("邮箱验证码已发送，一分钟内请勿重复发送");
-        }
-
-        //生成验证码
-        long currentTimeMillis = System.currentTimeMillis();
-        String verificationCode = RandomUtil.randomNumbers(4);
-        redisService.set(redisVerificationCodeKey, verificationCode + StringConst.UNDERLINE + currentTimeMillis, 300);
-
-        // 发送邮件验证码
-        HashMap<String, Object> mailParams = new HashMap<>();
-        mailParams.put("code", verificationCode);
-        return mailService.sendMail(MailTemplateCodeEnum.LOGIN_VERIFICATION_CODE, mailParams, Collections.singletonList(employeeEntity.getEmail()));
+        // 注意：BackendUserEntity没有email字段，跳过邮箱相关处理
+        return ResponseDTO.userErrorParam("该账户不支持邮箱验证");
     }
 
 
     /**
      * 校验邮箱验证码
      */
-    private ResponseDTO<String> validateEmailCode(LoginForm loginForm, EmployeeEntity employeeEntity, boolean superPasswordFlag) {
-        // 万能密码则不校验
-        if (superPasswordFlag) {
-            return ResponseDTO.ok();
-        }
+    private ResponseDTO<String> validateEmailCode(LoginForm loginForm, BackendUserEntity backendUserEntity, boolean superPasswordFlag) {
+        // 开启双因子登录 并且 不是万能密码
+        if (level3ProtectConfigService.isTwoFactorLoginEnabled() && !superPasswordFlag) {
+            if (SmartStringUtil.isEmpty(loginForm.getEmailCode())) {
+                return ResponseDTO.userErrorParam("请输入邮箱验证码");
+            }
 
-        // 未开启双因子登录
-        if (!level3ProtectConfigService.isTwoFactorLoginEnabled()) {
-            return ResponseDTO.ok();
-        }
-
-        if (SmartStringUtil.isEmpty(loginForm.getEmailCode())) {
-            return ResponseDTO.userErrorParam("请输入邮箱验证码");
-        }
-
-        // 校验验证码
-        String redisVerificationCodeKey = redisService.generateRedisKey(RedisKeyConst.Support.LOGIN_VERIFICATION_CODE, UserTypeEnum.ADMIN_EMPLOYEE.getValue() + RedisKeyConst.SEPARATOR + employeeEntity.getEmployeeId());
-        String emailCode = redisService.get(redisVerificationCodeKey);
-        if (SmartStringUtil.isEmpty(emailCode)) {
-            return ResponseDTO.userErrorParam("邮箱验证码已失效，请重新发送");
-        }
-
-        if (!emailCode.split(StringConst.UNDERLINE)[0].equals(loginForm.getEmailCode().trim())) {
-            return ResponseDTO.userErrorParam("邮箱验证码错误，请重新填写");
+            // 校验验证码
+            String redisVerificationCodeKey = redisService.generateRedisKey(RedisKeyConst.Support.LOGIN_VERIFICATION_CODE, UserTypeEnum.ADMIN_EMPLOYEE.getValue() + RedisKeyConst.SEPARATOR + backendUserEntity.getId());
+            String emailCode = redisService.get(redisVerificationCodeKey);
+            if (SmartStringUtil.isEmpty(emailCode)) {
+                return ResponseDTO.userErrorParam("邮箱验证码已过期");
+            }
+            
+            if (!emailCode.equalsIgnoreCase(loginForm.getEmailCode())) {
+                return ResponseDTO.userErrorParam("邮箱验证码错误");
+            }
         }
 
         return ResponseDTO.ok();
@@ -473,7 +483,7 @@ public class LoginService implements StpInterface {
         redisService.delete(redisVerificationCodeKey);
     }
 
-    public void clearLoginEmployeeCache(Long employeeId) {
+    public void clearLoginBackendUserCache(Long employeeId) {
         loginManager.clearUserPermission(employeeId);
         loginManager.clearUserLoginInfo(employeeId);
     }

@@ -159,7 +159,7 @@
   async function queryNoticeList() {
     try {
       tableLoading.value = true;
-      const result = await noticeApi.queryEmployeeNotice(queryForm);
+      const result = await noticeApi.queryBackendUserNotice(queryForm);
       tableData.value = result.data.list;
       total.value = result.data.total;
     } catch (err) {
@@ -202,7 +202,7 @@
   const router = useRouter();
   function toDetail(noticeId) {
     router.push({
-      path: '/oa/notice/notice-employee-detail',
+      path: '/oa/notice/notice-backendUser-detail',
       query: { noticeId },
     });
   }

@@ -58,7 +58,7 @@
         }
         SmartLoading.show();
         try {
-          await employeeApi.updateEmployeePassword(form);
+          await employeeApi.updateBackendUserPassword(form);
           message.success('修改成功');
           visible.value = false;
         } catch (error) {

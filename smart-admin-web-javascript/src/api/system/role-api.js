@@ -55,31 +55,31 @@ export const roleApi = {
   /**
    * @description: 获取角色成员-员工列表
    */
-  queryRoleEmployee: (params) => {
-    return postRequest('/role/employee/queryEmployee', params);
+  queryRoleBackendUser: (params) => {
+    return postRequest('/role/employee/queryBackendUser', params);
   },
   /**
    * @description: 从角色成员列表中移除员工
    */
-  deleteEmployeeRole: (employeeId, roleId) => {
-    return getRequest('/role/employee/removeEmployee?employeeId=' + employeeId + '&roleId=' + roleId);
+  deleteBackendUserRole: (employeeId, roleId) => {
+    return getRequest('/role/employee/removeBackendUser?employeeId=' + employeeId + '&roleId=' + roleId);
   },
   /**
    * @description: 从角色成员列表中批量移除员工
    */
-  batchRemoveRoleEmployee: (data) => {
-    return postRequest('/role/employee/batchRemoveRoleEmployee', data);
+  batchRemoveRoleBackendUser: (data) => {
+    return postRequest('/role/employee/batchRemoveRoleBackendUser', data);
   },
   /**
    * @description: 根据角色id获取角色员工列表(无分页)
    */
-  getRoleAllEmployee: (roleId) => {
-    return getRequest(`/role/employee/getAllEmployeeByRoleId/${roleId}`);
+  getRoleAllBackendUser: (roleId) => {
+    return getRequest(`/role/employee/getAllBackendUserByRoleId/${roleId}`);
   },
   /**
    * @description: 角色成员列表中批量添加员工
    */
-  batchAddRoleEmployee: (data) => {
-    return postRequest('/role/employee/batchAddRoleEmployee', data);
+  batchAddRoleBackendUser: (data) => {
+    return postRequest('/role/employee/batchAddRoleBackendUser', data);
   },
 };

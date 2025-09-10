@@ -18,7 +18,7 @@
         <RoleDataScope />
       </a-tab-pane>
       <a-tab-pane key="3" tab="角色-员工列表">
-        <RoleEmployeeList />
+        <RoleBackendUserList />
       </a-tab-pane>
     </a-tabs>
   </a-card>
@@ -26,7 +26,7 @@
 <script setup>
   import { ref } from 'vue';
   import RoleDataScope from '../role-data-scope/index.vue';
-  import RoleEmployeeList from '../role-employee-list/index.vue';
+  import RoleBackendUserList from '../role-employee-list/index.vue';
   import RoleTree from '../role-tree/index.vue';
 
   defineProps({

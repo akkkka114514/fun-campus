@@ -1,6 +1,6 @@
 <template>
-  <NoticeEmployeeList />
+  <NoticeBackendUserList />
 </template>
 <script setup>
-  import NoticeEmployeeList from '/@/views/business/oa/notice/notice-employee-list.vue';
+  import NoticeBackendUserList from '/@/views/business/oa/notice/notice-employee-list.vue';
 </script>

@@ -53,13 +53,13 @@
   // 查看更多
   function onMore() {
     router.push({
-      path: '/oa/notice/notice-employee-list',
+      path: '/oa/notice/notice-backendUser-list',
     });
   }
 
   function toDetail(noticeId) {
     router.push({
-      path: '/oa/notice/notice-employee-detail',
+      path: '/oa/notice/notice-backendUser-detail',
       query: { noticeId },
     });
   }

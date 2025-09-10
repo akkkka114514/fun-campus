@@ -3,9 +3,7 @@ package net.lab1024.sa.admin.module.system.role.service;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.google.common.collect.Lists;
 import jakarta.annotation.Resource;
-import net.lab1024.sa.admin.module.system.department.dao.DepartmentDao;
-import net.lab1024.sa.admin.module.system.department.domain.entity.DepartmentEntity;
-import net.lab1024.sa.admin.module.system.employee.domain.vo.BackendUserVO;
+import net.lab1024.sa.admin.module.system.backendUser.domain.vo.BackendUserVO;
 import net.lab1024.sa.admin.module.system.role.dao.RoleDao;
 import net.lab1024.sa.admin.module.system.role.dao.RoleBackendUserDao;
 import net.lab1024.sa.admin.module.system.role.domain.entity.RoleBackendUserEntity;
@@ -15,7 +13,6 @@ import net.lab1024.sa.admin.module.system.role.domain.form.RoleBackendUserUpdate
 import net.lab1024.sa.admin.module.system.role.domain.vo.RoleSelectedVO;
 import net.lab1024.sa.admin.module.system.role.domain.vo.RoleVO;
 import net.lab1024.sa.admin.module.system.role.manager.RoleBackendUserManager;
-import net.lab1024.sa.base.common.constant.StringConst;
 import net.lab1024.sa.base.common.domain.PageResult;
 import net.lab1024.sa.base.common.domain.ResponseDTO;
 import net.lab1024.sa.base.common.util.SmartBeanUtil;
@@ -24,13 +21,12 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * 角色-员工
+ * 角色-后台用户
  *
  * @Author 1024创新实验室: 善逸
  * @Date 2021-10-22 23:17:47
@@ -58,24 +54,16 @@ public class RoleBackendUserService {
     }
 
     /**
-     * 通过角色id，分页获取成员员工列表
+     * 通过角色id，分页获取成员后台用户列表
      *
      */
     public ResponseDTO<PageResult<BackendUserVO>> queryBackendUser(RoleBackendUserQueryForm roleBackendUserQueryForm) {
         Page page = SmartPageUtil.convert2PageQuery(roleBackendUserQueryForm);
-        List<BackendUserVO> backendList = roleBackendUserDao.selectRoleBackendUserByName(page, roleBackendUserQueryForm)
+        List<BackendUserVO> backendUserList = roleBackendUserDao.selectRoleBackendUserByName(page, roleBackendUserQueryForm)
                 .stream()
                 .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-        List<Long> departmentIdList = employeeList.stream().filter(e -> e != null && e.getDepartmentId() != null).map(BackendUserVO::getDepartmentId).collect(Collectors.toList());
-        if (CollectionUtils.isNotEmpty(departmentIdList)) {
-            List<DepartmentEntity> departmentEntities = departmentDao.selectBatchIds(departmentIdList);
-            Map<Long, String> departmentIdNameMap = departmentEntities.stream().collect(Collectors.toMap(DepartmentEntity::getDepartmentId, DepartmentEntity::getDepartmentName));
-            employeeList.forEach(e -> {
-                e.setDepartmentName(departmentIdNameMap.getOrDefault(e.getDepartmentId(), StringConst.EMPTY));
-            });
-        }
-        PageResult<BackendUserVO> pageResult = SmartPageUtil.convert2PageResult(page, employeeList, BackendUserVO.class);
+                .toList();
+        PageResult<BackendUserVO> pageResult = SmartPageUtil.convert2PageResult(page, backendUserList, BackendUserVO.class);
         return ResponseDTO.ok(pageResult);
     }
 
@@ -84,7 +72,7 @@ public class RoleBackendUserService {
     }
 
     /**
-     * 移除员工角色
+     * 移除后台用户角色
      *
      */
     public ResponseDTO<String> removeRoleBackendUser(Long employeeId, Long roleId) {
@@ -96,7 +84,7 @@ public class RoleBackendUserService {
     }
 
     /**
-     * 批量删除角色的成员员工
+     * 批量删除角色的成员后台用户
      *
      */
     public ResponseDTO<String> batchRemoveRoleBackendUser(RoleBackendUserUpdateForm roleBackendUserUpdateForm) {
@@ -105,20 +93,20 @@ public class RoleBackendUserService {
     }
 
     /**
-     * 批量添加角色的成员员工
+     * 批量添加角色的成员后台用户
      *
      */
     public ResponseDTO<String> batchAddRoleBackendUser(RoleBackendUserUpdateForm roleBackendUserUpdateForm) {
         Long roleId = roleBackendUserUpdateForm.getRoleId();
 
-        // 已选择的员工id列表
+        // 已选择的后台用户id列表
         Set<Long> selectedBackendUserIdList = roleBackendUserUpdateForm.getBackendUserIdList();
-        // 数据库里已有的员工id列表
+        // 数据库里已有的后台用户id列表
         Set<Long> dbBackendUserIdList = roleBackendUserDao.selectBackendUserIdByRoleIdList(Lists.newArrayList(roleId));
-        // 从已选择的员工id列表里 过滤数据库里不存在的 即需要添加的员工 id
+        // 从已选择的后台用户id列表里 过滤数据库里不存在的 即需要添加的后台用户 id
         Set<Long> addBackendUserIdList = selectedBackendUserIdList.stream().filter(id -> !dbBackendUserIdList.contains(id)).collect(Collectors.toSet());
 
-        // 添加角色员工
+        // 添加角色后台用户
         if (CollectionUtils.isNotEmpty(addBackendUserIdList)) {
             List<RoleBackendUserEntity> roleBackendUserList = addBackendUserIdList.stream()
                     .map(employeeId -> new RoleBackendUserEntity(roleId, employeeId))
@@ -129,7 +117,7 @@ public class RoleBackendUserService {
     }
 
     /**
-     * 通过员工id获取员工角色
+     * 通过后台用户id获取后台用户角色
      *
      */
     public List<RoleSelectedVO> getRoleInfoListByBackendUserId(Long employeeId) {
@@ -141,7 +129,7 @@ public class RoleBackendUserService {
     }
 
     /**
-     * 根据员工id 查询角色id集合
+     * 根据后台用户id 查询角色id集合
      *
      */
     public List<RoleVO> getRoleIdList(Long employeeId) {

@@ -1,5 +1,5 @@
 <!--
-  * 企业 员工
+  * 企业 后台用户
   *
   * @Author:    1024创新实验室-主任：卓大
   * @Date:      2022-08-15 20:15:49
@@ -17,7 +17,7 @@
         <a-button class="button-style" type="default" @click="resetQueryBackendUser">重置</a-button>
       </div>
       <div>
-        <a-button class="button-style" type="primary" @click="addBackendUser" v-privilege="'oa:enterprise:addBackendUser'"> 添加员工 </a-button>
+        <a-button class="button-style" type="primary" @click="addBackendUser" v-privilege="'oa:enterprise:addBackendUser'"> 添加后台用户 </a-button>
         <a-button class="button-style" type="primary" danger @click="batchDelete" v-privilege="'oa:enterprise:deleteBackendUser'"> 批量移除 </a-button>
       </div>
     </div>
@@ -167,7 +167,7 @@
 
   async function selectData(list) {
     if (_.isEmpty(list)) {
-      message.warning('请选择员工');
+      message.warning('请选择后台用户');
       return;
     }
     SmartLoading.show();
@@ -186,9 +186,9 @@
     }
   }
 
-  // --------------------------- 添加员工 ---------------------------
+  // --------------------------- 添加后台用户 ---------------------------
 
-  // 添加员工
+  // 添加后台用户
   const selectBackendUserModal = ref();
   async function addBackendUser() {
     let res = await enterpriseApi.employeeList([props.enterpriseId]);
@@ -198,11 +198,11 @@
 
   // --------------------------- 删除 ---------------------------
 
-  // 删除员工方法
+  // 删除后台用户方法
   async function deleteBackendUser(employeeId) {
     Modal.confirm({
       title: '提示',
-      content: '确定要删除该企业下的员工么？',
+      content: '确定要删除该企业下的后台用户么？',
       okText: '确定',
       okType: 'danger',
       async onOk() {
@@ -236,12 +236,12 @@
   // 批量移除
   function batchDelete() {
     if (!hasSelected.value) {
-      message.warning('请选择要删除的员工');
+      message.warning('请选择要删除的后台用户');
       return;
     }
     Modal.confirm({
       title: '提示',
-      content: '确定要删除该企业下的员工么？',
+      content: '确定要删除该企业下的后台用户么？',
       okText: '确定',
       okType: 'danger',
       async onOk() {

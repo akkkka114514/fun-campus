@@ -3,7 +3,6 @@ package net.lab1024.sa.admin.module.system.menu.dao;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import org.springframework.stereotype.Component;
 import net.lab1024.sa.admin.module.system.menu.domain.entity.MenuEntity;
 import net.lab1024.sa.admin.module.system.menu.domain.vo.MenuVO;
 
@@ -67,11 +66,11 @@ public interface MenuDao extends BaseMapper<MenuEntity> {
     List<MenuEntity> getPointListByMenuId(@Param("menuId") Long menuId, @Param("menuType") Integer menuType, @Param("deletedFlag") Boolean deletedFlag);
 
     /**
-     * 根据员工ID查询菜单列表
+     * 根据后台用户ID查询菜单列表
      *
      * @param deletedFlag  是否删除
      * @param disabledFlag 禁用标识
-     * @param employeeId   员工id
+     * @param employeeId   后台用户id
      */
     List<MenuVO> queryMenuByBackendUserId(@Param("deletedFlag") Boolean deletedFlag,
                                        @Param("disabledFlag") Boolean disabledFlag,

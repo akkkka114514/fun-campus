@@ -48,20 +48,20 @@ export const enterpriseApi = {
     update: (param) => {
         return postRequest('/oa/enterprise/update', param);
     },
-    // 企业全部员工List @author yandy
+    // 企业全部后台用户List @author yandy
     employeeList: (param) => {
         return postRequest('/oa/enterprise/employee/list', param);
     },
-    // 分页查询企业员工List @author 卓大
+    // 分页查询企业后台用户List @author 卓大
     queryPageBackendUserList: (param) => {
         return postRequest('/oa/enterprise/employee/queryPage', param);
     },
-    // 添加员工 @author yandy
+    // 添加后台用户 @author yandy
     addBackendUser: (param) => {
         return postRequest('/oa/enterprise/employee/add', param);
     },
 
-    // 删除员工 @author yandy
+    // 删除后台用户 @author yandy
     deleteBackendUser: (param) => {
         return postRequest('/oa/enterprise/employee/delete', param);
     },

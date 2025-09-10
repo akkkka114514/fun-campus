@@ -8,7 +8,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 角色 员工关系
+ * 角色 后台用户关系
  *
  * @Author 1024创新实验室: 罗伊
  * @Date 2022-03-07 18:54:42

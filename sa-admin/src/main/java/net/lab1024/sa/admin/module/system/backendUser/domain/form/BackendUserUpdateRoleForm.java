@@ -15,8 +15,8 @@ import java.util.List;
 @Data
 public class BackendUserUpdateRoleForm {
 
-    @Schema(description = "员工id")
-    @NotNull(message = "员工id不能为空")
+    @Schema(description = "后台用户id")
+    @NotNull(message = "后台用户id不能为空")
     private Long id;
 
     @Schema(description = "角色ids")

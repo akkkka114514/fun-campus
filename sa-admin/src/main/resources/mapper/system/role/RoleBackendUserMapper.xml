@@ -2,11 +2,6 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="net.lab1024.sa.admin.module.system.role.dao.RoleBackendUserDao">
 
-
-    <resultMap id="BackendUserVO"
-               type="net.lab1024.sa.admin.module.system.backendUser.domain.vo.BackendUserVO"></resultMap>
-
-
     <select id="selectRoleByBackendUserId" resultType="net.lab1024.sa.admin.module.system.role.domain.vo.RoleVO">
         SELECT t_role.*
         FROM t_role_user

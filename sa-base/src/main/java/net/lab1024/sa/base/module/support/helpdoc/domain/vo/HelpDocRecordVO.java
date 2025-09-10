@@ -17,13 +17,13 @@ import java.time.LocalDateTime;
 @Data
 public class HelpDocRecordVO {
 
-    @Schema(description = "员工ID")
+    @Schema(description = "后台用户ID")
     private Long employeeId;
 
-    @Schema(description = "员工姓名")
+    @Schema(description = "后台用户姓名")
     private String employeeName;
 
-    @Schema(description = "员工部门名称")
+    @Schema(description = "后台用户部门名称")
     private String departmentName;
 
     @Schema(description = "查看次数")

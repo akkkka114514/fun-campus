@@ -5,7 +5,7 @@ import lombok.Data;
 import net.lab1024.sa.base.common.domain.PageParam;
 
 /**
- * 角色的员工查询
+ * 角色的后台用户查询
  *
  * @Author 1024创新实验室: 善逸
  * @Date 2022-04-08 21:53:04

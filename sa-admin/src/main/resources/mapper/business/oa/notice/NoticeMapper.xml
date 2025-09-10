@@ -103,7 +103,7 @@
         </if>
     </select>
 
-    <!-- ================================== 通知公告【员工查看】相关 ================================== -->
+    <!-- ================================== 通知公告【后台用户查看】相关 ================================== -->
     <select id="queryBackendUserNotice" resultType="net.lab1024.sa.admin.module.business.oa.notice.domain.vo.NoticeBackendUserVO">
         select
         <include refid="base_columns"/>,
@@ -240,7 +240,7 @@
         order by t_notice_view_record.update_time desc,t_notice_view_record.create_time desc
     </select>
 
-    <!-- ================================== 通知公告【员工查看记录】相关 ================================== -->
+    <!-- ================================== 通知公告【后台用户查看记录】相关 ================================== -->
     <select id="viewRecordCount" resultType="java.lang.Long">
         select count(*)
         from t_notice_view_record

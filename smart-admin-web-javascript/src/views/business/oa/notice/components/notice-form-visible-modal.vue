@@ -10,7 +10,7 @@
 <template>
   <a-modal title="选择部门" v-model:open="visibleFlag" :maskClosable="false" :width="768" @ok="onSubmit" @cancel="onClose">
     <a-tabs v-model:activeKey="activeKey">
-      <a-tab-pane :key="1" tab="选择员工">
+      <a-tab-pane :key="1" tab="选择后台用户">
         <NoticeFormVisibleTransferBackendUser :employeeList="employeeList" @onChange="onChangeBackendUser" />
       </a-tab-pane>
       <a-tab-pane :key="2" tab="选择部门">
@@ -33,7 +33,7 @@ function onClose() {
 }
 
 const activeKey = ref(1);
-// 已选的员工列表
+// 已选的后台用户列表
 const employeeList = ref([]);
 // 已选的部门列表
 const departmentList = ref([]);
@@ -52,7 +52,7 @@ function onSubmit() {
   onClose();
 }
 
-// 选择员工改变
+// 选择后台用户改变
 function onChangeBackendUser({ selectedList }) {
   employeeList.value = selectedList;
 }

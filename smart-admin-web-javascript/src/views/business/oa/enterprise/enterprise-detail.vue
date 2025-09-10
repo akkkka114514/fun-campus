@@ -36,7 +36,7 @@
     v-if="$privilege('oa:enterprise:queryBackendUser') || $privilege('oa:bank:query') || $privilege('oa:invoice:query')"
   >
     <a-tabs>
-      <a-tab-pane key="employee" tab="员工信息" v-if="$privilege('oa:enterprise:queryBackendUser')">
+      <a-tab-pane key="employee" tab="后台用户信息" v-if="$privilege('oa:enterprise:queryBackendUser')">
         <BackendUserList :enterpriseId="enterpriseId" />
       </a-tab-pane>
       <a-tab-pane key="bank" tab="银行信息" v-if="$privilege('oa:bank:query')">

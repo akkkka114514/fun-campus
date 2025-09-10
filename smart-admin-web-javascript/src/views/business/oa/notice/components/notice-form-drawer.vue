@@ -42,7 +42,7 @@
           <a-select-option :value="0">部分可见</a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item v-show="!formData.allVisibleFlag" label="可见员工/部门">
+      <a-form-item v-show="!formData.allVisibleFlag" label="可见后台用户/部门">
         <a-button type="primary" @click="showNoticeVisibleModal">选择</a-button>
         <div class="visible-list">
           <div class="visible-item" v-for="(item, index) in formData.visibleRangeList" :key="item.dataId">
@@ -248,8 +248,8 @@
     }
   }
 
-  // ----------------------- 可见员工/部门 ----------------------------
-  // 点击显示选择可见员工/部门
+  // ----------------------- 可见后台用户/部门 ----------------------------
+  // 点击显示选择可见后台用户/部门
   function showNoticeVisibleModal() {
     const visibleRangeList = formData.visibleRangeList || [];
     noticeFormVisibleModal.value.showModal(visibleRangeList);
@@ -260,7 +260,7 @@
     formData.visibleRangeList = selectedList;
   }
 
-  // 移除某个员工/部门
+  // 移除某个后台用户/部门
   function removeVisibleItem(index) {
     Modal.confirm({
       title: '提示',

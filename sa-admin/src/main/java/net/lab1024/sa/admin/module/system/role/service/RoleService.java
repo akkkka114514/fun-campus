@@ -65,10 +65,10 @@ public class RoleService {
         if (null == roleEntity) {
             return ResponseDTO.error(UserErrorCode.DATA_NOT_EXIST);
         }
-        // 当没有员工绑定这个角色时才可以删除
+        // 当没有后台用户绑定这个角色时才可以删除
         Integer exists = roleBackendUserDao.existsByRoleId(roleId);
         if (exists != null) {
-            return ResponseDTO.error(UserErrorCode.ALREADY_EXIST, "该角色下存在员工，无法删除");
+            return ResponseDTO.error(UserErrorCode.ALREADY_EXIST, "该角色下存在后台用户，无法删除");
         }
         roleDao.deleteById(roleId);
         roleMenuDao.deleteByRoleId(roleId);

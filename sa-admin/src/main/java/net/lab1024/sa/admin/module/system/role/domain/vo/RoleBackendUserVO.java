@@ -3,7 +3,7 @@ package net.lab1024.sa.admin.module.system.role.domain.vo;
 import lombok.Data;
 
 /**
- * 角色的员工
+ * 角色的后台用户
  *
  * @Author 1024创新实验室: 罗伊
  * @Date 2022-04-08 21:53:04

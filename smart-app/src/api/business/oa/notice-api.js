@@ -14,19 +14,19 @@ export const noticeApi = {
     return getRequest('/oa/noticeType/getAll');
   },
 
-  // --------------------- 【员工】查看 通知公告 -------------------------
+  // --------------------- 【后台用户】查看 通知公告 -------------------------
 
-  // 通知公告-员工-查看详情 @author zhuoda
+  // 通知公告-后台用户-查看详情 @author zhuoda
   view(noticeId) {
     return getRequest(`/oa/notice/employee/view/${noticeId}`);
   },
 
-  // 通知公告-员工-查询 @author zhuoda
+  // 通知公告-后台用户-查询 @author zhuoda
   queryBackendUserNotice(param) {
     return postRequest('/oa/notice/employee/query', param);
   },
 
-  // 【员工】通知公告-查询 查看记录 @author zhuoda
+  // 【后台用户】通知公告-查询 查看记录 @author zhuoda
   queryViewRecord(param) {
     return postRequest('/oa/notice/employee/queryViewRecord', param);
   },

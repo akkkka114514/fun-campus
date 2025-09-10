@@ -20,7 +20,7 @@ export const MESSAGE_TYPE_ENUM = {
 export const MESSAGE_RECEIVE_TYPE_ENUM = {
     EMPLOYEE: {
         value: 1,
-        desc: '员工'
+        desc: '后台用户'
     },
   };
 

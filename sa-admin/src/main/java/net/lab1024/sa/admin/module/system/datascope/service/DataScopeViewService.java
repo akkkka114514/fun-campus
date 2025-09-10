@@ -56,7 +56,7 @@ public class DataScopeViewService {
         if (DataScopeViewTypeEnum.DEPARTMENT_AND_SUB == viewType) {
             return this.getDepartmentAndSubBackendUserIdList(employeeId);
         }
-        // 可以查看所有员工数据
+        // 可以查看所有后台用户数据
         return Lists.newArrayList();
     }
 
@@ -89,7 +89,7 @@ public class DataScopeViewService {
     }
 
     /**
-     * 根据员工id 获取各数据范围最大的可见范围 map<dataScopeType,viewType></>
+     * 根据后台用户id 获取各数据范围最大的可见范围 map<dataScopeType,viewType></>
      */
     public DataScopeViewTypeEnum getBackendUserDataScopeViewType(DataScopeTypeEnum dataScopeTypeEnum, Long employeeId) {
         BackendUserEntity employeeEntity = employeeDao.selectById(employeeId);
@@ -122,14 +122,14 @@ public class DataScopeViewService {
     }
 
     /**
-     * 获取本人相关 可查看员工id
+     * 获取本人相关 可查看后台用户id
      */
     private List<Long> getMeBackendUserIdList(Long employeeId) {
         return Lists.newArrayList(employeeId);
     }
 
     /**
-     * 获取本部门相关 可查看员工id
+     * 获取本部门相关 可查看后台用户id
      */
     private List<Long> getDepartmentBackendUserIdList(Long employeeId) {
         BackendUserEntity employeeEntity = employeeDao.selectById(employeeId);
@@ -137,7 +137,7 @@ public class DataScopeViewService {
     }
 
     /**
-     * 获取本部门及下属子部门相关 可查看员工id
+     * 获取本部门及下属子部门相关 可查看后台用户id
      */
     private List<Long> getDepartmentAndSubBackendUserIdList(Long employeeId) {
         List<Long> allDepartmentIds = getDepartmentAndSubIdList(employeeId);

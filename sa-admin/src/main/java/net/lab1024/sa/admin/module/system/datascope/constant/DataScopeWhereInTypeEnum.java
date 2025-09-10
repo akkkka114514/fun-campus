@@ -15,9 +15,9 @@ import net.lab1024.sa.base.common.enumeration.BaseEnum;
 public enum DataScopeWhereInTypeEnum implements BaseEnum {
 
     /**
-     * 以员工IN
+     * 以后台用户IN
      */
-    EMPLOYEE(0, "以员工IN"),
+    EMPLOYEE(0, "以后台用户IN"),
 
     /**
      * 以部门IN

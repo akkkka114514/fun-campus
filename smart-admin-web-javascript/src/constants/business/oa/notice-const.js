@@ -11,7 +11,7 @@
 export const NOTICE_VISIBLE_RANGE_DATA_TYPE_ENUM = {
   EMPLOYEE: {
     value: 1,
-    desc: '员工',
+    desc: '后台用户',
   },
   DEPARTMENT: {
     value: 2,

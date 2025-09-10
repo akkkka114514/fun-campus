@@ -25,7 +25,7 @@ export const TABLE_ID_CONST = {
     OA: {
       NOTICE: businessOAInitTableId + 1, //通知公告
       ENTERPRISE: businessOAInitTableId + 2, //企业信息
-      ENTERPRISE_EMPLOYEE: businessOAInitTableId + 3, //企业员工
+      ENTERPRISE_EMPLOYEE: businessOAInitTableId + 3, //企业后台用户
       ENTERPRISE_BANK: businessOAInitTableId + 4, //企业银行
       ENTERPRISE_INVOICE: businessOAInitTableId + 5, //企业发票
     },
@@ -38,7 +38,7 @@ export const TABLE_ID_CONST = {
    * 系统
    */
   SYSTEM: {
-    EMPLOYEE: systemInitTableId + 1, //员工
+    EMPLOYEE: systemInitTableId + 1, //后台用户
     MENU: systemInitTableId + 2, //菜单
     POSITION: systemInitTableId + 3, //职位
   },

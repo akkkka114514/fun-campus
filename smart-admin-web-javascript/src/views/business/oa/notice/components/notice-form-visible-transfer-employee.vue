@@ -1,5 +1,5 @@
 <!--
-  * 通知  可见范围 选择员工
+  * 通知  可见范围 选择后台用户
   * 
   * @Author:    1024创新实验室-主任：卓大 
   * @Date:      2022-08-21 19:52:43 
@@ -49,7 +49,7 @@
   import { smartSentry } from '/@/lib/smart-sentry';
 
   const props = defineProps({
-    // 已选择的员工数据列表
+    // 已选择的后台用户数据列表
     employeeList: {
       type: Array,
       default: () => [],
@@ -80,7 +80,7 @@
     }
   }
 
-  // 递归构建部门员工树
+  // 递归构建部门后台用户树
   function buildDepartmentBackendUserTree(departmentTree, employeeList) {
     for (const department of departmentTree) {
       if (department.dataType && department.dataType === NOTICE_VISIBLE_RANGE_DATA_TYPE_ENUM.EMPLOYEE.value) {
@@ -118,10 +118,10 @@
     expandedKeys.value = [treeData.value[0].key];
   }
 
-  // 选择的员工列表数据
+  // 选择的后台用户列表数据
   const selectedList = ref([]);
 
-  // 选择的员工列表Ids
+  // 选择的后台用户列表Ids
   const selectedIds = computed(() => {
     return selectedList.value.map((item) => item.dataId);
   });

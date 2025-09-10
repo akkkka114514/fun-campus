@@ -1,5 +1,5 @@
 <!--
-  * 员工 表格 弹窗 选择框
+  * 后台用户 表格 弹窗 选择框
   *
   * @Author:    1024创新实验室-主任：卓大
   * @Date:      2022-08-19 23:09:02
@@ -104,7 +104,7 @@
     selectedRowKeyList.value = [];
     visible.value = false;
   }
-  // ----------------------- 员工查询表单与查询 ---------------------
+  // ----------------------- 后台用户查询表单与查询 ---------------------
   const tableLoading = ref(false);
   const departmentTreeSelect = ref();
   const total = ref();
@@ -143,7 +143,7 @@
     }
   }
 
-  // ----------------------- 员工表格选择 ---------------------
+  // ----------------------- 后台用户表格选择 ---------------------
   const originalRowKeyList = ref([]);
   let selectedRowKeyList = ref([]);
   const hasSelected = computed(() => selectedRowKeyList.value.length !== originalRowKeyList.value.length);
@@ -165,12 +165,12 @@
 
   function getCheckboxProps(record) {
     return {
-      // 角色员工列表的添加员工弹窗中 禁止添加选择已存在该角色的员工
+      // 角色后台用户列表的添加后台用户弹窗中 禁止添加选择已存在该角色的后台用户
       disabled: originalRowKeyList.value.includes(record.employeeId),
     };
   }
 
-  // ----------------------- 员工表格渲染 ---------------------
+  // ----------------------- 后台用户表格渲染 ---------------------
   const tableData = ref([]);
   //字段
   const columns = [

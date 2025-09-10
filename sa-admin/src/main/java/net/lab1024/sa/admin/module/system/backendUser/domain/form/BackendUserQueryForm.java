@@ -25,8 +25,8 @@ public class BackendUserQueryForm extends PageParam {
     @Schema(description = "是否禁用")
     private Boolean disabledFlag;
 
-    @Schema(description = "员工id集合")
-    @Size(max = 99, message = "最多查询99个员工")
+    @Schema(description = "后台用户id集合")
+    @Size(max = 99, message = "最多查询99个后台用户")
     private List<Long> backendUserIdList;
 
     @Schema(description = "删除标识", hidden = true)

@@ -1,5 +1,5 @@
 <!--
-  *  员工 列表
+  *  后台用户 列表
   *
   * @Author:    1024创新实验室-主任：卓大
   * @Date:      2022-08-08 20:46:18
@@ -280,16 +280,16 @@
     selectedRows.value = selectRows;
   }
 
-  // 批量删除员工
+  // 批量删除后台用户
   function batchDelete() {
     if (!hasSelected.value) {
-      message.warning('请选择要删除的员工');
+      message.warning('请选择要删除的后台用户');
       return;
     }
     const actualNameArray = selectedRows.value.map((e) => e.actualName);
     const employeeIdArray = selectedRows.value.map((e) => e.employeeId);
     Modal.confirm({
-      title: '确定要删除如下员工吗?',
+      title: '确定要删除如下后台用户吗?',
       icon: createVNode(ExclamationCircleOutlined),
       content: _.join(actualNameArray, ','),
       okText: '删除',
@@ -313,12 +313,12 @@
     });
   }
 
-  // 批量更新员工部门
+  // 批量更新后台用户部门
   const employeeDepartmentFormModal = ref();
 
   function updateBackendUserDepartment() {
     if (!hasSelected.value) {
-      message.warning('请选择要调整部门的员工');
+      message.warning('请选择要调整部门的后台用户');
       return;
     }
     const employeeIdArray = selectedRows.value.map((e) => e.employeeId);

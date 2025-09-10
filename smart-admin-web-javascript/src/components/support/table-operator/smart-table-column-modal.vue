@@ -26,7 +26,7 @@
           使用: {{ '<TableOperator v-model="columns" :tableId="TABLE_ID_CONST.BUSINESS.XXX" :refresh="queryData" />' }}
           <br />
           <br />
-          3. 具体用法可参考员工管理
+          3. 具体用法可参考后台用户管理
         </template>
       </a-alert>
     </div>

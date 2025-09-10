@@ -15,7 +15,7 @@ import java.util.Set;
 
 
 /**
- * 角色 员工 dao
+ * 角色 后台用户 dao
  *
  * @Author 1024创新实验室: 罗伊
  * @Date 2022-03-07 18:54:42
@@ -27,22 +27,22 @@ import java.util.Set;
 public interface RoleBackendUserDao extends BaseMapper<RoleBackendUserEntity> {
 
     /**
-     * 根据员工id 查询所有的角色
+     * 根据后台用户id 查询所有的角色
      */
     List<RoleVO> selectRoleByBackendUserId(@Param("backendUserId") Long backendUserId);
 
     /**
-     * 根据员工id 查询所有的角色io集合
+     * 根据后台用户id 查询所有的角色io集合
      */
     List<Long> selectRoleIdByBackendUserId(@Param("backendUserId") Long backendUserId);
 
     /**
-     * 根据员工id 查询所有的角色
+     * 根据后台用户id 查询所有的角色
      */
     List<RoleBackendUserEntity> selectRoleIdByBackendUserIdList(@Param("backendUserIdList") List<Long> backendUserIdList);
 
     /**
-     * 根据员工id 查询所有的角色
+     * 根据后台用户id 查询所有的角色
      */
     List<RoleBackendUserVO> selectRoleByBackendUserIdList(@Param("backendUserIdList") List<Long> backendUserIdList);
 
@@ -61,7 +61,7 @@ public interface RoleBackendUserDao extends BaseMapper<RoleBackendUserEntity> {
      */
     List<BackendUserVO> selectBackendUserByRoleId(@Param("roleId") Long roleId);
     /**
-     * 根据员工信息删除
+     * 根据后台用户信息删除
      */
     void deleteByBackendUserId(@Param("backendUserId") Long backendUserId);
 
@@ -71,7 +71,7 @@ public interface RoleBackendUserDao extends BaseMapper<RoleBackendUserEntity> {
     void deleteByRoleId(@Param("roleId")Long roleId);
 
     /**
-     * 根据员工和 角色删除关系
+     * 根据后台用户和 角色删除关系
      */
     void deleteByBackendUserIdRoleId(@Param("backendUserId") Long backendUserId,@Param("roleId")Long roleId);
 

@@ -118,7 +118,7 @@ public class LoginService implements StpInterface {
     }
 
     /**
-     * 员工登录
+     * 后台用户登录
      *
      * @return 返回用户登录信息
      */
@@ -309,7 +309,7 @@ public class LoginService implements StpInterface {
     }
 
     /**
-     * 根据 loginId 获取 员工id
+     * 根据 loginId 获取 后台用户id
      */
     Long getBackendUserIdByLoginId(String loginId) {
 

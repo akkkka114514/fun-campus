@@ -12,9 +12,9 @@ package net.lab1024.sa.base.common.enumeration;
 public enum UserTypeEnum implements BaseEnum {
 
     /**
-     * 管理端 员工用户
+     * 管理端 后台用户用户
      */
-    ADMIN_EMPLOYEE(1, "员工");
+    ADMIN_EMPLOYEE(1, "后台用户");
 
     private Integer type;
 

@@ -10,7 +10,7 @@ import net.lab1024.sa.base.module.support.captcha.domain.CaptchaForm;
 import org.hibernate.validator.constraints.Length;
 
 /**
- * 员工登录
+ * 后台用户登录
  *
  * @Author 1024创新实验室: 开云
  * @Date 2021-12-19 11:49:45

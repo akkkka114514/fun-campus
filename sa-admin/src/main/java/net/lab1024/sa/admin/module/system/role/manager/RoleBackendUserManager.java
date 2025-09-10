@@ -6,7 +6,7 @@ import net.lab1024.sa.admin.module.system.role.domain.entity.RoleBackendUserEnti
 import org.springframework.stereotype.Service;
 
 /**
- * 角色员工 manager
+ * 角色后台用户 manager
  *
  * @Author 1024创新实验室-主任: 卓大
  * @Date 2022-04-08 21:53:04

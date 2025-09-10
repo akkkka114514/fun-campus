@@ -25,12 +25,12 @@ import java.util.List;
 @Component
 public interface BackendUserDao extends BaseMapper<BackendUserEntity> {
     /**
-     * 查询员工列表
+     * 查询后台用户列表
      */
     List<BackendUserVO> queryBackendUser(Page page, @Param("queryForm") BackendUserQueryForm queryForm);
 
     /**
-     * 查询员工
+     * 查询后台用户
      */
     List<BackendUserVO> selectBackendUserByDisabledAndDeleted(@Param("disabledFlag") Boolean disabledFlag, @Param("deletedFlag") Boolean deletedFlag);
 
@@ -46,18 +46,18 @@ public interface BackendUserDao extends BaseMapper<BackendUserEntity> {
     BackendUserEntity getByEmail(@Param("email") String email, @Param("deletedFlag") Boolean deletedFlag);
 
     /**
-     * 获取所有员工
+     * 获取所有后台用户
      */
     List<BackendUserVO> listAll();
 
 
     /**
-     * 获取一批员工
+     * 获取一批后台用户
      */
     List<BackendUserVO> getBackendUserByIds(@Param("ids") Collection<Long> ids);
 
     /**
-     * 查询单个员工信息
+     * 查询单个后台用户信息
      */
     BackendUserVO getBackendUserById(@Param("backendUserId") Long id);
 
@@ -68,7 +68,7 @@ public interface BackendUserDao extends BaseMapper<BackendUserEntity> {
     List<Long> getBackendUserId(@Param("leaveFlag") Boolean leaveFlag, @Param("deletedFlag") Boolean deletedFlag);
 
     /**
-     * 员工重置密码
+     * 后台用户重置密码
      */
     Integer updatePassword(@Param("backendUserId") Long backendUserId, @Param("password") String password);
 

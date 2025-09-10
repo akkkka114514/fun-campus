@@ -75,7 +75,7 @@ public class BackendUserService extends ServiceImpl<BackendUserDao, BackendUserE
             return ResponseDTO.ok(pageResult);
         }
 
-        // 查询员工角色
+        // 查询后台用户角色
         List<Long> backendUserIdList = backendUserList.stream().map(BackendUserVO::getId).collect(Collectors.toList());
         List<RoleBackendUserVO> roleBackendUserEntityList = backendUserIdList.isEmpty() ? Collections.emptyList() : roleBackendUserDao.selectRoleByBackendUserIdList(backendUserIdList);
         Map<Long, List<Long>> backendUserRoleIdListMap = roleBackendUserEntityList.stream().collect(Collectors.groupingBy(RoleBackendUserVO::getBackendUserId, Collectors.mapping(RoleBackendUserVO::getRoleId, Collectors.toList())));
@@ -90,7 +90,7 @@ public class BackendUserService extends ServiceImpl<BackendUserDao, BackendUserE
     }
 
     /**
-     * 新增员工
+     * 新增后台用户
      */
     public synchronized ResponseDTO<String> addBackendUser(BackendUserAddForm backendUserAddForm) {
         // 校验登录名是否重复
@@ -112,7 +112,7 @@ public class BackendUserService extends ServiceImpl<BackendUserDao, BackendUserE
     }
 
     /**
-     * 更新员工
+     * 更新后台用户
      */
     public synchronized ResponseDTO<String> updateBackendUser(BackendUserUpdateForm backendUserUpdateForm) {
 
@@ -137,14 +137,14 @@ public class BackendUserService extends ServiceImpl<BackendUserDao, BackendUserE
         // 更新数据
         backendUserManager.updateBackendUser(entity, backendUserUpdateForm.getRoleIdList());
 
-        // 清除员工缓存
+        // 清除后台用户缓存
         loginService.clearLoginBackendUserCache(backendUserId);
 
         return ResponseDTO.ok();
     }
 
     /**
-     * 更新员工个人中心信息
+     * 更新后台用户个人中心信息
      */
     public ResponseDTO<String> updateCenter(BackendUserUpdateCenterForm updateCenterForm) {
 
@@ -170,7 +170,7 @@ public class BackendUserService extends ServiceImpl<BackendUserDao, BackendUserE
         // 更新数据
         backendUserDao.updateById(backendUser);
 
-        // 清除员工缓存
+        // 清除后台用户缓存
         loginService.clearLoginBackendUserCache(backendUserId);
 
         return ResponseDTO.ok();
@@ -218,7 +218,7 @@ public class BackendUserService extends ServiceImpl<BackendUserDao, BackendUserE
     }
 
     /**
-     * 批量删除员工
+     * 批量删除后台用户
      */
     public ResponseDTO<String> batchUpdateDeleteFlag(List<Long> backendUserIdList) {
         if (CollectionUtils.isEmpty(backendUserIdList)) {
@@ -308,7 +308,7 @@ public class BackendUserService extends ServiceImpl<BackendUserDao, BackendUserE
 
 
     /**
-     * 查询全部员工
+     * 查询全部后台用户
      */
     public ResponseDTO<List<BackendUserVO>> queryAllBackendUser(Boolean disabledFlag) {
         List<BackendUserVO> backendUserList = backendUserDao.selectBackendUserByDisabledAndDeleted(disabledFlag, Boolean.FALSE);
@@ -316,7 +316,7 @@ public class BackendUserService extends ServiceImpl<BackendUserDao, BackendUserE
     }
 
     /**
-     * 根据登录名获取员工
+     * 根据登录名获取后台用户
      */
     public BackendUserEntity getByUsername(String loginName) {
         return backendUserDao.getByUsername(loginName, false);

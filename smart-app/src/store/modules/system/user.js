@@ -16,7 +16,7 @@ import {messageApi} from "@/api/support/message-api";
 
 const defaultUserInfo = {
   token: '',
-  //员工id
+  //后台用户id
   employeeId: '',
   // 头像
   avatar: '',

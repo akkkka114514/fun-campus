@@ -1,5 +1,6 @@
 package net.lab1024.sa.admin.util;
 
+import net.lab1024.sa.admin.module.system.login.domain.RequestBackendUser;
 import net.lab1024.sa.base.common.domain.RequestUser;
 import net.lab1024.sa.base.common.util.SmartRequestUtil;
 

@@ -39,12 +39,12 @@ public class BackendUserManager extends ServiceImpl<BackendUserDao, BackendUserE
     private RoleBackendUserDao roleBackendUserDao;
 
     /**
-     * 保存员工
+     * 保存后台用户
      *
      */
     @Transactional(rollbackFor = Throwable.class)
     public void saveBackendUser(BackendUserEntity backendUser, List<Long> roleIdList) {
-        // 保存员工 获得id
+        // 保存后台用户 获得id
         backendUserDao.insert(backendUser);
 
         if (CollectionUtils.isNotEmpty(roleIdList)) {
@@ -54,12 +54,12 @@ public class BackendUserManager extends ServiceImpl<BackendUserDao, BackendUserE
     }
 
     /**
-     * 更新员工
+     * 更新后台用户
      *
      */
     @Transactional(rollbackFor = Throwable.class)
     public void updateBackendUser(BackendUserEntity backendUser, List<Long> roleIdList) {
-        // 保存员工 获得id
+        // 保存后台用户 获得id
         backendUserDao.updateById(backendUser);
 
         // 若为空，则删除所有角色
@@ -73,7 +73,7 @@ public class BackendUserManager extends ServiceImpl<BackendUserDao, BackendUserE
     }
 
     /**
-     * 更新员工角色
+     * 更新后台用户角色
      */
     @Transactional(rollbackFor = Throwable.class)
     public void updateBackendUserRole(Long backendUserId, List<RoleBackendUserEntity> roleBackendUserList) {

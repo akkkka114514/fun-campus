@@ -1,5 +1,5 @@
 /*
- *  员工
+ *  后台用户
  *
  * @Author:    1024创新实验室-主任：卓大
  * @Date:      2022-09-03 21:59:15
@@ -12,31 +12,31 @@ import { getRequest, postEncryptRequest, postRequest } from '/@/lib/axios';
 
 export const employeeApi = {
   /**
-   * 查询所有员工 @author 卓大
+   * 查询所有后台用户 @author 卓大
    */
   queryAll: () => {
     return getRequest('/employee/queryAll');
   },
   /**
-   * 员工管理查询
+   * 后台用户管理查询
    */
   queryBackendUser: (params) => {
     return postRequest('/employee/query', params);
   },
   /**
-   * 添加员工
+   * 添加后台用户
    */
   addBackendUser: (params) => {
     return postRequest('/employee/add', params);
   },
   /**
-   * 更新员工信息
+   * 更新后台用户信息
    */
   updateBackendUser: (params) => {
     return postRequest('/employee/update', params);
   },
   /**
-   * 更新员工个人中心信息
+   * 更新后台用户个人中心信息
    */
   updateCenter: (params) => {
     return postRequest('/employee/update/center', params);
@@ -48,25 +48,25 @@ export const employeeApi = {
     return postRequest('/employee/update/avatar', params);
   },
   /**
-   * 删除员工
+   * 删除后台用户
    */
   deleteBackendUser: (employeeId) => {
     return getRequest(`/employee/delete/${employeeId}`);
   },
   /**
-   * 批量删除员工
+   * 批量删除后台用户
    */
   batchDeleteBackendUser: (employeeIdList) => {
     return postRequest('/employee/update/batch/delete', employeeIdList);
   },
   /**
-   * 批量调整员工部门
+   * 批量调整后台用户部门
    */
   batchUpdateDepartmentBackendUser: (updateParam) => {
     return postRequest('/employee/update/batch/department', updateParam);
   },
   /**
-   * 重置员工密码
+   * 重置后台用户密码
    */
   resetPassword: (employeeId) => {
     return getRequest(`/employee/update/password/reset/${employeeId}`);
@@ -84,13 +84,13 @@ export const employeeApi = {
     return getRequest('/employee/getPasswordComplexityEnabled');
   },
   /**
-   * 更新员工禁用状态
+   * 更新后台用户禁用状态
    */
   updateDisabled: (employeeId) => {
     return getRequest(`/employee/update/disabled/${employeeId}`);
   },
   /**
-   * 查询员工-根据部门id
+   * 查询后台用户-根据部门id
    */
   queryBackendUserByDeptId: (departmentId) => {
     return getRequest(`/employee/getAllBackendUserByDepartmentId/${departmentId}`);

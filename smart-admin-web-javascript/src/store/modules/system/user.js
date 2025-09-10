@@ -21,7 +21,7 @@ export const useUserStore = defineStore({
   id: 'userStore',
   state: () => ({
     token: '',
-    //员工id
+    //后台用户id
     employeeId: '',
     // 头像
     avatar: '',

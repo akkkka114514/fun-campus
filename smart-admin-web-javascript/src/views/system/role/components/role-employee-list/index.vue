@@ -1,5 +1,5 @@
 <!--
-  * 角色 员工 列表
+  * 角色 后台用户 列表
   *
   * @Author:    1024创新实验室-主任：卓大
   * @Date:      2022-09-12 22:34:00
@@ -20,7 +20,7 @@
 
       <div>
         <a-button class="button-style" v-if="selectRoleId" type="primary" @click="addRoleBackendUser" v-privilege="'system:role:backendUser:add'"
-          >添加员工</a-button
+          >添加后台用户</a-button
         >
         <a-button
           class="button-style"
@@ -87,7 +87,7 @@
   // ----------------------- 以下是字段定义 emits props ---------------------
   let selectRoleId = inject('selectRoleId');
 
-  // ----------------------- 员工列表：显示和搜索 ------------------------
+  // ----------------------- 后台用户列表：显示和搜索 ------------------------
   watch(
     () => selectRoleId.value,
     () => queryRoleBackendUser()

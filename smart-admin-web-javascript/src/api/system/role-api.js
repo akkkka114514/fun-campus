@@ -53,31 +53,31 @@ export const roleApi = {
     return getRequest(`/role/dataScope/getRoleDataScopeList/${roleId}`);
   },
   /**
-   * @description: 获取角色成员-员工列表
+   * @description: 获取角色成员-后台用户列表
    */
   queryRoleBackendUser: (params) => {
     return postRequest('/role/employee/queryBackendUser', params);
   },
   /**
-   * @description: 从角色成员列表中移除员工
+   * @description: 从角色成员列表中移除后台用户
    */
   deleteBackendUserRole: (employeeId, roleId) => {
     return getRequest('/role/employee/removeBackendUser?employeeId=' + employeeId + '&roleId=' + roleId);
   },
   /**
-   * @description: 从角色成员列表中批量移除员工
+   * @description: 从角色成员列表中批量移除后台用户
    */
   batchRemoveRoleBackendUser: (data) => {
     return postRequest('/role/employee/batchRemoveRoleBackendUser', data);
   },
   /**
-   * @description: 根据角色id获取角色员工列表(无分页)
+   * @description: 根据角色id获取角色后台用户列表(无分页)
    */
   getRoleAllBackendUser: (roleId) => {
     return getRequest(`/role/employee/getAllBackendUserByRoleId/${roleId}`);
   },
   /**
-   * @description: 角色成员列表中批量添加员工
+   * @description: 角色成员列表中批量添加后台用户
    */
   batchAddRoleBackendUser: (data) => {
     return postRequest('/role/employee/batchAddRoleBackendUser', data);

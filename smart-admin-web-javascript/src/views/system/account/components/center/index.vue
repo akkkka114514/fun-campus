@@ -21,8 +21,8 @@
                 disabled
               />
             </a-form-item>
-            <a-form-item label="员工名称" name="actualName">
-              <a-input class="form-item" v-model:value.trim="form.actualName" placeholder="请输入员工名称" />
+            <a-form-item label="后台用户名称" name="actualName">
+              <a-input class="form-item" v-model:value.trim="form.actualName" placeholder="请输入后台用户名称" />
             </a-form-item>
             <a-form-item label="性别" name="gender">
               <smart-enum-select class="form-item" v-model:value="form.gender" placeholder="请选择性别" enum-name="GENDER_ENUM" />
@@ -93,13 +93,13 @@
   const formRef = ref();
 
   const formDefault = {
-    // 员工ID
+    // 后台用户ID
     employeeId: undefined,
     // 头像
     avatar: undefined,
     // 登录账号
     loginName: '',
-    // 员工名称
+    // 后台用户名称
     actualName: '',
     // 性别
     gender: undefined,
@@ -200,7 +200,7 @@
     }
   }
 
-  // 更新员工信息
+  // 更新后台用户信息
   async function updateBackendUser() {
     SmartLoading.show();
     try {

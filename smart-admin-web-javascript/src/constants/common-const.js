@@ -53,7 +53,7 @@ export const GENDER_ENUM = {
 export const USER_TYPE_ENUM = {
   ADMIN_EMPLOYEE: {
     value: 1,
-    desc: '员工',
+    desc: '后台用户',
   },
 
 };

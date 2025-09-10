@@ -1,5 +1,5 @@
 <!--
-  * 部门 员工 弹窗
+  * 部门 后台用户 弹窗
   *
   * @Author:    1024创新实验室-主任：卓大
   * @Date:      2022-08-08 20:46:18
@@ -51,7 +51,7 @@
     SmartLoading.show();
     try {
       if (_.isEmpty(employeeIdList.value)) {
-        message.warning('请选择要调整的员工');
+        message.warning('请选择要调整的后台用户');
         return;
       }
       if (_.isEmpty(departmentTree.value.selectedKeys)) {

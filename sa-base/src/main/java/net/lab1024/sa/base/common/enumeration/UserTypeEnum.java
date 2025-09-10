@@ -16,9 +16,9 @@ public enum UserTypeEnum implements BaseEnum {
      */
     ADMIN_EMPLOYEE(1, "后台用户");
 
-    private Integer type;
+    private final Integer type;
 
-    private String desc;
+    private final String desc;
 
     UserTypeEnum(Integer type, String desc) {
         this.type = type;

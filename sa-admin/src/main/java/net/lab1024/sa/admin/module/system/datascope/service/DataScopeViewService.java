@@ -4,9 +4,8 @@ import com.google.common.collect.Lists;
 import jakarta.annotation.Resource;
 import net.lab1024.sa.admin.module.system.datascope.constant.DataScopeTypeEnum;
 import net.lab1024.sa.admin.module.system.datascope.constant.DataScopeViewTypeEnum;
-import net.lab1024.sa.admin.module.system.department.service.DepartmentService;
-import net.lab1024.sa.admin.module.system.employee.dao.BackendUserDao;
-import net.lab1024.sa.admin.module.system.employee.domain.entity.BackendUserEntity;
+import net.lab1024.sa.admin.module.system.backendUser.dao.BackendUserDao;
+import net.lab1024.sa.admin.module.system.backendUser.domain.entity.BackendUserEntity;
 import net.lab1024.sa.admin.module.system.role.dao.RoleDataScopeDao;
 import net.lab1024.sa.admin.module.system.role.dao.RoleBackendUserDao;
 import net.lab1024.sa.admin.module.system.role.domain.entity.RoleDataScopeEntity;
@@ -38,71 +37,18 @@ public class DataScopeViewService {
     private RoleDataScopeDao roleDataScopeDao;
 
     @Resource
-    private BackendUserDao employeeDao;
-
-    @Resource
-    private DepartmentService departmentService;
-
-    /**
-     * 获取某人可以查看的所有人员数据
-     */
-    public List<Long> getCanViewBackendUserId(DataScopeViewTypeEnum viewType, Long employeeId) {
-        if (DataScopeViewTypeEnum.ME == viewType) {
-            return this.getMeBackendUserIdList(employeeId);
-        }
-        if (DataScopeViewTypeEnum.DEPARTMENT == viewType) {
-            return this.getDepartmentBackendUserIdList(employeeId);
-        }
-        if (DataScopeViewTypeEnum.DEPARTMENT_AND_SUB == viewType) {
-            return this.getDepartmentAndSubBackendUserIdList(employeeId);
-        }
-        // 可以查看所有后台用户数据
-        return Lists.newArrayList();
-    }
-
-    /**
-     * 获取某人可以查看的所有部门数据
-     */
-    public List<Long> getCanViewDepartmentId(DataScopeViewTypeEnum viewType, Long employeeId) {
-        if (DataScopeViewTypeEnum.ME == viewType) {
-            // 数据可见范围类型为本人时 不可以查看任何部门数据
-            return Lists.newArrayList(0L);
-        }
-        if (DataScopeViewTypeEnum.DEPARTMENT == viewType) {
-            return this.getMeDepartmentIdList(employeeId);
-        }
-        if (DataScopeViewTypeEnum.DEPARTMENT_AND_SUB == viewType) {
-            return this.getDepartmentAndSubIdList(employeeId);
-        }
-        // 可以查看所有部门数据
-        return Lists.newArrayList();
-    }
-
-    public List<Long> getMeDepartmentIdList(Long employeeId) {
-        BackendUserEntity employeeEntity = employeeDao.selectById(employeeId);
-        return Lists.newArrayList(employeeEntity.getDepartmentId());
-    }
-
-    public List<Long> getDepartmentAndSubIdList(Long employeeId) {
-        BackendUserEntity employeeEntity = employeeDao.selectById(employeeId);
-        return departmentService.selfAndChildrenIdList(employeeEntity.getDepartmentId());
-    }
+    private BackendUserDao backendUserDao;
 
     /**
      * 根据后台用户id 获取各数据范围最大的可见范围 map<dataScopeType,viewType></>
      */
-    public DataScopeViewTypeEnum getBackendUserDataScopeViewType(DataScopeTypeEnum dataScopeTypeEnum, Long employeeId) {
-        BackendUserEntity employeeEntity = employeeDao.selectById(employeeId);
-        if (employeeEntity == null || employeeEntity.getBackendUserId() == null) {
+    public DataScopeViewTypeEnum getBackendUserDataScopeViewType(DataScopeTypeEnum dataScopeTypeEnum, Long id) {
+        BackendUserEntity backendUserEntity = backendUserDao.selectById(id);
+        if (backendUserEntity == null || backendUserEntity.getId() == null) {
             return DataScopeViewTypeEnum.ME;
         }
 
-        // 如果是超级管理员 则可查看全部
-        if (employeeEntity.getAdministratorFlag()) {
-            return DataScopeViewTypeEnum.ALL;
-        }
-
-        List<Long> roleIdList = roleBackendUserDao.selectRoleIdByBackendUserId(employeeId);
+        List<Long> roleIdList = roleBackendUserDao.selectRoleIdByBackendUserId(id);
         //未设置角色 默认本人
         if (CollectionUtils.isEmpty(roleIdList)) {
             return DataScopeViewTypeEnum.ME;
@@ -124,23 +70,7 @@ public class DataScopeViewService {
     /**
      * 获取本人相关 可查看后台用户id
      */
-    private List<Long> getMeBackendUserIdList(Long employeeId) {
-        return Lists.newArrayList(employeeId);
-    }
-
-    /**
-     * 获取本部门相关 可查看后台用户id
-     */
-    private List<Long> getDepartmentBackendUserIdList(Long employeeId) {
-        BackendUserEntity employeeEntity = employeeDao.selectById(employeeId);
-        return employeeDao.getBackendUserIdByDepartmentId(employeeEntity.getDepartmentId(), false);
-    }
-
-    /**
-     * 获取本部门及下属子部门相关 可查看后台用户id
-     */
-    private List<Long> getDepartmentAndSubBackendUserIdList(Long employeeId) {
-        List<Long> allDepartmentIds = getDepartmentAndSubIdList(employeeId);
-        return employeeDao.getBackendUserIdByDepartmentIdList(allDepartmentIds, false);
+    private List<Long> getMeBackendUserIdList(Long backendUserId) {
+        return Lists.newArrayList(backendUserId);
     }
 }

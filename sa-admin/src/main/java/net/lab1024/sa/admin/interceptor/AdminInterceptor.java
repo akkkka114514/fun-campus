@@ -37,12 +37,8 @@ import java.lang.reflect.Method;
 @Component
 @Slf4j
 public class AdminInterceptor implements HandlerInterceptor {
-
     @Resource
     private LoginService loginService;
-    
-    @Resource
-    private BackendUserLoginService backendUserLoginService;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -63,46 +59,31 @@ public class AdminInterceptor implements HandlerInterceptor {
 
             String tokenValue = StpUtil.getTokenValue();
             String loginId = (String) StpUtil.getLoginIdByToken(tokenValue);
-            
-            // 判断用户类型
-            Object requestUser = null;
-            if (loginId != null && loginId.startsWith("1:")) {
-                // 原BackendUser用户
-                RequestBackendUser requestBackendUser = loginService.getLoginBackendUser(loginId, request);
-                requestUser = requestBackendUser;
-            } else if (loginId != null && loginId.startsWith("2:")) {
-                // BackendUser用户
-                RequestBackendUser requestBackendUser = backendUserLoginService.getLoginUser(loginId, request);
-                requestUser = requestBackendUser;
-            }
+            RequestBackendUser requestBackendUser = loginService.getLoginBackendUser(loginId, request);
 
             // --------------- 第二步： 校验 登录 ---------------
 
             Method method = ((HandlerMethod) handler).getMethod();
             NoNeedLogin noNeedLogin = ((HandlerMethod) handler).getMethodAnnotation(NoNeedLogin.class);
             if (noNeedLogin != null) {
-                updateActiveTimeout(requestUser);
-                SmartRequestUtil.setRequestUser((net.lab1024.sa.base.common.domain.RequestUser) requestUser);
+                updateActiveTimeout(requestBackendUser);
+                SmartRequestUtil.setRequestUser(requestBackendUser);
                 return true;
             }
 
-            if (requestUser == null) {
+            if (requestBackendUser == null) {
                 SmartResponseUtil.write(response, ResponseDTO.error(UserErrorCode.LOGIN_STATE_INVALID));
                 return false;
             }
 
             // 更新活跃
-            updateActiveTimeout(requestUser);
+            updateActiveTimeout(requestBackendUser);
+
 
             // --------------- 第三步： 校验 权限 ---------------
 
-            SmartRequestUtil.setRequestUser((net.lab1024.sa.base.common.domain.RequestUser) requestUser);
+            SmartRequestUtil.setRequestUser(requestBackendUser);
             if (SaAnnotationStrategy.instance.isAnnotationPresent.apply(method, SaIgnore.class)) {
-                return true;
-            }
-
-            // 如果是超级管理员的话，不需要校验权限
-            if (requestUser instanceof RequestBackendUser && ((RequestBackendUser) requestUser).getAdministratorFlag()) {
                 return true;
             }
 
@@ -134,19 +115,22 @@ public class AdminInterceptor implements HandlerInterceptor {
         return true;
     }
 
+
     /**
      * 更新活跃时间
      */
-    private void updateActiveTimeout(Object requestUser) {
-        if (requestUser == null) {
+    private void updateActiveTimeout(RequestBackendUser requestBackendUser) {
+        if (requestBackendUser == null) {
             return;
         }
         StpUtil.updateLastActiveToNow();
     }
+
 
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
         // 清除上下文
         SmartRequestUtil.remove();
     }
+
 }

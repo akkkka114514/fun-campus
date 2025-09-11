@@ -65,7 +65,7 @@
   import { message } from 'ant-design-vue';
   import _ from 'lodash';
   import { nextTick, reactive, ref } from 'vue';
-  import { employeeApi } from '/@/api/system/employee-api';
+  import { backendUserApi } from '/src/api/system/backend-user-api';
   import { roleApi } from '/@/api/system/role-api';
   import DepartmentTreeSelect from '/@/components/system/department-tree-select/index.vue';
   import SmartEnumSelect from '/@/components/framework/smart-enum-select/index.vue';
@@ -181,7 +181,7 @@
 
   async function addBackendUser(keepAdding) {
     try {
-      let { data } = await employeeApi.addBackendUser(form);
+      let { data } = await backendUserApi.addBackendUser(form);
       message.success('添加成功');
       emit('show-account', form.loginName, data);
       if (keepAdding) {
@@ -198,7 +198,7 @@
   }
   async function updateBackendUser(keepAdding) {
     try {
-      let result = await employeeApi.updateBackendUser(form);
+      let result = await backendUserApi.updateBackendUser(form);
       message.success('更新成功');
       if (keepAdding) {
         reset();

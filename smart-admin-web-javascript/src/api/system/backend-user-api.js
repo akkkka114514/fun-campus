@@ -10,7 +10,7 @@
 
 import { getRequest, postEncryptRequest, postRequest } from '/@/lib/axios';
 
-export const employeeApi = {
+export const backendUserApi = {
   /**
    * 查询所有后台用户 @author 卓大
    */
@@ -42,12 +42,6 @@ export const employeeApi = {
     return postRequest('/employee/update/center', params);
   },
   /**
-   * 更新登录人头像
-   */
-  updateAvatar: (params) => {
-    return postRequest('/employee/update/avatar', params);
-  },
-  /**
    * 删除后台用户
    */
   deleteBackendUser: (employeeId) => {
@@ -58,12 +52,6 @@ export const employeeApi = {
    */
   batchDeleteBackendUser: (employeeIdList) => {
     return postRequest('/employee/update/batch/delete', employeeIdList);
-  },
-  /**
-   * 批量调整后台用户部门
-   */
-  batchUpdateDepartmentBackendUser: (updateParam) => {
-    return postRequest('/employee/update/batch/department', updateParam);
   },
   /**
    * 重置后台用户密码
@@ -88,11 +76,5 @@ export const employeeApi = {
    */
   updateDisabled: (employeeId) => {
     return getRequest(`/employee/update/disabled/${employeeId}`);
-  },
-  /**
-   * 查询后台用户-根据部门id
-   */
-  queryBackendUserByDeptId: (departmentId) => {
-    return getRequest(`/employee/getAllBackendUserByDepartmentId/${departmentId}`);
   },
 };

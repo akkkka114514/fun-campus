@@ -21,7 +21,7 @@
   import _ from 'lodash';
   import { ref } from 'vue';
   import DepartmentTree from '../department-tree/index.vue';
-  import { employeeApi } from '/@/api/system/employee-api';
+  import { backendUserApi } from '/src/api/system/backend-user-api';
   import { smartSentry } from '/@/lib/smart-sentry';
   import { SmartLoading } from '/@/components/framework/smart-loading';
 
@@ -63,7 +63,7 @@
         employeeIdList: employeeIdList.value,
         departmentId: departmentId,
       };
-      await employeeApi.batchUpdateDepartmentBackendUser(params);
+      await backendUserApi.batchUpdateDepartmentBackendUser(params);
       message.success('操作成功');
       emit('refresh');
       closeModal();

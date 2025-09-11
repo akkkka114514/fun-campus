@@ -26,7 +26,7 @@
 
 <script setup>
   import { onMounted, ref, watch } from 'vue';
-  import { employeeApi } from '/@/api/system/employee-api';
+  import { backendUserApi } from '/src/api/system/backend-user-api';
   import { smartSentry } from '/@/lib/smart-sentry';
 
   // =========== 属性定义 和 事件方法暴露 =============
@@ -72,7 +72,7 @@
       if (null != props.disabledFlag) {
         params.disabledFlag = props.disabledFlag;
       }
-      let resp = await employeeApi.queryAll(params);
+      let resp = await backendUserApi.queryAll(params);
       employeeList.value = resp.data;
     } catch (e) {
       smartSentry.captureError(e);

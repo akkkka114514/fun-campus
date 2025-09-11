@@ -14,17 +14,7 @@ import net.lab1024.sa.base.constant.SwaggerTagConst;
 public class AdminSwaggerTagConst extends SwaggerTagConst {
 
     public static class Business {
-        public static final String MANAGER_CATEGORY = "ERP进销存-分类管理";
 
-        public static final String MANAGER_GOODS = "ERP进销存-商品管理";
-
-        public static final String OA_BANK = "OA办公-银行卡信息";
-
-        public static final String OA_ENTERPRISE = "OA办公-企业";
-
-        public static final String OA_INVOICE = "OA办公-发票信息";
-
-        public static final String OA_NOTICE = "OA办公-通知公告";
 
     }
 
@@ -33,9 +23,7 @@ public class AdminSwaggerTagConst extends SwaggerTagConst {
 
         public static final String SYSTEM_LOGIN = "系统-后台用户登录";
 
-        public static final String SYSTEM_EMPLOYEE = "系统-后台用户管理";
-
-        public static final String SYSTEM_DEPARTMENT = "系统-部门管理";
+        public static final String SYSTEM_BACKEND_USER = "系统-后台用户管理";
 
         public static final String SYSTEM_MENU = "系统-菜单";
 
@@ -45,11 +33,9 @@ public class AdminSwaggerTagConst extends SwaggerTagConst {
 
         public static final String SYSTEM_ROLE_DATA_SCOPE = "系统-角色-数据范围";
 
-        public static final String SYSTEM_ROLE_EMPLOYEE = "系统-角色-后台用户";
+        public static final String SYSTEM_ROLE_BACKEND_USER = "系统-角色-后台用户";
 
         public static final String SYSTEM_ROLE_MENU = "系统-角色-菜单";
-
-        public static final String SYSTEM_POSITION = "系统-职务管理";
 
         public static final String SYSTEM_MESSAGE = "系统-消息";
 

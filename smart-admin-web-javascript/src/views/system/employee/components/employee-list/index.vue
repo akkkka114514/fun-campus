@@ -107,7 +107,7 @@
   import { message, Modal } from 'ant-design-vue';
   import _ from 'lodash';
   import { computed, createVNode, reactive, ref, watch } from 'vue';
-  import { employeeApi } from '/@/api/system/employee-api';
+  import { backendUserApi } from '/src/api/system/backend-user-api';
   import { PAGE_SIZE } from '/@/constants/common-const';
   import { SmartLoading } from '/@/components/framework/smart-loading';
   import BackendUserFormModal from '../employee-form-modal/index.vue';
@@ -219,7 +219,7 @@
     tableLoading.value = true;
     try {
       params.departmentId = props.departmentId;
-      let res = await employeeApi.queryBackendUser(params);
+      let res = await backendUserApi.queryBackendUser(params);
       for (const item of res.data.list) {
         item.roleNameList = _.join(item.roleNameList, ',');
       }
@@ -241,7 +241,7 @@
     try {
       params.pageNum = 1;
       params.departmentId = allDepartment ? undefined : props.departmentId;
-      let res = await employeeApi.queryBackendUser(params);
+      let res = await backendUserApi.queryBackendUser(params);
       for (const item of res.data.list) {
         item.roleNameList = _.join(item.roleNameList, ',');
       }
@@ -297,7 +297,7 @@
       async onOk() {
         SmartLoading.show();
         try {
-          await employeeApi.batchDeleteBackendUser(employeeIdArray);
+          await backendUserApi.batchDeleteBackendUser(employeeIdArray);
           message.success('删除成功');
           queryBackendUser();
           selectedRowKeys.value = [];
@@ -352,7 +352,7 @@
       async onOk() {
         SmartLoading.show();
         try {
-          let { data: passWord } = await employeeApi.resetPassword(id);
+          let { data: passWord } = await backendUserApi.resetPassword(id);
           message.success('重置成功');
           employeePasswordDialog.value.showModal(name, passWord);
           queryBackendUser();
@@ -378,7 +378,7 @@
       async onOk() {
         SmartLoading.show();
         try {
-          await employeeApi.updateDisabled(id);
+          await backendUserApi.updateDisabled(id);
           message.success(`${disabledFlag ? '启用' : '禁用'}成功`);
           queryBackendUser();
         } catch (error) {

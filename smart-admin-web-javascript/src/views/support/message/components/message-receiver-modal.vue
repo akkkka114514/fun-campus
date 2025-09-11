@@ -58,7 +58,7 @@
   import { PAGE_SIZE, PAGE_SIZE_OPTIONS } from '/@/constants/common-const';
   import { smartSentry } from '/@/lib/smart-sentry';
   import { SmartLoading } from '/@/components/framework/smart-loading';
-  import { employeeApi } from '/@/api/system/employee-api';
+  import { backendUserApi } from '/src/api/system/backend-user-api';
   // ---------------查询条件----------------
   const queryParamState = {
     searchWord: null,
@@ -109,7 +109,7 @@
   async function queryList() {
     try {
       tableLoading.value = true;
-      let res = await employeeApi.queryBackendUser(queryParam);
+      let res = await backendUserApi.queryBackendUser(queryParam);
       const list = res.data.list;
       total.value = res.data.total;
       tableData.value = list;

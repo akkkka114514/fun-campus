@@ -25,7 +25,7 @@
 <script setup>
   import { ref, reactive } from 'vue';
   import { message } from 'ant-design-vue';
-  import { employeeApi } from '/@/api/system/employee-api';
+  import { backendUserApi } from '/src/api/system/backend-user-api';
   import { SmartLoading } from '/@/components/framework/smart-loading';
   import { smartSentry } from '/@/lib/smart-sentry';
 
@@ -58,7 +58,7 @@
         }
         SmartLoading.show();
         try {
-          await employeeApi.updateBackendUserPassword(form);
+          await backendUserApi.updateBackendUserPassword(form);
           message.success('修改成功');
           visible.value = false;
         } catch (error) {

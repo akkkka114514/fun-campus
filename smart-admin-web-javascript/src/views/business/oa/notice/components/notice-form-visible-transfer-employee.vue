@@ -45,7 +45,7 @@
   import _ from 'lodash';
   import { NOTICE_VISIBLE_RANGE_DATA_TYPE_ENUM } from '/@/constants/business/oa/notice-const';
   import { departmentApi } from '/@/api/system/department-api';
-  import { employeeApi } from '/@/api/system/employee-api';
+  import { backendUserApi } from '/src/api/system/backend-user-api';
   import { smartSentry } from '/@/lib/smart-sentry';
 
   const props = defineProps({
@@ -64,7 +64,7 @@
   async function queryDepartmentTree() {
     try {
       const departmentResult = await departmentApi.queryDepartmentTree();
-      const employeeResult = await employeeApi.queryAll();
+      const employeeResult = await backendUserApi.queryAll();
       const departmentTree = departmentResult.data;
       buildDepartmentBackendUserTree(departmentTree, employeeResult.data);
 

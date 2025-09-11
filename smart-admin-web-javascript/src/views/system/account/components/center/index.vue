@@ -84,7 +84,7 @@
   import { useUserStore } from '/@/store/modules/system/user.js';
   import { message } from 'ant-design-vue';
   import { smartSentry } from '/@/lib/smart-sentry.js';
-  import { employeeApi } from '/@/api/system/employee-api';
+  import { backendUserApi } from '/src/api/system/backend-user-api';
   import { SmartLoading } from '/@/components/framework/smart-loading/index.js';
   import { fileApi } from '/@/api/support/file-api.js';
   import { FILE_FOLDER_TYPE_ENUM } from '/@/constants/support/file-const.js';
@@ -189,7 +189,7 @@
       avatarUrl.value = file.fileUrl;
       // 更新头像
       let updateAvatarForm = { avatar: file.fileKey };
-      await employeeApi.updateAvatar(updateAvatarForm);
+      await backendUserApi.updateAvatar(updateAvatarForm);
       message.success('更新成功');
       // 重新获取详情，刷新整体缓存
       await getLoginInfo();
@@ -204,7 +204,7 @@
   async function updateBackendUser() {
     SmartLoading.show();
     try {
-      await employeeApi.updateCenter(form);
+      await backendUserApi.updateCenter(form);
       message.success('更新成功');
       // 重新获取详情，刷新整体缓存
       await getLoginInfo();

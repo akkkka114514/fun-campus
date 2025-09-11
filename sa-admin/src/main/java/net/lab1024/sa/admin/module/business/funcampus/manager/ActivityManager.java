@@ -26,24 +26,6 @@ public class ActivityManager extends ServiceImpl<ActivityDao, ActivityEntity> {
     private ActivityDao activityDao;
 
     /**
-     * 更新活动状态
-     *
-     * @param activityId 活动ID
-     * @param status 新状态
-     * @return 是否更新成功
-     */
-    public boolean updateStatus(Long activityId, Integer status) {
-        if (activityId == null || status == null) {
-            return false;
-        }
-        
-        UpdateWrapper<ActivityEntity> updateWrapper = new UpdateWrapper<>();
-        updateWrapper.eq("id", activityId);
-        updateWrapper.set("status", status);
-        return this.update(updateWrapper);
-    }
-
-    /**
      * 批量更新活动状态
      *
      * @param statusMap 活动ID和状态的映射

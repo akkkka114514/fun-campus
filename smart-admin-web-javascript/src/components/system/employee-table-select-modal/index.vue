@@ -79,7 +79,7 @@
 <script setup>
   import { message } from 'ant-design-vue';
   import { computed, reactive, ref } from 'vue';
-  import { employeeApi } from '/@/api/system/employee-api';
+  import { backendUserApi } from '/src/api/system/backend-user-api';
   import { PAGE_SIZE, PAGE_SIZE_OPTIONS } from '/@/constants/common-const';
   import DepartmentTreeSelect from '/@/components/system/department-tree-select/index.vue';
   import { smartSentry } from '/@/lib/smart-sentry';
@@ -133,7 +133,7 @@
   async function queryBackendUser() {
     tableLoading.value = true;
     try {
-      let res = await employeeApi.queryBackendUser(params);
+      let res = await backendUserApi.queryBackendUser(params);
       tableData.value = res.data.list;
       total.value = res.data.total;
     } catch (error) {

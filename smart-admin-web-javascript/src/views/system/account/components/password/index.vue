@@ -21,7 +21,7 @@
   import { computed, onMounted, reactive, ref } from 'vue';
   import { message } from 'ant-design-vue';
   import { SmartLoading } from '/@/components/framework/smart-loading/index.js';
-  import { employeeApi } from '/@/api/system/employee-api.js';
+  import { backendUserApi } from '/src/api/system/backend-user-api.js';
   import { smartSentry } from '/@/lib/smart-sentry.js';
 
   const emits = defineEmits(['onSuccess']);
@@ -39,7 +39,7 @@
   async function getPasswordComplexityEnabled() {
     try {
       SmartLoading.show();
-      let res = await employeeApi.getPasswordComplexityEnabled();
+      let res = await backendUserApi.getPasswordComplexityEnabled();
       passwordComplexityEnabledFlag.value = res.data;
       tips.value = passwordComplexityEnabledFlag.value ? passwordComplexityEnabledTips : passwordTips;
     } catch (e) {
@@ -89,7 +89,7 @@
         }
         SmartLoading.show();
         try {
-          await employeeApi.updateBackendUserPassword(form);
+          await backendUserApi.updateBackendUserPassword(form);
           message.success('修改成功');
 
           form.oldPassword = '';

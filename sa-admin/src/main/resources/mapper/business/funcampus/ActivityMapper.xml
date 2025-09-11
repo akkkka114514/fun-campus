@@ -36,5 +36,19 @@
         update activity set deleted_flag = #{deletedFlag}
         where id = #{id}
     </update>
+    
+    <!-- 批量更新活动状态 -->
+    <update id="updateStatusBatch" parameterType="java.util.Map">
+        UPDATE activity 
+        SET status = CASE id 
+            <foreach collection="statusMap" index="key" item="value">
+                WHEN #{key} THEN #{value}
+            </foreach>
+        END
+        WHERE id IN 
+        <foreach collection="statusMap.keys" open="(" close=")" separator="," item="key">
+            #{key}
+        </foreach>
+    </update>
 
 </mapper>

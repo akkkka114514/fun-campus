@@ -2,6 +2,7 @@ package net.lab1024.sa.admin.module.business.funcampus.manager;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import jakarta.annotation.Resource;
 import net.lab1024.sa.admin.module.business.funcampus.dao.ActivityDao;
 import net.lab1024.sa.admin.module.business.funcampus.domain.entity.ActivityEntity;
 
@@ -9,6 +10,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 活动管理  Manager
@@ -19,6 +21,9 @@ import java.util.List;
  */
 @Service
 public class ActivityManager extends ServiceImpl<ActivityDao, ActivityEntity> {
+
+    @Resource
+    private ActivityDao activityDao;
 
     /**
      * 更新活动状态
@@ -39,16 +44,17 @@ public class ActivityManager extends ServiceImpl<ActivityDao, ActivityEntity> {
     }
 
     /**
-     * 获取需要检查状态的活动列表（未删除且未结束的活动）
+     * 批量更新活动状态
      *
-     * @param limit 限制数量
-     * @return 活动列表
+     * @param statusMap 活动ID和状态的映射
+     * @return 更新成功的记录数
      */
-    public List<ActivityEntity> getActivitiesForStatusCheck(int limit) {
-        QueryWrapper<ActivityEntity> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("deleted_flag", false);
-        queryWrapper.ne("status", 4); // 排除已结束的活动
-        queryWrapper.last("LIMIT " + limit);
-        return this.list(queryWrapper);
+    public int updateStatusBatch(Map<Long, Integer> statusMap) {
+        if (statusMap == null || statusMap.isEmpty()) {
+            return 0;
+        }
+
+        activityDao.updateStatusBatch(statusMap);
+        return statusMap.size(); // 返回更新的记录数
     }
 }

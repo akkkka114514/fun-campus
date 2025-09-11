@@ -35,5 +35,30 @@
         update activity_schedule set deleted_flag = #{deletedFlag}
         where activity_id = #{activityId}
     </update>
-
+    
+    <!-- 根据活动ID列表查询时间表 -->
+    <select id="selectByActivityIds" resultType="net.lab1024.sa.admin.module.business.funcampus.domain.entity.ActivityScheduleEntity">
+        SELECT
+        <include refid="base_columns"/>
+        FROM activity_schedule
+        WHERE activity_id IN
+        <foreach collection="activityIds" open="(" close=")" separator="," item="activityId">
+            #{activityId}
+        </foreach>
+        AND deleted_flag = 0
+    </select>
+    
+    <!-- 查询指定时间范围内有关键时间点的活动 -->
+    <select id="selectActivitiesWithKeyTime" resultType="net.lab1024.sa.admin.module.business.funcampus.domain.entity.ActivityScheduleEntity">
+        SELECT
+        <include refid="base_columns"/>
+        FROM activity_schedule
+        WHERE deleted_flag = 0
+        AND (
+            (enroll_start_time BETWEEN #{startTime} AND #{endTime}) OR
+            (enroll_end_time BETWEEN #{startTime} AND #{endTime}) OR
+            (activity_start_time BETWEEN #{startTime} AND #{endTime}) OR
+            (activity_end_time BETWEEN #{startTime} AND #{endTime})
+        )
+    </select>
 </mapper>

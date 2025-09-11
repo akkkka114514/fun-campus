@@ -27,7 +27,7 @@ import java.util.List;
  * @Copyright  <a href="https://1024lab.net">1024创新实验室</a>
  */
 @RestController
-@Tag(name = AdminSwaggerTagConst.System.SYSTEM_ROLE_EMPLOYEE)
+@Tag(name = AdminSwaggerTagConst.System.SYSTEM_ROLE_BACKEND_USER)
 public class RoleBackendUserController {
 
     @Resource

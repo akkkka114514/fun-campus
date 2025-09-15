@@ -123,7 +123,6 @@ public class LoginService implements StpInterface {
      * @return 返回用户登录信息
      */
     public ResponseDTO<LoginResultVO> login(LoginForm loginForm, String ip, String userAgent) {
-
         LoginDeviceEnum loginDeviceEnum = SmartEnumUtil.getEnumByValue(loginForm.getLoginDevice(), LoginDeviceEnum.class);
         if (loginDeviceEnum == null) {
             return ResponseDTO.userErrorParam("登录设备暂不支持！");
@@ -172,21 +171,21 @@ public class LoginService implements StpInterface {
         } else {
 
             // 按照等保登录要求，进行登录失败次数校验
-            ResponseDTO<LoginFailEntity> loginFailEntityResponseDTO = securityLoginService.checkLogin(backendUserEntity.getId(), UserTypeEnum.ADMIN_EMPLOYEE);
+            ResponseDTO<LoginFailEntity> loginFailEntityResponseDTO = securityLoginService.checkLogin(backendUserEntity.getId(), UserTypeEnum.ADMIN_BACKEND_USER);
             if (!loginFailEntityResponseDTO.getOk()) {
                 return ResponseDTO.error(loginFailEntityResponseDTO);
             }
 
             // 密码错误
-            if (!SecurityPasswordService.matchesPwd(backendUserEntity.getPassword(), backendUserEntity.getPassword())) {
+            if (!SecurityPasswordService.matchesPwd(requestPassword, backendUserEntity.getPassword())) {
                 // 记录登录失败
                 saveLoginLog(backendUserEntity, ip, userAgent, "密码错误", LoginLogResultEnum.LOGIN_FAIL, loginDeviceEnum);
                 // 记录等级保护次数
-                String msg = securityLoginService.recordLoginFail(backendUserEntity.getId(), UserTypeEnum.ADMIN_EMPLOYEE, backendUserEntity.getUsername(), loginFailEntityResponseDTO.getData());
+                String msg = securityLoginService.recordLoginFail(backendUserEntity.getId(), UserTypeEnum.ADMIN_BACKEND_USER, backendUserEntity.getUsername(), loginFailEntityResponseDTO.getData());
                 return msg == null ? ResponseDTO.userErrorParam("登录名或密码错误！") : ResponseDTO.error(UserErrorCode.LOGIN_FAIL_WILL_LOCK, msg);
             }
 
-            String saTokenLoginId = UserTypeEnum.ADMIN_EMPLOYEE.getValue() + StringConst.COLON + backendUserEntity.getId();
+            String saTokenLoginId = UserTypeEnum.ADMIN_BACKEND_USER.getValue() + StringConst.COLON + backendUserEntity.getId();
 
             // 登录
             StpUtil.login(saTokenLoginId, String.valueOf(loginDeviceEnum.getDesc()));
@@ -196,7 +195,7 @@ public class LoginService implements StpInterface {
         }
 
         // 清除登录失败次数
-        securityLoginService.removeLoginFail(backendUserEntity.getId(), UserTypeEnum.ADMIN_EMPLOYEE);
+        securityLoginService.removeLoginFail(backendUserEntity.getId(), UserTypeEnum.ADMIN_BACKEND_USER);
 
         // 获取菜单权限等信息
         loginManager.loadUserPermission(backendUserEntity.getId());
@@ -224,7 +223,7 @@ public class LoginService implements StpInterface {
         loginResultVO.setUserAgent(requestBackendUser.getUserAgent());
 
         // 上次登录信息
-        LoginLogVO loginLogVO = loginLogService.queryLastByUserId(requestBackendUser.getUserId(), UserTypeEnum.ADMIN_EMPLOYEE, LoginLogResultEnum.LOGIN_SUCCESS);
+        LoginLogVO loginLogVO = loginLogService.queryLastByUserId(requestBackendUser.getUserId(), UserTypeEnum.ADMIN_BACKEND_USER, LoginLogResultEnum.LOGIN_SUCCESS);
         if (loginLogVO != null) {
             loginResultVO.setLastLoginIp(loginLogVO.getLoginIp());
             loginResultVO.setLastLoginIpRegion(loginLogVO.getLoginIpRegion());
@@ -274,7 +273,7 @@ public class LoginService implements StpInterface {
         }
 
         // 上次登录信息
-        LoginLogVO loginLogVO = loginLogService.queryLastByUserId(requestBackendUser.getUserId(), UserTypeEnum.ADMIN_EMPLOYEE, LoginLogResultEnum.LOGIN_SUCCESS);
+        LoginLogVO loginLogVO = loginLogService.queryLastByUserId(requestBackendUser.getUserId(), UserTypeEnum.ADMIN_BACKEND_USER, LoginLogResultEnum.LOGIN_SUCCESS);
         if (loginLogVO != null) {
             loginResultVO.setLastLoginIp(loginLogVO.getLoginIp());
             loginResultVO.setLastLoginIpRegion(loginLogVO.getLoginIpRegion());
@@ -367,7 +366,7 @@ public class LoginService implements StpInterface {
     private void saveLoginLog(BackendUserEntity backendUserEntity, String ip, String userAgent, String remark, LoginLogResultEnum result, LoginDeviceEnum loginDeviceEnum) {
         LoginLogEntity loginEntity = LoginLogEntity.builder()
                 .userId(backendUserEntity.getId())
-                .userType(UserTypeEnum.ADMIN_EMPLOYEE.getValue())
+                .userType(UserTypeEnum.ADMIN_BACKEND_USER.getValue())
                 .userName(backendUserEntity.getUsername())
                 .userAgent(userAgent)
                 .loginIp(ip)
@@ -461,7 +460,7 @@ public class LoginService implements StpInterface {
             }
 
             // 校验验证码
-            String redisVerificationCodeKey = redisService.generateRedisKey(RedisKeyConst.Support.LOGIN_VERIFICATION_CODE, UserTypeEnum.ADMIN_EMPLOYEE.getValue() + RedisKeyConst.SEPARATOR + backendUserEntity.getId());
+            String redisVerificationCodeKey = redisService.generateRedisKey(RedisKeyConst.Support.LOGIN_VERIFICATION_CODE, UserTypeEnum.ADMIN_BACKEND_USER.getValue() + RedisKeyConst.SEPARATOR + backendUserEntity.getId());
             String emailCode = redisService.get(redisVerificationCodeKey);
             if (SmartStringUtil.isEmpty(emailCode)) {
                 return ResponseDTO.userErrorParam("邮箱验证码已过期");
@@ -479,7 +478,7 @@ public class LoginService implements StpInterface {
      * 移除邮箱验证码
      */
     private void deleteEmailCode(Long employeeId) {
-        String redisVerificationCodeKey = redisService.generateRedisKey(RedisKeyConst.Support.LOGIN_VERIFICATION_CODE, UserTypeEnum.ADMIN_EMPLOYEE.getValue() + RedisKeyConst.SEPARATOR + employeeId);
+        String redisVerificationCodeKey = redisService.generateRedisKey(RedisKeyConst.Support.LOGIN_VERIFICATION_CODE, UserTypeEnum.ADMIN_BACKEND_USER.getValue() + RedisKeyConst.SEPARATOR + employeeId);
         redisService.delete(redisVerificationCodeKey);
     }
 

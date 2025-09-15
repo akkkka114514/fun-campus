@@ -211,7 +211,7 @@ public class BackendUserService extends ServiceImpl<BackendUserDao, BackendUserE
 
         if (backendUserEntity.getDisabledFlag()) {
             // 强制退出登录
-            StpUtil.logout(UserTypeEnum.ADMIN_EMPLOYEE.getValue() + StringConst.COLON + backendUserId);
+            StpUtil.logout(UserTypeEnum.ADMIN_BACKEND_USER.getValue() + StringConst.COLON + backendUserId);
         }
 
         return ResponseDTO.ok();
@@ -239,7 +239,7 @@ public class BackendUserService extends ServiceImpl<BackendUserDao, BackendUserE
 
         for (Long backendUserId : backendUserIdList) {
             // 强制退出登录
-            StpUtil.logout(UserTypeEnum.ADMIN_EMPLOYEE.getValue() + StringConst.COLON + backendUserId);
+            StpUtil.logout(UserTypeEnum.ADMIN_BACKEND_USER.getValue() + StringConst.COLON + backendUserId);
         }
         return ResponseDTO.ok();
     }

@@ -25,7 +25,7 @@ public @interface DataScope {
 
     DataScopeTypeEnum dataScopeType() ;
 
-    DataScopeWhereInTypeEnum whereInType() default DataScopeWhereInTypeEnum.EMPLOYEE;
+    DataScopeWhereInTypeEnum whereInType() default DataScopeWhereInTypeEnum.BACKEND_USER;
 
     /**
      * DataScopeWhereInTypeEnum.CUSTOM_STRATEGY类型 才可使用joinSqlImplClazz属性

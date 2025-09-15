@@ -1,7 +1,9 @@
 package net.lab1024.sa.admin;
 
+import net.lab1024.sa.base.module.support.securityprotect.service.SecurityPasswordService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -21,5 +23,11 @@ public class AdminApplicationTest {
         System.out.println("----------------------- 测试结束 -----------------------");
     }
 
+
+    @Test
+    public void test() {
+        String password = SecurityPasswordService.getEncryptPwd("Qw020829@qazwsx");
+        System.out.println(password);
+    }
 }
 

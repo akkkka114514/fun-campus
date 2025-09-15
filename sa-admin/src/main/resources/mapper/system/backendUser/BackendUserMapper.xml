@@ -4,10 +4,8 @@
 
     <select id="queryBackendUser" resultType="net.lab1024.sa.admin.module.system.backendUser.domain.vo.BackendUserVO">
         SELECT
-        backend_user.*,
-        t_department.department_name
+        backend_user.*
         FROM backend_user
-        LEFT JOIN t_department ON t_department.department_id = backend_user.department_id
         <where>
             <if test="queryForm.keyword != null and queryForm.keyword != ''">
                 AND INSTR(backend_user.username,#{queryForm.keyword})
@@ -76,18 +74,13 @@
 
     <select id="getBackendUserById" resultType="net.lab1024.sa.admin.module.system.backendUser.domain.vo.BackendUserVO">
         SELECT backend_user.*,
-               t_department.department_name
         FROM backend_user
-                 LEFT JOIN t_department ON t_department.department_id = backend_user.department_id
-        where backend_user.id = #{id}
     </select>
 
     <select id="selectBackendUserByDisabledAndDeleted" resultType="net.lab1024.sa.admin.module.system.backendUser.domain.vo.BackendUserVO">
         SELECT
-        backend_user.*,
-        t_department.department_name
+        backend_user.*
         FROM backend_user
-        LEFT JOIN t_department ON t_department.department_id = backend_user.department_id
         <where>
             <if test="disabledFlag != null">
                 AND backend_user.disabled_flag = #{disabledFlag}

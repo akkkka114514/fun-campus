@@ -1,7 +1,6 @@
 package net.lab1024.sa.admin.module.business.funcampus.dao;
 
 import java.util.List;
-import java.util.Map;
 import net.lab1024.sa.admin.module.business.funcampus.domain.entity.ActivityEntity;
 import net.lab1024.sa.admin.module.business.funcampus.domain.form.ActivityQueryForm;
 import net.lab1024.sa.admin.module.business.funcampus.domain.vo.ActivityVO;
@@ -40,12 +39,5 @@ public interface ActivityDao extends BaseMapper<ActivityEntity> {
      * 批量更新删除状态
      */
     void batchUpdateDeleted(@Param("idList")List<Long> idList,@Param("deletedFlag")boolean deletedFlag);
-    
-    /**
-     * 批量更新活动状态
-     * 
-     * @param statusMap 活动ID和状态的映射
-     */
-    void updateStatusBatch(@Param("statusMap") Map<Long, Integer> statusMap);
 
 }

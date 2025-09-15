@@ -71,7 +71,7 @@ public class LoginManager {
     public RequestBackendUser loadLoginInfo(BackendUserEntity backendUserEntity) {
         // 基础信息
         RequestBackendUser requestBackendUser = SmartBeanUtil.copy(backendUserEntity, RequestBackendUser.class);
-        requestBackendUser.setUserType(UserTypeEnum.ADMIN_EMPLOYEE);
+        requestBackendUser.setUserType(UserTypeEnum.ADMIN_BACKEND_USER);
         return requestBackendUser;
     }
 
@@ -117,13 +117,13 @@ public class LoginManager {
      * 更新用户权限
      */
     @CachePut(value = AdminCacheConst.Login.USER_PERMISSION)
-    public UserPermission loadUserPermission(Long employeeId) {
+    public UserPermission loadUserPermission(Long id) {
         UserPermission userPermission = new UserPermission();
         userPermission.setPermissionList(new ArrayList<>());
         userPermission.setRoleList(new ArrayList<>());
 
         // 角色列表
-        List<RoleVO> roleList = roleBackendUserService.getRoleIdList(employeeId);
+        List<RoleVO> roleList = roleBackendUserService.getRoleIdList(id);
         userPermission.getRoleList().addAll(roleList.stream().map(RoleVO::getRoleCode).collect(Collectors.toSet()));
 
         // 前端菜单和功能点清单

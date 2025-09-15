@@ -8,7 +8,6 @@ import net.lab1024.sa.admin.module.business.funcampus.domain.entity.ActivitySche
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -22,9 +21,6 @@ import java.util.List;
 @Service
 public class ActivityScheduleManager extends ServiceImpl<ActivityScheduleDao, ActivityScheduleEntity> {
 
-    @Resource
-    private ActivityScheduleDao activityScheduleDao;
-
     /**
      * 根据活动ID列表查询时间表
      *
@@ -36,7 +32,9 @@ public class ActivityScheduleManager extends ServiceImpl<ActivityScheduleDao, Ac
             return List.of();
         }
         
-        return activityScheduleDao.selectByActivityIds(activityIds);
+        LambdaQueryWrapper<ActivityScheduleEntity> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.in(ActivityScheduleEntity::getActivityId, activityIds);
+        return this.list(queryWrapper);
     }
 
     /**
@@ -63,6 +61,19 @@ public class ActivityScheduleManager extends ServiceImpl<ActivityScheduleDao, Ac
      * @return 活动时间表列表
      */
     public List<ActivityScheduleEntity> getActivitiesWithKeyTime(LocalDateTime startTime, LocalDateTime endTime) {
-        return activityScheduleDao.selectActivitiesWithKeyTime(startTime, endTime);
+        LambdaQueryWrapper<ActivityScheduleEntity> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(ActivityScheduleEntity::getDeletedFlag, false);
+        
+        // 查询在指定时间范围内有关键时间点的活动
+        queryWrapper
+            .and(wrapper -> wrapper.between(ActivityScheduleEntity::getEnrollStartTime, startTime, endTime)
+                    .or()
+                    .between(ActivityScheduleEntity::getEnrollEndTime, startTime, endTime)
+                    .or()
+                    .between(ActivityScheduleEntity::getActivityStartTime, startTime, endTime)
+                    .or()
+                    .between(ActivityScheduleEntity::getActivityEndTime, startTime, endTime));
+        
+        return this.list(queryWrapper);
     }
 }

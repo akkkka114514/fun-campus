@@ -63,7 +63,7 @@ public class SmartJobLogEntity {
     /**
      * ip
      */
-    private String ip;
+    private String ip = "";
 
     /**
      * 进程id

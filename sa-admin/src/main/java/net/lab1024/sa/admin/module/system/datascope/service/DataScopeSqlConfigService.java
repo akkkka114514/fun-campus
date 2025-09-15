@@ -42,9 +42,7 @@ public class DataScopeSqlConfigService {
     /**
      * 注解joinsql 参数
      */
-    private static final String EMPLOYEE_PARAM = "#employeeIds";
-
-    private static final String DEPARTMENT_PARAM = "#departmentIds";
+    private static final String BACKEND_USER_PARAM = "#backendUserIds";
 
     /**
      * 用于拼接查看本人数据范围的 SQL
@@ -126,22 +124,13 @@ public class DataScopeSqlConfigService {
             }
             return powerStrategy.getCondition(viewTypeEnum, paramMap, sqlConfigDTO);
         }
-        if (DataScopeWhereInTypeEnum.EMPLOYEE == sqlConfigDTO.getDataScopeWhereInType()) {
+        if (DataScopeWhereInTypeEnum.BACKEND_USER == sqlConfigDTO.getDataScopeWhereInType()) {
             List<Long> canViewBackendUserIds = dataScopeViewService.getCanViewBackendUserId(viewTypeEnum, employeeId);
             if (CollectionUtils.isEmpty(canViewBackendUserIds)) {
                 return "";
             }
-            String employeeIds = StringUtils.join(canViewBackendUserIds, ",");
-            String sql = joinSql.replaceAll(EMPLOYEE_PARAM, employeeIds);
-            return sql;
-        }
-        if (DataScopeWhereInTypeEnum.DEPARTMENT == sqlConfigDTO.getDataScopeWhereInType()) {
-            List<Long> canViewDepartmentIds = dataScopeViewService.getCanViewDepartmentId(viewTypeEnum, employeeId);
-            if (CollectionUtils.isEmpty(canViewDepartmentIds)) {
-                return "";
-            }
-            String departmentIds = StringUtils.join(canViewDepartmentIds, ",");
-            String sql = joinSql.replaceAll(DEPARTMENT_PARAM, departmentIds);
+            String backendUserIds = StringUtils.join(canViewBackendUserIds, ",");
+            String sql = joinSql.replaceAll(BACKEND_USER_PARAM, backendUserIds);
             return sql;
         }
         return "";

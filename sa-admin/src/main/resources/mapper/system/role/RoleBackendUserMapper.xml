@@ -2,17 +2,26 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="net.lab1024.sa.admin.module.system.role.dao.RoleBackendUserDao">
 
+    <resultMap id="BackendUserVO" type="net.lab1024.sa.admin.module.system.backendUser.domain.vo.BackendUserVO">
+        <id property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="password" column="password"/>
+        <result property="disabledFlag" column="disabled_flag"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
     <select id="selectRoleByBackendUserId" resultType="net.lab1024.sa.admin.module.system.role.domain.vo.RoleVO">
         SELECT t_role.*
         FROM t_role_user
         left join t_role on t_role_user.role_id = t_role.role_id
-        WHERE t_role_user.user_id = #{userId}
+        WHERE t_role_user.user_id = #{backendUserId}
     </select>
 
     <select id="selectRoleIdByBackendUserId" resultType="java.lang.Long">
         SELECT ru.role_id
         FROM t_role_user ru
-        WHERE ru.user_id = #{userId}
+        WHERE ru.user_id = #{backendUserId}
     </select>
 
 
@@ -96,9 +105,8 @@
     <delete id="deleteByBackendUserId">
         DELETE
         FROM t_role_user
-        WHERE user_id = #{userId}
+        WHERE user_id = #{backendUserId}
     </delete>
-
 
     <delete id="deleteByRoleId">
         DELETE
@@ -110,7 +118,7 @@
         DELETE
         FROM t_role_user
         WHERE role_id = #{roleId}
-          and user_id = #{userId}
+          and user_id = #{backendUserId}
     </delete>
 
 

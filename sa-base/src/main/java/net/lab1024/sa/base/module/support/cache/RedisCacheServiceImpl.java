@@ -4,9 +4,9 @@ import cn.hutool.core.util.StrUtil;
 import com.google.common.collect.Lists;
 import jakarta.annotation.Resource;
 import net.lab1024.sa.base.constant.ReloadConst;
+import net.lab1024.sa.base.module.support.redis.CustomRedisCacheManager;
 import net.lab1024.sa.base.module.support.reload.core.annoation.SmartReload;
 import org.springframework.data.redis.cache.RedisCache;
-import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 
@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 public class RedisCacheServiceImpl implements CacheService {
 
     @Resource
-    private RedisCacheManager redisCacheManager;
+    private CustomRedisCacheManager redisCacheManager;
 
     @Resource
     private RedisConnectionFactory redisConnectionFactory;

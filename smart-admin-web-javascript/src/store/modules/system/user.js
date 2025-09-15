@@ -152,15 +152,9 @@ export const useUserStore = defineStore({
     setUserLoginInfo(data) {
       // 用户基本信息
       this.token = data.token;
-      this.employeeId = data.employeeId;
-      this.avatar = data.avatar;
-      this.loginName = data.loginName;
-      this.actualName = data.actualName;
-      this.phone = data.phone;
-      this.departmentId = data.departmentId;
-      this.departmentName = data.departmentName;
+      this.id = data.id;
+      this.username = data.username;
       this.needUpdatePwdFlag = data.needUpdatePwdFlag;
-      this.administratorFlag = data.administratorFlag;
       this.lastLoginIp = data.lastLoginIp;
       this.lastLoginIpRegion = data.lastLoginIpRegion;
       this.lastLoginUserAgent = data.lastLoginUserAgent;

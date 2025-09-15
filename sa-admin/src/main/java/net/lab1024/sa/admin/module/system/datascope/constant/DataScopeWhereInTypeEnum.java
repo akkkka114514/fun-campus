@@ -17,12 +17,8 @@ public enum DataScopeWhereInTypeEnum implements BaseEnum {
     /**
      * 以后台用户IN
      */
-    EMPLOYEE(0, "以后台用户IN"),
+    BACKEND_USER(0, "以后台用户IN"),
 
-    /**
-     * 以部门IN
-     */
-    DEPARTMENT(1, "以部门IN"),
 
     /**
      * 自定义策略

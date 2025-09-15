@@ -81,7 +81,7 @@
   import { roleApi } from '/@/api/system/role-api';
   import { PAGE_SIZE, showTableTotal, PAGE_SIZE_OPTIONS } from '/@/constants/common-const';
   import { SmartLoading } from '/@/components/framework/smart-loading';
-  import BackendUserTableSelectModal from '/@/components/system/employee-table-select-modal/index.vue';
+  import BackendUserTableSelectModal from '/src/components/system/backend-user-table-select-modal/index.vue';
   import { smartSentry } from '/@/lib/smart-sentry';
 
   // ----------------------- 以下是字段定义 emits props ---------------------

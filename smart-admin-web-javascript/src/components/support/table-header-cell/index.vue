@@ -80,7 +80,7 @@
   const components = {
     'enum-select': defineAsyncComponent(() => import('/src/components/framework/smart-enum-select/index.vue')),
     'dict-select': defineAsyncComponent(() => import('/src/components/support/dict-select/index.vue')),
-    'employee-select': defineAsyncComponent(() => import('/src/components/system/employee-select/index.vue')),
+    'employee-select': defineAsyncComponent(() => import('/src/components/system/backend-user-select/index.vue')),
     'enterprise-select': defineAsyncComponent(() => import('/src/components/business/oa/enterprise-select/index.vue')),
     'boolean-select': defineAsyncComponent(() => import('/src/components/framework/boolean-select/index.vue')),
     'category-tree': defineAsyncComponent(() => import('/src/components/business/category-tree-select/index.vue')),

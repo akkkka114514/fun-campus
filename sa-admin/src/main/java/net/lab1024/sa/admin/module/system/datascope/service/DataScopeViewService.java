@@ -73,4 +73,14 @@ public class DataScopeViewService {
     private List<Long> getMeBackendUserIdList(Long backendUserId) {
         return Lists.newArrayList(backendUserId);
     }
+    /**
+     * 获取某人可以查看的所有人员数据
+     */
+    public List<Long> getCanViewBackendUserId(DataScopeViewTypeEnum viewType, Long backendUserId) {
+        if (DataScopeViewTypeEnum.ME == viewType) {
+            return this.getMeBackendUserIdList(backendUserId);
+        }
+        // 可以查看所有后台用户数据
+        return Lists.newArrayList();
+    }
 }

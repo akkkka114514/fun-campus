@@ -3,6 +3,7 @@ package net.lab1024.sa.admin.module.system.menu.dao;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.springframework.stereotype.Component;
 import net.lab1024.sa.admin.module.system.menu.domain.entity.MenuEntity;
 import net.lab1024.sa.admin.module.system.menu.domain.vo.MenuVO;
 

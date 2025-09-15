@@ -93,7 +93,7 @@ public class SmartJobService {
         List<Long> logIdList = jobList.stream().map(SmartJobVO::getLastExecuteLogId).filter(Objects::nonNull).collect(Collectors.toList());
         Map<Long, SmartJobLogVO> lastLogMap = Collections.emptyMap();
         if (CollectionUtils.isNotEmpty(logIdList)) {
-            lastLogMap = jobLogDao.selectByIds(logIdList)
+            lastLogMap = jobLogDao.selectBatchIds(logIdList)
                     .stream()
                     .collect(Collectors.toMap(SmartJobLogEntity::getLogId, e -> SmartBeanUtil.copy(e, SmartJobLogVO.class)));
         }

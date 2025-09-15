@@ -125,7 +125,7 @@ public class NoticeService {
                 .distinct().collect(Collectors.toList());
         if (CollectionUtils.isNotEmpty(backendUserIdList)) {
             backendUserIdList = backendUserIdList.stream().distinct().collect(Collectors.toList());
-            List<Long> dbBackendUserIdList = backendUserDao.selectByIds(backendUserIdList).stream().map(BackendUserEntity::getId).collect(Collectors.toList());
+            List<Long> dbBackendUserIdList = backendUserDao.selectBatchIds(backendUserIdList).stream().map(BackendUserEntity::getId).collect(Collectors.toList());
             Collection<Long> subtract = CollectionUtils.subtract(backendUserIdList, dbBackendUserIdList);
             if (!subtract.isEmpty()) {
                 return ResponseDTO.userErrorParam("后台用户id不存在：" + subtract);

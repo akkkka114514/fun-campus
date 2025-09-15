@@ -78,7 +78,6 @@ public class NoticeBackendUserService {
             return ResponseDTO.userErrorParam("通知公告不存在");
         }
 
-        BackendUserEntity backendUserEntity = backendUserService.getById(requestBackendUserId);
         if (!updateFormVO.getAllVisibleFlag()
                 && !checkVisibleRange(updateFormVO.getVisibleRangeList(), requestBackendUserId)) {
             return ResponseDTO.userErrorParam("对不起，您没有权限查看内容");

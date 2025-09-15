@@ -59,16 +59,16 @@ export const noticeApi = {
 
   // 通知公告-后台用户-查看详情 @author zhuoda
   view(noticeId) {
-    return getRequest(`/notice/employee/view/${noticeId}`);
+    return getRequest(`/notice/backend-user/view/${noticeId}`);
   },
 
   // 通知公告-后台用户-查询 @author zhuoda
   queryBackendUserNotice(param) {
-    return postRequest('/notice/employee/query', param);
+    return postRequest('/notice/backend-user/query', param);
   },
 
   // 【后台用户】通知公告-查询 查看记录 @author zhuoda
   queryViewRecord(param) {
-    return postRequest('/notice/employee/queryViewRecord', param);
+    return postRequest('/notice/backend-user/queryViewRecord', param);
   },
 };

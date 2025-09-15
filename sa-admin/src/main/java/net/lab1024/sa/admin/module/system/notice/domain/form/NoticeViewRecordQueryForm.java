@@ -21,9 +21,6 @@ public class NoticeViewRecordQueryForm extends PageParam {
     @NotNull(message = "通知公告id不能为空")
     private Long noticeId;
 
-    @Schema(description = "部门id")
-    private Long departmentId;
-
     @Schema(description = "关键字")
     private String keywords;
 

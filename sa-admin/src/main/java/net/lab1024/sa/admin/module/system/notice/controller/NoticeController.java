@@ -116,7 +116,7 @@ public class NoticeController {
 
 
     @Operation(summary = "【后台用户】通知公告-查看详情 @author 卓大")
-    @GetMapping("/notice/employee/view/{noticeId}")
+    @GetMapping("/notice/backend-user/view/{noticeId}")
     public ResponseDTO<NoticeDetailVO> view(@PathVariable Long noticeId, HttpServletRequest request) {
         return noticeBackendUserService.view(
                 SmartRequestUtil.getRequestUserId(),
@@ -127,13 +127,13 @@ public class NoticeController {
     }
 
     @Operation(summary = "【后台用户】通知公告-查询全部 @author 卓大")
-    @PostMapping("/notice/employee/query")
+    @PostMapping("/notice/backend-user/query")
     public ResponseDTO<PageResult<NoticeBackendUserVO>> queryBackendUserNotice(@RequestBody @Valid NoticeBackendUserQueryForm noticeBackendUserQueryForm) {
         return noticeBackendUserService.queryList(SmartRequestUtil.getRequestUserId(), noticeBackendUserQueryForm);
     }
 
     @Operation(summary = "【后台用户】通知公告-查询 查看记录 @author 卓大")
-    @PostMapping("/notice/employee/queryViewRecord")
+    @PostMapping("/notice/backend-user/queryViewRecord")
     public ResponseDTO<PageResult<NoticeViewRecordVO>> queryViewRecord(@RequestBody @Valid NoticeViewRecordQueryForm noticeViewRecordQueryForm) {
         return ResponseDTO.ok(noticeBackendUserService.queryViewRecord(noticeViewRecordQueryForm));
     }

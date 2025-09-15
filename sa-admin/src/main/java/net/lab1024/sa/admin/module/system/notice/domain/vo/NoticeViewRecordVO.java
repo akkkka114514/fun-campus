@@ -18,13 +18,10 @@ import java.time.LocalDateTime;
 public class NoticeViewRecordVO {
 
     @Schema(description = "后台用户ID")
-    private Long employeeId;
+    private Long backendUserId;
 
     @Schema(description = "后台用户姓名")
-    private String employeeName;
-
-    @Schema(description = "后台用户部门名称")
-    private String departmentName;
+    private String username;
 
     @Schema(description = "查看次数")
     private Integer pageViewCount;

@@ -22,19 +22,9 @@ export const useUserStore = defineStore({
   state: () => ({
     token: '',
     //后台用户id
-    employeeId: '',
-    // 头像
-    avatar: '',
+    backendUserId: '',
     //登录名
-    loginName: '',
-    //姓名
-    actualName: '',
-    //手机号
-    phone: '',
-    //部门id
-    departmentId: '',
-    //部门名词
-    departmentName: '',
+    username: '',
     //是否需要修改密码
     needUpdatePwdFlag: false,
     //是否为超级管理员
@@ -173,7 +163,7 @@ export const useUserStore = defineStore({
       this.pointsList = data.menuList.filter((menu) => menu.menuType === MENU_TYPE_ENUM.POINTS.value && menu.visibleFlag && !menu.disabledFlag);
 
       // 获取用户未读消息
-      this.queryUnreadMessageCount();
+      //this.queryUnreadMessageCount();
       // 获取待办工作数
       this.queryToBeDoneList();
     },

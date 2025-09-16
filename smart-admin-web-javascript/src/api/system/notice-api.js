@@ -4,7 +4,7 @@
  * @Author: zhuoda
  * @Date: 2022-08-16 20:34:36
  */
-import { postRequest, getRequest } from '/@/lib/axios';
+import { postRequest, getRequest } from '/src/lib/axios';
 
 export const noticeApi = {
   // ---------------- 通知公告类型 -----------------------

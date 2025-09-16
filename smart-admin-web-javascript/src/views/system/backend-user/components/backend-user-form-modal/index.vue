@@ -19,17 +19,8 @@
     <a-alert message="超管需要直接在数据库表 t_employee修改哦" type="error" closable />
     <br />
     <a-form ref="formRef" :model="form" :rules="rules" layout="vertical">
-      <a-form-item label="姓名" name="actualName">
-        <a-input v-model:value.trim="form.actualName" placeholder="请输入姓名" />
-      </a-form-item>
-      <a-form-item label="手机号" name="phone">
-        <a-input v-model:value.trim="form.phone" placeholder="请输入手机号" />
-      </a-form-item>
-      <a-form-item label="部门" name="departmentId">
-        <DepartmentTreeSelect ref="departmentTreeSelect" width="100%" :init="false" v-model:value="form.departmentId" />
-      </a-form-item>
-      <a-form-item label="登录名" name="loginName">
-        <a-input v-model:value.trim="form.loginName" placeholder="请输入登录名" />
+      <a-form-item label="登录名" name="username">
+        <a-input v-model:value.trim="form.username" placeholder="请输入登录名" />
         <p class="hint">初始密码默认为：随机</p>
       </a-form-item>
       <a-form-item label="邮箱" name="email">
@@ -43,9 +34,6 @@
           <a-select-option :value="0">启用</a-select-option>
           <a-select-option :value="1">禁用</a-select-option>
         </a-select>
-      </a-form-item>
-      <a-form-item label="职务" name="positionId">
-        <PositionSelect v-model:value="form.positionId" placeholder="请选择职务" />
       </a-form-item>
 
       <a-form-item label="角色" name="roleIdList">
@@ -109,16 +97,13 @@
 
   const formRef = ref(); // 组件ref
   const formDefault = {
-    employeeId: undefined,
-    actualName: undefined,
-    departmentId: undefined,
+    id: undefined,
     disabledFlag: 0,
     leaveFlag: 0,
     gender: GENDER_ENUM.MAN.value,
-    loginName: undefined,
+    username: undefined,
     phone: undefined,
     roleIdList: undefined,
-    positionId: undefined,
     email: undefined,
   };
 
@@ -131,22 +116,12 @@
   // ----------------------- 表单提交 ---------------------
   // 表单规则
   const rules = {
-    actualName: [
-      { required: true, message: '姓名不能为空' },
-      { max: 30, message: '姓名不能大于30个字符', trigger: 'blur' },
-    ],
-    phone: [
-      { required: true, message: '手机号不能为空' },
-      { pattern: regular.phone, message: '请输入正确的手机号码', trigger: 'blur' },
-    ],
-    loginName: [
+    username: [
       { required: true, message: '登录账号不能为空' },
       { max: 30, message: '登录账号不能大于30个字符', trigger: 'blur' },
     ],
     gender: [{ required: true, message: '性别不能为空' }],
-    departmentId: [{ required: true, message: '部门不能为空' }],
     disabledFlag: [{ required: true, message: '状态不能为空' }],
-    leaveFlag: [{ required: true, message: '在职状态不能为空' }],
     email: [{ required: true, message: '请输入邮箱' }],
   };
 

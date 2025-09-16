@@ -45,7 +45,7 @@
   import _ from 'lodash';
   import { message } from 'ant-design-vue';
   import { SmartLoading } from '/@/components/framework/smart-loading';
-  import { activityApi } from '/@/api/business/activity/activity-api';
+  import { activityApi } from '/@/api/business/funcampus/activity-api';
   import { smartSentry } from '/@/lib/smart-sentry';
 
   // ------------------------ 事件 ------------------------

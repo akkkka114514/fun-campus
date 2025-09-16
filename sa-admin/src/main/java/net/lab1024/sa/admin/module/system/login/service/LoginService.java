@@ -135,7 +135,7 @@ public class LoginService implements StpInterface {
         }
 
         // 验证登录名
-        BackendUserEntity backendUserEntity = backendUserService.getByUsername(loginForm.getLoginName());
+        BackendUserEntity backendUserEntity = backendUserService.getByUsername(loginForm.getUsername());
         if (null == backendUserEntity) {
             return ResponseDTO.userErrorParam("登录名或密码错误！");
         }

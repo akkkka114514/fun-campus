@@ -34,4 +34,18 @@ public class ActivityWithScheduleController {
         return activityWithScheduleService.addActivityWithSchedule(addForm);
     }
 
+    @Operation(summary = "删除活动和时间表 @author akkkka114514")
+    @PostMapping("/activityWithSchedule/delete")
+    @RepeatSubmit(intervalMilliSecond = 3 * 1000 )
+    public ResponseDTO<String> deleteActivityWithSchedule(@RequestBody Long activityId) {
+        return activityWithScheduleService.deleteActivityWithSchedule(activityId);
+    }
+
+    @Operation(summary = "更新活动和时间表 @author akkkka114514")
+    @PostMapping("/activityWithSchedule/update")
+    @RepeatSubmit(intervalMilliSecond = 3 * 1000 )
+    public ResponseDTO<String> updateActivityWithSchedule(@RequestBody @Valid ActivityWithScheduleForm updateForm) {
+        return activityWithScheduleService.updateActivityWithSchedule(updateForm);
+    }
+
 }

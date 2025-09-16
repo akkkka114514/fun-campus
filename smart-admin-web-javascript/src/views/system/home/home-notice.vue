@@ -34,7 +34,7 @@
 <script setup>
   import { onMounted, ref } from 'vue';
   import { useRouter } from 'vue-router';
-  import { noticeApi } from '/@/api/business/oa/notice-api';
+  import { noticeApi } from '/src/api/system/notice-api';
   import { smartSentry } from '/@/lib/smart-sentry';
   import DefaultHomeCard from '/@/views/system/home/components/default-home-card.vue';
 
@@ -75,7 +75,7 @@
   // 查看更多
   function onMore() {
     router.push({
-      path: '/oa/notice/notice-backendUser-list',
+      path: '/system/notice-backendUser-list',
     });
   }
 
@@ -83,7 +83,7 @@
   const router = useRouter();
   function toDetail(noticeId) {
     router.push({
-      path: '/oa/notice/notice-backendUser-detail',
+      path: '/system/notice-backendUser-detail',
       query: { noticeId },
     });
   }

@@ -90,4 +90,22 @@ public class ActivityWithScheduleService {
             }
         });
     }
+
+    public ResponseDTO<String> deleteActivityWithSchedule(Long activityId) {
+        ActivityEntity deletedActivity = new ActivityEntity();
+        deletedActivity.setDeletedFlag(true);
+        ActivityScheduleEntity deletedSchedule = new ActivityScheduleEntity();
+        deletedSchedule.setDeletedFlag(true);
+        transactionTemplate.execute(status -> {
+            if(!activityManager.updateById(deletedActivity)){
+                status.setRollbackOnly();
+            }
+            if(!activityScheduleManager.updateById(deletedSchedule)){
+                status.setRollbackOnly();
+            }
+            return ResponseDTO.ok("删除成功");
+        });
+        return null;
+    }
+
 }

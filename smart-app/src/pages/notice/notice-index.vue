@@ -46,7 +46,7 @@
 <script setup>
   import { reactive, ref } from 'vue';
   import NoticeQueryFormPopUp from './components/notice-query-form-popup.vue';
-  import { noticeApi } from '@/api/business/oa/notice-api';
+  import { noticeApi } from '@/api/system/notice-api';
   import { onPageScroll, onReachBottom } from '@dcloudio/uni-app';
   import useMescroll from '@/uni_modules/uni-mescroll/hooks/useMescroll';
   import { smartSentry } from '@/lib/smart-sentry';

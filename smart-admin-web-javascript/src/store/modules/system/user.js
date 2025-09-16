@@ -140,6 +140,7 @@ export const useUserStore = defineStore({
     },
     //设置登录信息
     setUserLoginInfo(data) {
+      console.log(data)
       // 用户基本信息
       this.token = data.token;
       this.id = data.id;

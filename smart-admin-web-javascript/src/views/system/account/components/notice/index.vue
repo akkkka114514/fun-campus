@@ -2,5 +2,5 @@
   <NoticeBackendUserList />
 </template>
 <script setup>
-  import NoticeBackendUserList from '/@/views/business/oa/notice/notice-employee-list.vue';
+  import NoticeBackendUserList from '/@/views/system/notice-backend-user-list.vue';
 </script>

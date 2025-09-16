@@ -37,11 +37,10 @@
     </div>
     <div class="btn-group">
       <a-button class="btn" type="primary" @click="showDrawer" v-privilege="'system:backendUser:add'">添加成员</a-button>
-      <a-button class="btn" @click="updateBackendUserDepartment" v-privilege="'system:backendUser:department:update'">调整部门</a-button>
       <a-button class="btn" @click="batchDelete" v-privilege="'system:backendUser:delete'">批量删除</a-button>
 
       <span class="smart-table-column-operate">
-        <TableOperator v-model="columns" :tableId="TABLE_ID_CONST.SYSTEM.EMPLOYEE" :refresh="queryBackendUser" />
+        <TableOperator v-model="columns" :tableId="backend-user" :refresh="queryBackendUser" />
       </span>
     </div>
 
@@ -110,9 +109,9 @@
   import { backendUserApi } from '/src/api/system/backend-user-api';
   import { PAGE_SIZE } from '/@/constants/common-const';
   import { SmartLoading } from '/@/components/framework/smart-loading';
-  import BackendUserFormModal from '../employee-form-modal/index.vue';
+  import BackendUserFormModal from '/@/views/system/backend-user/components/backend-user-form-modal/index.vue';
   import BackendUserDepartmentFormModal from '../employee-department-form-modal/index.vue';
-  import BackendUserPasswordDialog from '../employee-password-dialog/index.vue';
+  import BackendUserPasswordDialog from '/src/views/system/backend-user/components/backend-user-password-dialog/index.vue';
   import { PAGE_SIZE_OPTIONS, showTableTotal } from '/@/constants/common-const';
   import { smartSentry } from '/@/lib/smart-sentry';
   import TableOperator from '/@/components/support/table-operator/index.vue';
@@ -120,25 +119,15 @@
 
   // ----------------------- 以下是字段定义 emits props ---------------------
 
-  const props = defineProps({
-    departmentId: Number,
-    breadcrumb: Array,
-  });
-
   //-------------回显账号密码信息----------
-  let employeePasswordDialog = ref();
+  let backendUserPasswordDialog = ref();
   function showAccount(accountName, passWord) {
-    employeePasswordDialog.value.showModal(accountName, passWord);
+    backendUserPasswordDialog.value.showModal(accountName, passWord);
   }
 
   // ----------------------- 表格/列表/ 搜索 ---------------------
   //字段
   const columns = ref([
-    {
-      title: '姓名',
-      dataIndex: 'actualName',
-      width: 85,
-    },
     {
       title: '性别',
       dataIndex: 'gender',
@@ -150,20 +139,10 @@
       width: 100,
     },
     {
-      title: '手机号',
-      dataIndex: 'phone',
-      width: 85,
-    },
-    {
       title: '邮箱',
       dataIndex: 'email',
       width: 100,
       ellipsis: true,
-    },
-    {
-      title: '超管',
-      dataIndex: 'administratorFlag',
-      width: 60,
     },
     {
       title: '状态',
@@ -182,12 +161,6 @@
       width: 100,
     },
     {
-      title: '部门',
-      dataIndex: 'departmentName',
-      ellipsis: true,
-      width: 200,
-    },
-    {
       title: '操作',
       dataIndex: 'operate',
       width: 140,
@@ -196,7 +169,6 @@
   const tableData = ref();
 
   let defaultParams = {
-    departmentId: undefined,
     disabledFlag: false,
     keyword: undefined,
     searchCount: undefined,
@@ -240,7 +212,6 @@
     tableLoading.value = true;
     try {
       params.pageNum = 1;
-      params.departmentId = allDepartment ? undefined : props.departmentId;
       let res = await backendUserApi.queryBackendUser(params);
       for (const item of res.data.list) {
         item.roleNameList = _.join(item.roleNameList, ',');
@@ -256,17 +227,6 @@
       tableLoading.value = false;
     }
   }
-
-  watch(
-    () => props.departmentId,
-    () => {
-      if (props.departmentId !== params.departmentId) {
-        params.pageNum = 1;
-        queryBackendUser();
-      }
-    },
-    { immediate: true }
-  );
 
   // ----------------------- 多选操作 ---------------------
 
@@ -313,21 +273,10 @@
     });
   }
 
-  // 批量更新后台用户部门
-  const employeeDepartmentFormModal = ref();
-
-  function updateBackendUserDepartment() {
-    if (!hasSelected.value) {
-      message.warning('请选择要调整部门的后台用户');
-      return;
-    }
-    const employeeIdArray = selectedRows.value.map((e) => e.employeeId);
-    employeeDepartmentFormModal.value.showModal(employeeIdArray);
-  }
 
   // ----------------------- 添加、修改、禁用、重置密码 ------------------------------------
 
-  const employeeFormModal = ref(); //组件
+  const backendUserFormModal = ref(); //组件
 
   // 展示编辑弹窗
   function showDrawer(rowData) {
@@ -335,10 +284,8 @@
     if (rowData) {
       params = _.cloneDeep(rowData);
       params.disabledFlag = params.disabledFlag ? 1 : 0;
-    } else if (props.departmentId) {
-      params.departmentId = props.departmentId;
-    }
-    employeeFormModal.value.showDrawer(params);
+
+    backendUserFormModal.value.showDrawer(params);
   }
 
   // 重置密码
@@ -354,7 +301,7 @@
         try {
           let { data: passWord } = await backendUserApi.resetPassword(id);
           message.success('重置成功');
-          employeePasswordDialog.value.showModal(name, passWord);
+          backendUserPasswordDialog.value.showModal(name, passWord);
           queryBackendUser();
         } catch (error) {
           smartSentry.captureError(error);

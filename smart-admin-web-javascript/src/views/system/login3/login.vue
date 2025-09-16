@@ -100,14 +100,14 @@
   //--------------------- 登录表单 ---------------------------------
 
   const loginForm = reactive({
-    loginName: 'admin',
+    username: 'akkkka',
     password: '',
     captchaCode: '',
     captchaUuid: '',
     loginDevice: LOGIN_DEVICE_ENUM.PC.value,
   });
   const rules = {
-    loginName: [{ required: true, message: '用户名不能为空' }],
+    username: [{ required: true, message: '用户名不能为空' }],
     password: [{ required: true, message: '密码不能为空' }],
     captchaCode: [{ required: true, message: '验证码不能为空' }],
   };

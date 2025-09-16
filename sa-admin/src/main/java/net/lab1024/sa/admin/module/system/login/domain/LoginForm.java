@@ -24,7 +24,7 @@ public class LoginForm extends CaptchaForm {
     @Schema(description = "登录账号")
     @NotBlank(message = "登录账号不能为空")
     @Length(max = 30, message = "登录账号最多30字符")
-    private String loginName;
+    private String username;
 
     @Schema(description = "密码")
     @NotBlank(message = "密码不能为空")

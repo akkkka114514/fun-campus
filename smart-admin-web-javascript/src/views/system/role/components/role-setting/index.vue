@@ -26,7 +26,7 @@
 <script setup>
   import { ref } from 'vue';
   import RoleDataScope from '../role-data-scope/index.vue';
-  import RoleBackendUserList from '../role-employee-list/index.vue';
+  import RoleBackendUserList from '/@/views/system/role/components/role-backend-user-list/index.vue';
   import RoleTree from '../role-tree/index.vue';
 
   defineProps({

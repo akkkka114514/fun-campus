@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="net.lab1024.sa.admin.module.business.funcampus.organizerActivity.dao.OrganizerActivityDao">
+
+    <!-- 查询结果列 -->
+    <sql id="base_columns">
+        organizer_activity.id,
+        organizer_activity.activity_id,
+        organizer_activity.organizer_id,
+        organizer_activity.deleted_flag,
+        organizer_activity.update_time,
+        organizer_activity.create_time
+    </sql>
+
+    <!-- 分页查询 -->
+    <select id="queryPage" resultType="net.lab1024.sa.admin.module.business.funcampus.organizerActivity.domain.vo.OrganizerActivityVO">
+        SELECT
+        <include refid="base_columns"/>
+        FROM organizer_activity
+    </select>
+
+    <update id="batchUpdateDeleted">
+        update organizer_activity set deleted_flag = #{deletedFlag}
+        where id in
+        <foreach collection="idList" open="(" close=")" separator="," item="item">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="updateDeleted">
+        update organizer_activity set deleted_flag = #{deletedFlag}
+        where id = #{id}
+    </update>
+
+</mapper>

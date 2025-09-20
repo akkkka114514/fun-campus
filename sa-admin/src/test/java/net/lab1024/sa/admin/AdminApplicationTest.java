@@ -29,5 +29,5 @@ public class AdminApplicationTest {
         String password = SecurityPasswordService.getEncryptPwd("Qw020829@qazwsx");
         System.out.println(password);
     }
-}
 
+}

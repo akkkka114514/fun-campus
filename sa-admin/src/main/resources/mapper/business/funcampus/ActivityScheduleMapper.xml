@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="net.lab1024.sa.admin.module.business.funcampus.dao.ActivityScheduleDao">
+<mapper namespace="net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.dao.ActivityScheduleDao">
 
     <!-- 查询结果列 -->
     <sql id="base_columns">
@@ -17,7 +17,7 @@
     </sql>
 
     <!-- 分页查询 -->
-    <select id="queryPage" resultType="net.lab1024.sa.admin.module.business.funcampus.domain.vo.ActivityScheduleVO">
+    <select id="queryPage" resultType="net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityScheduleVO">
         SELECT
         <include refid="base_columns"/>
         FROM activity_schedule
@@ -37,7 +37,7 @@
     </update>
     
     <!-- 根据活动ID列表查询时间表 -->
-    <select id="selectByActivityIds" resultType="net.lab1024.sa.admin.module.business.funcampus.domain.entity.ActivityScheduleEntity">
+    <select id="selectByActivityIds" resultType="net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityScheduleEntity">
         SELECT
         <include refid="base_columns"/>
         FROM activity_schedule
@@ -49,7 +49,7 @@
     </select>
     
     <!-- 查询指定时间范围内有关键时间点的活动 -->
-    <select id="selectActivitiesWithKeyTime" resultType="net.lab1024.sa.admin.module.business.funcampus.domain.entity.ActivityScheduleEntity">
+    <select id="selectActivitiesWithKeyTime" resultType="net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityScheduleEntity">
         SELECT
         <include refid="base_columns"/>
         FROM activity_schedule

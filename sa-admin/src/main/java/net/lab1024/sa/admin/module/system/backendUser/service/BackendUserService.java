@@ -67,7 +67,7 @@ public class BackendUserService extends ServiceImpl<BackendUserDao, BackendUserE
      */
     public ResponseDTO<PageResult<BackendUserVO>> queryBackendUser(BackendUserQueryForm backendUserQueryForm) {
         backendUserQueryForm.setDeletedFlag(false);
-        Page pageParam = SmartPageUtil.convert2PageQuery(backendUserQueryForm);
+        Page<?> pageParam = SmartPageUtil.convert2PageQuery(backendUserQueryForm);
 
         List<BackendUserVO> backendUserList = backendUserDao.queryBackendUser(pageParam, backendUserQueryForm);
         if (CollectionUtils.isEmpty(backendUserList)) {

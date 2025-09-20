@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="net.lab1024.sa.admin.module.business.funcampus.dao.ActivityDao">
+<mapper namespace="net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.dao.ActivityDao">
 
     <!-- 查询结果列 -->
     <sql id="base_columns">
@@ -17,12 +17,25 @@
         activity.update_time
     </sql>
 
-    <!-- 分页查询 -->
-    <select id="queryPage" resultType="net.lab1024.sa.admin.module.business.funcampus.domain.vo.ActivityVO">
-        SELECT
-        <include refid="base_columns"/>
-        FROM activity
-    </select>
+    <resultMap id="ActivityWithScheduleVO" type="net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityWithScheduleVO">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="status" column="status"/>
+        <result property="position" column="position"/>
+        <result property="scoreCanGet" column="score_can_get"/>
+        <result property="enrollNumLimit" column="enroll_num_limit"/>
+        <result property="activitySchoolId" column="activity_school_id"/>
+        <result property="activityOrganizerId" column="activity_organizer_id"/>
+        <result property="enrollStartTime" column="enroll_start_time"/>
+        <result property="enrollEndTime" column="enroll_end_time"/>
+        <result property="activityStartTime" column="activity_start_time"/>
+        <result property="activityEndTime" column="activity_end_time"/>
+        <result property="signinStartTime" column="signin_start_time"/>
+        <result property="signinEndTime" column="signin_end_time"/>
+        <result property="deletedFlag" column="deleted_flag"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
 
     <update id="batchUpdateDeleted">
         update activity set deleted_flag = #{deletedFlag}
@@ -51,4 +64,36 @@
         </foreach>
     </update>
 
+    
+    <select id="queryActivityWithSchedule" resultMap="ActivityWithScheduleVO">
+        SELECT
+        <include refid="base_columns"/>,
+        activity_schedule.enroll_start_time,
+        activity_schedule.enroll_end_time,
+        activity_schedule.activity_start_time,
+        activity_schedule.activity_end_time,
+        activity_schedule.signin_start_time,
+        activity_schedule.signin_end_time
+        FROM activity
+        LEFT JOIN activity_schedule ON activity.id = activity_schedule.activity_id
+        WHERE
+        <if test="queryForm.keyword != null and queryForm.keyword != ''">
+            AND INSTR(activity.title,#{queryForm.keyword})
+        </if>
+        <if test="queryForm.status != null">
+            AND activity.status = #{queryForm.status}
+        </if>
+        <if test="queryForm.deletedFlag != null">
+            AND activity.deleted_flag = #{queryForm.deletedFlag}
+        </if>
+    </select>
+
+    <update id="batchDelete">
+        UPDATE activity
+        SET deleted_flag = 1
+        WHERE id IN
+        <foreach collection="ids" open="(" close=")" separator="," item="item">
+            #{item}
+        </foreach>
+    </update>
 </mapper>

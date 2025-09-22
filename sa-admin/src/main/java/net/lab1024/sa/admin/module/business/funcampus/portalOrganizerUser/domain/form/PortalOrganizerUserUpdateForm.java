@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import net.lab1024.sa.admin.module.system.backendUser.domain.form.BackendUserUpdateForm;
 
 /**
  * 组织账号运营者 更新表单
@@ -14,19 +15,7 @@ import lombok.Data;
  */
 
 @Data
-public class PortalOrganizerUserUpdateForm {
-
-    @Schema(description = "主键", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "主键 不能为空")
-    private Long id;
-
-    @Schema(description = "用户名", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotBlank(message = "用户名 不能为空")
-    private String username;
-
-    @Schema(description = "密码", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotBlank(message = "密码 不能为空")
-    private String password;
+public class PortalOrganizerUserUpdateForm extends BackendUserUpdateForm {
 
     @Schema(description = "头像")
     private String avatar;

@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.time.LocalDateTime;
 import lombok.Data;
+import net.lab1024.sa.admin.module.system.backendUser.domain.entity.BackendUserEntity;
 
 /**
  * 组织账号运营者 实体类
@@ -18,41 +19,7 @@ import lombok.Data;
 
 @Data
 @TableName("portal_organizer_user")
-public class PortalOrganizerUserEntity {
-
-    /**
-     * 主键
-     */
-    @TableId(type = IdType.AUTO)
-    private Long id;
-
-    /**
-     * 用户名
-     */
-    private String username;
-
-    /**
-     * 密码
-     */
-    private String password;
-
-    /**
-     * 创建时间
-     */
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createTime;
-
-    /**
-     * 修改时间
-     */
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updateTime;
-
-    /**
-     * 是否已删除
-     */
-    private Boolean deletedFlag;
-
+public class PortalOrganizerUserEntity extends BackendUserEntity {
     /**
      * 头像
      */

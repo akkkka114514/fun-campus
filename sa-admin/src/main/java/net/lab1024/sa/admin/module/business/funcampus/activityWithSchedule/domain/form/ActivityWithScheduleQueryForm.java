@@ -28,9 +28,6 @@ public class ActivityWithScheduleQueryForm extends PageParam {
     @Length(max = 20, message = "搜索词最多20字符")
     private String keyword;
 
-    @Schema(description = "是否禁用")
-    private Boolean disabledFlag;
-
     @Schema(description = "活动状态")
     private Integer status;
 

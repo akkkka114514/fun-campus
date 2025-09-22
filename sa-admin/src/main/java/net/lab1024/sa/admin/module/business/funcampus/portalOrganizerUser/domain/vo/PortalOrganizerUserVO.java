@@ -3,6 +3,7 @@ package net.lab1024.sa.admin.module.business.funcampus.portalOrganizerUser.domai
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 import lombok.Data;
+import net.lab1024.sa.admin.module.system.backendUser.domain.vo.BackendUserVO;
 
 /**
  * 组织账号运营者 列表VO
@@ -13,26 +14,7 @@ import lombok.Data;
  */
 
 @Data
-public class PortalOrganizerUserVO {
-
-
-    @Schema(description = "主键")
-    private Long id;
-
-    @Schema(description = "用户名")
-    private String username;
-
-    @Schema(description = "密码")
-    private String password;
-
-    @Schema(description = "创建时间")
-    private LocalDateTime createTime;
-
-    @Schema(description = "修改时间")
-    private LocalDateTime updateTime;
-
-    @Schema(description = "是否已删除")
-    private Boolean deletedFlag;
+public class PortalOrganizerUserVO extends BackendUserVO {
 
     @Schema(description = "头像")
     private String avatar;

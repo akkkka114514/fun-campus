@@ -27,7 +27,7 @@ public interface PortalOrganizerUserDao extends BaseMapper<PortalOrganizerUserEn
      * @param queryForm
      * @return
      */
-    List<PortalOrganizerUserVO> queryPage(Page page, @Param("queryForm") PortalOrganizerUserQueryForm queryForm);
+    List<PortalOrganizerUserVO> queryPage(Page<?> page, @Param("queryForm") PortalOrganizerUserQueryForm queryForm);
 
     /**
      * 更新删除状态
@@ -39,4 +39,7 @@ public interface PortalOrganizerUserDao extends BaseMapper<PortalOrganizerUserEn
      */
     void batchUpdateDeleted(@Param("idList")List<Long> idList,@Param("deletedFlag")boolean deletedFlag);
 
+    long updateDisableFlag(@Param("id")Long id,@Param("disabledFlag")boolean disabledFlag);
+
+    void batchUpdateDisableFlag(@Param("idList")List<Long> idList,@Param("disabledFlag")boolean disabledFlag);
 }

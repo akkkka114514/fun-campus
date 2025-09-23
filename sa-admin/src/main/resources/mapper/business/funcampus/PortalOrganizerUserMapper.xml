@@ -7,9 +7,13 @@
         portal_organizer_user.id,
         portal_organizer_user.username,
         portal_organizer_user.password,
+        portal_organizer_user.gender,
+        portal_organizer_usre.email,
         portal_organizer_user.create_time,
         portal_organizer_user.update_time,
         portal_organizer_user.deleted_flag,
+        portal_organizer_user.disabled_flag,
+        portal_organizer_user.role_id,
         portal_organizer_user.avatar,
         portal_organizer_user.phone,
         portal_organizer_user.school_id
@@ -20,6 +24,20 @@
         SELECT
         <include refid="base_columns"/>
         FROM portal_organizer_user
+        <where>
+        <if test="queryForm.username != null">
+            and INSTR(username,#{queryForm.keyword})
+        </if>
+        <if test="queryForm.deletedFlag != null">
+            and deleted_flag = #{queryForm.deletedFlag}
+        </if>
+        <if test="queryForm.disabledFlag != null">
+            and disabled_flag = #{queryForm.disabledFlag}
+        </if>
+        <if test="queryForm.schoolId != null">
+            and school_id = #{queryForm.schoolId}
+        </if>
+        </where>
     </select>
 
     <update id="batchUpdateDeleted">
@@ -35,4 +53,17 @@
         where id = #{id}
     </update>
 
+
+    <update id="batchUpdateDisableFlag">
+        update portal_organizer_user set disabled_flag = #{disabledFlag}
+        where id in
+        <foreach collection="idList" open="(" close=")" separator="," item="item">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="updateDisableFlag">
+        update portal_organizer_user set disabled_flag = #{disabledFlag}
+        where id = #{id}
+    </update>
 </mapper>

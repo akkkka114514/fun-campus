@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="net.lab1024.sa.admin.module.business.funcampus.schoolInfo.dao.SchoolInfoDao">
+
+    <!-- 查询结果列 -->
+    <sql id="base_columns">
+        school_info.id,
+        school_info.name,
+        school_info.code,
+        school_info.type,
+        school_info.address,
+        school_info.contact_person,
+        school_info.contact_phone,
+        school_info.email,
+        school_info.website,
+        school_info.description,
+        school_info.logo_url,
+        school_info.status,
+        school_info.sort,
+        school_info.create_time,
+        school_info.update_time,
+        school_info.deleted_flag
+    </sql>
+
+    <!-- 分页查询 -->
+    <select id="queryPage" resultType="net.lab1024.sa.admin.module.business.funcampus.schoolInfo.domain.vo.SchoolInfoVO">
+        SELECT
+        <include refid="base_columns"/>
+        FROM school_info
+        <where>
+            <!--关键字-->
+            <if test="queryForm.keywords != null and queryForm.keywords != ''">
+                AND INSTR(school_info.name,#{queryForm.keywords})
+            </if>
+            <!--学校类型(1:小学,2:初中,3:高中,4:中职,5:高职,6:本科)-->
+            <if test="queryForm.type != null">
+                AND school_info.type = #{queryForm.type}
+            </if>
+            <!--学校编码-->
+            <if test="queryForm.code != null">
+                AND school_info.code = #{queryForm.code}
+            </if>
+        </where>
+    </select>
+
+    <update id="batchUpdateDeleted">
+        update school_info set deleted_flag = #{deletedFlag}
+        where id in
+        <foreach collection="idList" open="(" close=")" separator="," item="item">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="updateDeleted">
+        update school_info set deleted_flag = #{deletedFlag}
+        where id = #{id}
+    </update>
+
+</mapper>

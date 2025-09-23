@@ -1,6 +1,7 @@
 package net.lab1024.sa.admin.module.business.funcampus.portalOrganizerUser.domain.form;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Min;
 import net.lab1024.sa.base.common.domain.PageParam;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -24,5 +25,12 @@ public class PortalOrganizerUserQueryForm extends PageParam {
 
     @Schema(description = "删除标识", hidden = true)
     private boolean deletedFlag;
+
+    @Schema(description = "禁用标识", hidden = true)
+    private boolean disabledFlag;
+
+    @Schema(description = "学校id")
+    @Min(value = 1, message = "学校id不能小于1")
+    private Long schoolId;
 
 }

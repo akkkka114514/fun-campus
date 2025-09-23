@@ -27,7 +27,7 @@ public interface BackendUserDao extends BaseMapper<BackendUserEntity> {
     /**
      * 查询后台用户列表
      */
-    List<BackendUserVO> queryBackendUser(Page page, @Param("queryForm") BackendUserQueryForm queryForm);
+    List<BackendUserVO> queryBackendUser(Page<?> page, @Param("queryForm") BackendUserQueryForm queryForm);
 
     /**
      * 查询后台用户

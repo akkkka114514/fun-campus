@@ -68,4 +68,11 @@ public class PortalOrganizerUserController {
     public ResponseDTO<String> batchDelete(@PathVariable Long id) {
         return portalOrganizerUserService.delete(id);
     }
+
+    @Operation(summary = "批量禁用 @author akkkka114514")
+    @PostMapping("/portalOrganizerUser/batchDisable")
+    @SaCheckPermission("portalOrganizerUser:disable")
+    public ResponseDTO<String> batchDisable(@RequestBody ValidateList<Long> idList) {
+        return portalOrganizerUserService.batchDisable(idList);
+    }
 }

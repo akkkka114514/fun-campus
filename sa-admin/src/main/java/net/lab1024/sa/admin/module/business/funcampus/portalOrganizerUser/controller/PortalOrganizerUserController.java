@@ -1,10 +1,13 @@
 package net.lab1024.sa.admin.module.business.funcampus.portalOrganizerUser.controller;
 
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import net.lab1024.sa.admin.module.business.funcampus.portalOrganizerUser.domain.form.PortalOrganizerUserAddForm;
 import net.lab1024.sa.admin.module.business.funcampus.portalOrganizerUser.domain.form.PortalOrganizerUserQueryForm;
 import net.lab1024.sa.admin.module.business.funcampus.portalOrganizerUser.domain.form.PortalOrganizerUserUpdateForm;
 import net.lab1024.sa.admin.module.business.funcampus.portalOrganizerUser.domain.vo.PortalOrganizerUserVO;
 import net.lab1024.sa.admin.module.business.funcampus.portalOrganizerUser.service.PortalOrganizerUserService;
+import net.lab1024.sa.base.common.code.UserErrorCode;
 import net.lab1024.sa.base.common.domain.ValidateList;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,6 +21,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 组织账号运营者 Controller
@@ -34,6 +38,8 @@ public class PortalOrganizerUserController {
     @Resource
     private PortalOrganizerUserService portalOrganizerUserService;
 
+    private static final Long MAX_AVATAR_SIZE = 2*1024*1024L;
+
     @Operation(summary = "分页查询 @author akkkka114514")
     @PostMapping("/portalOrganizerUser/queryPage")
     @SaCheckPermission("portalOrganizerUser:query")
@@ -45,6 +51,10 @@ public class PortalOrganizerUserController {
     @PostMapping("/portalOrganizerUser/add")
     @SaCheckPermission("portalOrganizerUser:add")
     public ResponseDTO<String> add(@RequestBody @Valid PortalOrganizerUserAddForm addForm) {
+        MultipartFile avatar = addForm.getAvatar();
+        if(avatar.getSize()<MAX_AVATAR_SIZE){
+            return ResponseDTO.error(UserErrorCode.PARAM_ERROR,"图片大小不能超过2M");
+        }
         return portalOrganizerUserService.add(addForm);
     }
 
@@ -75,4 +85,12 @@ public class PortalOrganizerUserController {
     public ResponseDTO<String> batchDisable(@RequestBody ValidateList<Long> idList) {
         return portalOrganizerUserService.batchDisable(idList);
     }
+//
+//    @Operation(summary = "添加头像 @author akkkka114514")
+//    @PostMapping("/portalOrganizerUser/addAvatar/{id}")
+//    @SaCheckPermission("portalOrganizerUser:addAvatar")
+//    public ResponseDTO<String> addAvatar(@PathVariable Long id, MultipartFile avatar) {
+//
+//
+//    }
 }

@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import net.lab1024.sa.admin.module.system.backendUser.domain.form.BackendUserUpdateForm;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 组织账号运营者 更新表单
@@ -18,7 +19,7 @@ import net.lab1024.sa.admin.module.system.backendUser.domain.form.BackendUserUpd
 public class PortalOrganizerUserUpdateForm extends BackendUserUpdateForm {
 
     @Schema(description = "头像")
-    private String avatar;
+    private MultipartFile avatar;
 
     @Schema(description = "手机号")
     private String phone;

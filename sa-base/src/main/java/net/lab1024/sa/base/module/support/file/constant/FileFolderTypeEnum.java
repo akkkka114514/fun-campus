@@ -37,6 +37,11 @@ public enum FileFolderTypeEnum implements BaseEnum {
      */
     FEEDBACK(4, FileFolderTypeEnum.FOLDER_PUBLIC + "/feedback/", "意见反馈"),
 
+    /**
+     * 头像
+     */
+    AVATAR(5, FileFolderTypeEnum.FOLDER_PUBLIC + "/avatar/", "头像"),
+
     ;
 
     /**

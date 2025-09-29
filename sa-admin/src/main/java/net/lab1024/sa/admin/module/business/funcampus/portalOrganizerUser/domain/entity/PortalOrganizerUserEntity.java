@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.time.LocalDateTime;
 import lombok.Data;
 import net.lab1024.sa.admin.module.system.backendUser.domain.entity.BackendUserEntity;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 组织账号运营者 实体类
@@ -23,7 +24,7 @@ public class PortalOrganizerUserEntity extends BackendUserEntity {
     /**
      * 头像
      */
-    private String avatar;
+    private Long avatarFileId;
 
     /**
      * 手机号

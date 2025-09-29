@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 import lombok.Data;
 import net.lab1024.sa.admin.module.system.backendUser.domain.vo.BackendUserVO;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 组织账号运营者 列表VO
@@ -17,7 +18,7 @@ import net.lab1024.sa.admin.module.system.backendUser.domain.vo.BackendUserVO;
 public class PortalOrganizerUserVO extends BackendUserVO {
 
     @Schema(description = "头像")
-    private String avatar;
+    private MultipartFile avatar;
 
     @Schema(description = "手机号")
     private String phone;

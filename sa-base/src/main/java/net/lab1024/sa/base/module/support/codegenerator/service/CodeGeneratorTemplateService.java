@@ -31,10 +31,9 @@ import org.apache.velocity.tools.ToolContext;
 import org.apache.velocity.tools.ToolManager;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.io.OutputStream;
-import java.io.StringWriter;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,8 +54,10 @@ import java.util.stream.Collectors;
 @Slf4j
 public class CodeGeneratorTemplateService {
 
-
-    private Map<String, CodeGenerateBaseVariableService> map = new HashMap<>();
+    private static final String JAVA_PROJECT_PATH = "D:/ideaWorkspace/fun-campus/sa-admin/src/main/java/net/lab1024/sa/admin/module/business/funcampus/";
+    private static final String JS_PROJECT_PATH = "D:/ideaWorkspace/fun-campus/smart-admin-web-javascript/src/";
+    private static final String SQL_PATH = "D:/ideaWorkspace/fun-campus/sql_script/mysql/";
+    private Map<String, CodeGenerateBaseVariableService> map = new HashMap<>(20);
 
     @PostConstruct
     public void init() {
@@ -99,14 +100,36 @@ public class CodeGeneratorTemplateService {
                 String upperCamel = new CodeGeneratorTool().lowerCamel2UpperCamel(moduleName);
                 String lowerHyphen = new CodeGeneratorTool().lowerCamel2LowerHyphen(moduleName);
                 String[] templateSplit = templateFile.split("/");
-                String fileName = templateFile.startsWith("java") ? upperCamel + templateSplit[templateSplit.length - 1] : lowerHyphen + "-" + templateSplit[templateSplit.length - 1];
-                String fullPathFileName = templateFile.replaceAll(templateSplit[templateSplit.length - 1], fileName);
-                fullPathFileName = fullPathFileName.replaceAll("java/", "java/" + basic.getModuleName().toLowerCase() + "/");
-                fullPathFileName = fullPathFileName.replaceAll("js/", "js/" + lowerHyphen + "/");
+                String fileName = templateFile.startsWith("java") ?
+                        upperCamel + templateSplit[templateSplit.length - 1] :
+                        lowerHyphen + "-" + templateSplit[templateSplit.length - 1];
+//                String fullPathFileName = templateFile.replaceAll(
+//                        templateSplit[templateSplit.length - 1], fileName);
+//                fullPathFileName = fullPathFileName.replaceAll(
+//                        "java/", "java/" + basic.getModuleName().toLowerCase() + "/");
+//                fullPathFileName = fullPathFileName.replaceAll(
+//                        "js/", "js/" + lowerHyphen + "/");
+                String fullPathFileName = null;
+                if(templateFile.endsWith(".sql")){
+                    fullPathFileName = SQL_PATH + "/" + fileName;
+                }else if(templateFile.endsWith(".java")){
+                    fullPathFileName = JAVA_PROJECT_PATH +moduleName + "/"
+                             + templateFile.replace("java/","");
+                }else if(templateFile.endsWith(".js")){
+                    
+                }else if(templateFile.endsWith(".vue")){
+
+                }else{
+                    break;
+                }
 
                 String fileContent = generate(tableName, templateFile, codeGeneratorConfigEntity);
-                File file = new File(uuid + "/" + fullPathFileName);
-                file.getParentFile().mkdirs();
+                File file = new File(fullPathFileName);
+                try(FileOutputStream out = new FileOutputStream(file)){
+                    out.write(Files.readAllBytes(file.toPath()));
+                } catch (IOException e) {
+                    log.error(e.getMessage(), e);
+                }
                 FileUtil.appendUtf8String(fileContent, file);
             } catch (IORuntimeException e) {
                 log.error(e.getMessage(), e);
@@ -138,7 +161,7 @@ public class CodeGeneratorTemplateService {
         }
 
 
-        ZipUtil.zip(outputStream, StandardCharsets.UTF_8, false, null, dir);
+        //ZipUtil.zip(outputStream, StandardCharsets.UTF_8, false, null, dir);
 
         FileUtil.del(dir);
 

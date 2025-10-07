@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.constant.ActivityStatus;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.dao.ActivityDao;
+import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.dao.ActivityEnrollNumDao;
+import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEnrollNum;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityScheduleEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleAddForm;
@@ -20,14 +22,12 @@ import net.lab1024.sa.base.common.code.UnexpectedErrorCode;
 import net.lab1024.sa.base.common.code.UserErrorCode;
 import net.lab1024.sa.base.common.domain.PageResult;
 import net.lab1024.sa.base.common.domain.ResponseDTO;
-import net.lab1024.sa.base.common.util.SmartBeanUtil;
 import net.lab1024.sa.base.common.util.SmartPageUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import jakarta.annotation.Resource;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -58,6 +58,9 @@ public class ActivityWithScheduleService {
 
     @Resource
     private OrganizerActivityManager organizerActivityManager;
+
+    @Resource
+    private ActivityEnrollNumDao activityEnrollNumDao;
 
     /**
      * 同时添加活动和活动时间表
@@ -111,23 +114,31 @@ public class ActivityWithScheduleService {
         organizerActivityEntity.setActivityId(null);
         organizerActivityEntity.setOrganizerId(addForm.getActivityOrganizerId());
         organizerActivityEntity.setDeletedFlag(false);
+        //要插入的activityEnrollNum
+        ActivityEnrollNum activityEnrollNum = new ActivityEnrollNum();
+        activityEnrollNum.setActivityId(activityEntity.getId());
+        activityEnrollNum.setEnrollNum(0);
         //开始事务
         return transactionTemplate.execute(status -> {
             try {
+                //保存activity和activity时间表
                 synchronized (this) {
-                    if (!activityManager.save(activityEntity) || !activityScheduleManager.save(scheduleEntity)) {
+                    if (!activityManager.save(activityEntity) ||
+                        !activityScheduleManager.save(scheduleEntity) ||
+                        activityEnrollNumDao.insert(activityEnrollNum)==0) {
                         status.setRollbackOnly();
                         return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "保存失败");
                     }
                 }
+                //保存organizerActivity
                 organizerActivityEntity.setActivityId(activityEntity.getId());
-                if(!organizerActivityManager.save(organizerActivityEntity)){
+                if(!organizerActivityManager.save(organizerActivityEntity)) {
                     status.setRollbackOnly();
                     return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "保存失败");
                 }
+
                 return ResponseDTO.ok("保存成功");
             } catch (Exception e) {
-                // 发生异常时回滚事务
                 status.setRollbackOnly();
                 return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "保存过程中发生异常：" + e.getMessage());
             }

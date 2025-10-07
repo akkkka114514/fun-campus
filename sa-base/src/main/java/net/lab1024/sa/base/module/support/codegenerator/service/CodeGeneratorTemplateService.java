@@ -29,6 +29,7 @@ import org.apache.velocity.app.Velocity;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.tools.ToolContext;
 import org.apache.velocity.tools.ToolManager;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -54,10 +55,23 @@ import java.util.stream.Collectors;
 @Slf4j
 public class CodeGeneratorTemplateService {
 
-    private static final String JAVA_PROJECT_PATH = "D:/ideaWorkspace/fun-campus/sa-admin/src/main/java/net/lab1024/sa/admin/module/business/funcampus/";
-    private static final String JS_PROJECT_PATH = "D:/ideaWorkspace/fun-campus/smart-admin-web-javascript/src/";
-    private static final String SQL_PATH = "D:/ideaWorkspace/fun-campus/sql_script/mysql/";
-    private Map<String, CodeGenerateBaseVariableService> map = new HashMap<>(20);
+    private static final String PROJECT_BASE_PATH="D:/ideaWorkspace/fun-campus";
+    private static final String JAVA_PROJECT_PATH = PROJECT_BASE_PATH + "/sa-admin/src/main/java/net/lab1024/sa/admin/module/business/funcampus/";
+    private static final String JS_BASE_PATH = PROJECT_BASE_PATH + "/smart-admin-web-javascript/src";
+    private static final String JS_CONST_PATH = JS_BASE_PATH + "/constants/business/funcampus/";
+    private static final String JS_API_PATH = JS_BASE_PATH + "/api/business/funcampus/";
+    private static final String SQL_PATH = PROJECT_BASE_PATH + "/sql_script/mysql/";
+    private static final String VUE_VIEW_PATH = JS_BASE_PATH + "/views/business/funcampus/";
+    private static final String MAPPER_XML_PATH = PROJECT_BASE_PATH + "/sa-admin/src/main/resources/mapper/business/funcampus/";
+    private final Map<String, CodeGenerateBaseVariableService> map = new HashMap<>(20);
+    @Value("${spring.datasource.username}")
+    private String MYSQL_USERNAME;
+    @Value("${spring.datasource.password}")
+    private String MYSQL_PASSWORD;
+    private static final String MYSQL_HOST = "127.0.0.1";
+    private static final String MYSQL_PORT = "3306";
+    private static final String MYSQL_DATABASE = "fc_portal";
+
 
     @PostConstruct
     public void init() {
@@ -98,41 +112,57 @@ public class CodeGeneratorTemplateService {
             try {
                 String templateFile = entry.getKey();
                 String upperCamel = new CodeGeneratorTool().lowerCamel2UpperCamel(moduleName);
+                String upperCamelWithFirstLow = upperCamel.replace(upperCamel.charAt(0), Character.toLowerCase(upperCamel.charAt(0)));
                 String lowerHyphen = new CodeGeneratorTool().lowerCamel2LowerHyphen(moduleName);
                 String[] templateSplit = templateFile.split("/");
                 String fileName = templateFile.startsWith("java") ?
                         upperCamel + templateSplit[templateSplit.length - 1] :
                         lowerHyphen + "-" + templateSplit[templateSplit.length - 1];
-//                String fullPathFileName = templateFile.replaceAll(
-//                        templateSplit[templateSplit.length - 1], fileName);
-//                fullPathFileName = fullPathFileName.replaceAll(
-//                        "java/", "java/" + basic.getModuleName().toLowerCase() + "/");
-//                fullPathFileName = fullPathFileName.replaceAll(
-//                        "js/", "js/" + lowerHyphen + "/");
-                String fullPathFileName = null;
+                String fullPathFileName = templateFile.replaceAll(
+                        templateSplit[templateSplit.length - 1], fileName);
+                fullPathFileName = fullPathFileName.replaceAll(
+                        "java/", upperCamelWithFirstLow
+                                + "/");
+                fullPathFileName = fullPathFileName.replaceAll(
+                        "js/", "js/" + lowerHyphen + "/");
                 if(templateFile.endsWith(".sql")){
+                    String command = "cmd /k mysql -h "+MYSQL_HOST+" -P "+MYSQL_PORT+" -u"+MYSQL_USERNAME+" -p"+MYSQL_PASSWORD+" -D "+MYSQL_DATABASE+" < "+templateFile;
+                    Runtime.getRuntime().exec(command);
+                    log.info("执行命令：{}",command);
                     fullPathFileName = SQL_PATH + "/" + fileName;
                 }else if(templateFile.endsWith(".java")){
-                    fullPathFileName = JAVA_PROJECT_PATH +moduleName + "/"
-                             + templateFile.replace("java/","");
-                }else if(templateFile.endsWith(".js")){
-                    
-                }else if(templateFile.endsWith(".vue")){
-
+                    fullPathFileName = JAVA_PROJECT_PATH
+                             + fullPathFileName;
+                }else if(templateFile.endsWith("api.js")) {
+                    fullPathFileName = JS_API_PATH
+                            + fullPathFileName.replace("js/"+lowerHyphen+"/", "");
+                }else if(templateFile.endsWith("const.js")){
+                    fullPathFileName = JS_CONST_PATH
+                            + fullPathFileName.replace("js/"+lowerHyphen+"/", "");
+                }else if(templateFile.endsWith(".vue") && templateFile.startsWith("js")){
+                    fullPathFileName = VUE_VIEW_PATH
+                             + fullPathFileName;
+                }else if(templateFile.endsWith("Mapper.xml")) {
+                    fullPathFileName = fullPathFileName.replace(
+                            upperCamelWithFirstLow + "/mapper/", "");
+                    fullPathFileName = MAPPER_XML_PATH
+                             + fullPathFileName;
                 }else{
-                    break;
+                    continue;
                 }
 
                 String fileContent = generate(tableName, templateFile, codeGeneratorConfigEntity);
                 File file = new File(fullPathFileName);
-                try(FileOutputStream out = new FileOutputStream(file)){
-                    out.write(Files.readAllBytes(file.toPath()));
-                } catch (IOException e) {
-                    log.error(e.getMessage(), e);
+                // 确保父目录存在
+                File parentDir = file.getParentFile();
+                if (parentDir != null && !parentDir.exists()) {
+                    parentDir.mkdirs();
                 }
                 FileUtil.appendUtf8String(fileContent, file);
             } catch (IORuntimeException e) {
                 log.error(e.getMessage(), e);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
         }
 

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.dao.ActivityEnrollNumDao">
+
+    <update id="increaseEnrollNum">
+        update activity_enroll_num
+        LEFT JOIN activity ON activity.id = activity_enroll_num.activity_id
+        set enroll_num = enroll_num + 1
+        where activity_id = #{activityId}
+        AND activity_enroll_num.enroll_num &lt; activity.enroll_num_limit;
+    </update>
+
+    <update id="decreaseEnrollNum">
+        update activity_enroll_num
+        LEFT JOIN activity ON activity.id = activity_enroll_num.activity_id
+        set enroll_num = enroll_num - 1
+        where activity_id = #{activityId}
+        AND activity_enroll_num.enroll_num &gt; 0;
+    </update>
+</mapper>

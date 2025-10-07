@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="net.lab1024.sa.admin.module.business.funcampus.activityEnrollment.dao.ActivityEnrollmentDao">
+
+    <sql id="base_columns">
+        activity_enrollment.activity_id,
+        activity_enrollment.user_id,
+        activity_enrollment.sign_in_status,
+        activity_enrollment.create_time,
+        activity_enrollment.update_time,
+        activity_enrollment.deleted_flag
+    </sql>
+
+    <select id="queryPage" resultType="net.lab1024.sa.admin.module.business.funcampus.activityEnrollment.domain.vo.ActivityEnrollmentVO">
+        SELECT
+        <include refid="base_columns"/>
+        FROM activity_enrollment
+        <where>
+            <!--根据活动id查询-->
+            <if test="queryForm.activityId != null">
+                AND activity_enrollment.activity_id = #{queryForm.activityId}
+            </if>
+            <!--根据用户id查询-->
+            <if test="queryForm.userId != null">
+                AND activity_enrollment.user_id = #{queryForm.userId}
+            </if>
+            <!--根据是否已删除查询-->
+            <if test="queryForm.deletedFlag != null">
+                AND activity_enrollment.deleted_flag = #{queryForm.deletedFlag}
+            </if>
+            <!--是否已签到，1-》是，0-》否-->
+            <if test="queryForm.signInStatus != null">
+                AND activity_enrollment.sign_in_status = #{queryForm.signInStatus}
+            </if>
+        </where>
+    </select>
+
+    <update id="updateDeleted">
+        update activity_enrollment set deleted_flag = #{deletedFlag}
+        where activity_id = #{activityId}
+    </update>
+
+    <update id="batchUpdateDeleted">
+        update activity_enrollment set deleted_flag = #{deletedFlag}
+        where activity_id in
+        <foreach collection="idList" open="(" close=")" separator="," item="item">
+            #{item}
+        </foreach>
+    </update>
+
+</mapper>

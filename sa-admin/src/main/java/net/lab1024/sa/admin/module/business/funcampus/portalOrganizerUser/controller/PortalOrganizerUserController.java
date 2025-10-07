@@ -9,6 +9,7 @@ import net.lab1024.sa.admin.module.business.funcampus.portalOrganizerUser.domain
 import net.lab1024.sa.admin.module.business.funcampus.portalOrganizerUser.service.PortalOrganizerUserService;
 import net.lab1024.sa.base.common.code.UserErrorCode;
 import net.lab1024.sa.base.common.domain.ValidateList;
+import net.lab1024.sa.base.module.support.file.domain.vo.FileUploadVO;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import net.lab1024.sa.base.common.domain.ResponseDTO;
@@ -50,7 +51,7 @@ public class PortalOrganizerUserController {
     @Operation(summary = "添加 @author akkkka114514")
     @PostMapping("/portalOrganizerUser/add")
     @SaCheckPermission("portalOrganizerUser:add")
-    public ResponseDTO<String> add(@RequestBody @Valid PortalOrganizerUserAddForm addForm) {
+    public ResponseDTO<FileUploadVO> add(@RequestBody @Valid PortalOrganizerUserAddForm addForm) {
         MultipartFile avatar = addForm.getAvatar();
         if(avatar.getSize()<MAX_AVATAR_SIZE){
             return ResponseDTO.error(UserErrorCode.PARAM_ERROR,"图片大小不能超过2M");
@@ -61,7 +62,7 @@ public class PortalOrganizerUserController {
     @Operation(summary = "更新 @author akkkka114514")
     @PostMapping("/portalOrganizerUser/update")
     @SaCheckPermission("portalOrganizerUser:update")
-    public ResponseDTO<String> update(@RequestBody @Valid PortalOrganizerUserUpdateForm updateForm) {
+    public ResponseDTO<FileUploadVO> update(@RequestBody @Valid PortalOrganizerUserUpdateForm updateForm) {
         return portalOrganizerUserService.update(updateForm);
     }
 
@@ -85,12 +86,4 @@ public class PortalOrganizerUserController {
     public ResponseDTO<String> batchDisable(@RequestBody ValidateList<Long> idList) {
         return portalOrganizerUserService.batchDisable(idList);
     }
-//
-//    @Operation(summary = "添加头像 @author akkkka114514")
-//    @PostMapping("/portalOrganizerUser/addAvatar/{id}")
-//    @SaCheckPermission("portalOrganizerUser:addAvatar")
-//    public ResponseDTO<String> addAvatar(@PathVariable Long id, MultipartFile avatar) {
-//
-//
-//    }
 }

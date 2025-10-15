@@ -3,20 +3,20 @@
 # 如果你一切都是按照默认，那么下面的 SQL 基本不用改
 
 INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
-VALUES ( '学校信息表', 2, 0, '/school-info/list', '/business/school-info/school-info-list.vue', false, false, true, false, 1, 1 );
+VALUES ( '前端用户', 2, 0, '/portal-user/list', '/business/portal-user/portal-user-list.vue', false, false, true, false, 1, 1 );
 
 # 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
 SET @parent_id = NULL;
-SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '学校信息表';
+SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '前端用户';
 
 INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'schoolInfo:query', 'schoolInfo:query', @parent_id, 1 );
+VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'portalUser:query', 'portalUser:query', @parent_id, 1 );
 
 INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'schoolInfo:add', 'schoolInfo:add', @parent_id, 1 );
+VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'portalUser:add', 'portalUser:add', @parent_id, 1 );
 
 INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'schoolInfo:update', 'schoolInfo:update', @parent_id, 1 );
+VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'portalUser:update', 'portalUser:update', @parent_id, 1 );
 
 INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'schoolInfo:delete', 'schoolInfo:delete', @parent_id, 1 );
+VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'portalUser:delete', 'portalUser:delete', @parent_id, 1 );

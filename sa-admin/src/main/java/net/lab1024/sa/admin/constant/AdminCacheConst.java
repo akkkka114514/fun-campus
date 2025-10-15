@@ -13,29 +13,6 @@ import net.lab1024.sa.base.constant.CacheKeyConst;
  */
 public class AdminCacheConst extends CacheKeyConst {
 
-    public static class Department {
-
-        /**
-         * 部门列表
-         */
-        public static final String DEPARTMENT_LIST_CACHE = "department_list_cache";
-
-        /**
-         * 部门树
-         */
-        public static final String DEPARTMENT_TREE_CACHE = "department_tree_cache";
-
-        /**
-         * 某个部门以及下级的id列表
-         */
-        public static final String DEPARTMENT_SELF_CHILDREN_CACHE = "department_self_children_cache";
-
-        /**
-         * 部门路径 缓存
-         */
-        public static final String DEPARTMENT_PATH_CACHE = "department_path_cache";
-
-    }
 
     /**
      * 分类相关缓存
@@ -57,7 +34,7 @@ public class AdminCacheConst extends CacheKeyConst {
         /**
          * 请求用户信息
          */
-        public static final String REQUEST_EMPLOYEE = "login_request_employee";
+        public static final String REQUEST_USER = "login_request_user";
 
         /**
          * 请求用户信息权限

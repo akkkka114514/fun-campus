@@ -38,10 +38,10 @@
   import { reactive, ref, nextTick } from 'vue';
   import _ from 'lodash';
   import { message } from 'ant-design-vue';
-  import { SmartLoading } from '/@/components/framework/smart-loading';
+  import { SmartLoading } from '/src/components/framework/smart-loading';
   import { activityEnrollmentApi } from '/@/api/business/activity-enrollment/activity-enrollment-api';
-  import { smartSentry } from '/@/lib/smart-sentry';
-  import BooleanSelect from '/@/components/framework/boolean-select/index.vue';
+  import { smartSentry } from '/src/lib/smart-sentry';
+  import BooleanSelect from '/src/components/framework/boolean-select/index.vue';
 
   // ------------------------ 事件 ------------------------
 
@@ -163,10 +163,10 @@
   import { reactive, ref, nextTick } from 'vue';
   import _ from 'lodash';
   import { message } from 'ant-design-vue';
-  import { SmartLoading } from '/@/components/framework/smart-loading';
+  import { SmartLoading } from '/src/components/framework/smart-loading';
   import { activityEnrollmentApi } from '/@/api/business/activity-enrollment/activity-enrollment-api';
-  import { smartSentry } from '/@/lib/smart-sentry';
-  import BooleanSelect from '/@/components/framework/boolean-select/index.vue';
+  import { smartSentry } from '/src/lib/smart-sentry';
+  import BooleanSelect from '/src/components/framework/boolean-select/index.vue';
 
   // ------------------------ 事件 ------------------------
 
@@ -288,10 +288,10 @@
   import { reactive, ref, nextTick } from 'vue';
   import _ from 'lodash';
   import { message } from 'ant-design-vue';
-  import { SmartLoading } from '/@/components/framework/smart-loading';
+  import { SmartLoading } from '/src/components/framework/smart-loading';
   import { activityEnrollmentApi } from '/@/api/business/activity-enrollment/activity-enrollment-api';
-  import { smartSentry } from '/@/lib/smart-sentry';
-  import BooleanSelect from '/@/components/framework/boolean-select/index.vue';
+  import { smartSentry } from '/src/lib/smart-sentry';
+  import BooleanSelect from '/src/components/framework/boolean-select/index.vue';
 
   // ------------------------ 事件 ------------------------
 
@@ -413,10 +413,10 @@
   import { reactive, ref, nextTick } from 'vue';
   import _ from 'lodash';
   import { message } from 'ant-design-vue';
-  import { SmartLoading } from '/@/components/framework/smart-loading';
+  import { SmartLoading } from '/src/components/framework/smart-loading';
   import { activityEnrollmentApi } from '/@/api/business/activity-enrollment/activity-enrollment-api';
-  import { smartSentry } from '/@/lib/smart-sentry';
-  import BooleanSelect from '/@/components/framework/boolean-select/index.vue';
+  import { smartSentry } from '/src/lib/smart-sentry';
+  import BooleanSelect from '/src/components/framework/boolean-select/index.vue';
 
   // ------------------------ 事件 ------------------------
 

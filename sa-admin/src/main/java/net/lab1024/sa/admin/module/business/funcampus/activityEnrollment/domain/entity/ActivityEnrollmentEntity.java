@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.time.LocalDateTime;
+
+import com.github.jeffreyning.mybatisplus.anno.MppMultiId;
 import lombok.Data;
 
 /**
@@ -21,15 +23,17 @@ import lombok.Data;
 public class ActivityEnrollmentEntity {
 
     /**
-     * 
+     * 活动id
      */
-    @TableId(type = IdType.AUTO)
+    @MppMultiId
+    @TableField(value = "activity_id")
     private Long activityId;
 
     /**
-     * 
+     * 用户id
      */
-    @TableId
+    @MppMultiId
+    @TableField(value = "user_id")
     private Long userId;
 
     /**
@@ -38,20 +42,26 @@ public class ActivityEnrollmentEntity {
     private Boolean signInStatus;
 
     /**
-     * 
+     * 创建时间
      */
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 
     /**
-     * 
+     * 修改时间
      */
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
 
     /**
-     * 
+     * 是否已删除
      */
     private Boolean deletedFlag;
+
+
+    /**
+     * 是否禁止该用户报名该活动
+     */
+    private Boolean banFlag;
 
 }

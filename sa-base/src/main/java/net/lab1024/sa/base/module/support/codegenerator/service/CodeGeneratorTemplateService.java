@@ -141,7 +141,7 @@ public class CodeGeneratorTemplateService {
                             + fullPathFileName.replace("js/"+lowerHyphen+"/", "");
                 }else if(templateFile.endsWith(".vue") && templateFile.startsWith("js")){
                     fullPathFileName = VUE_VIEW_PATH
-                             + fullPathFileName;
+                             + fullPathFileName.replace("js/", "");
                 }else if(templateFile.endsWith("Mapper.xml")) {
                     fullPathFileName = fullPathFileName.replace(
                             upperCamelWithFirstLow + "/mapper/", "");

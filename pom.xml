@@ -54,6 +54,7 @@
         <tika.version>3.1.0</tika.version>
         <httpcomponents.version>5.5</httpcomponents.version>
         <lombok.version>1.18.36</lombok.version>
+        <mybatisplus-plus.version>1.7.5-RELEASE</mybatisplus-plus.version>
     </properties>
 
     <dependencyManagement>
@@ -333,6 +334,12 @@
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
                 <version>${lombok.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.github.jeffreyning</groupId>
+                <artifactId>mybatisplus-plus</artifactId>
+                <version>${mybatisplus-plus.version}</version>
             </dependency>
         </dependencies>
 

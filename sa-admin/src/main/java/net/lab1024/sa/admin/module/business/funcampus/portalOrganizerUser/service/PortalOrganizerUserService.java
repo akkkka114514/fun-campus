@@ -29,6 +29,7 @@ import net.lab1024.sa.base.module.support.file.service.FileStorageCloudServiceIm
 import net.lab1024.sa.base.module.support.file.service.IFileStorageService;
 import org.apache.commons.collections4.CollectionUtils;
 
+import org.apache.coyote.Response;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.Resource;
@@ -191,7 +192,5 @@ public class PortalOrganizerUserService {
         portalOrganizerUserDao.batchUpdateDisableFlag(idList, true);
         return ResponseDTO.ok();
     }
-
-
 
 }

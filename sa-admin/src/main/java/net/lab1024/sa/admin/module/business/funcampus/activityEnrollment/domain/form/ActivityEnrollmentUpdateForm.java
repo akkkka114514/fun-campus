@@ -30,4 +30,8 @@ public class ActivityEnrollmentUpdateForm {
     @Schema(description = "是否删除，1-》是，0-》否", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "是否删除，1-》是，0-》否 不能为空")
     private Boolean deletedFlag;
+
+    @Schema(description = "禁止报名")
+    @NotNull(message = "禁止报名 不能为空")
+    private Boolean banFlag;
 }

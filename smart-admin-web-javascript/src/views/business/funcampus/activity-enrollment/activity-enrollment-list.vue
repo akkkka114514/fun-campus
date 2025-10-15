@@ -110,11 +110,11 @@
 <script setup>
     import { reactive, ref, onMounted } from 'vue';
     import { message, Modal } from 'ant-design-vue';
-    import { SmartLoading } from '/@/components/framework/smart-loading';
+    import { SmartLoading } from '/src/components/framework/smart-loading';
     import { activityEnrollmentApi } from '/@/api/business/activity-enrollment/activity-enrollment-api';
-    import { PAGE_SIZE_OPTIONS } from '/@/constants/common-const';
-    import { smartSentry } from '/@/lib/smart-sentry';
-    import TableOperator from '/@/components/support/table-operator/index.vue';
+    import { PAGE_SIZE_OPTIONS } from '/src/constants/common-const';
+    import { smartSentry } from '/src/lib/smart-sentry';
+    import TableOperator from '/src/components/support/table-operator/index.vue';
     import ActivityEnrollmentForm from './activity-enrollment-form.vue';
 
     // ---------------------------- 表格列 ----------------------------
@@ -398,11 +398,11 @@
 <script setup>
     import { reactive, ref, onMounted } from 'vue';
     import { message, Modal } from 'ant-design-vue';
-    import { SmartLoading } from '/@/components/framework/smart-loading';
+    import { SmartLoading } from '/src/components/framework/smart-loading';
     import { activityEnrollmentApi } from '/@/api/business/activity-enrollment/activity-enrollment-api';
-    import { PAGE_SIZE_OPTIONS } from '/@/constants/common-const';
-    import { smartSentry } from '/@/lib/smart-sentry';
-    import TableOperator from '/@/components/support/table-operator/index.vue';
+    import { PAGE_SIZE_OPTIONS } from '/src/constants/common-const';
+    import { smartSentry } from '/src/lib/smart-sentry';
+    import TableOperator from '/src/components/support/table-operator/index.vue';
     import ActivityEnrollmentForm from './activity-enrollment-form.vue';
 
     // ---------------------------- 表格列 ----------------------------
@@ -686,11 +686,11 @@
 <script setup>
     import { reactive, ref, onMounted } from 'vue';
     import { message, Modal } from 'ant-design-vue';
-    import { SmartLoading } from '/@/components/framework/smart-loading';
+    import { SmartLoading } from '/src/components/framework/smart-loading';
     import { activityEnrollmentApi } from '/@/api/business/activity-enrollment/activity-enrollment-api';
-    import { PAGE_SIZE_OPTIONS } from '/@/constants/common-const';
-    import { smartSentry } from '/@/lib/smart-sentry';
-    import TableOperator from '/@/components/support/table-operator/index.vue';
+    import { PAGE_SIZE_OPTIONS } from '/src/constants/common-const';
+    import { smartSentry } from '/src/lib/smart-sentry';
+    import TableOperator from '/src/components/support/table-operator/index.vue';
     import ActivityEnrollmentForm from './activity-enrollment-form.vue';
 
     // ---------------------------- 表格列 ----------------------------
@@ -974,11 +974,11 @@
 <script setup>
     import { reactive, ref, onMounted } from 'vue';
     import { message, Modal } from 'ant-design-vue';
-    import { SmartLoading } from '/@/components/framework/smart-loading';
+    import { SmartLoading } from '/src/components/framework/smart-loading';
     import { activityEnrollmentApi } from '/@/api/business/activity-enrollment/activity-enrollment-api';
-    import { PAGE_SIZE_OPTIONS } from '/@/constants/common-const';
-    import { smartSentry } from '/@/lib/smart-sentry';
-    import TableOperator from '/@/components/support/table-operator/index.vue';
+    import { PAGE_SIZE_OPTIONS } from '/src/constants/common-const';
+    import { smartSentry } from '/src/lib/smart-sentry';
+    import TableOperator from '/src/components/support/table-operator/index.vue';
     import ActivityEnrollmentForm from './activity-enrollment-form.vue';
 
     // ---------------------------- 表格列 ----------------------------

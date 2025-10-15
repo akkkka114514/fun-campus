@@ -1,5 +1,6 @@
 package net.lab1024.sa.admin;
 
+import com.github.jeffreyning.mybatisplus.conf.EnableMPP;
 import net.lab1024.sa.base.listener.Ip2RegionListener;
 import net.lab1024.sa.base.listener.LogVariableListener;
 import org.apache.ibatis.annotations.Mapper;
@@ -27,6 +28,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @ComponentScan(AdminApplication.COMPONENT_SCAN)
 @MapperScan(value = AdminApplication.COMPONENT_SCAN, annotationClass = Mapper.class)
 @SpringBootApplication(exclude = {UserDetailsServiceAutoConfiguration.class})
+@EnableMPP
 public class AdminApplication {
 
     public static final String COMPONENT_SCAN = "net.lab1024.sa";

@@ -116,20 +116,24 @@ public class ActivityWithScheduleService {
         organizerActivityEntity.setDeletedFlag(false);
         //要插入的activityEnrollNum
         ActivityEnrollNum activityEnrollNum = new ActivityEnrollNum();
-        activityEnrollNum.setActivityId(activityEntity.getId());
+        activityEnrollNum.setActivityId(null);
         activityEnrollNum.setEnrollNum(0);
         //开始事务
         return transactionTemplate.execute(status -> {
             try {
+                if(!activityManager.save(activityEntity)){
+                    status.setRollbackOnly();
+                    return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "保存失败");
+                }
+                Long id = activityEntity.getId();
+                scheduleEntity.setActivityId(id);
+                activityEnrollNum.setActivityId(id);
                 //保存activity和activity时间表
-                synchronized (this) {
-                    if (!activityManager.save(activityEntity) ||
-                        !activityScheduleManager.save(scheduleEntity) ||
+                    if (!activityScheduleManager.save(scheduleEntity) ||
                         activityEnrollNumDao.insert(activityEnrollNum)==0) {
                         status.setRollbackOnly();
                         return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "保存失败");
                     }
-                }
                 //保存organizerActivity
                 organizerActivityEntity.setActivityId(activityEntity.getId());
                 if(!organizerActivityManager.save(organizerActivityEntity)) {

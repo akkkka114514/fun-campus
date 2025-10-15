@@ -13,6 +13,8 @@ import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.const
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.dao.ActivityEnrollNumDao;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
+import net.lab1024.sa.admin.module.business.funcampus.portalUser.domain.entity.PortalUserEntity;
+import net.lab1024.sa.admin.module.business.funcampus.portalUser.manager.PortalUserManager;
 import net.lab1024.sa.base.common.code.UserErrorCode;
 import net.lab1024.sa.base.common.domain.RequestUser;
 import net.lab1024.sa.base.common.util.SmartPageUtil;
@@ -46,6 +48,8 @@ public class ActivityEnrollmentService {
     private ActivityEnrollNumDao activityEnrollNumDao;
     @Resource
     private TransactionTemplate transactionTemplate;
+    @Resource
+    private PortalUserManager portalUserManager;
 
     /**
      * 分页查询

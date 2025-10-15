@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="net.lab1024.sa.admin.module.business.funcampus.portalUser.dao.PortalUserDao">
+
+    <!-- 查询结果列 -->
+    <sql id="base_columns">
+        portal_user.id,
+        portal_user.username,
+        portal_user.password,
+        portal_user.create_time,
+        portal_user.update_time,
+        portal_user.deleted_flag,
+        portal_user.gender,
+        portal_user.phone,
+        portal_user.avatar,
+        portal_user.school_name,
+        portal_user.college_name
+    </sql>
+
+    <!-- 分页查询 -->
+    <select id="queryPage" resultType="net.lab1024.sa.admin.module.business.funcampus.portalUser.domain.vo.PortalUserVO">
+        SELECT
+        <include refid="base_columns"/>
+        FROM portal_user
+        <where>
+            <!--用户名-->
+            <if test="queryForm.username != null">
+                AND portal_user.username = #{queryForm.username}
+            </if>
+            <!--是否已删除-->
+            <if test="queryForm.deletedFlag != null">
+                AND portal_user.deleted_flag = #{queryForm.deletedFlag}
+            </if>
+            <!--手机号-->
+            <if test="queryForm.phone != null">
+                AND portal_user.phone = #{queryForm.phone}
+            </if>
+            <!--学校名-->
+            <if test="queryForm.schoolName != null">
+                AND portal_user.school_name = #{queryForm.schoolName}
+            </if>
+            <!--学院名-->
+            <if test="queryForm.collegeName != null">
+                AND portal_user.college_name = #{queryForm.collegeName}
+            </if>
+        </where>
+    </select>
+
+    <update id="batchUpdateDeleted">
+        update portal_user set deleted_flag = #{deletedFlag}
+        where id in
+        <foreach collection="idList" open="(" close=")" separator="," item="item">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="updateDeleted">
+        update portal_user set deleted_flag = #{deletedFlag}
+        where id = #{id}
+    </update>
+
+</mapper>

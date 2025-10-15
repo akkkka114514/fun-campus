@@ -34,4 +34,7 @@ public class ActivityEnrollmentVO {
     @Schema(description = "是否已删除")
     private Boolean deletedFlag;
 
+    @Schema(description = "是否禁止报名")
+    private Boolean banFlag;
+
 }

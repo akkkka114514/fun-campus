@@ -1,6 +1,8 @@
 package net.lab1024.sa.admin.module.business.funcampus.activityEnrollment.dao;
 
 import java.util.List;
+
+import com.github.jeffreyning.mybatisplus.base.MppBaseMapper;
 import net.lab1024.sa.admin.module.business.funcampus.activityEnrollment.domain.entity.ActivityEnrollmentEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityEnrollment.domain.form.ActivityEnrollmentQueryForm;
 import net.lab1024.sa.admin.module.business.funcampus.activityEnrollment.domain.vo.ActivityEnrollmentVO;
@@ -19,7 +21,7 @@ import org.springframework.stereotype.Component;
  */
 
 @Mapper
-public interface ActivityEnrollmentDao extends BaseMapper<ActivityEnrollmentEntity> {
+public interface ActivityEnrollmentDao extends MppBaseMapper<ActivityEnrollmentEntity> {
 
     /**
      * 分页 查询
@@ -28,7 +30,7 @@ public interface ActivityEnrollmentDao extends BaseMapper<ActivityEnrollmentEnti
      * @param queryForm
      * @return
      */
-    List<ActivityEnrollmentVO> queryPage(Page page, @Param("queryForm") ActivityEnrollmentQueryForm queryForm);
+    List<ActivityEnrollmentVO> queryPage(Page<?> page, @Param("queryForm") ActivityEnrollmentQueryForm queryForm);
 
     /**
      * 更新删除状态

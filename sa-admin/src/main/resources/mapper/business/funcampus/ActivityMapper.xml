@@ -96,4 +96,35 @@
             #{item}
         </foreach>
     </update>
+    <select id="getByIds" resultMap="ActivityWithScheduleVO">
+        SELECT
+        <include refid="base_columns"/>,
+        activity_schedule.enroll_start_time,
+        activity_schedule.enroll_end_time,
+        activity_schedule.activity_start_time,
+        activity_schedule.activity_end_time,
+        activity_schedule.signin_start_time,
+        activity_schedule.signin_end_time
+        FROM activity
+        LEFT JOIN activity_schedule ON activity.id = activity_schedule.activity_id
+        WHERE
+            activity.id IN
+        <foreach collection="ids" open="(" close=")" separator="," item="item">
+            #{item}
+        </foreach>
+    </select>
+    <select id="getActivityWithScheduleById" resultMap="ActivityWithScheduleVO">
+        SELECT
+        <include refid="base_columns"/>,
+        activity_schedule.enroll_start_time,
+        activity_schedule.enroll_end_time,
+        activity_schedule.activity_start_time,
+        activity_schedule.activity_end_time,
+        activity_schedule.signin_start_time,
+        activity_schedule.signin_end_time
+        FROM activity
+        LEFT JOIN activity_schedule ON activity.id = activity_schedule.activity_id
+        WHERE
+            activity.id = #{id}
+    </select>
 </mapper>

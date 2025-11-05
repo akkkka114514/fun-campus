@@ -272,7 +272,15 @@
         <dependency>
             <groupId>com.github.jeffreyning</groupId>
             <artifactId>mybatisplus-plus</artifactId>
-            <version>${mybatisplus-plus.version}</version>
+        </dependency>
+        <!--二维码生成和扫描-->
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>javase</artifactId>
         </dependency>
     </dependencies>
 

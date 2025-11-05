@@ -58,10 +58,12 @@ public class ActivityEnrollmentEntity {
      */
     private Boolean deletedFlag;
 
-
     /**
-     * 是否禁止该用户报名该活动
-     */
-    private Boolean banFlag;
+    *  审核状态：0-》待审核，1-》审核通过，2-》审核未通过
+    */
+    private byte signinReviewStatus;
+
+
+    private byte enrollReviewStatus;
 
 }

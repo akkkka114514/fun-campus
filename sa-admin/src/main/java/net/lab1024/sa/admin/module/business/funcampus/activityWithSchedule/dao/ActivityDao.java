@@ -1,6 +1,8 @@
 package net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.dao;
 
 import java.util.List;
+
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleQueryForm;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
@@ -33,4 +35,8 @@ public interface ActivityDao extends BaseMapper<ActivityEntity> {
     List<ActivityWithScheduleVO> queryActivityWithSchedule(Page<?> page, ActivityWithScheduleQueryForm queryForm);
 
     Integer batchDelete(List<Integer> ids);
+
+    Page<ActivityWithScheduleVO> getByIds(List<Long> ids);
+
+    ActivityWithScheduleVO getActivityWithScheduleById(Long id);
 }

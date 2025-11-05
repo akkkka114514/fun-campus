@@ -68,4 +68,5 @@ public class PortalUserController {
     public ResponseDTO<String> batchDelete(@PathVariable Long id) {
         return portalUserService.delete(id);
     }
+
 }

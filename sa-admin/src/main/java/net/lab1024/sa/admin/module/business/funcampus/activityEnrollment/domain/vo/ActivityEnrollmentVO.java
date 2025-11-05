@@ -34,7 +34,9 @@ public class ActivityEnrollmentVO {
     @Schema(description = "是否已删除")
     private Boolean deletedFlag;
 
-    @Schema(description = "是否禁止报名")
-    private Boolean banFlag;
+    @Schema(description = "报名审核状态：0-》待审核，1-》审核通过，2-》审核未通过")
+    private byte enrollReviewStatus;
 
+    @Schema(description = "签到审核状态")
+    private byte signinReviewStatus;
 }

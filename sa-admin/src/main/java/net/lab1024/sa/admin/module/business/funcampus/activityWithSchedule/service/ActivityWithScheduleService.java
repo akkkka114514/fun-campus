@@ -237,4 +237,20 @@ public class ActivityWithScheduleService {
         return activityDao.batchDelete(ids) > 0 ?
                 ResponseDTO.ok() : ResponseDTO.error(UnexpectedErrorCode.BUSINESS_HANDING, "删除失败");
     }
+
+    public ResponseDTO<String> publish(Long activityId){
+
+    }
+    public ResponseDTO<String> cancelPublish(Long activityId){
+    }
+    public ResponseDTO<String> passReview(Long activityId){
+    }
+    public ResponseDTO<String> batchPassReview(List<Long> activityIds){
+
+    }
+    public ResponseDTO<String> rejectReview(Long activityId){
+    }
+    public ResponseDTO<String> batchRejectReview(List<Long> activityIds){
+
+    }
 }

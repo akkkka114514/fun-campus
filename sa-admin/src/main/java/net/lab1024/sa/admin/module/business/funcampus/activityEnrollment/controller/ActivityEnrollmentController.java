@@ -1,12 +1,18 @@
 package net.lab1024.sa.admin.module.business.funcampus.activityEnrollment.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.google.zxing.common.BitMatrix;
+import jakarta.servlet.http.HttpServletResponse;
 import net.lab1024.sa.admin.module.business.funcampus.activityEnrollment.domain.form.ActivityEnrollmentAddForm;
 import net.lab1024.sa.admin.module.business.funcampus.activityEnrollment.domain.form.ActivityEnrollmentQueryForm;
 import net.lab1024.sa.admin.module.business.funcampus.activityEnrollment.domain.form.ActivityEnrollmentUpdateForm;
 import net.lab1024.sa.admin.module.business.funcampus.activityEnrollment.domain.vo.ActivityEnrollmentVO;
 import net.lab1024.sa.admin.module.business.funcampus.activityEnrollment.service.ActivityEnrollmentService;
+import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityWithScheduleVO;
+import net.lab1024.sa.admin.module.business.funcampus.portalUser.domain.vo.PortalUserVO;
 import net.lab1024.sa.base.common.domain.ValidateList;
 import net.lab1024.sa.base.module.support.repeatsubmit.annoation.RepeatSubmit;
+import org.apache.commons.math3.linear.MatrixUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import net.lab1024.sa.base.common.domain.ResponseDTO;
@@ -53,5 +59,23 @@ public class ActivityEnrollmentController {
     @RepeatSubmit(intervalMilliSecond = 3 * 1000 )
     public ResponseDTO<String> cancelEnroll(@RequestBody Long activityId) {
         return activityEnrollmentService.cancelEnroll(activityId);
+    }
+
+    @Operation(summary = "查询报名用户 @author akkkka114514")
+    @GetMapping("/activityEnrollment/queryEnrollUsers/{activityId}")
+    public ResponseDTO<Page<PortalUserVO>> queryEnrollUsersByActivityId(@PathVariable Long activityId) {
+        return activityEnrollmentService.queryEnrollUsersByActivityId(activityId);
+    }
+
+    @Operation(summary = "查询用户报名活动 @author akkkka114514")
+    @GetMapping("/activityEnrollment/queryActivity/")
+    public ResponseDTO<Page<ActivityWithScheduleVO>> queryActivityWithScheduleByPortalUserId() {
+        return activityEnrollmentService.queryActivityWithScheduleByPortalUserId();
+    }
+    @Operation(summary = "生成签到二维码 @author akkkka114514")
+    @GetMapping("/activityEnrollment/signIn/QRCode/{activityId}/{userId}")
+    public ResponseDTO<String> signInQRCode(@PathVariable Long activityId,
+                                          @PathVariable Long userId) {
+        return activityEnrollmentService.signInQRCode(activityId, userId);
     }
 }

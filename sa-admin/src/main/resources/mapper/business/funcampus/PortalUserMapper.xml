@@ -59,4 +59,14 @@
         where id = #{id}
     </update>
 
+
+    <select id="queryByIds" resultType="net.lab1024.sa.admin.module.business.funcampus.portalUser.domain.entity.PortalUserEntity">
+        SELECT
+        <include refid="base_columns"/>
+        FROM portal_user
+        WHERE id IN
+        <foreach item="item" collection="ids" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
 </mapper>

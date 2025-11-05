@@ -29,7 +29,10 @@ public class ActivityEnrollmentQueryForm extends PageParam {
     @Schema(description = "是否已签到，1-》是，0-》否")
     private Boolean signInStatus;
 
-    @Schema(description = "是否禁止报名")
-    private Boolean banFlag;
+    @Schema(description = "签到审核状态，0-》等待审核，1-》审核通过，2-》审核不通过")
+    private Byte signinReviewStatus;
+
+    @Schema(description = "报名审核状态")
+    private Byte enrollReviewStatus;
 
 }

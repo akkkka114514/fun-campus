@@ -31,7 +31,4 @@ public class ActivityEnrollmentUpdateForm {
     @NotNull(message = "是否删除，1-》是，0-》否 不能为空")
     private Boolean deletedFlag;
 
-    @Schema(description = "禁止报名")
-    @NotNull(message = "禁止报名 不能为空")
-    private Boolean banFlag;
 }

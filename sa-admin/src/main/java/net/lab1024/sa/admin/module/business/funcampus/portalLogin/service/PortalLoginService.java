@@ -160,7 +160,7 @@ public class PortalLoginService implements StpInterface {
             return msg == null ? ResponseDTO.userErrorParam("登录名或密码错误！") : ResponseDTO.error(UserErrorCode.LOGIN_FAIL_WILL_LOCK, msg);
         }
 
-        String saTokenLoginId = UserTypeEnum.ADMIN_BACKEND_USER.getValue() + StringConst.COLON + portalUserEntity.getId();
+        String saTokenLoginId = UserTypeEnum.PORTAL_USER.getValue() + StringConst.COLON + portalUserEntity.getId();
 
         // 登录
         StpUtil.login(saTokenLoginId, String.valueOf(loginDeviceEnum.getDesc()));
@@ -171,16 +171,7 @@ public class PortalLoginService implements StpInterface {
         // 清除登录失败次数
         securityLoginService.removeLoginFail(portalUserEntity.getId(), UserTypeEnum.ADMIN_BACKEND_USER);
 
-        // 获取菜单权限等信息
-        portalLoginManager.loadUserPermission(portalUserEntity.getId());
         RequestPortalUser requestPortalUser = portalLoginManager.loadLoginInfo(portalUserEntity);
-
-        UserPermission userPermission = new UserPermission();
-        userPermission.setPermissionList(new ArrayList<>());
-        userPermission.setRoleList(new ArrayList<>());
-
-        // 缓存用户权限
-        StpUtil.getSession().set("permission", userPermission);
 
         // 返回登录结果
         LoginResultVO loginResultVO = new LoginResultVO();
@@ -321,22 +312,7 @@ public class PortalLoginService implements StpInterface {
 
     @Override
     public List<String> getPermissionList(Object loginId, String loginType) {
-        if (loginId == null) {
-            return Collections.emptyList();
-        }
-
-        String loginIdStr = (String) loginId;
-        Long userId = this.getPortalUserIdByLoginId(loginIdStr);
-        if (userId == null) {
-            return Collections.emptyList();
-        }
-
-        UserPermission userPermission = portalLoginManager.getUserPermission(userId);
-        if (userPermission == null) {
-            return Collections.emptyList();
-        }
-
-        return userPermission.getPermissionList();
+        return Collections.emptyList();
     }
 
     /**
@@ -361,22 +337,7 @@ public class PortalLoginService implements StpInterface {
 
     @Override
     public List<String> getRoleList(Object loginId, String loginType) {
-        if (loginId == null) {
-            return Collections.emptyList();
-        }
-
-        String loginIdStr = (String) loginId;
-        Long employeeId = this.getPortalUserIdByLoginId(loginIdStr);
-        if (employeeId == null) {
-            return Collections.emptyList();
-        }
-
-        UserPermission userPermission = portalLoginManager.getUserPermission(employeeId);
-        if (userPermission == null) {
-            return Collections.emptyList();
-        }
-
-        return userPermission.getRoleList();
+        return Collections.emptyList();
     }
 
 

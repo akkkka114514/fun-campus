@@ -40,4 +40,6 @@ public interface PortalUserDao extends BaseMapper<PortalUserEntity> {
      */
     void batchUpdateDeleted(@Param("idList")List<Long> idList,@Param("deletedFlag")boolean deletedFlag);
 
+
+    Page<PortalUserVO> queryByIds(List<Long> ids);
 }

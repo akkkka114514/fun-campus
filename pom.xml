@@ -55,6 +55,7 @@
         <httpcomponents.version>5.5</httpcomponents.version>
         <lombok.version>1.18.36</lombok.version>
         <mybatisplus-plus.version>1.7.5-RELEASE</mybatisplus-plus.version>
+        <zxing.version>3.5.3</zxing.version>
     </properties>
 
     <dependencyManagement>
@@ -340,6 +341,17 @@
                 <groupId>com.github.jeffreyning</groupId>
                 <artifactId>mybatisplus-plus</artifactId>
                 <version>${mybatisplus-plus.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.zxing</groupId>
+                <artifactId>core</artifactId>
+                <version>${zxing.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.zxing</groupId>
+                <artifactId>javase</artifactId>
+                <version>${zxing.version}</version>
             </dependency>
         </dependencies>
 

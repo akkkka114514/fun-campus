@@ -1,0 +1,133 @@
+{
+	"easycom": {
+		"^u-(.*)": "uview-ui/components/u-$1/u-$1.vue"
+	},
+	"globalStyle": {
+		"navigationBarTextStyle": "white",
+		"navigationBarTitleText": "uni-app",
+		"navigationBarBackgroundColor": "#2b9939",
+		"backgroundColor": "#f1f1f1"
+	},
+	"pages": [
+		{
+			"path": "pages/account/login/index",
+			"style": {
+				"navigationBarTitleText": "用户登录"
+			}
+		},
+		{
+			"path": "pages/index/tab-0/index",
+			"style": {
+				"navigationBarTitleText": "tab-0"
+			}
+		},
+		{
+			"path": "pages/index/tab-1/index",
+			"style": {
+				"navigationBarTitleText": "tab-1",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/index/tab-2/index",
+			"style": {
+				"navigationBarTitleText": "tab-2"
+			}
+		},
+		{
+			"path": "pages/index/tab-3/index",
+			"style": {
+				"navigationBarTitleText": "tab-3"
+			}
+		}
+	],
+	"subPackages": [
+		{
+			"root": "pages/tab-items-0",
+			"pages": [
+				{
+					"path": "demo/index",
+					"style": {
+						"navigationBarTitleText": "测试页"
+					}
+				}
+			]
+		},
+		// 为空时app端将会报错所以要注掉
+		// {
+		// 	"root": "pages/tab-items-1",
+		// 	"pages": []
+		// },
+		// {
+		// 	"root": "pages/tab-items-2",
+		// 	"pages": []
+		// },
+		// {
+		// 	"root": "pages/tab-items-3",
+		// 	"pages": []
+		// },
+		// {
+		// 	"root": "pages/account",
+		// 	"pages": []
+		// },
+		{
+			"root": "pages/common",
+			"pages": [
+				{
+					"path": "u-avatar-cropper/u-avatar-cropper",
+					"style": {
+						"navigationBarTitleText": "头像裁剪",
+						"navigationBarBackgroundColor": "#000000"
+					}
+				}
+			]
+		}
+	],
+	"preloadRule": {
+		"pages/account/login/index": {
+			"network": "all",
+			"packages": [
+				"pages/common",
+				"pages/tab-items-0"
+			]
+		},
+		"pages/index/tab-0/index": {
+			"network": "all",
+			"packages": [
+				"pages/common",
+				"pages/tab-items-0"
+			]
+		}
+	},
+	"tabBar": {
+		"color": "#7a7e83",
+		"selectedColor": "#2b9939",
+		"backgroundColor": "#ffffff",
+		"list": [
+			{
+				"iconPath": "static/images/tabbar/tab-0.png",
+				"selectedIconPath": "static/images/tabbar/tab-0-active.png",
+				"pagePath": "pages/index/tab-0/index",
+				"text": "tab-0"
+			},
+			{
+				"iconPath": "static/images/tabbar/tab-1.png",
+				"selectedIconPath": "static/images/tabbar/tab-1-active.png",
+				"pagePath": "pages/index/tab-1/index",
+				"text": "tab-1"
+			},
+			{
+				"iconPath": "static/images/tabbar/tab-2.png",
+				"selectedIconPath": "static/images/tabbar/tab-2-active.png",
+				"pagePath": "pages/index/tab-2/index",
+				"text": "tab-2"
+			},
+			{
+				"iconPath": "static/images/tabbar/tab-3.png",
+				"selectedIconPath": "static/images/tabbar/tab-3-active.png",
+				"pagePath": "pages/index/tab-3/index",
+				"text": "tab-3"
+			}
+		]
+	}
+}

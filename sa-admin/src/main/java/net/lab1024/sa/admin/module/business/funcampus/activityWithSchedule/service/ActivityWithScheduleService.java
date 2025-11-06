@@ -25,6 +25,7 @@ import net.lab1024.sa.base.common.domain.ResponseDTO;
 import net.lab1024.sa.base.common.util.SmartPageUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
+import lombok.extern.slf4j.Slf4j;
 
 import jakarta.annotation.Resource;
 
@@ -37,7 +38,7 @@ import java.util.List;
  * @Date 2025-09-07
  * @Copyright akkkka114514
  */
-
+@Slf4j
 @Service
 public class ActivityWithScheduleService {
 
@@ -69,12 +70,15 @@ public class ActivityWithScheduleService {
      * @return ResponseDTO
      */
     public ResponseDTO<String> addActivityWithSchedule(ActivityWithScheduleAddForm addForm) {
+        log.info("ActivityWithScheduleService.addActivityWithSchedule called, title={}", addForm.getTitle());
+        
         //检查提交activity的organizer user是否存在
         LambdaQueryWrapper<PortalOrganizerUserEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(PortalOrganizerUserEntity::getId, addForm.getActivityOrganizerId())
                 .eq(PortalOrganizerUserEntity::getDeletedFlag, false);
         PortalOrganizerUserEntity organizerUserEntity = portalOrganizerUserManager.getOne(queryWrapper);
         if(organizerUserEntity == null){
+            log.warn("ActivityWithScheduleService.addActivityWithSchedule failed: organizer user not found, organizerId={}", addForm.getActivityOrganizerId());
             return ResponseDTO.userErrorParam("组织者用户不存在");
         }
         //未删除和未完全结束的活动中不能有和添加活动标题一致的
@@ -84,6 +88,7 @@ public class ActivityWithScheduleService {
                 .or()
                 .ne(ActivityEntity::getStatus, ActivityStatus.END_SIGNIN);
         if(activityManager.getOne(queryWrapper2)!= null){
+            log.warn("ActivityWithScheduleService.addActivityWithSchedule failed: activity with same title already exists, title={}", addForm.getTitle());
             return ResponseDTO.userErrorParam("已存在相同标题的活动");
         }
         //要插入的activity
@@ -122,27 +127,34 @@ public class ActivityWithScheduleService {
         return transactionTemplate.execute(status -> {
             try {
                 if(!activityManager.save(activityEntity)){
+                    log.error("ActivityWithScheduleService.addActivityWithSchedule failed: failed to save activity, title={}", addForm.getTitle());
                     status.setRollbackOnly();
                     return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "保存失败");
                 }
                 Long id = activityEntity.getId();
+                log.debug("ActivityWithScheduleService.addActivityWithSchedule: activity saved, activityId={}", id);
+                
                 scheduleEntity.setActivityId(id);
                 activityEnrollNum.setActivityId(id);
                 //保存activity和activity时间表
                     if (!activityScheduleManager.save(scheduleEntity) ||
                         activityEnrollNumDao.insert(activityEnrollNum)==0) {
+                        log.error("ActivityWithScheduleService.addActivityWithSchedule failed: failed to save schedule or enrollNum, activityId={}", id);
                         status.setRollbackOnly();
                         return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "保存失败");
                     }
                 //保存organizerActivity
                 organizerActivityEntity.setActivityId(activityEntity.getId());
                 if(!organizerActivityManager.save(organizerActivityEntity)) {
+                    log.error("ActivityWithScheduleService.addActivityWithSchedule failed: failed to save organizerActivity, activityId={}", id);
                     status.setRollbackOnly();
                     return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "保存失败");
                 }
 
+                log.info("ActivityWithScheduleService.addActivityWithSchedule success: activity created, activityId={}", id);
                 return ResponseDTO.ok("保存成功");
             } catch (Exception e) {
+                log.error("ActivityWithScheduleService.addActivityWithSchedule failed: exception occurred, title={}", addForm.getTitle(), e);
                 status.setRollbackOnly();
                 return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "保存过程中发生异常：" + e.getMessage());
             }
@@ -150,6 +162,8 @@ public class ActivityWithScheduleService {
     }
 
     public ResponseDTO<String> deleteActivityWithSchedule(Long activityId) {
+        log.info("ActivityWithScheduleService.deleteActivityWithSchedule called, activityId={}", activityId);
+        
         ActivityEntity deletedActivity = new ActivityEntity();
         deletedActivity.setDeletedFlag(true);
         deletedActivity.setId(activityId);
@@ -161,6 +175,7 @@ public class ActivityWithScheduleService {
         OrganizerActivityEntity deletedOrganizerActivity = new OrganizerActivityEntity();
         ActivityEntity activityEntity = activityManager.getById(activityId);
         if(activityEntity==null){
+            log.warn("ActivityWithScheduleService.deleteActivityWithSchedule failed: activity not found, activityId={}", activityId);
             return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "活动不存在");
         }
         deletedOrganizerActivity.setOrganizerId(activityEntity.getActivityOrganizerId());
@@ -172,15 +187,19 @@ public class ActivityWithScheduleService {
             boolean scheduleUpdated = activityScheduleManager.updateById(deletedSchedule);
             
             if (!activityUpdated || !scheduleUpdated) {
+                log.error("ActivityWithScheduleService.deleteActivityWithSchedule failed: failed to update activity or schedule, activityId={}", activityId);
                 status.setRollbackOnly();
                 return ResponseDTO.error(UnexpectedErrorCode.BUSINESS_HANDING, "删除失败");
             }
+            log.info("ActivityWithScheduleService.deleteActivityWithSchedule success: activity deleted, activityId={}", activityId);
             return ResponseDTO.ok("删除成功");
         });
     }
 
 
     public ResponseDTO<String> updateActivityWithSchedule(ActivityWithScheduleUpdateForm updateForm) {
+        log.info("ActivityWithScheduleService.updateActivityWithSchedule called, activityId={}", updateForm.getId());
+        
         ActivityEntity activityEntity = new ActivityEntity();
         activityEntity.setId(updateForm.getId());
         activityEntity.setTitle(updateForm.getTitle());
@@ -190,6 +209,7 @@ public class ActivityWithScheduleService {
         activityEntity.setEnrollNumLimit(updateForm.getEnrollNumLimit());
         activityEntity.setActivityOrganizerId(updateForm.getActivityOrganizerId());
         if(portalOrganizerUserManager.getById(updateForm.getActivityOrganizerId())==null){
+            log.warn("ActivityWithScheduleService.updateActivityWithSchedule failed: organizer not found, organizerId={}", updateForm.getActivityOrganizerId());
             return ResponseDTO.userErrorParam("组织者不存在");
         }
         activityEntity.setActivitySchoolId(updateForm.getActivitySchoolId());
@@ -209,9 +229,11 @@ public class ActivityWithScheduleService {
             boolean scheduleUpdated = activityScheduleManager.updateById(scheduleEntity);
             
             if (!activityUpdated || !scheduleUpdated) {
+                log.error("ActivityWithScheduleService.updateActivityWithSchedule failed: failed to update activity or schedule, activityId={}", updateForm.getId());
                 status.setRollbackOnly();
                 return ResponseDTO.error(UnexpectedErrorCode.BUSINESS_HANDING, "更新失败");
             }
+            log.info("ActivityWithScheduleService.updateActivityWithSchedule success: activity updated, activityId={}", updateForm.getId());
             return ResponseDTO.ok("更新成功");
         });
     }
@@ -227,30 +249,60 @@ public class ActivityWithScheduleService {
     */
 
     public ResponseDTO<PageResult<ActivityWithScheduleVO>> queryActivityWithSchedule(ActivityWithScheduleQueryForm queryForm){
+        log.info("ActivityWithScheduleService.queryActivityWithSchedule called, queryForm={}", queryForm);
         Page<?> page = SmartPageUtil.convert2PageQuery(queryForm);
         List<ActivityWithScheduleVO> resultList = activityDao.queryActivityWithSchedule(page, queryForm);
         PageResult<ActivityWithScheduleVO> pageResult = SmartPageUtil.convert2PageResult(page, resultList);
+        log.info("ActivityWithScheduleService.queryActivityWithSchedule result: count={}", resultList.size());
         return ResponseDTO.ok(pageResult);
     }
 
     public ResponseDTO<String> batchDelete(List<Integer> ids){
-        return activityDao.batchDelete(ids) > 0 ?
-                ResponseDTO.ok() : ResponseDTO.error(UnexpectedErrorCode.BUSINESS_HANDING, "删除失败");
+        log.info("ActivityWithScheduleService.batchDelete called, idsCount={}", ids != null ? ids.size() : 0);
+        int result = activityDao.batchDelete(ids);
+        if (result > 0) {
+            log.info("ActivityWithScheduleService.batchDelete success: deleted {} records", result);
+            return ResponseDTO.ok();
+        } else {
+            log.warn("ActivityWithScheduleService.batchDelete failed: no records deleted");
+            return ResponseDTO.error(UnexpectedErrorCode.BUSINESS_HANDING, "删除失败");
+        }
     }
 
     public ResponseDTO<String> publish(Long activityId){
-
+        log.info("ActivityWithScheduleService.publish called, activityId={}", activityId);
+        // TODO: 实现发布逻辑
+        log.warn("ActivityWithScheduleService.publish not implemented");
+        return ResponseDTO.ok("功能未实现");
     }
     public ResponseDTO<String> cancelPublish(Long activityId){
+        log.info("ActivityWithScheduleService.cancelPublish called, activityId={}", activityId);
+        // TODO: 实现取消发布逻辑
+        log.warn("ActivityWithScheduleService.cancelPublish not implemented");
+        return ResponseDTO.ok("功能未实现");
     }
     public ResponseDTO<String> passReview(Long activityId){
+        log.info("ActivityWithScheduleService.passReview called, activityId={}", activityId);
+        // TODO: 实现通过审核逻辑
+        log.warn("ActivityWithScheduleService.passReview not implemented");
+        return ResponseDTO.ok("功能未实现");
     }
     public ResponseDTO<String> batchPassReview(List<Long> activityIds){
-
+        log.info("ActivityWithScheduleService.batchPassReview called, activityIdsCount={}", activityIds != null ? activityIds.size() : 0);
+        // TODO: 实现批量通过审核逻辑
+        log.warn("ActivityWithScheduleService.batchPassReview not implemented");
+        return ResponseDTO.ok("功能未实现");
     }
     public ResponseDTO<String> rejectReview(Long activityId){
+        log.info("ActivityWithScheduleService.rejectReview called, activityId={}", activityId);
+        // TODO: 实现拒绝审核逻辑
+        log.warn("ActivityWithScheduleService.rejectReview not implemented");
+        return ResponseDTO.ok("功能未实现");
     }
     public ResponseDTO<String> batchRejectReview(List<Long> activityIds){
-
+        log.info("ActivityWithScheduleService.batchRejectReview called, activityIdsCount={}", activityIds != null ? activityIds.size() : 0);
+        // TODO: 实现批量拒绝审核逻辑
+        log.warn("ActivityWithScheduleService.batchRejectReview not implemented");
+        return ResponseDTO.ok("功能未实现");
     }
 }

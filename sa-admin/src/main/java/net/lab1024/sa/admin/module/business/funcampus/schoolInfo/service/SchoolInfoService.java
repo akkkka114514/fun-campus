@@ -14,6 +14,7 @@ import net.lab1024.sa.base.common.domain.PageResult;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
+import lombok.extern.slf4j.Slf4j;
 
 import jakarta.annotation.Resource;
 
@@ -24,7 +25,7 @@ import jakarta.annotation.Resource;
  * @Date 2025-09-23 08:34:37
  * @Copyright akkkka114514
  */
-
+@Slf4j
 @Service
 public class SchoolInfoService {
 
@@ -35,8 +36,10 @@ public class SchoolInfoService {
      * 分页查询
      */
     public PageResult<SchoolInfoVO> queryPage(SchoolInfoQueryForm queryForm) {
+        log.info("SchoolInfoService.queryPage called, queryForm={}", queryForm);
         Page<?> page = SmartPageUtil.convert2PageQuery(queryForm);
         List<SchoolInfoVO> list = schoolInfoDao.queryPage(page, queryForm);
+        log.info("SchoolInfoService.queryPage result: count={}", list.size());
         return SmartPageUtil.convert2PageResult(page, list);
     }
 
@@ -44,8 +47,14 @@ public class SchoolInfoService {
      * 添加
      */
     public ResponseDTO<String> add(SchoolInfoAddForm addForm) {
+        log.info("SchoolInfoService.add called, schoolName={}", addForm.getSchoolName());
         SchoolInfoEntity schoolInfoEntity = SmartBeanUtil.copy(addForm, SchoolInfoEntity.class);
-        schoolInfoDao.insert(schoolInfoEntity);
+        int result = schoolInfoDao.insert(schoolInfoEntity);
+        if (result > 0) {
+            log.info("SchoolInfoService.add success: school created, id={}", schoolInfoEntity.getId());
+        } else {
+            log.error("SchoolInfoService.add failed: failed to insert record");
+        }
         return ResponseDTO.ok();
     }
 
@@ -54,8 +63,14 @@ public class SchoolInfoService {
      *
      */
     public ResponseDTO<String> update(SchoolInfoUpdateForm updateForm) {
+        log.info("SchoolInfoService.update called, id={}", updateForm.getId());
         SchoolInfoEntity schoolInfoEntity = SmartBeanUtil.copy(updateForm, SchoolInfoEntity.class);
-        schoolInfoDao.updateById(schoolInfoEntity);
+        int result = schoolInfoDao.updateById(schoolInfoEntity);
+        if (result > 0) {
+            log.info("SchoolInfoService.update success: school updated, id={}", updateForm.getId());
+        } else {
+            log.error("SchoolInfoService.update failed: failed to update record, id={}", updateForm.getId());
+        }
         return ResponseDTO.ok();
     }
 
@@ -63,11 +78,14 @@ public class SchoolInfoService {
      * 批量删除
      */
     public ResponseDTO<String> batchDelete(List<Long> idList) {
+        log.info("SchoolInfoService.batchDelete called, idListSize={}", idList != null ? idList.size() : 0);
         if (CollectionUtils.isEmpty(idList)){
+            log.info("SchoolInfoService.batchDelete skipped: empty idList");
             return ResponseDTO.ok();
         }
 
-        schoolInfoDao.batchUpdateDeleted(idList, true);
+        int result = schoolInfoDao.batchUpdateDeleted(idList, true);
+        log.info("SchoolInfoService.batchDelete result: updated {} records", result);
         return ResponseDTO.ok();
     }
 
@@ -75,11 +93,14 @@ public class SchoolInfoService {
      * 单个删除
      */
     public ResponseDTO<String> delete(Long id) {
+        log.info("SchoolInfoService.delete called, id={}", id);
         if (null == id){
+            log.info("SchoolInfoService.delete skipped: null id");
             return ResponseDTO.ok();
         }
 
-        schoolInfoDao.updateDeleted(id, true);
+        int result = schoolInfoDao.updateDeleted(id, true);
+        log.info("SchoolInfoService.delete result: updated {} records", result);
         return ResponseDTO.ok();
     }
 }

@@ -13,7 +13,7 @@ import lombok.Data;
  */
 
 @Data
-public class OrganizerActivityUpdateForm {
+public class OrganizerActivityUpdateForm extends OrganizerActivityAddForm{
 
     @Schema(description = "主键", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "主键 不能为空")

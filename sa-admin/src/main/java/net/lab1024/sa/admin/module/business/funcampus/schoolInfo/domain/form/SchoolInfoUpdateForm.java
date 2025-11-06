@@ -13,7 +13,7 @@ import lombok.Data;
  */
 
 @Data
-public class SchoolInfoUpdateForm {
+public class SchoolInfoUpdateForm extends SchoolInfoAddForm{
 
     @Schema(description = "学校ID", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "学校ID 不能为空")

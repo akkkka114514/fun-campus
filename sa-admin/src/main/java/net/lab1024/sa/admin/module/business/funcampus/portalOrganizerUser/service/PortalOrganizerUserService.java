@@ -216,8 +216,8 @@ public class PortalOrganizerUserService {
             return ResponseDTO.ok();
         }
 
-        int result = portalOrganizerUserDao.updateDeleted(id, true);
-        log.info("PortalOrganizerUserService.delete result: updated {} records", result);
+        Long result = portalOrganizerUserDao.updateDeleted(id, true);
+        log.info("PortalOrganizerUserService.delete result: updated id:{}", result);
         return ResponseDTO.ok();
     }
 

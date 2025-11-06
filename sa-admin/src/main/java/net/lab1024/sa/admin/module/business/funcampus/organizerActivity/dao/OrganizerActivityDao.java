@@ -8,7 +8,6 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import org.springframework.stereotype.Component;
 
 /**
  * 运营者发布活动的对应关系 Dao
@@ -37,7 +36,9 @@ public interface OrganizerActivityDao extends BaseMapper<OrganizerActivityEntity
 
     /**
      * 批量更新删除状态
+     *
+     * @return
      */
-    void batchUpdateDeleted(@Param("idList")List<Long> idList,@Param("deletedFlag")boolean deletedFlag);
+    int batchUpdateDeleted(@Param("idList")List<Long> idList, @Param("deletedFlag")boolean deletedFlag);
 
 }

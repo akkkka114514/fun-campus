@@ -8,7 +8,6 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import org.springframework.stereotype.Component;
 
 /**
  * 前端用户 Dao
@@ -37,8 +36,10 @@ public interface PortalUserDao extends BaseMapper<PortalUserEntity> {
 
     /**
      * 批量更新删除状态
+     *
+     * @return
      */
-    void batchUpdateDeleted(@Param("idList")List<Long> idList,@Param("deletedFlag")boolean deletedFlag);
+    int batchUpdateDeleted(@Param("idList")List<Long> idList, @Param("deletedFlag")boolean deletedFlag);
 
 
     Page<PortalUserVO> queryByIds(List<Long> ids);

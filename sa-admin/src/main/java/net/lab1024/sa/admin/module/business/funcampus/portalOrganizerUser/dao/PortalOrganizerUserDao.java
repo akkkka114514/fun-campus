@@ -36,10 +36,12 @@ public interface PortalOrganizerUserDao extends BaseMapper<PortalOrganizerUserEn
 
     /**
      * 批量更新删除状态
+     *
+     * @return
      */
-    void batchUpdateDeleted(@Param("idList")List<Long> idList,@Param("deletedFlag")boolean deletedFlag);
+    int batchUpdateDeleted(@Param("idList")List<Long> idList, @Param("deletedFlag")boolean deletedFlag);
 
     long updateDisableFlag(@Param("id")Long id,@Param("disabledFlag")boolean disabledFlag);
 
-    void batchUpdateDisableFlag(@Param("idList")List<Long> idList,@Param("disabledFlag")boolean disabledFlag);
+    int batchUpdateDisableFlag(@Param("idList")List<Long> idList, @Param("disabledFlag")boolean disabledFlag);
 }

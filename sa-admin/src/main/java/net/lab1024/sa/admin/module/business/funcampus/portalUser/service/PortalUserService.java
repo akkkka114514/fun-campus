@@ -91,8 +91,8 @@ public class PortalUserService {
             return ResponseDTO.ok();
         }
 
-        int result = portalUserDao.updateDeleted(id, true);
-        log.info("PortalUserService.delete result: updated={} records", result);
+        Long result = portalUserDao.updateDeleted(id, true);
+        log.info("PortalUserService.delete result: updated id={} ", result);
         return ResponseDTO.ok();
     }
 }

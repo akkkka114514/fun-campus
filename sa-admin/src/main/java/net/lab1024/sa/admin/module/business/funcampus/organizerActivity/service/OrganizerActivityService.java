@@ -99,8 +99,8 @@ public class OrganizerActivityService {
             return ResponseDTO.ok();
         }
 
-        int result = organizerActivityDao.updateDeleted(id, true);
-        log.info("OrganizerActivityService.delete result: updated {} records", result);
+        Long result = organizerActivityDao.updateDeleted(id, true);
+        log.info("OrganizerActivityService.delete result: updated id={}", result);
         return ResponseDTO.ok();
     }
 }

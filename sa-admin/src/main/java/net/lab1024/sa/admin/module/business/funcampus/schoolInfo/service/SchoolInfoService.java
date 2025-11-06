@@ -47,7 +47,7 @@ public class SchoolInfoService {
      * 添加
      */
     public ResponseDTO<String> add(SchoolInfoAddForm addForm) {
-        log.info("SchoolInfoService.add called, schoolName={}", addForm.getSchoolName());
+        log.info("SchoolInfoService.add called, schoolName={}", addForm.getName());
         SchoolInfoEntity schoolInfoEntity = SmartBeanUtil.copy(addForm, SchoolInfoEntity.class);
         int result = schoolInfoDao.insert(schoolInfoEntity);
         if (result > 0) {
@@ -99,8 +99,8 @@ public class SchoolInfoService {
             return ResponseDTO.ok();
         }
 
-        int result = schoolInfoDao.updateDeleted(id, true);
-        log.info("SchoolInfoService.delete result: updated {} records", result);
+        Long result = schoolInfoDao.updateDeleted(id, true);
+        log.info("SchoolInfoService.delete result: updated id = {}", result);
         return ResponseDTO.ok();
     }
 }

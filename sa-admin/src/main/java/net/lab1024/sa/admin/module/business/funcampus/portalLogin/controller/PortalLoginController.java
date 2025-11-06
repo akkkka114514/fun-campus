@@ -1,5 +1,6 @@
 package net.lab1024.sa.admin.module.business.funcampus.portalLogin.controller;
 
+import cn.hutool.extra.servlet.JakartaServletUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
@@ -10,6 +11,7 @@ import net.lab1024.sa.admin.module.business.funcampus.portalLogin.domain.PortalL
 import net.lab1024.sa.admin.module.business.funcampus.portalLogin.service.PortalLoginService;
 import net.lab1024.sa.base.common.annoation.NoNeedLogin;
 import net.lab1024.sa.base.common.domain.ResponseDTO;
+import net.lab1024.sa.base.common.util.SmartRequestUtil;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -29,12 +31,14 @@ public class PortalLoginController {
     @PostMapping("/portal/login")
     @NoNeedLogin
     public ResponseDTO<PortalLoginResultVO> login(@RequestBody @Valid PortalLoginForm loginForm, HttpServletRequest request) {
-        return portalUserLoginService.login(loginForm, request);
+        String userAgent = request.getHeader("User-Agent");
+        String ip = JakartaServletUtil.getClientIP(request);
+        return portalUserLoginService.login(loginForm, ip, userAgent);
     }
 
     @Operation(summary = "Portal用户退出登录")
     @PostMapping("/portal/logout")
     public ResponseDTO<String> logout() {
-        return portalUserLoginService.logout();
+        return portalUserLoginService.logout(SmartRequestUtil.getRequestUser());
     }
 }

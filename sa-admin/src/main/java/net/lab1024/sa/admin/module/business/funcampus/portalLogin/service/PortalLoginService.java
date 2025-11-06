@@ -6,6 +6,7 @@ import cn.hutool.extra.servlet.JakartaServletUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import net.lab1024.sa.admin.module.business.funcampus.portalLogin.domain.PortalLoginResultVO;
 import net.lab1024.sa.admin.module.business.funcampus.portalLogin.domain.RequestPortalUser;
 import net.lab1024.sa.admin.module.business.funcampus.portalLogin.manager.PortalLoginManager;
 import net.lab1024.sa.admin.module.business.funcampus.portalOrganizerUser.manager.PortalOrganizerUserManager;
@@ -121,7 +122,7 @@ public class PortalLoginService implements StpInterface {
      *
      * @return 返回用户登录信息
      */
-    public ResponseDTO<LoginResultVO> login(LoginForm loginForm, String ip, String userAgent) {
+    public ResponseDTO<PortalLoginResultVO> login(LoginForm loginForm, String ip, String userAgent) {
         log.info("PortalLoginService.login called, username={}, ip={}", loginForm.getUsername(), ip);
         LoginDeviceEnum loginDeviceEnum = SmartEnumUtil.getEnumByValue(loginForm.getLoginDevice(), LoginDeviceEnum.class);
         if (loginDeviceEnum == null) {
@@ -188,7 +189,7 @@ public class PortalLoginService implements StpInterface {
         RequestPortalUser requestPortalUser = portalLoginManager.loadLoginInfo(portalUserEntity);
 
         // 返回登录结果
-        LoginResultVO loginResultVO = new LoginResultVO();
+        PortalLoginResultVO loginResultVO = new PortalLoginResultVO();
         loginResultVO.setToken(StpUtil.getTokenValue());
         loginResultVO.setId(requestPortalUser.getId());
         loginResultVO.setUsername(requestPortalUser.getUserName());

@@ -63,7 +63,4 @@ public class ActivityEnrollmentEntity {
     */
     private byte signinReviewStatus;
 
-
-    private byte enrollReviewStatus;
-
 }

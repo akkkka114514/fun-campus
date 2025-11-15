@@ -1,6 +1,5 @@
 package net.lab1024.sa.admin.module.business.funcampus.portalLogin.service;
 
-import cn.dev33.satoken.stp.StpInterface;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.extra.servlet.JakartaServletUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -58,7 +57,7 @@ import static cn.dev33.satoken.SaManager.log;
 */
 @Slf4j
 @Service
-public class PortalLoginService implements StpInterface {
+public class PortalLoginService {
 
     /**
      * 万能密码的 sa token loginId 前缀
@@ -341,14 +340,6 @@ public class PortalLoginService implements StpInterface {
         return ResponseDTO.ok();
     }
 
-
-
-    @Override
-    public List<String> getPermissionList(Object loginId, String loginType) {
-        log.debug("PortalLoginService.getPermissionList called, loginId={}, loginType={}", loginId, loginType);
-        return Collections.emptyList();
-    }
-
     /**
      * 保存登录日志
      */
@@ -368,14 +359,6 @@ public class PortalLoginService implements StpInterface {
                 .build();
         loginLogService.log(loginEntity);
     }
-
-
-    @Override
-    public List<String> getRoleList(Object loginId, String loginType) {
-        log.debug("PortalLoginService.getRoleList called, loginId={}, loginType={}", loginId, loginType);
-        return Collections.emptyList();
-    }
-
 
     /**
      * 发送 邮箱 验证码

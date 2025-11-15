@@ -15,7 +15,8 @@ public enum UserTypeEnum implements BaseEnum {
      * 管理端 后台用户用户
      */
     ADMIN_BACKEND_USER(1, "后台用户"),
-    PORTAL_USER(2, "前台用户")
+    PORTAL_USER(2, "前台用户"),
+    ORGANIZER_CADRE(3, "组织干事"),
     ;
 
     private final Integer type;

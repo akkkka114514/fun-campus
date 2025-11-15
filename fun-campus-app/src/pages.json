@@ -1,133 +1,230 @@
 {
 	"easycom": {
-		"^u-(.*)": "uview-ui/components/u-$1/u-$1.vue"
+		"autoscan": true,
+		"custom": {
+			"^tm-(.*)": "@/tmui/components/tm-$1/tm-$1.vue"
+		}
 	},
+	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "首页"
+			}
+		},{
+			"path":"pages/login/login",
+			"style":{
+				"navigationBarTitleText":"登录"
+			}
+		},
+		{
+			"path":"pages/login/register",
+			"style":{
+				"navigationBarTitleText":"注册"
+			}
+		},
+		{
+			"path":"pages/login/mobile",
+			"style":{
+				"navigationBarTitleText":"验证码登录"
+			}
+		},
+		{
+			"path":"pages/login/forgot",
+			"style":{
+				"navigationBarTitleText":"忘记密码"
+			}
+		},
+		{
+			"path":"pages/login/wechat",
+			"style":{
+				"navigationBarTitleText":"微信登录"
+			}
+		},{
+			"path":"pages/user/edit",
+			"style":{
+				"navigationBarTitleText":"编辑资料"
+			}
+		}
+	],
+	"subPackages": [ //分包配置，参考：https://uniapp.dcloud.io/collocation/pages?id=分包配置
+		{
+			"root": "teams",
+			"pages": [
+				{
+					"path": "index/index",
+					"style": {
+						"navigationBarTitleText": "我的组织"
+					}
+				},
+				{
+					"path": "detail/detail",
+					"style": {
+						"navigationBarTitleText": "组织详情"
+					}
+				},
+				{
+					"path": "manage/manage",
+					"style": {
+						"navigationBarTitleText": "组织管理"
+					}
+				},
+				{
+					"path": "create/create",
+					"style": {
+						"navigationBarTitleText": "创建组织"
+					}
+				},
+				{
+					"path": "activity/activity",
+					"style": {
+						"navigationBarTitleText": "全部活动"
+					}
+				},
+				{
+					"path": "approve/approve",
+					"style": {
+						"navigationBarTitleText": "组织认证"
+					}
+				},
+				{
+					"path": "manager/manager",
+					"style": {
+						"navigationBarTitleText": "管理员"
+					}
+				},
+				{
+					"path": "manager/share",
+					"style": {
+						"navigationBarTitleText": "添加管理员"
+					}
+				},
+				{
+					"path": "blacklist/blacklist",
+					"style": {
+						"navigationBarTitleText": "黑名单"
+					}
+				},
+				{
+					"path": "images/images",
+					"style": {
+						"navigationBarTitleText": "相册"
+					}
+				},
+				{
+					"path": "images/detail",
+					"style": {
+						"navigationBarTitleText": "相册详情"
+					}
+				},
+				{
+					"path": "apply/info",
+					"style": {
+						"navigationBarTitleText": "会员详情"
+					}
+				}
+			]
+		},
+		{
+			"root": "others",
+			"pages": [
+				{
+					"path": "publish/publish",
+					"style": {
+						"navigationBarTitleText": "发布活动"
+					}
+				},
+				{
+					"path": "publish/fields",
+					"style": {
+						"navigationBarTitleText": "报名填写项"
+					}
+				},
+				{
+					"path": "follow/follow",
+					"style": {
+						"navigationBarTitleText": "我的关注"
+					}
+				},
+				{
+					"path": "activity/activity",
+					"style": {
+						"navigationBarTitleText": "我的活动"
+					}
+				},
+				{
+					"path": "activity/detail",
+					"style": {
+						"navigationBarTitleText": "活动详情"
+					}
+				},
+				{
+					"path": "activity/apply",
+					"style": {
+						"navigationBarTitleText": "活动报名"
+					}
+				},
+				{
+					"path": "activity/manage",
+					"style": {
+						"navigationBarTitleText": "活动管理"
+					}
+				},
+				{
+					"path": "activity/setting",
+					"style": {
+						"navigationBarTitleText": "快速设置"
+					}
+				},
+				{
+					"path": "activity/high",
+					"style": {
+						"navigationBarTitleText": "高级设置"
+					}
+				},
+				{
+					"path": "activity/user",
+					"style": {
+						"navigationBarTitleText": "报名用户"
+					}
+				},
+				{
+					"path": "activity/userinfo",
+					"style": {
+						"navigationBarTitleText": "用户详情"
+					}
+				},
+				{
+					"path": "activity/info",
+					"style": {
+						"navigationBarTitleText": "我的报名"
+					}
+				},
+				{
+					"path": "activity/list",
+					"style": {
+						"navigationBarTitleText": "报名明细"
+					}
+				},
+				{
+					"path": "activity/stats",
+					"style": {
+						"navigationBarTitleText": "数据统计"
+					}
+				},
+				{
+					"path": "help/help",
+					"style": {
+						"navigationBarTitleText": "帮助中心"
+					}
+				}
+			]
+		}
+	],
 	"globalStyle": {
 		"navigationBarTextStyle": "white",
-		"navigationBarTitleText": "uni-app",
-		"navigationBarBackgroundColor": "#2b9939",
-		"backgroundColor": "#f1f1f1"
-	},
-	"pages": [
-		{
-			"path": "pages/account/login/index",
-			"style": {
-				"navigationBarTitleText": "用户登录"
-			}
-		},
-		{
-			"path": "pages/index/tab-0/index",
-			"style": {
-				"navigationBarTitleText": "tab-0"
-			}
-		},
-		{
-			"path": "pages/index/tab-1/index",
-			"style": {
-				"navigationBarTitleText": "tab-1",
-				"enablePullDownRefresh": true
-			}
-		},
-		{
-			"path": "pages/index/tab-2/index",
-			"style": {
-				"navigationBarTitleText": "tab-2"
-			}
-		},
-		{
-			"path": "pages/index/tab-3/index",
-			"style": {
-				"navigationBarTitleText": "tab-3"
-			}
-		}
-	],
-	"subPackages": [
-		{
-			"root": "pages/tab-items-0",
-			"pages": [
-				{
-					"path": "demo/index",
-					"style": {
-						"navigationBarTitleText": "测试页"
-					}
-				}
-			]
-		},
-		// 为空时app端将会报错所以要注掉
-		// {
-		// 	"root": "pages/tab-items-1",
-		// 	"pages": []
-		// },
-		// {
-		// 	"root": "pages/tab-items-2",
-		// 	"pages": []
-		// },
-		// {
-		// 	"root": "pages/tab-items-3",
-		// 	"pages": []
-		// },
-		// {
-		// 	"root": "pages/account",
-		// 	"pages": []
-		// },
-		{
-			"root": "pages/common",
-			"pages": [
-				{
-					"path": "u-avatar-cropper/u-avatar-cropper",
-					"style": {
-						"navigationBarTitleText": "头像裁剪",
-						"navigationBarBackgroundColor": "#000000"
-					}
-				}
-			]
-		}
-	],
-	"preloadRule": {
-		"pages/account/login/index": {
-			"network": "all",
-			"packages": [
-				"pages/common",
-				"pages/tab-items-0"
-			]
-		},
-		"pages/index/tab-0/index": {
-			"network": "all",
-			"packages": [
-				"pages/common",
-				"pages/tab-items-0"
-			]
-		}
-	},
-	"tabBar": {
-		"color": "#7a7e83",
-		"selectedColor": "#2b9939",
-		"backgroundColor": "#ffffff",
-		"list": [
-			{
-				"iconPath": "static/images/tabbar/tab-0.png",
-				"selectedIconPath": "static/images/tabbar/tab-0-active.png",
-				"pagePath": "pages/index/tab-0/index",
-				"text": "tab-0"
-			},
-			{
-				"iconPath": "static/images/tabbar/tab-1.png",
-				"selectedIconPath": "static/images/tabbar/tab-1-active.png",
-				"pagePath": "pages/index/tab-1/index",
-				"text": "tab-1"
-			},
-			{
-				"iconPath": "static/images/tabbar/tab-2.png",
-				"selectedIconPath": "static/images/tabbar/tab-2-active.png",
-				"pagePath": "pages/index/tab-2/index",
-				"text": "tab-2"
-			},
-			{
-				"iconPath": "static/images/tabbar/tab-3.png",
-				"selectedIconPath": "static/images/tabbar/tab-3-active.png",
-				"pagePath": "pages/index/tab-3/index",
-				"text": "tab-3"
-			}
-		]
+		"navigationBarTitleText": "活动管理",
+		"navigationBarBackgroundColor": "#3c8af8",
+		"backgroundColor": "#3c8af8"
 	}
 }

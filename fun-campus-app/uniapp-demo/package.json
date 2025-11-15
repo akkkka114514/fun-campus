@@ -1,0 +1,12 @@
+{
+  "name": "uniapp-demo",
+  "version": "0.1.0",
+  "private": true,
+  "devDependencies": {
+    "@dcloudio/vue-cli-plugin-uni": "^2.0.2-3061420221215001",
+    "@dcloudio/vue-cli-plugin-uni-optimize": "^2.0.2-3061420221215001",
+    "@dcloudio/vue-cli-plugin-hbuilderx": "^2.0.2-3061420221215001",
+    "@vue/cli-plugin-babel": "~5.0.0",
+    "@vue/cli-service": "~5.0.0"
+  }
+}

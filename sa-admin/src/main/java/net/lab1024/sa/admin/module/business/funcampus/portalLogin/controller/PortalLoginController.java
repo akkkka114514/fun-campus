@@ -9,9 +9,12 @@ import jakarta.validation.Valid;
 import net.lab1024.sa.admin.module.business.funcampus.portalLogin.domain.PortalLoginForm;
 import net.lab1024.sa.admin.module.business.funcampus.portalLogin.domain.PortalLoginResultVO;
 import net.lab1024.sa.admin.module.business.funcampus.portalLogin.service.PortalLoginService;
+import net.lab1024.sa.admin.module.system.login.service.LoginService;
 import net.lab1024.sa.base.common.annoation.NoNeedLogin;
 import net.lab1024.sa.base.common.domain.ResponseDTO;
 import net.lab1024.sa.base.common.util.SmartRequestUtil;
+import net.lab1024.sa.base.module.support.captcha.domain.CaptchaVO;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,6 +29,8 @@ public class PortalLoginController {
 
     @Resource
     private PortalLoginService portalUserLoginService;
+    @Resource
+    private LoginService loginService;
 
     @Operation(summary = "Portal用户登录")
     @PostMapping("/portal/login")
@@ -40,5 +45,12 @@ public class PortalLoginController {
     @PostMapping("/portal/logout")
     public ResponseDTO<String> logout() {
         return portalUserLoginService.logout(SmartRequestUtil.getRequestUser());
+    }
+
+    @Operation(summary = "获取验证码")
+    @GetMapping("/portal/login/getCaptcha")
+    @NoNeedLogin
+    public ResponseDTO<CaptchaVO> getCaptcha() {
+        return loginService.getCaptcha();
     }
 }

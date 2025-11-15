@@ -2,10 +2,8 @@ package net.lab1024.sa.admin.module.business.funcampus.activityEnrollment.servic
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -14,6 +12,7 @@ import com.google.zxing.BarcodeFormat;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
+import net.lab1024.sa.admin.module.business.funcampus.activityEnrollment.constant.RedisKey;
 import net.lab1024.sa.admin.module.business.funcampus.activityEnrollment.constant.ReviewStatus;
 import net.lab1024.sa.admin.module.business.funcampus.activityEnrollment.dao.ActivityEnrollmentDao;
 import net.lab1024.sa.admin.module.business.funcampus.activityEnrollment.domain.entity.ActivityEnrollmentEntity;
@@ -43,6 +42,7 @@ import net.lab1024.sa.base.common.domain.ResponseDTO;
 import net.lab1024.sa.base.common.domain.PageResult;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import net.lab1024.sa.base.common.util.SmartRequestUtil;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import lombok.extern.slf4j.Slf4j;
 
@@ -82,6 +82,8 @@ public class ActivityEnrollmentService {
     private PortalUserManager portalUserManager;
     @Resource
     private BackendUserManager backendUserManager;
+    @Resource
+    private RedisTemplate<String, String> redisTemplate;
 
     /**
      * 分页查询
@@ -98,7 +100,10 @@ public class ActivityEnrollmentService {
     public ResponseDTO<String> enroll(Long activityId){
         RequestUser requestUser = SmartRequestUtil.getRequestUser();
         log.info("ActivityEnrollmentService.enroll called, activityId={}, userId={}", activityId, requestUser != null ? requestUser.getUserId() : null);
-        
+        if(requestUser==null){
+            log.warn("ActivityEnrollmentService.enroll failed: user not login");
+            return ResponseDTO.error(UserErrorCode.LOGIN_STATE_INVALID);
+        }
         if(requestUser.getUserType()!= UserTypeEnum.PORTAL_USER){
             log.warn("ActivityEnrollmentService.enroll failed: user type error, userType={}", requestUser.getUserType());
             return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "用户类型错误");
@@ -287,22 +292,20 @@ public class ActivityEnrollmentService {
             log.warn("ActivityEnrollmentService.signInQRCode failed: user already signed in, activityId={}, userId={}", activityId, userId);
             return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "用户已签到");
         }
-        //检查用户报名审核状态
-        if(enrollmentEntity.getEnrollReviewStatus()==ReviewStatus.REJECTED){
-            log.warn("ActivityEnrollmentService.signInQRCode failed: enrollment review rejected, activityId={}, userId={}", activityId, userId);
-            return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "用户报名审核未通过");
-        }
         //检查用户签到审核状态
         if(enrollmentEntity.getSigninReviewStatus() == ReviewStatus.REJECTED){
             log.warn("ActivityEnrollmentService.signInQRCode failed: sign-in review rejected, activityId={}, userId={}", activityId, userId);
             return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "用户报名审核未通过");
         }
+        String uuid = UUID.randomUUID().toString().replace("-", "");
+        String redisKey = RedisKey.SIGN_IN_CODE_KEY(userId, activityId);
+        redisTemplate.opsForValue().set(redisKey, uuid, 45, TimeUnit.SECONDS);
         //TODO:填入域名
         String qrContent = String.format(
-                "activityId=%d&userId=%d&token=%s",
+                "activityId=%d&userId=%d&uuid=%s",
                 activityId,
                 userId,
-                StpUtil.getTokenValue()
+                uuid
         );
         // 使用ZXing生成二维码
         try {
@@ -367,11 +370,6 @@ public class ActivityEnrollmentService {
             log.warn("ActivityEnrollmentService.signIn failed: user already signed in, activityId={}, userId={}", activityId, userId);
             return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "用户已签到");
         }
-        //检查用户报名审核状态
-        if(enrollmentEntity.getEnrollReviewStatus()==ReviewStatus.REJECTED){
-            log.warn("ActivityEnrollmentService.signIn failed: enrollment review rejected, activityId={}, userId={}", activityId, userId);
-            return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "用户报名审核未通过");
-        }
         //检查用户签到审核状态
         if(enrollmentEntity.getSigninReviewStatus() == ReviewStatus.REJECTED){
             log.warn("ActivityEnrollmentService.signIn failed: sign-in review rejected, activityId={}, userId={}", activityId, userId);
@@ -390,272 +388,6 @@ public class ActivityEnrollmentService {
             return ResponseDTO.error(SystemErrorCode.SYSTEM_ERROR, "签到失败");
         }
     }
-    // 后台操作签到
-    public ResponseDTO<String> backendOperateSignIn(Long activityId, Long userId){
-        log.info("ActivityEnrollmentService.backendOperateSignIn called, activityId={}, userId={}", activityId, userId);
-        
-        ActivityWithScheduleVO activityWithScheduleVO = activityDao.getActivityWithScheduleById(activityId);
-        if(activityWithScheduleVO==null||activityWithScheduleVO.getDeletedFlag()){
-            log.warn("ActivityEnrollmentService.backendOperateSignIn failed: activity not found or deleted, activityId={}", activityId);
-            return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "活动不存在");
-        }
 
-        if(activityWithScheduleVO.getStatus()!=ActivityStatus.START_SIGNIN){
-            log.warn("ActivityEnrollmentService.backendOperateSignIn failed: activity not in sign-in period, activityId={}, status={}", activityId, activityWithScheduleVO.getStatus());
-            return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "活动未开始签到或签到已结束");
-        }
 
-        PortalUserEntity portalUser = portalUserManager.getById(userId);
-        if(portalUser==null||portalUser.getDeletedFlag()) {
-            log.warn("ActivityEnrollmentService.backendOperateSignIn failed: user not found or deleted, userId={}", userId);
-            return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "用户不存在");
-        }
-
-        RequestUser requestUser = SmartRequestUtil.getRequestUser();
-        if(requestUser.getUserType()!= UserTypeEnum.ADMIN_BACKEND_USER){
-            log.warn("ActivityEnrollmentService.backendOperateSignIn failed: user type error, userType={}", requestUser.getUserType());
-            return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "用户权限不足");
-        }
-
-        Long organizerId = requestUser.getUserId();
-        LambdaQueryWrapper<OrganizerActivityEntity> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(OrganizerActivityEntity::getActivityId, activityId)
-                .eq(OrganizerActivityEntity::getOrganizerId, organizerId)
-                .eq(OrganizerActivityEntity::getDeletedFlag, false);
-        OrganizerActivityEntity organizerActivityEntity = organizerActivityManager.getOne(queryWrapper);
-        if(organizerActivityEntity==null){
-            log.warn("ActivityEnrollmentService.backendOperateSignIn failed: user is not activity organizer, activityId={}, userId={}", activityId, organizerId);
-            return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "用户不是活动发起者");
-        }
-
-        LambdaUpdateWrapper<ActivityEnrollmentEntity> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.eq(ActivityEnrollmentEntity::getActivityId, activityId)
-                .eq(ActivityEnrollmentEntity::getUserId, userId);
-        ActivityEnrollmentEntity activityEnrollmentEntity = new ActivityEnrollmentEntity();
-        activityEnrollmentEntity.setSignInStatus(true);
-
-        boolean result = activityEnrollmentManager.update(activityEnrollmentEntity ,updateWrapper);
-        if (result) {
-            log.info("ActivityEnrollmentService.backendOperateSignIn success: backend sign-in completed, activityId={}, userId={}", activityId, userId);
-            return ResponseDTO.ok("后台操作签到成功");
-        } else {
-            log.error("ActivityEnrollmentService.backendOperateSignIn failed: failed to update sign-in status, activityId={}, userId={}", activityId, userId);
-            return ResponseDTO.error(SystemErrorCode.SYSTEM_ERROR, "签到失败");
-        }
-    }
-    public ResponseDTO<String> batchBackendOperateSignIn(Map<Long, Set<Long>> activityIdUserIdMap){
-        log.info("ActivityEnrollmentService.batchBackendOperateSignIn called, activity count={}", activityIdUserIdMap != null ? activityIdUserIdMap.size() : 0);
-        
-        if(activityIdUserIdMap == null || activityIdUserIdMap.isEmpty()){
-            log.warn("ActivityEnrollmentService.batchBackendOperateSignIn failed: empty parameters");
-            return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "参数错误");
-        }
-        RequestUser requestUser = SmartRequestUtil.getRequestUser();
-        Long organizerId = requestUser.getUserId();
-        if(requestUser.getUserType()!= UserTypeEnum.ADMIN_BACKEND_USER){
-            log.warn("ActivityEnrollmentService.batchBackendOperateSignIn failed: user type error, userType={}", requestUser.getUserType());
-            return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "用户权限不足");
-        }
-        for(Map.Entry<Long, Set<Long>> entry : activityIdUserIdMap.entrySet()){
-            Long activityId = entry.getKey();
-            Set<Long> userIdSet = entry.getValue();
-            ActivityWithScheduleVO activityWithScheduleVO = activityDao.getActivityWithScheduleById(activityId);
-            if(activityWithScheduleVO==null||activityWithScheduleVO.getDeletedFlag()){
-                log.warn("ActivityEnrollmentService.batchBackendOperateSignIn failed: activity not found or deleted, activityId={}", activityId);
-                return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "活动不存在");
-            }
-            if(activityWithScheduleVO.getStatus()!=ActivityStatus.START_SIGNIN){
-                log.warn("ActivityEnrollmentService.batchBackendOperateSignIn failed: activity not in sign-in period, activityId={}, status={}", activityId, activityWithScheduleVO.getStatus());
-                return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "活动未开始签到或签到已结束");
-            }
-            LambdaQueryWrapper<OrganizerActivityEntity> queryWrapper = new LambdaQueryWrapper<>();
-            queryWrapper.eq(OrganizerActivityEntity::getActivityId, activityId)
-                    .eq(OrganizerActivityEntity::getOrganizerId, organizerId)
-                    .eq(OrganizerActivityEntity::getDeletedFlag, false);
-            OrganizerActivityEntity organizerActivityEntity = organizerActivityManager.getOne(queryWrapper);
-            if(organizerActivityEntity==null){
-                log.warn("ActivityEnrollmentService.batchBackendOperateSignIn failed: user is not activity organizer, activityId={}, userId={}", activityId, organizerId);
-                return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "用户不是活动发起者");
-            }
-            for(Long userId : userIdSet){
-                PortalUserEntity portalUser = portalUserManager.getById(userId);
-                if(portalUser==null||portalUser.getDeletedFlag()) {
-                    log.warn("ActivityEnrollmentService.batchBackendOperateSignIn failed: user not found or deleted, userId={}", userId);
-                    return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "用户不存在");
-                }
-                LambdaQueryWrapper<ActivityEnrollmentEntity> queryWrapper2 = new LambdaQueryWrapper<>();
-                queryWrapper2.eq(ActivityEnrollmentEntity::getActivityId, activityId)
-                        .eq(ActivityEnrollmentEntity::getUserId, userId);
-                ActivityEnrollmentEntity activityEnrollmentEntity = activityEnrollmentManager.getOne(queryWrapper2);
-                if(activityEnrollmentEntity==null||activityEnrollmentEntity.getDeletedFlag()){
-                    log.warn("ActivityEnrollmentService.batchBackendOperateSignIn failed: user not enrolled, activityId={}, userId={}", activityId, userId);
-                    return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "用户未报名该活动");
-                }
-                if(activityEnrollmentEntity.getSigninReviewStatus()==ReviewStatus.REJECTED){
-                    log.warn("ActivityEnrollmentService.batchBackendOperateSignIn failed: sign-in review rejected, activityId={}, userId={}", activityId, userId);
-                    return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "用户报名该活动已被拒绝签到");
-                }
-            }
-        }
-        transactionTemplate.executeWithoutResult(transactionStatus -> {
-            for(Map.Entry<Long, Set<Long>> entry : activityIdUserIdMap.entrySet()){
-                for (Long userId : entry.getValue()){
-                    LambdaUpdateWrapper<ActivityEnrollmentEntity> updateWrapper = new LambdaUpdateWrapper<>();
-                    updateWrapper.eq(ActivityEnrollmentEntity::getActivityId, entry.getKey())
-                            .eq(ActivityEnrollmentEntity::getUserId, userId);
-                    ActivityEnrollmentEntity activityEnrollmentEntity = new ActivityEnrollmentEntity();
-                    activityEnrollmentEntity.setSignInStatus(true);
-                    activityEnrollmentEntity.setSigninReviewStatus(ReviewStatus.PASSED);
-                    activityEnrollmentManager.update(activityEnrollmentEntity, updateWrapper);
-                }
-            }
-        });
-        log.info("ActivityEnrollmentService.batchBackendOperateSignIn success: batch backend sign-in completed");
-        return ResponseDTO.ok("批量后台操作签到成功");
-    }
-    public ResponseDTO<String> RejectSignIn(Long activityId, Long userId){
-        log.info("ActivityEnrollmentService.RejectSignIn called, activityId={}, userId={}", activityId, userId);
-        
-        ActivityWithScheduleVO activityWithScheduleVO = activityDao.getActivityWithScheduleById(activityId);
-        if(activityWithScheduleVO==null||activityWithScheduleVO.getDeletedFlag()){
-            log.warn("ActivityEnrollmentService.RejectSignIn failed: activity not found or deleted, activityId={}", activityId);
-            return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "活动不存在");
-        }
-        if(activityWithScheduleVO.getStatus()!=ActivityStatus.START_SIGNIN){
-            log.warn("ActivityEnrollmentService.RejectSignIn failed: activity not in sign-in period, activityId={}, status={}", activityId, activityWithScheduleVO.getStatus());
-            return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "活动未开始签到或签到已结束");
-        }
-        PortalUserEntity portalUser = portalUserManager.getById(userId);
-        if(portalUser==null||portalUser.getDeletedFlag()) {
-            log.warn("ActivityEnrollmentService.RejectSignIn failed: user not found or deleted, userId={}", userId);
-            return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "用户不存在");
-        }
-        RequestUser requestUser = SmartRequestUtil.getRequestUser();
-        if(requestUser.getUserType()!= UserTypeEnum.ADMIN_BACKEND_USER){
-            log.warn("ActivityEnrollmentService.RejectSignIn failed: user type error, userType={}", requestUser.getUserType());
-            return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "用户权限不足");
-        }
-        LambdaUpdateWrapper<ActivityEnrollmentEntity> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.eq(ActivityEnrollmentEntity::getActivityId, activityId)
-                .eq(ActivityEnrollmentEntity::getUserId, userId);
-        ActivityEnrollmentEntity activityEnrollmentEntity = new ActivityEnrollmentEntity();
-        activityEnrollmentEntity.setSignInStatus(false);
-        activityEnrollmentEntity.setSigninReviewStatus(ReviewStatus.REJECTED);
-        boolean result = activityEnrollmentManager.update(activityEnrollmentEntity ,updateWrapper);
-        if (result) {
-            log.info("ActivityEnrollmentService.RejectSignIn success: sign-in rejected, activityId={}, userId={}", activityId, userId);
-            return ResponseDTO.ok("拒绝签到成功");
-        } else {
-            log.error("ActivityEnrollmentService.RejectSignIn failed: failed to update sign-in status, activityId={}, userId={}", activityId, userId);
-            return ResponseDTO.error(SystemErrorCode.SYSTEM_ERROR, "拒绝签到失败");
-        }
-    }
-
-    public ResponseDTO<String> passEnrollReview(Long activityId, Long userId){
-        log.info("ActivityEnrollmentService.passEnrollReview called, activityId={}, userId={}", activityId, userId);
-        
-        ActivityWithScheduleVO activityWithScheduleVO = activityDao.getActivityWithScheduleById(activityId);
-        if(activityWithScheduleVO==null||activityWithScheduleVO.getDeletedFlag()){
-            log.warn("ActivityEnrollmentService.passEnrollReview failed: activity not found or deleted, activityId={}", activityId);
-            return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "活动不存在");
-        }
-        if(activityWithScheduleVO.getStatus()!=ActivityStatus.START_SIGNIN
-                &&activityWithScheduleVO.getStatus()!=ActivityStatus.END_ENROLL){
-            log.warn("ActivityEnrollmentService.passEnrollReview failed: activity not in enrollment period, activityId={}, status={}", activityId, activityWithScheduleVO.getStatus());
-            return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "活动未开始报名或活动已开始");
-        }
-        LambdaQueryWrapper<ActivityEnrollmentEntity> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(ActivityEnrollmentEntity::getActivityId, activityId)
-                .eq(ActivityEnrollmentEntity::getUserId, userId);
-        ActivityEnrollmentEntity activityEnrollmentEntity = activityEnrollmentManager.getOne(queryWrapper);
-        if(activityEnrollmentEntity==null||activityEnrollmentEntity.getDeletedFlag()){
-            log.warn("ActivityEnrollmentService.passEnrollReview failed: user not enrolled, activityId={}, userId={}", activityId, userId);
-            return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "用户未报名该活动");
-        }
-        RequestUser requestUser = SmartRequestUtil.getRequestUser();
-        if(requestUser.getUserType()!= UserTypeEnum.ADMIN_BACKEND_USER){
-            log.warn("ActivityEnrollmentService.passEnrollReview failed: user type error, userType={}", requestUser.getUserType());
-            return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "用户权限不足");
-        }
-        transactionTemplate.executeWithoutResult(status -> {
-            LambdaUpdateWrapper<ActivityEnrollmentEntity> updateWrapper = new LambdaUpdateWrapper<>();
-            updateWrapper.eq(ActivityEnrollmentEntity::getActivityId, activityId)
-                    .eq(ActivityEnrollmentEntity::getUserId, userId);
-            ActivityEnrollmentEntity updateEntity = new ActivityEnrollmentEntity();
-            activityEnrollmentEntity.setEnrollReviewStatus(ReviewStatus.PASSED);
-            if(activityEnrollmentManager.update(updateEntity, updateWrapper)){
-                log.error("ActivityEnrollmentService.passEnrollReview failed: failed to update review status, activityId={}, userId={}", activityId, userId);
-                status.setRollbackOnly();
-            }
-        });
-        log.info("ActivityEnrollmentService.passEnrollReview success: enrollment review passed, activityId={}, userId={}", activityId, userId);
-        return ResponseDTO.ok("通过审核成功");
-    }
-    public ResponseDTO<String> batchPassEnrollReview(Map<Long, Long>  activityIdUserIdMap){
-        log.info("ActivityEnrollmentService.batchPassEnrollReview called, entry count={}", activityIdUserIdMap != null ? activityIdUserIdMap.size() : 0);
-        
-        if(activityIdUserIdMap == null || activityIdUserIdMap.isEmpty()){
-            log.warn("ActivityEnrollmentService.batchPassEnrollReview failed: empty parameters");
-            return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "参数错误");
-        }
-        //passEnrollReview中会做校验，所以这里不需要再次做校验
-        for(Map.Entry<Long, Long> entry: activityIdUserIdMap.entrySet()){
-            passEnrollReview(entry.getKey(), entry.getValue());
-        }
-        //TODO 出错时告知出错的那一个
-        log.info("ActivityEnrollmentService.batchPassEnrollReview success: batch enrollment review passed");
-        return ResponseDTO.ok("批量通过签到成功");
-    }
-    public ResponseDTO<String> rejectEnrollReview(Long activityId, Long userId){
-        log.info("ActivityEnrollmentService.rejectEnrollReview called, activityId={}, userId={}", activityId, userId);
-        
-        ActivityWithScheduleVO activityWithScheduleVO = activityDao.getActivityWithScheduleById(activityId);
-        if(activityWithScheduleVO==null||activityWithScheduleVO.getDeletedFlag()){
-            log.warn("ActivityEnrollmentService.rejectEnrollReview failed: activity not found or deleted, activityId={}", activityId);
-            return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "活动不存在");
-        }
-        if(activityWithScheduleVO.getStatus()!=ActivityStatus.START_ENROLL
-                &&activityWithScheduleVO.getStatus()!=ActivityStatus.END_ENROLL){
-            log.warn("ActivityEnrollmentService.rejectEnrollReview failed: activity not in enrollment period, activityId={}, status={}", activityId, activityWithScheduleVO.getStatus());
-            return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "活动未开始报名或活动已开始");
-        }
-        PortalUserEntity portalUser = portalUserManager.getById(userId);
-        if(portalUser==null||portalUser.getDeletedFlag()) {
-            log.warn("ActivityEnrollmentService.rejectEnrollReview failed: user not found or deleted, userId={}", userId);
-            return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "用户不存在");
-        }
-        RequestUser requestUser = SmartRequestUtil.getRequestUser();
-        if(requestUser.getUserType()!= UserTypeEnum.ADMIN_BACKEND_USER){
-            log.warn("ActivityEnrollmentService.rejectEnrollReview failed: user type error, userType={}", requestUser.getUserType());
-            return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "用户权限不足");
-        }
-        LambdaUpdateWrapper<ActivityEnrollmentEntity> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.eq(ActivityEnrollmentEntity::getActivityId, activityId)
-                .eq(ActivityEnrollmentEntity::getUserId, userId);
-        ActivityEnrollmentEntity activityEnrollmentEntity = new ActivityEnrollmentEntity();
-        activityEnrollmentEntity.setEnrollReviewStatus(ReviewStatus.REJECTED);
-        transactionTemplate.executeWithoutResult(status -> {
-            if(!activityEnrollNumDao.decreaseEnrollNum(activityId)||
-                activityEnrollmentManager.update(activityEnrollmentEntity, updateWrapper)){
-                log.error("ActivityEnrollmentService.rejectEnrollReview failed: failed to update review status or decrease enrollment count, activityId={}, userId={}", activityId, userId);
-                status.setRollbackOnly();
-            }
-        });
-        log.info("ActivityEnrollmentService.rejectEnrollReview success: enrollment review rejected, activityId={}, userId={}", activityId, userId);
-        return ResponseDTO.ok("拒绝审核成功");
-    }
-    public ResponseDTO<String> batchRejectEnrollReview(Map<Long, Long>  activityIdUserIdMap){
-        log.info("ActivityEnrollmentService.batchRejectEnrollReview called, entry count={}", activityIdUserIdMap != null ? activityIdUserIdMap.size() : 0);
-        
-        if(activityIdUserIdMap == null || activityIdUserIdMap.isEmpty()){
-            log.warn("ActivityEnrollmentService.batchRejectEnrollReview failed: empty parameters");
-            return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "参数错误");
-        }
-        for(Map.Entry<Long, Long> entry: activityIdUserIdMap.entrySet()){
-            passEnrollReview(entry.getKey(), entry.getValue());
-        }
-        //TODO 出错时告知出错的那一个
-        log.info("ActivityEnrollmentService.batchRejectEnrollReview success: batch enrollment review rejected");
-        return ResponseDTO.ok("批拒绝报名成功");
-    }
 }

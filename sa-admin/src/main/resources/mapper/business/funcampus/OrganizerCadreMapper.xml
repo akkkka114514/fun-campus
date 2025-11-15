@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="net.lab1024.sa.admin.module.business.funcampus.organizerCadre.dao.OrganizerCadreDao">
+
+    <!-- 查询结果列 -->
+    <sql id="base_columns">
+        organizer_cadre.id,
+        organizer_cadre.organizer_id,
+        organizer_cadre.create_time,
+        organizer_cadre.update_time,
+        organizer_cadre.deleted_flag
+    </sql>
+
+    <!-- 分页查询 -->
+    <select id="queryPage" resultType="net.lab1024.sa.admin.module.business.funcampus.organizerCadre.domain.vo.OrganizerCadreVO">
+        SELECT
+        <include refid="base_columns"/>
+        FROM organizer_cadre
+        <where>
+            <!--与portalUser共享id-->
+            <if test="queryForm.id != null">
+                AND organizer_cadre.id = #{queryForm.id}
+            </if>
+            <!--所属organizer-->
+            <if test="queryForm.organizerId != null">
+                AND organizer_cadre.organizer_id = #{queryForm.organizerId}
+            </if>
+            <!--删除flag-->
+            <if test="queryForm.deletedFlag != null">
+                AND organizer_cadre.deleted_flag = #{queryForm.deletedFlag}
+            </if>
+        </where>
+    </select>
+
+    <update id="batchUpdateDeleted">
+        update organizer_cadre set deleted_flag = #{deletedFlag}
+        where id in
+        <foreach collection="idList" open="(" close=")" separator="," item="item">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="updateDeleted">
+        update organizer_cadre set deleted_flag = #{deletedFlag}
+        where id = #{id}
+    </update>
+
+    <select id="canManageActivity" resultType="boolean">
+        SELECT
+        COUNT(1) > 0
+        FROM organizer_cadre
+        JOIN organizer_activity
+        ON organizer_cadre.organizer_id = organizer_activity.organizer_id
+        WHERE organizer_cadre.id = #{cadreId}
+          AND organizer_activity.id = #{activityId}
+          AND organizer_cadre.deleted_flag = 0
+          AND organizer_activity.deleted_flag = 0
+    </select>
+</mapper>

@@ -1,6 +1,7 @@
 package net.lab1024.sa.admin.module.business.funcampus.portalUser.domain.form;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -14,7 +15,7 @@ import lombok.Data;
  */
 
 @Data
-public class PortalUserAddForm {
+public class PortalUserAddForm{
 
     @Schema(description = "用户名", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "用户名 不能为空")
@@ -35,5 +36,19 @@ public class PortalUserAddForm {
     @Schema(description = "学院名", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "学院名 不能为空")
     private String collegeName;
+    @Schema(description = "是否已删除", requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotNull(message = "是否已删除 不能为空")
+    private Boolean deletedFlag;
+
+    @Schema(description = "是否禁用", requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotNull(message = "是否禁用 不能为空")
+    private Boolean disableFlag;
+
+    @Schema(description = "手机号", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String phone;
+
+    @Schema(description = "头像", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Nullable
+    private String avatar;
 
 }

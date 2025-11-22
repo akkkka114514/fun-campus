@@ -1,73 +1,80 @@
 <template>
   <tm-app color="white">
-    <view class="top">
-      <view class="logo">
-        <tm-avatar :round="26" :size="150" :img="appStore.app_logo"></tm-avatar>
-      </view>
-    </view>
-    <view class="login">
-      <view class="box">
+    <view class="login-container">
+      <view class="login-box">
         <view class="title text-center text-size-xl text-weight-b mb-50">欢迎登录</view>
-        <tm-form @submit="confirm" ref="form" v-model="loginForm" :label-width="0">
+        <tm-form class="login-form" @submit="usernamePasswordLogin" ref="form" v-model="loginForm" :label-width="0" :transprent=true>
           <tm-form-item required field="username" :rules="[{ required: true, message: '请输入账号' }]">
             <tm-input 
-              :inputPadding="[20, 0]" 
-              :round="20" 
+              :inputPadding="[30, 0]" 
+              :round="26" 
               prefix="tmicon-account" 
               v-model.lazy="loginForm.username" 
               placeholder="请输入账号" 
               :showBottomBotder="false"
               clearable
+              class="custom-input"
+              :font-size="32"
+              :height="80"
             >
             </tm-input>
           </tm-form-item>
           <tm-form-item required field="password" :rules="[{ required: true, message: '请输入密码' }]">
             <tm-input 
-              :inputPadding="[20, 0]" 
+              :inputPadding="[30, 0]" 
               type="password" 
-              :round="20" 
+              :round="26" 
               prefix="tmicon-lock" 
               v-model.lazy="loginForm.password" 
               placeholder="请输入密码" 
               :showBottomBotder="false"
               clearable
+              class="custom-input"
+              :font-size="32"
+              :height="80"
             >
             </tm-input>
           </tm-form-item>
-          <tm-form-item required field="captcha" :border="false" :rules="[{ required: true, message: '请输入验证码' }]">
-            <view class="captcha-container">
-              <tm-input 
-                :inputPadding="[20, 0]" 
-                :round="20" 
-                prefix="tmicon-picture" 
-                v-model.lazy="loginForm.captcha" 
-                placeholder="请输入验证码" 
+        <tm-form-item required field="captchaCode" :border="false" :rules="[{ required: true, message: '请输入验证码' }]">
+          <view class="captcha-container">
+            <tm-input
+                :inputPadding="[30, 0]"
+                :round="26"
+                prefix="tmicon-picture"
+                v-model.lazy="loginForm.captchaCode"
+                placeholder="请输入验证码"
                 :showBottomBotder="false"
-                class="captcha-input"
-              >
-              </tm-input>
-              <image 
-                :src="captchaUrl" 
-                class="captcha-image" 
+                class="captcha-input custom-input"
+                :font-size="32"
+                :height="80"
+            >
+            </tm-input>
+            <image
+                :src="captchaBase64Image"
+                class="captcha-image"
                 @click="captcha"
-              >
-              </image>
-            </view>
-          </tm-form-item>
+            >
+            </image>
+          </view>
+        </tm-form-item>
+
           <tm-form-item :border="false">
             <tm-button 
-              :margin="[10]" 
+              :margin="[20]" 
               :shadow="0" 
-              :round="20" 
-              size="small" 
+              :round="26" 
+              size="normal" 
               form-type="submit" 
               block 
               label="立即登录"
               type="primary"
+              class="login-button"
+              :font-size="34"
+              :height="90"
             ></tm-button>
-            <view class="login-tips flex flex-between px-30 mt-30">
-              <text class="text-size-n" @click="openLink('pages/login/forgot')">忘记密码</text>
-              <text class="text-size-n" @click="openLink('pages/login/register')">没有账号?立即注册</text>
+            <view class="login-tips flex flex-between px-30 mt-40">
+              <text class="text-size-n tip-link" @click="openLink('pages/login/forgot')">忘记密码</text>
+              <text class="text-size-n tip-link" @click="openLink('pages/login/register')">没有账号?立即注册</text>
             </view>
           </tm-form-item>
         </tm-form>
@@ -150,7 +157,7 @@
           </view>
         </view>
         <view class="mt-50 pt-30 px-30">
-          <tm-button :margin="[10]" :shadow="0" :round="20" size="small" block label="立即登录" @click="toAuthLogin"></tm-button>
+          <tm-button :margin="[10]" :shadow="0" :round="20" size="small" block label="立即登录" @click="usernamePasswordLogin"></tm-button>
         </view>
       </view>
     </tm-drawer>
@@ -159,19 +166,22 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed } from 'vue';
-import { login, getCaptcha } from '@/common/index';
+import { ref, computed, onMounted } from 'vue';
+import { login, getCaptcha } from '@/common';
 import { useAppStore } from '@/stores/app';
 import { useUserStore } from '@/stores/user';
 import { openLink } from '@/common/tools';
 import { onLoad } from '@dcloudio/uni-app';
 const appStore = useAppStore();
 const userStore = useUserStore();
-const captchaUrl = ref('');
+let captchaBase64Image = ref('static/captcha-placeholder.png'); // 默认占位图
 const loginForm = ref({
   username: '',
   password: '',
-  captcha: '',
+  loginDevice: -1,
+  emailCode:'',
+  captchaCode: '',
+  captchaUuid: '',
 });
 // #ifdef MP-WEIXIN
 const showWin = ref(false);
@@ -293,32 +303,66 @@ function mobileLogin() {
 // #endif
 
 function captcha() {
-  getCaptcha({ scene: 'login' }).then(res => {
-    if (res.code == 1000) {
-      captchaUrl.value = res.data;
+  getCaptcha().then(res => {
+    // 设置验证码图片URL
+    if (res.code === 0 && res.data) {
+      captchaBase64Image.value = res.data.captchaBase64Image;
+      loginForm.value.captchaUuid = res.data.captchaUuid;
+    } else {
+      console.log('获取验证码失败:', res.message || res);
+      uni.$tm.u.toast(res.message || '获取验证码失败');
     }
+  }).catch(err => {
+    console.error('获取验证码异常:', err);
+    uni.$tm.u.toast('获取验证码失败');
   });
 }
-captcha();
-function confirm(e: any) {
-  if (e.validate) {
-    login({
-      ...e.data,
-      loginType: 'account',
-    }).then(res => {
-      console.log(res);
-      if (res.code === 1000) {
-        userStore.setUserInfo(res.data);
-        uni.reLaunch({
-          url: '/pages/index/index',
-        });
-      } else {
-        captcha();
-        uni.$tm.u.toast(res.message);
-      }
-    });
+
+function usernamePasswordLogin(){
+  console.log(loginForm)
+  login({
+    username: loginForm.value.username,
+    password: loginForm.value.password,
+    emailCode: loginForm.value.emailCode,
+    loginDevice: loginForm.value.loginDevice,
+    captchaCode: loginForm.value.captchaCode,
+    captchaUuid: loginForm.value.captchaUuid
+  }).then(res => {
+    if (res.code === 0) {
+      userStore.setUserInfo(res.data);
+      console.log('登录成功')
+      uni.reLaunch({
+        url: '/pages/index/index',
+      });
+    } else {
+      console.log(res)
+      captcha();
+    }
+  }).catch(err => {
+    console.error('登录请求出错:', err);
+    uni.$tm.u.toast('登录请求失败');
+  });
+}
+function getDeviceInfo() {
+  try {
+    const info = uni.getSystemInfoSync();
+    console.log('设备信息:', info.platform);
+    if (info.platform === 'ios') loginForm.value.loginDevice = 3
+    if (info.platform === 'android') loginForm.value.loginDevice = 2
+    if (info.platform === 'h5') loginForm.value.loginDevice = 4
+    if (info.platform === 'mp-weixin') loginForm.value.loginDevice = 5
+    if (info.platform === 'windows') loginForm.value.loginDevice = 1
+  } catch (e) {
+    console.error('获取设备信息失败:', e);
   }
 }
+
+onMounted(() => {
+  // 页面加载时获取验证码
+  captcha();
+  getDeviceInfo();
+});
+
 onLoad((e: any) => {
   // #ifdef H5
   if (e.code && e.state) {
@@ -372,44 +416,59 @@ onLoad((e: any) => {
     height: 100%;
     background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 60%);
   }
-
-  .logo {
-    position: absolute;
-    left: 50%;
-    top: 170rpx;
-    transform: translate(-50%, -50%);
-    z-index: 100;
-    box-shadow: 0 10rpx 30rpx rgba(0,0,0,0.15);
-    background-color: white;
-    padding: 20rpx;
-    border-radius: 50%;
-  }
 }
 
-.login {
-  flex: 1;
-  margin-top: -170rpx;
-  position: relative;
-  padding: 0 30rpx;
+.login-container {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 40rpx;
+  background: linear-gradient(135deg, #3c8af8 0%, #2962ff 100%);
+  
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 60%);
+  }
 
-    .box {
-      height: 100%;
-      background-color: #fff;
-      border-radius: 30rpx;
-      box-shadow: 0 20rpx 50rpx rgba(0,0,0,0.15), 
-                  inset 0 1px 0 rgba(255,255,255,0.5);
-      padding: 50rpx 40rpx;
-      margin-bottom: 50rpx;
-      border: 1px solid rgba(230, 230, 230, 0.8);
+  .login-box {
+    width: 100%;
+    max-width: 750rpx;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 30rpx;
+    box-shadow: 0 20rpx 50rpx rgba(0,0,0,0.15), 
+                inset 0 1px 0 rgba(255,255,255,0.5);
+    padding: 70rpx 60rpx;
+    margin-bottom: 50rpx;
+    border: 1px solid rgba(230, 230, 230, 0.8);
+    backdrop-filter: blur(10rpx);
+    position: relative;
+    z-index: 2;
       
       .title {
         margin-bottom: 60rpx;
         color: #222;
         font-weight: 600;
         letter-spacing: 1px;
+        position: relative;
+        font-size: 36rpx;
+        
+        &::after {
+          content: "";
+          position: absolute;
+          bottom: -15rpx;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 60rpx;
+          height: 6rpx;
+          border-radius: 3rpx;
+        }
       }
       
       .login-tips {
@@ -419,30 +478,48 @@ onLoad((e: any) => {
         display: flex;
         justify-content: space-between;
         
-        text {
+        .tip-link {
           transition: all 0.3s ease;
+          position: relative;
+          padding: 8rpx 0;
+          
           &:hover {
             color: #2962ff;
             transform: translateY(-3rpx);
-            text-decoration: underline;
+          }
+          
+          &::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2rpx;
+            background: #2962ff;
+            transition: width 0.3s ease;
+          }
+          
+          &:hover::after {
+            width: 100%;
           }
         }
       }
     }
-}
-
-.footer {
-  padding-bottom: 20vh;
-  text-align: center;
   
-  .tm-divider {
-    margin-bottom: 30rpx;
-  }
-  
-  .flex-center {
-    display: flex;
-    justify-content: center;
-    gap: 40rpx;
+  .footer {
+    width: 100%;
+    max-width: 750rpx;
+    text-align: center;
+    
+    .tm-divider {
+      margin-bottom: 30rpx;
+    }
+    
+    .flex-center {
+      display: flex;
+      justify-content: center;
+      gap: 40rpx;
+    }
   }
 }
 
@@ -462,11 +539,48 @@ onLoad((e: any) => {
   }
 }
 
+.login-button {
+  background: linear-gradient(135deg, #3c8af8, #2962ff);
+  color: white;
+  font-weight: 500;
+  letter-spacing: 1rpx;
+  box-shadow: 0 10rpx 20rpx rgba(60, 138, 248, 0.3);
+  transition: all 0.3s ease;
+  
+  &:active {
+    transform: scale(0.98);
+    box-shadow: 0 5rpx 15rpx rgba(60, 138, 248, 0.2);
+  }
+  
+  &:hover {
+    box-shadow: 0 15rpx 25rpx rgba(60, 138, 248, 0.4);
+    transform: translateY(-3rpx);
+  }
+}
+
 // 输入框聚焦效果
 .tm-input {
   transition: all 0.3s ease;
+  
   &:focus-within {
     box-shadow: 0 0 0 2rpx #3c8af8;
+  }
+}
+
+.custom-input {
+  background-color: rgba(248, 249, 250, 0.8);
+  border: 2rpx solid #e9ecef;
+  transition: all 0.3s ease;
+  font-size: 32rpx;
+  
+  &:focus-within {
+    border-color: #3c8af8;
+    box-shadow: 0 0 0 2rpx rgba(60, 138, 248, 0.2);
+    background-color: #fff;
+  }
+  
+  ::v-deep .tm-input__field {
+    background-color: transparent;
   }
 }
 
@@ -481,26 +595,55 @@ onLoad((e: any) => {
   }
   
   .captcha-image {
-    width: 160rpx;
+    width: 80rpx;
     height: 80rpx;
-    border-radius: 10rpx;
+    border-radius: 12rpx;
     cursor: pointer;
     transition: all 0.3s ease;
+    box-shadow: 0 4rpx 10rpx rgba(0,0,0,0.05);
+    position: relative;
+    overflow: hidden;
+    
+    &::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: all 0.3s ease;
+    }
     
     &:hover {
       transform: scale(1.05);
+      box-shadow: 0 6rpx 15rpx rgba(0,0,0,0.1);
+      
+      &::before {
+        left: 100%;
+      }
+    }
+    
+    &:active {
+      transform: scale(0.98);
     }
   }
+  
 }
 
 // 社交登录图标样式
 .social-icon {
   transition: all 0.3s ease;
   cursor: pointer;
+  box-shadow: 0 4rpx 10rpx rgba(0,0,0,0.05);
   
   &:hover {
     transform: translateY(-5rpx);
-    box-shadow: 0 5rpx 15rpx rgba(0,0,0,0.1);
+    box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.1);
+  }
+  
+  &:active {
+    transform: scale(0.95);
   }
 }
 
@@ -509,19 +652,37 @@ onLoad((e: any) => {
   margin-bottom: 30rpx;
 }
 
+// 浮动动画
+@keyframes float {
+  0% {
+    transform: translate(-50%, -50%) translateY(0px);
+  }
+  50% {
+    transform: translate(-50%, -50%) translateY(-15px);
+  }
+  100% {
+    transform: translate(-50%, -50%) translateY(0px);
+  }
+}
+
 // 响应式设计
 @media (max-width: 768px) {
-  .login {
-    padding: 0 20rpx;
+  .login-container {
+    padding: 20rpx;
   }
   
-  .box {
-    padding: 30rpx 20rpx;
+  .login-box {
+    padding: 40rpx 30rpx;
+    max-width: none;
   }
   
   .title {
     font-size: 32rpx;
     margin-bottom: 40rpx;
+  }
+  
+  .custom-input {
+    font-size: 28rpx;
   }
   
   .captcha-container {
@@ -533,6 +694,10 @@ onLoad((e: any) => {
       height: 80rpx;
       margin-top: 10rpx;
     }
+  }
+  
+  .footer {
+    max-width: none;
   }
 }
 </style>

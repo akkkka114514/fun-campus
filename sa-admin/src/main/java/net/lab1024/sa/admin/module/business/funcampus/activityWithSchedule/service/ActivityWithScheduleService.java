@@ -257,7 +257,7 @@ public class ActivityWithScheduleService {
         return ResponseDTO.ok(pageResult);
     }
 
-    public ResponseDTO<String> batchDelete(List<Integer> ids){
+    public ResponseDTO<String> batchDelete(List<Long> ids){
         log.info("ActivityWithScheduleService.batchDelete called, idsCount={}", ids != null ? ids.size() : 0);
         int result = activityDao.batchDelete(ids);
         if (result > 0) {

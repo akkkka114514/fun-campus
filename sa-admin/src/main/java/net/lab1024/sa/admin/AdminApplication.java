@@ -28,7 +28,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @ComponentScan(AdminApplication.COMPONENT_SCAN)
 @MapperScan(value = AdminApplication.COMPONENT_SCAN, annotationClass = Mapper.class)
 @SpringBootApplication(exclude = {UserDetailsServiceAutoConfiguration.class})
-@EnableMPP
 public class AdminApplication {
 
     public static final String COMPONENT_SCAN = "net.lab1024.sa";

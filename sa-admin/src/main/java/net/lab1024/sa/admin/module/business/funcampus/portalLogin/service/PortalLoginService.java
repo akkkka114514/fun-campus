@@ -142,7 +142,7 @@ public class PortalLoginService {
         PortalUserEntity portalUserEntity = portalUserManager.getOne(queryWrapper);
         if (null == portalUserEntity) {
             log.warn("PortalLoginService.login failed: user not found, username={}", loginForm.getUsername());
-            return ResponseDTO.userErrorParam("登录名或密码错误！");
+            return ResponseDTO.userErrorParam("请先注册！");
         }
 
         // 验证账号状态
@@ -153,7 +153,7 @@ public class PortalLoginService {
         }
 
         // 解密前端加密的密码
-        String requestPassword = apiEncryptService.decrypt(loginForm.getPassword());
+        //String requestPassword = apiEncryptService.decrypt(loginForm.getPassword());
         log.debug("PortalLoginService.login: password decrypted");
 
         // 按照等保登录要求，进行登录失败次数校验
@@ -164,7 +164,7 @@ public class PortalLoginService {
         }
 
         // 密码错误
-        if (!SecurityPasswordService.matchesPwd(requestPassword, portalUserEntity.getPassword())) {
+        if (!SecurityPasswordService.matchesPwd(loginForm.getPassword(), portalUserEntity.getPassword())) {
             log.warn("PortalLoginService.login failed: password mismatch, username={}", loginForm.getUsername());
             // 记录登录失败
             saveLoginLog(portalUserEntity, ip, userAgent, "密码错误", LoginLogResultEnum.LOGIN_FAIL, loginDeviceEnum);

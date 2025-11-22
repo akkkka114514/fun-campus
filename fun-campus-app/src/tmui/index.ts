@@ -6,7 +6,7 @@ import { language, languageByGlobal } from "./tool/lib/language"
 import { share } from "./tool/lib/share"
 import { App, nextTick, ref } from "vue"
 import PageJsonInit from "../pages.json"
-import { useTmRouterAfter, useTmRouterBefore } from "./tool/router/index"
+import { useTmRouterAfter, useTmRouterBefore } from "@/tmui/tool/router"
 import tmuiconfigdefault from "./tool/lib/tmuiconfigDefault"
 import { pagesType, tabBarItemType, tabBarType, beforeRouterOpts, pagesCustomType } from './interface';
 import * as Pinia from 'pinia';
@@ -55,10 +55,9 @@ let cusutomIconList = [];
 // #ifdef APP
 cusutomIconList = fontJson;
 // #endif
-let $tm = {
+let $tm: typeof uni.$tm = {
 	tabBar: tabBar,
 	pages: pages,
-	isOpenDarkModel:(PageJsonInit?.globalStyle?.navigationBarBackgroundColor??"").indexOf("@")>-1,
 	isColor: (color: string) => {
 		const reg1 = /^#([0-9a-fA-f]{3}|[0-9a-fA-f]{6})$/;
 		const reg2 = /^(rgb|RGB|rgba|RGBA)/;
@@ -79,6 +78,8 @@ let $tm = {
 	config: tmuiconfigdefault as Tmui.tmuiConfig
 };
 
+// 保存 isOpenDarkModel 的值，但不作为 $tm 对象的属性
+const isOpenDarkModel = (PageJsonInit?.globalStyle?.navigationBarBackgroundColor??"").indexOf("@")>-1;
 
 export default {
 	/**
@@ -217,7 +218,7 @@ export default {
 		$tm = {
 			...$tm,
 			config: options
-		}
+		} as typeof uni.$tm
 		
 		/**对外暴露 */
 		uni.$tm = $tm;

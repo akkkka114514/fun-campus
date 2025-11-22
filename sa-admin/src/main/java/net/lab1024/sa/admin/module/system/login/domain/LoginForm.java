@@ -1,6 +1,8 @@
 package net.lab1024.sa.admin.module.system.login.domain;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import net.lab1024.sa.base.common.swagger.SchemaEnum;
@@ -30,8 +32,8 @@ public class LoginForm extends CaptchaForm {
     @NotBlank(message = "密码不能为空")
     private String password;
 
-    @SchemaEnum(desc = "登录终端", value = LoginDeviceEnum.class)
-    @CheckEnum(value = LoginDeviceEnum.class, required = true, message = "此终端不允许登录")
+    @Min(value = 1, message = "登录设备类型错误")
+    @Max(value = 5, message = "登录设备类型错误")
     private Integer loginDevice;
 
     @Schema(description = "邮箱验证码")

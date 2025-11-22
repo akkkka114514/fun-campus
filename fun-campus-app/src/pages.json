@@ -9,41 +9,55 @@
 		{
 			"path": "pages/index/index",
 			"style": {
-				"navigationBarTitleText": "首页"
+				"navigationBarTitleText": "首页",
+				"navigationBarBackgroundColor": "#3c8af8",
+				"navigationBarTextStyle": "white"
 			}
 		},{
 			"path":"pages/login/login",
 			"style":{
-				"navigationBarTitleText":"登录"
+				"navigationBarTitleText":"登录",
+				"navigationBarBackgroundColor": "#3c8af8",
+				"navigationBarTextStyle": "white"
 			}
 		},
 		{
 			"path":"pages/login/register",
 			"style":{
-				"navigationBarTitleText":"注册"
+				"navigationBarTitleText":"注册",
+				"navigationBarBackgroundColor": "#3c8af8",
+				"navigationBarTextStyle": "white"
 			}
 		},
 		{
 			"path":"pages/login/mobile",
 			"style":{
-				"navigationBarTitleText":"验证码登录"
+				"navigationBarTitleText":"验证码登录",
+				"navigationBarBackgroundColor": "#3c8af8",
+				"navigationBarTextStyle": "white"
 			}
 		},
 		{
 			"path":"pages/login/forgot",
 			"style":{
-				"navigationBarTitleText":"忘记密码"
+				"navigationBarTitleText":"忘记密码",
+				"navigationBarBackgroundColor": "#3c8af8",
+				"navigationBarTextStyle": "white"
 			}
 		},
 		{
 			"path":"pages/login/wechat",
 			"style":{
-				"navigationBarTitleText":"微信登录"
+				"navigationBarTitleText":"微信登录",
+				"navigationBarBackgroundColor": "#3c8af8",
+				"navigationBarTextStyle": "white"
 			}
 		},{
 			"path":"pages/user/edit",
 			"style":{
-				"navigationBarTitleText":"编辑资料"
+				"navigationBarTitleText":"编辑资料",
+				"navigationBarBackgroundColor": "#3c8af8",
+				"navigationBarTextStyle": "white"
 			}
 		}
 	],
@@ -54,73 +68,97 @@
 				{
 					"path": "index/index",
 					"style": {
-						"navigationBarTitleText": "我的组织"
+						"navigationBarTitleText": "我的组织",
+						"navigationBarBackgroundColor": "#3c8af8",
+						"navigationBarTextStyle": "white"
 					}
 				},
 				{
 					"path": "detail/detail",
 					"style": {
-						"navigationBarTitleText": "组织详情"
+						"navigationBarTitleText": "组织详情",
+						"navigationBarBackgroundColor": "#3c8af8",
+						"navigationBarTextStyle": "white"
 					}
 				},
 				{
 					"path": "manage/manage",
 					"style": {
-						"navigationBarTitleText": "组织管理"
+						"navigationBarTitleText": "组织管理",
+						"navigationBarBackgroundColor": "#3c8af8",
+						"navigationBarTextStyle": "white"
 					}
 				},
 				{
 					"path": "create/create",
 					"style": {
-						"navigationBarTitleText": "创建组织"
+						"navigationBarTitleText": "创建组织",
+						"navigationBarBackgroundColor": "#3c8af8",
+						"navigationBarTextStyle": "white"
 					}
 				},
 				{
 					"path": "activity/activity",
 					"style": {
-						"navigationBarTitleText": "全部活动"
+						"navigationBarTitleText": "全部活动",
+						"navigationBarBackgroundColor": "#3c8af8",
+						"navigationBarTextStyle": "white"
 					}
 				},
 				{
 					"path": "approve/approve",
 					"style": {
-						"navigationBarTitleText": "组织认证"
+						"navigationBarTitleText": "组织认证",
+						"navigationBarBackgroundColor": "#3c8af8",
+						"navigationBarTextStyle": "white"
 					}
 				},
 				{
 					"path": "manager/manager",
 					"style": {
-						"navigationBarTitleText": "管理员"
+						"navigationBarTitleText": "管理员",
+						"navigationBarBackgroundColor": "#3c8af8",
+						"navigationBarTextStyle": "white"
 					}
 				},
 				{
 					"path": "manager/share",
 					"style": {
-						"navigationBarTitleText": "添加管理员"
+						"navigationBarTitleText": "添加管理员",
+						"navigationBarBackgroundColor": "#3c8af8",
+						"navigationBarTextStyle": "white"
 					}
 				},
 				{
 					"path": "blacklist/blacklist",
 					"style": {
-						"navigationBarTitleText": "黑名单"
+						"navigationBarTitleText": "黑名单",
+						"navigationBarBackgroundColor": "#3c8af8",
+						"navigationBarTextStyle": "white"
 					}
 				},
 				{
 					"path": "images/images",
 					"style": {
-						"navigationBarTitleText": "相册"
+						"navigationBarTitleText": "相册",
+						"navigationBarBackgroundColor": "#3c8af8",
+						"navigationBarTextStyle": "white"
 					}
 				},
 				{
 					"path": "images/detail",
 					"style": {
-						"navigationBarTitleText": "相册详情"
+						"navigationBarTitleText": "相册详情",
+						"navigationBarBackgroundColor": "#3c8af8",
+						"navigationBarTextStyle": "white"
 					}
 				},
 				{
 					"path": "apply/info",
 					"style": {
-						"navigationBarTitleText": "会员详情"
+						"navigationBarTitleText": "会员详情",
+						"navigationBarBackgroundColor": "#3c8af8",
+						"navigationBarTextStyle": "white"
 					}
 				}
 			]
@@ -131,91 +169,121 @@
 				{
 					"path": "publish/publish",
 					"style": {
-						"navigationBarTitleText": "发布活动"
+						"navigationBarTitleText": "发布活动",
+						"navigationBarBackgroundColor": "#3c8af8",
+						"navigationBarTextStyle": "white"
 					}
 				},
 				{
 					"path": "publish/fields",
 					"style": {
-						"navigationBarTitleText": "报名填写项"
+						"navigationBarTitleText": "报名填写项",
+						"navigationBarBackgroundColor": "#3c8af8",
+						"navigationBarTextStyle": "white"
 					}
 				},
 				{
 					"path": "follow/follow",
 					"style": {
-						"navigationBarTitleText": "我的关注"
+						"navigationBarTitleText": "我的关注",
+						"navigationBarBackgroundColor": "#3c8af8",
+						"navigationBarTextStyle": "white"
 					}
 				},
 				{
 					"path": "activity/activity",
 					"style": {
-						"navigationBarTitleText": "我的活动"
+						"navigationBarTitleText": "我的活动",
+						"navigationBarBackgroundColor": "#3c8af8",
+						"navigationBarTextStyle": "white"
 					}
 				},
 				{
 					"path": "activity/detail",
 					"style": {
-						"navigationBarTitleText": "活动详情"
+						"navigationBarTitleText": "活动详情",
+						"navigationBarBackgroundColor": "#3c8af8",
+						"navigationBarTextStyle": "white"
 					}
 				},
 				{
 					"path": "activity/apply",
 					"style": {
-						"navigationBarTitleText": "活动报名"
+						"navigationBarTitleText": "活动报名",
+						"navigationBarBackgroundColor": "#3c8af8",
+						"navigationBarTextStyle": "white"
 					}
 				},
 				{
 					"path": "activity/manage",
 					"style": {
-						"navigationBarTitleText": "活动管理"
+						"navigationBarTitleText": "活动管理",
+						"navigationBarBackgroundColor": "#3c8af8",
+						"navigationBarTextStyle": "white"
 					}
 				},
 				{
 					"path": "activity/setting",
 					"style": {
-						"navigationBarTitleText": "快速设置"
+						"navigationBarTitleText": "快速设置",
+						"navigationBarBackgroundColor": "#3c8af8",
+						"navigationBarTextStyle": "white"
 					}
 				},
 				{
 					"path": "activity/high",
 					"style": {
-						"navigationBarTitleText": "高级设置"
+						"navigationBarTitleText": "高级设置",
+						"navigationBarBackgroundColor": "#3c8af8",
+						"navigationBarTextStyle": "white"
 					}
 				},
 				{
 					"path": "activity/user",
 					"style": {
-						"navigationBarTitleText": "报名用户"
+						"navigationBarTitleText": "报名用户",
+						"navigationBarBackgroundColor": "#3c8af8",
+						"navigationBarTextStyle": "white"
 					}
 				},
 				{
 					"path": "activity/userinfo",
 					"style": {
-						"navigationBarTitleText": "用户详情"
+						"navigationBarTitleText": "用户详情",
+						"navigationBarBackgroundColor": "#3c8af8",
+						"navigationBarTextStyle": "white"
 					}
 				},
 				{
 					"path": "activity/info",
 					"style": {
-						"navigationBarTitleText": "我的报名"
+						"navigationBarTitleText": "我的报名",
+						"navigationBarBackgroundColor": "#3c8af8",
+						"navigationBarTextStyle": "white"
 					}
 				},
 				{
 					"path": "activity/list",
 					"style": {
-						"navigationBarTitleText": "报名明细"
+						"navigationBarTitleText": "报名明细",
+						"navigationBarBackgroundColor": "#3c8af8",
+						"navigationBarTextStyle": "white"
 					}
 				},
 				{
 					"path": "activity/stats",
 					"style": {
-						"navigationBarTitleText": "数据统计"
+						"navigationBarTitleText": "数据统计",
+						"navigationBarBackgroundColor": "#3c8af8",
+						"navigationBarTextStyle": "white"
 					}
 				},
 				{
 					"path": "help/help",
 					"style": {
-						"navigationBarTitleText": "帮助中心"
+						"navigationBarTitleText": "帮助中心",
+						"navigationBarBackgroundColor": "#3c8af8",
+						"navigationBarTextStyle": "white"
 					}
 				}
 			]
@@ -223,8 +291,8 @@
 	],
 	"globalStyle": {
 		"navigationBarTextStyle": "white",
-		"navigationBarTitleText": "活动管理",
+		"navigationBarTitleText": "校园活动",
 		"navigationBarBackgroundColor": "#3c8af8",
-		"backgroundColor": "#3c8af8"
+		"backgroundColor": "#f8f9fa"
 	}
 }

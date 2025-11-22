@@ -27,9 +27,10 @@ body {
   height: 100%;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
-  background-color: #f8f8f8;
+  background-color: #f5f6f7;
   font-size: 14px;
   position: relative;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
 #app {
@@ -61,6 +62,47 @@ body {
 .ant-spin-container {
   width: 100%;
   height: 100%;
+}
+
+/**********************************  ant design card **********************************/
+.ant-card {
+  border-radius: 8px;
+  box-shadow: 0 1px 2px -2px rgba(0, 0, 0, 0.16), 0 3px 6px 0 rgba(0, 0, 0, 0.12), 0 5px 12px 4px rgba(0, 0, 0, 0.09);
+  transition: box-shadow 0.3s ease;
+}
+
+.ant-card:hover {
+  box-shadow: 0 1px 2px -2px rgba(0, 0, 0, 0.2), 0 3px 6px 0 rgba(0, 0, 0, 0.16), 0 5px 12px 4px rgba(0, 0, 0, 0.12);
+}
+
+/**********************************  ant design button **********************************/
+.ant-btn {
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.ant-btn-primary {
+  box-shadow: 0 2px 0 rgba(5, 145, 255, 0.1);
+}
+
+.ant-btn-primary:hover, .ant-btn-primary:focus {
+  box-shadow: 0 4px 8px rgba(5, 145, 255, 0.2);
+}
+
+/**********************************  ant design menu **********************************/
+.ant-menu {
+  border-inline-end: none !important;
+}
+
+/**********************************  ant design input **********************************/
+.ant-input, .ant-input-affix-wrapper {
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.ant-input:hover, .ant-input-affix-wrapper:hover {
+  border-color: #40a9ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
 }
 
 /**********************************  富文本HTML样式 **********************************/
@@ -95,6 +137,7 @@ body {
     line-height: 1.4;
     font-size: 100%;
     background-color: #f1f1f1;
+    border-radius: 0 4px 4px 0;
   }
 
   /* code 样式 */

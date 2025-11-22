@@ -56,6 +56,14 @@
   margin-top: 10px;
 }
 
+.smart-margin-top15 {
+  margin-top: 15px;
+}
+
+.smart-margin-top20 {
+  margin-top: 20px;
+}
+
 /******************************** 下间距 ********************************/
 .smart-margin-bottom5 {
   margin-bottom: 5px;
@@ -64,6 +72,15 @@
 .smart-margin-bottom10 {
   margin-bottom: 10px;
 }
+
+.smart-margin-bottom15 {
+  margin-bottom: 15px;
+}
+
+.smart-margin-bottom20 {
+  margin-bottom: 20px;
+}
+
 /******************************** 查询表格样式 ********************************/
 
 .smart-table-operate {
@@ -105,5 +122,111 @@
   }
   .smart-table-setting-block {
     float: right;
+  }
+}
+
+/********************************** 新增美化样式 **********************************/
+
+/* 卡片美化 */
+.smart-card {
+  border-radius: 8px;
+  box-shadow: 0 1px 2px -2px rgba(0, 0, 0, 0.16), 0 3px 6px 0 rgba(0, 0, 0, 0.12), 0 5px 12px 4px rgba(0, 0, 0, 0.09);
+  transition: box-shadow 0.3s ease;
+  border: none;
+}
+
+.smart-card:hover {
+  box-shadow: 0 1px 2px -2px rgba(0, 0, 0, 0.2), 0 3px 6px 0 rgba(0, 0, 0, 0.16), 0 5px 12px 4px rgba(0, 0, 0, 0.12);
+}
+
+/* 按钮美化 */
+.smart-button {
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.smart-button-primary {
+  box-shadow: 0 2px 0 rgba(5, 145, 255, 0.1);
+}
+
+.smart-button-primary:hover, .smart-button-primary:focus {
+  box-shadow: 0 4px 8px rgba(5, 145, 255, 0.2);
+}
+
+/* 表单美化 */
+.smart-form-item {
+  margin-bottom: 16px;
+}
+
+.smart-form-item-label {
+  font-weight: 500;
+}
+
+/* 页面标题 */
+.smart-page-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+/* 页面描述 */
+.smart-page-description {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+/* 数据展示卡片 */
+.smart-data-card {
+  text-align: center;
+  padding: 20px;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 1px 2px -2px rgba(0, 0, 0, 0.16), 0 3px 6px 0 rgba(0, 0, 0, 0.12), 0 5px 12px 4px rgba(0, 0, 0, 0.09);
+}
+
+.smart-data-card .number {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1890ff;
+  margin: 10px 0;
+}
+
+.smart-data-card .label {
+  color: #999;
+  font-size: 14px;
+}
+
+/* 动画效果 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.smart-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* 响应式优化 */
+@media (max-width: 768px) {
+  .smart-table-btn-block {
+    flex-direction: column;
+  }
+  
+  .smart-table-operate-block {
+    margin-bottom: 10px;
+  }
+  
+  .smart-table-setting-block {
+    float: none;
   }
 }

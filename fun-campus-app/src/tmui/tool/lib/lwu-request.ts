@@ -474,6 +474,7 @@ export class Http {
             ...this.useConfig(config)
         };
 
+        this.config.baseUrl = {pro:"", dev:"http://localhost:1024"}
         if (!this.config.retry) {
             this.retryCount = 0;
         } else {
@@ -522,6 +523,7 @@ export class Http {
                     loading({ title: this.config.loadingText ?? '请求中...' });
                 }
 
+                // 处理Content-Type，确保正确设置
                 if (args?.header?.contentType) {
                     args.header['content-type'] = args.header.contentType;
                     delete args.header.contentType;
@@ -529,22 +531,48 @@ export class Http {
 
                 // 拼接baseURI
                 let baseURI: string|undefined = '';
-                if (process.env.NODE_ENV === 'development') {
-                    baseURI = this.config.baseUrl && this.config.baseUrl.dev;
-                    // debug = this.config.debug as boolean;
-                } else {
-                    baseURI = this.config.baseUrl && this.config.baseUrl.pro;
+                // 确保始终有baseUrl，优先使用开发环境配置
+                baseURI = this.config.baseUrl && (this.config.baseUrl.dev || this.config.baseUrl.pro);
+                
+                // 处理跨域问题 - 添加代理前缀
+                let reqUrl = url;
+                if (baseURI) {
+                    // 如果是相对路径，则拼接baseUrl
+                    if (url.startsWith('/')) {
+                        reqUrl = `${baseURI}${url}`;
+                    } else if (!url.startsWith('http')) {
+                        // 如果不是完整URL，则拼接baseUrl
+                        reqUrl = `${baseURI}/${url}`;
+                    }
                 }
 
-                let reqUrl = `${baseURI}${url}`;
                 if (args.method === 'GET') {
-                    args.data = this.config.buildQueryString && this.config.buildQueryString(args.data)
-                        ? this.config.buildQueryString(args.data)
-                        // : new URLSearchParams(Object.entries(args.data)).toString();
-                        : objToQueryString(args.data);
-                    args.url = `${reqUrl}?${args.data}`;
+                    // 只有当data不为空时才添加查询参数
+                    if (args.data && Object.keys(args.data).length > 0) {
+                        args.data = this.config.buildQueryString && this.config.buildQueryString(args.data)
+                            ? this.config.buildQueryString(args.data)
+                            // : new URLSearchParams(Object.entries(args.data)).toString();
+                            : objToQueryString(args.data);
+                        args.url = `${reqUrl}?${args.data}`;
+                    } else {
+                        args.url = reqUrl;
+                    }
                 } else {
                     args.url = reqUrl;
+                    
+                    // 确保POST请求的数据正确处理
+                    // 如果数据是对象且Content-Type是application/json，则不进行字符串化
+                    // uni.request会自动处理对象到JSON的转换
+                    if (args.header && args.header['Content-Type'] === 'application/json') {
+                        // 确保data是对象而不是字符串
+                        if (typeof args.data === 'string') {
+                            try {
+                                args.data = JSON.parse(args.data);
+                            } catch (e) {
+                                console.warn('数据不是有效的JSON字符串');
+                            }
+                        }
+                    }
                 }
 
                 // 请求前自定义拦截
@@ -718,6 +746,11 @@ export class Http {
         });
     }
 
+    public static request(url: string, data: object = {}, options: RequestOptions = {}) {
+        const http = new Http();
+        return http.request(url, data, options);
+    }
+
     public post(url: string, data: object = {}, options: RequestOptions = {}) {
         return this.request(url, data, {
             method: 'POST',
@@ -727,7 +760,7 @@ export class Http {
 
     public put(url: string, data: object = {}, options: RequestOptions = {}) {
         return this.request(url, data, {
-            method: 'POST',
+            method: 'PUT',
             ...options
         });
     }

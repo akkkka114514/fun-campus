@@ -34,7 +34,7 @@ public interface ActivityDao extends BaseMapper<ActivityEntity> {
 
     List<ActivityWithScheduleVO> queryActivityWithSchedule(Page<?> page, ActivityWithScheduleQueryForm queryForm);
 
-    Integer batchDelete(List<Integer> ids);
+    Integer batchDelete(List<Long> ids);
 
     Page<ActivityWithScheduleVO> getByIds(List<Long> ids);
 

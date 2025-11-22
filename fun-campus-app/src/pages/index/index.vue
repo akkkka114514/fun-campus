@@ -38,7 +38,7 @@
         class="tabbar-item"
       />
       <tm-tabbar-item
-        :shadow="3"
+        :shadow="5"
         btn-top
         fontColor="white"
         activeColor="white"
@@ -115,10 +115,11 @@ function tabbarChange(e: number) {
   left: 0;
   width: 100%;
   height: 220rpx;
-  background: linear-gradient(120deg, #3c8af8, #2962ff, #5a7dfd);
+  background: linear-gradient(135deg, #3c8af8, #2962ff, #5a7dfd);
   background-size: 300% 300%;
   z-index: -1;
   animation: gradientBG 10s ease infinite alternate;
+  box-shadow: 0 10rpx 30rpx rgba(59, 130, 248, 0.2);
 }
 
 @keyframes gradientBG {
@@ -132,7 +133,7 @@ function tabbarChange(e: number) {
 
 .main-content {
   min-height: calc(100vh - 160rpx);
-  background: #ffffff;
+  background: #f8f9fa;
   border-top-left-radius: 40rpx;
   border-top-right-radius: 40rpx;
   margin-top: 200rpx;
@@ -151,7 +152,7 @@ function tabbarChange(e: number) {
   bottom: 0;
   left: 0;
   width: 100%;
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
   border-top-left-radius: 36rpx;
   border-top-right-radius: 36rpx;
   box-shadow: 0 -8rpx 24rpx rgba(0, 0, 0, 0.06);
@@ -163,6 +164,7 @@ function tabbarChange(e: number) {
 .tabbar-item {
   transition: transform 0.25s ease, color 0.25s ease;
   position: relative;
+  font-weight: 500;
 
   &:active {
     transform: scale(0.92);
@@ -200,6 +202,8 @@ function tabbarChange(e: number) {
     0 4rpx 12rpx rgba(60, 138, 248, 0.3);
   animation: floatPulse 3.5s ease-in-out infinite;
   transform-origin: center;
+  background: linear-gradient(135deg, #3c8af8, #2962ff);
+  border: 6rpx solid #ffffff;
 
   &:active {
     transform: scale(0.9) rotate(5deg);

@@ -238,6 +238,7 @@
     background: @color-bg-container;
     padding: 0;
     z-index: 21;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.09);
   }
 
   .layout-header-user {
@@ -258,17 +259,35 @@
     .collapsed-button {
       margin-left: 10px;
       line-height: @header-user-height;
+      cursor: pointer;
+      padding: 0 10px;
+      border-radius: 4px;
+      transition: all 0.3s ease;
+      
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+      }
+      
+      .trigger {
+        font-size: 18px;
+      }
     }
 
     .home-button {
       margin-left: 15px;
       cursor: pointer;
-      padding: 0 5px;
+      padding: 0 10px;
       line-height: @header-user-height;
-    }
-
-    .home-button:hover {
-      background-color: @color-bg-container;
+      border-radius: 4px;
+      transition: all 0.3s ease;
+      
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+      }
+      
+      .trigger {
+        font-size: 18px;
+      }
     }
 
     .location-breadcrumb {
@@ -293,6 +312,7 @@
       height: 100vh;
       overflow-x: hidden;
       overflow-y: scroll;
+      box-shadow: 2px 0 8px rgba(29, 35, 41, 0.05);
 
       &.fixed-side {
         position: fixed;
@@ -322,6 +342,7 @@
       height: 100vh;
       max-width: 100px;
       width: auto !important;
+      box-shadow: -2px 0 8px rgba(29, 35, 41, 0.05);
 
       &.fixed-side {
         position: fixed;
@@ -350,19 +371,21 @@
     }
 
     .admin-layout-content {
-      background-color: inherit;
+      background-color: #f5f6f7;
       min-height: auto;
       position: relative;
       overflow-x: hidden;
-      padding: 5px 10px 0px 10px;
+      padding: 12px;
       height: calc(100% - v-bind(dueHeight) px);
     }
   }
 
   .layout-footer {
     position: relative;
-    padding: 7px 0px;
+    padding: 12px 0px;
     display: flex;
     justify-content: center;
+    background: #f5f6f7;
+    border-top: 1px solid #eee;
   }
 </style>

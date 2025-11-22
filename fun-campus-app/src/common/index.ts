@@ -1,15 +1,30 @@
 import request from './request';
 import { useUserStore } from '../stores/user';
 
+// 创建拦截器对象来兼容原有代码
+const interceptor = {
+  request: (callback: Function) => {
+    // 保存请求拦截器
+    (request as any)._requestInterceptor = callback;
+  },
+  response: (callback: Function) => {
+    // 保存响应拦截器
+    (request as any)._responseInterceptor = callback;
+  }
+};
+
+// 为request对象添加拦截器属性，以兼容原有代码
+(request as any).interceptor = interceptor;
+
 // type:request,upload
-request.interceptor.request(function (config : any) {
+interceptor.request(function (config : any) {
 	console.log('config', config);
 	const userStore = useUserStore();
 	//判断登录是否过期
 	if (userStore.checkLogin()) {
 		// 避免重复请求
 		uni.$tm.u.throttle(() => {
-			request.send('user/getUserInfo', 'dx-func-user').then((res : any) => {
+			request.post('user/getUserInfo', 'dx-func-user').then((res : any) => {
 				if (res.code === 1000) {
 					userStore.setUserInfo(res);
 				}
@@ -20,7 +35,7 @@ request.interceptor.request(function (config : any) {
 });
 
 //响应拦截，判断状态码是否通过
-request.interceptor.response(function (res : any) {
+interceptor.response(function (res : any) {
 	if (res.code === 4001) {
 		uni.$tm.u.throttle(() => {
 			uni.showToast({
@@ -34,77 +49,98 @@ request.interceptor.response(function (res : any) {
 	}
 	return res;
 });
+
 // 导出 request
 export const axios = request;
+
 // 应用初始化
-export const init = (params = {}) => request.send('api/index/init', 'dx-func-activity', params);
+export const init = (params = {}) => request.post('api/index/init', 'dx-func-activity', params);
+
 // 获取分类
-export const getCategory = (params = {}) => request.send('api/index/category', 'dx-func-activity', params);
-export const indexHome = (params = {}) => request.send('api/index/home', 'dx-func-activity', params);
-export const indexHelp = (params = {}) => request.send('api/index/help', 'dx-func-activity', params);
+export const getCategory = (params = {}) => request.post('api/index/category', 'dx-func-activity', params);
+
+export const indexHome = (params = {}) => request.post('api/index/home', 'dx-func-activity', params);
+export const indexHelp = (params = {}) => request.post('api/index/help', 'dx-func-activity', params);
+
 // 登陆
-export const login = (params = {}) => request.send('portal/login', 'dx-func-user', params, 'http://localhost:1024');
+export const login = (params: any = {}) => request.post('portal/login', 'dx-func-user', params);
+
 // 注册
-export const register = (params = {}) => request.send('index/register', 'dx-func-user', params);
+export const register = (params = {}) => request.post('index/register', 'dx-func-user', params);
+
 // 获取图形验证码
-export const getCaptcha = (params = {}) => request.send('index/getCaptcha', 'dx-func-user', params);
+export const getCaptcha = () => request.get('portal/login/getCaptcha', 'dx-func-user', {});
+
 // 获取短信验证码
-export const sendSmsCode = (params = {}) => request.send('index/sendSmsCode', 'dx-func-user', params);
+export const postSmsCode = (params = {}) => request.post('index/postSmsCode', 'dx-func-user', params);
+
 // 获取用户信息
-export const getUserInfo = (params = {}) => request.send('user/getUserInfo', 'dx-func-user', params);
+export const getUserInfo = (params = {}) => request.post('user/getUserInfo', 'dx-func-user', params);
+
 // 编辑用户信息
-export const editUserInfo = (params = {}) => request.send('user/edit', 'dx-func-user', params);
+export const editUserInfo = (params = {}) => request.post('user/edit', 'dx-func-user', params);
+
 // 找回密码
-export const forget = (params = {}) => request.send('index/forget', 'dx-func-user', params);
+export const forget = (params = {}) => request.post('index/forget', 'dx-func-user', params);
+
 // 创建/更新组织
-export const saveTeam = (params = {}) => request.send('api/team/save', 'dx-func-activity', params);
+export const saveTeam = (params = {}) => request.post('api/team/save', 'dx-func-activity', params);
+
 // 组织首页
-export const homeTeam = (params = {}) => request.send('api/team/home', 'dx-func-activity', params);
+export const homeTeam = (params = {}) => request.post('api/team/home', 'dx-func-activity', params);
+
 // 我的组织
-export const myTeamList = (params = {}) => request.send('api/team/myList', 'dx-func-activity', params);
+export const myTeamList = (params = {}) => request.post('api/team/myList', 'dx-func-activity', params);
+
 // 删除组织
-export const delTeam = (params = {}) => request.send('api/team/del', 'dx-func-activity', params);
+export const delTeam = (params = {}) => request.post('api/team/del', 'dx-func-activity', params);
+
 // 认证信息
-export const getApproveInfo = (params = {}) => request.send('api/team/getApproveInfo', 'dx-func-activity', params);
+export const getApproveInfo = (params = {}) => request.post('api/team/getApproveInfo', 'dx-func-activity', params);
+
 // 认证
-export const approve = (params = {}) => request.send('api/team/approve', 'dx-func-activity', params);
+export const approve = (params = {}) => request.post('api/team/approve', 'dx-func-activity', params);
+
 // 组织详情
-export const teamDetail = (params = {}) => request.send('api/team/detail', 'dx-func-activity', params);
-export const teamList = (params = {}) => request.send('api/team/list', 'dx-func-activity', params);
-export const teamApply = (params = {}) => request.send('api/team/apply', 'dx-func-activity', params);
-export const teamQuit = (params = {}) => request.send('api/team/quit', 'dx-func-activity', params);
-export const teamJoinInfo = (params = {}) => request.send('api/team/joinInfo', 'dx-func-activity', params);
+export const teamDetail = (params = {}) => request.post('api/team/detail', 'dx-func-activity', params);
+export const teamList = (params = {}) => request.post('api/team/list', 'dx-func-activity', params);
+export const teamApply = (params = {}) => request.post('api/team/apply', 'dx-func-activity', params);
+export const teamQuit = (params = {}) => request.post('api/team/quit', 'dx-func-activity', params);
+export const teamJoinInfo = (params = {}) => request.post('api/team/joinInfo', 'dx-func-activity', params);
+
 // 我的组织详情
-export const myTeamDetail = (params = {}) => request.send('api/team/myDetail', 'dx-func-activity', params);
+export const myTeamDetail = (params = {}) => request.post('api/team/myDetail', 'dx-func-activity', params);
+
 // 组织相片
-export const photoIndex = (params = {}) => request.send('api/photo/index', 'dx-func-activity', params);
-export const photoList = (params = {}) => request.send('api/photo/list', 'dx-func-activity', params);
-export const photoSave = (params = {}) => request.send('api/photo/save', 'dx-func-activity', params);
-export const photoUpdate = (params = {}) => request.send('api/photo/update', 'dx-func-activity', params);
-export const photoInfo = (params = {}) => request.send('api/photo/info', 'dx-func-activity', params);
-export const photoDel = (params = {}) => request.send('api/photo/del', 'dx-func-activity', params);
+export const photoIndex = (params = {}) => request.post('api/photo/index', 'dx-func-activity', params);
+export const photoList = (params = {}) => request.post('api/photo/list', 'dx-func-activity', params);
+export const photoSave = (params = {}) => request.post('api/photo/save', 'dx-func-activity', params);
+export const photoUpdate = (params = {}) => request.post('api/photo/update', 'dx-func-activity', params);
+export const photoInfo = (params = {}) => request.post('api/photo/info', 'dx-func-activity', params);
+export const photoDel = (params = {}) => request.post('api/photo/del', 'dx-func-activity', params);
+
 // 活动
-export const activitySave = (params = {}) => request.send('api/activity/save', 'dx-func-activity', params);
-export const myActivityInfo = (params = {}) => request.send('api/activity/myInfo', 'dx-func-activity', params);
-export const homeActivity = (params = {}) => request.send('api/activity/home', 'dx-func-activity', params);
-export const delActivity = (params = {}) => request.send('api/activity/del', 'dx-func-activity', params);
-export const myActivityList = (params = {}) => request.send('api/activity/myList', 'dx-func-activity', params);
-export const activitySetting = (params = {}) => request.send('api/activity/setting', 'dx-func-activity', params);
-export const activityHome = (params = {}) => request.send('api/activity/home', 'dx-func-activity', params);
-export const activityList = (params = {}) => request.send('api/activity/list', 'dx-func-activity', params);
-export const activityDetail = (params = {}) => request.send('api/activity/detail', 'dx-func-activity', params);
-export const formAndCost = (params = {}) => request.send('api/activity/formAndCost', 'dx-func-activity', params);
+export const activitySave = (params = {}) => request.post('api/activity/save', 'dx-func-activity', params);
+export const myActivityInfo = (params = {}) => request.post('api/activity/myInfo', 'dx-func-activity', params);
+export const homeActivity = (params = {}) => request.post('api/activity/home', 'dx-func-activity', params);
+export const delActivity = (params = {}) => request.post('api/activity/del', 'dx-func-activity', params);
+export const myActivityList = (params = {}) => request.post('api/activity/myList', 'dx-func-activity', params);
+export const activitySetting = (params = {}) => request.post('api/activity/setting', 'dx-func-activity', params);
+export const activityHome = (params = {}) => request.post('api/activity/home', 'dx-func-activity', params);
+export const activityList = (params = {}) => request.post('api/activity/list', 'dx-func-activity', params);
+export const activityDetail = (params = {}) => request.post('api/activity/detail', 'dx-func-activity', params);
+export const formAndCost = (params = {}) => request.post('api/activity/formAndCost', 'dx-func-activity', params);
 
 // 关注
-export const followTeam = (params = {}) => request.send('api/follow/team', 'dx-func-activity', params);
-export const followActivity = (params = {}) => request.send('api/follow/activity', 'dx-func-activity', params);
-export const followList = (params = {}) => request.send('api/follow/list', 'dx-func-activity', params);
-// 报名
-export const applySave = (params = {}) => request.send('api/apply/save', 'dx-func-activity', params);
-export const applyInfo = (params = {}) => request.send('api/apply/info', 'dx-func-activity', params);
-export const applyCancel = (params = {}) => request.send('api/apply/cancel', 'dx-func-activity', params);
-export const applyList = (params = {}) => request.send('api/apply/list', 'dx-func-activity', params);
+export const followTeam = (params = {}) => request.post('api/follow/team', 'dx-func-activity', params);
+export const followActivity = (params = {}) => request.post('api/follow/activity', 'dx-func-activity', params);
+export const followList = (params = {}) => request.post('api/follow/list', 'dx-func-activity', params);
 
+// 报名
+export const applySave = (params = {}) => request.post('api/apply/save', 'dx-func-activity', params);
+export const applyInfo = (params = {}) => request.post('api/apply/info', 'dx-func-activity', params);
+export const applyCancel = (params = {}) => request.post('api/apply/cancel', 'dx-func-activity', params);
+export const applyList = (params = {}) => request.post('api/apply/list', 'dx-func-activity', params);
 
 // 单文件上传请求
 export const upload = ({ name, size, path, type } : any, query = {}, index ?: number) => {
@@ -173,6 +209,7 @@ export const upload = ({ name, size, path, type } : any, query = {}, index ?: nu
 		}
 	});
 };
+
 // 多文件上传
 export const multiUpload = (files : any[], query = {}, max = 6) => {
 	return new Promise(async resolve => {

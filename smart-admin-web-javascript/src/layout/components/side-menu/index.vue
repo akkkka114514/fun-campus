@@ -91,9 +91,20 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      transition: all 0.3s ease;
+      
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.1);
+      }
+      
       .logo-img {
         width: 30px;
         height: 30px;
+        transition: transform 0.3s ease;
+      }
+      
+      &:hover .logo-img {
+        transform: scale(1.1);
       }
     }
 
@@ -108,17 +119,29 @@
       cursor: pointer;
       justify-content: center;
       align-items: center;
+      transition: all 0.3s ease;
+      
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.1);
+      }
 
       .logo-img {
         width: 30px;
         height: 30px;
+        transition: transform 0.3s ease;
+      }
+      
+      &:hover .logo-img {
+        transform: scale(1.1);
       }
 
       .title {
         font-size: 16px;
         font-weight: 600;
         margin-left: 8px;
+        transition: all 0.3s ease;
       }
+      
       .title-light {
         color: #001529;
       }

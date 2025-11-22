@@ -15,6 +15,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -120,5 +122,70 @@ public class PortalUserServiceTest {
         assertNotNull(result);
         assertTrue(result.getOk());
         verify(portalUserService, times(1)).delete(id);
+    }
+    
+    @Test
+    void testGeneratePortalUserTestData() {
+        // 生成测试数据并验证
+        List<PortalUserAddForm> testDataList = generatePortalUserTestData();
+        
+        // 验证生成了100条数据
+        assertEquals(100, testDataList.size());
+        
+        // 验证每条数据都包含必要的字段
+        for (PortalUserAddForm form : testDataList) {
+            assertNotNull(form.getUsername());
+            assertNotNull(form.getPassword());
+            assertNotNull(form.getSchoolName());
+            assertNotNull(form.getCollegeName());
+            assertNotNull(form.getGender());
+        }
+    }
+    
+    /**
+     * 生成100个合理的PortalUser测试数据
+     */
+    public List<PortalUserAddForm> generatePortalUserTestData() {
+        List<PortalUserAddForm> testDataList = new ArrayList<>();
+        Random random = new Random();
+        
+        String[] schools = {
+            "清华大学", "北京大学", "复旦大学", "上海交通大学", "浙江大学",
+            "中国科学技术大学", "南京大学", "华中科技大学", "中山大学", "西安交通大学"
+        };
+        
+        String[] colleges = {
+            "计算机学院", "软件学院", "信息学院", "电子工程学院", "机械工程学院",
+            "经济管理学院", "外国语学院", "法学院", "医学院", "艺术学院"
+        };
+        
+        String[] usernames = {
+            "张三", "李四", "王五", "赵六", "钱七", "孙八", "周九", "吴十",
+            "郑一", "王二", "冯三", "陈四", "褚五", "卫六", "蒋七", "沈八"
+        };
+        
+        for (int i = 1; i <= 100; i++) {
+            PortalUserAddForm form = new PortalUserAddForm();
+            
+            // 设置用户名
+            String username = usernames[random.nextInt(usernames.length)] + i;
+            form.setUsername(username);
+            
+            // 设置密码
+            form.setPassword("password" + i);
+            
+            // 设置性别 (true表示男，false表示女)
+            form.setGender(random.nextBoolean());
+            
+            // 设置学校
+            form.setSchoolName(schools[random.nextInt(schools.length)]);
+            
+            // 设置学院
+            form.setCollegeName(colleges[random.nextInt(colleges.length)]);
+            
+            testDataList.add(form);
+        }
+        
+        return testDataList;
     }
 }

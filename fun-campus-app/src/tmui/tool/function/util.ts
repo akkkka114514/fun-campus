@@ -123,12 +123,12 @@ export function getMaxDepth(data : Data) : number {
  * @param SecondOBJ 被合并的对象
  * @returns 返回合并后的对象 
  */
-export function deepObjectMerge<T>(FirstOBJ : Data, SecondOBJ : Data) : Data { // 深度合并对象
+export function deepObjectMerge<T>(FirstOBJ: { [key: string]: any }, SecondOBJ: { [key: string]: any }): T { // 深度合并对象
 	for (var key in SecondOBJ) {
 		FirstOBJ[key] = FirstOBJ[key] && FirstOBJ[key]?.toString() === "[object Object]" ?
 			deepObjectMerge(FirstOBJ[key], SecondOBJ[key]) : FirstOBJ[key] = SecondOBJ[key];
 	}
-	return FirstOBJ;
+	return FirstOBJ as T;
 }
 
 /**

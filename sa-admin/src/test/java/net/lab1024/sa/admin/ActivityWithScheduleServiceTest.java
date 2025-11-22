@@ -138,7 +138,7 @@ public class ActivityWithScheduleServiceTest {
     @Test
     void testBatchDelete() {
         // Given
-        List<Integer> ids = Arrays.asList(1, 2, 3);
+        List<Long> ids = Arrays.asList(1L, 2L, 3L);
         ResponseDTO<String> mockResponse = ResponseDTO.ok();
         when(activityWithScheduleService.batchDelete(ids))
             .thenReturn(mockResponse);

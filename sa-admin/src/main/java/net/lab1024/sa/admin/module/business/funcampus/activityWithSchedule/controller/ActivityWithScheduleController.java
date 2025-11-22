@@ -63,7 +63,7 @@ public class ActivityWithScheduleController {
     @Operation(summary = "批量删除活动和时间表 @author akkkka114514")
     @PostMapping("/activityWithSchedule/batchDelete")
     @RepeatSubmit(intervalMilliSecond = 3 * 1000 )
-    public ResponseDTO<String> batchDelete(@RequestBody List<Integer> ids) {
+    public ResponseDTO<String> batchDelete(@RequestBody List<Long> ids) {
         return activityWithScheduleService.batchDelete(ids);
     }
 }

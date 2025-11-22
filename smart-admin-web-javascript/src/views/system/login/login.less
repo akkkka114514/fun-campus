@@ -1,8 +1,7 @@
 .login-container {
   width: 100%;
   height: 100%;
-  background: url(/@/assets/images/login/login-bg.png) no-repeat center;
-  background-size: cover;
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -10,17 +9,20 @@
     width: 444px;
     height: 600px;
     &.desc {
-      background: #003b94;
-      border-radius: 12px 0px 0px 12px;
+      background: rgba(0, 59, 148, 0.85);
+      border-radius: 16px 0px 0px 16px;
       box-shadow: 0px 16px 73px 8px rgba(203, 203, 203, 0.2);
       padding: 23px 25px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
     &.login {
       background: #ffffff;
-      border-radius: 0px 12px 12px 0px;
+      border-radius: 0px 16px 16px 0px;
       padding: 34px 42px;
       position: relative;
       border: solid 1px #efefef;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
     }
     .login-qr {
       position: absolute;
@@ -28,6 +30,7 @@
       right: 0;
       width: 66px;
       height: 66px;
+      border-radius: 0 16px 0 16px;
     }
     .logo {
       width: 180px;
@@ -76,6 +79,9 @@
         > img {
           width: 112px;
           height: 112px;
+          border-radius: 8px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          transition: transform 0.3s ease;
         }
 
         .qr-desc {
@@ -131,6 +137,19 @@
       text-align: center;
       color: #1e1e1e;
       margin-bottom: 35px;
+      position: relative;
+      
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 50px;
+        height: 3px;
+        background: linear-gradient(90deg, #1748FD, #00a8ff);
+        border-radius: 3px;
+      }
     }
     .login-form {
       .captcha-input {
@@ -139,19 +158,41 @@
 
       .captcha-img {
         cursor: pointer;
+        border-radius: 4px;
+        transition: transform 0.3s ease;
+      }
+      
+      .captcha-img:hover {
+        transform: scale(1.05);
       }
     }
     .ant-input,
     .ant-input-affix-wrapper {
       height: 44px;
       border: 1px solid #ededed;
-      border-radius: 4px;
+      border-radius: 6px;
+      transition: all 0.3s ease;
+    }
+    
+    .ant-input:hover,
+    .ant-input-affix-wrapper:hover {
+      border-color: #40a9ff;
+      box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
     }
 
     .code-btn{
       height: 44px;
       padding: 4px 5px;
       width: 108px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #1748FD, #00a8ff);
+      border: none;
+      transition: all 0.3s ease;
+    }
+    
+    .code-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(23, 72, 253, 0.3);
     }
 
     .eye-box {
@@ -165,16 +206,28 @@
       }
     }
     .btn {
-      width: 350px;
+      width: 100%;
       height: 50px;
-      background: #1748FD;
-      border-radius: 4px;
+      background: linear-gradient(135deg, #1748FD, #00a8ff);
+      border-radius: 6px;
       font-size: 16px;
       font-weight: 700;
       text-align: center;
       color: #ffffff;
       line-height: 50px;
       cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(23, 72, 253, 0.3);
+      border: none;
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(23, 72, 253, 0.4);
+    }
+    
+    .btn:active {
+      transform: translateY(0);
     }
   }
 
@@ -206,8 +259,39 @@
       align-items: center;
       justify-content: space-between;
       > img {
-        width: 30px;
-        height: 30px;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        padding: 4px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+      
+      > img:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+    }
+  }
+}
+
+@media (max-width: 992px) {
+  .login-container {
+    .box-item {
+      width: 380px;
+      height: 560px;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .login-container {
+    .box-item {
+      &.desc {
+        display: none;
+      }
+      &.login {
+        border-radius: 16px;
       }
     }
   }

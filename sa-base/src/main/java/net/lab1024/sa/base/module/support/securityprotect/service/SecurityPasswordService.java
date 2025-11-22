@@ -95,10 +95,6 @@ public class SecurityPasswordService {
      * 随机生成密码
      */
     public String randomPassword() {
-        // 未开启密码复杂度，则由8为数字构成
-        if (!level3ProtectConfigService.isPasswordComplexityEnabled()) {
-            return RandomStringUtils.randomNumeric(PASSWORD_LENGTH);
-        }
 
         // 3位大写字母，2位数字，2位小写字母 + 1位特殊符号
         return RandomStringUtils.randomAlphabetic(3).toUpperCase()

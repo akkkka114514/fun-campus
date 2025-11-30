@@ -1,5 +1,5 @@
 <template>
-  <view class="flex flex-col flex-col-top-center" style="height: 75px">
+  <view class="flex flex-col flex-col-top-center" style="height: 75px; display: flex !important; visibility: visible !important;">
     <tm-sheet
       :height="60"
       :width="_width"
@@ -8,7 +8,7 @@
       _class="flex-center flex "
       parenClass="relative"
       class="relative"
-      :_style="_styletop"
+      :_style="_styletop + '; opacity: 1 !important; display: block !important; visibility: visible !important;'"
       :followTheme="_btnTop && props.followTheme"
       :transprent="_transprent"
       :color="props.color"
@@ -35,13 +35,13 @@
         <view
           :class="[_active ? 'anifun' : '']"
           class="flex flex-col flex-col-center-center"
-          :style="{ width: 65 + 'px', height: '30px' }"
+          :style="{ width: 65 + 'px', height: '30px', opacity: 1 }"
         >
           <slot>
             <tm-icon
 			  :customicon="props.customicon"
               v-if="!_load"
-              _style="line-height: 0px;"
+              _style="line-height: 0px; opacity: 1;"
               :color="_color"
               :font-size="c_font_style.iconSize"
               :name="
@@ -52,7 +52,7 @@
           <tm-icon
             v-if="_load"
             spin
-            _style="line-height: 0px;"
+            _style="line-height: 0px; opacity: 1;"
             :color="_color"
             :font-size="c_font_style.iconSize"
             name="tmicon-shuaxin"

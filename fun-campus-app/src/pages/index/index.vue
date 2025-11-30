@@ -1,66 +1,36 @@
 <template>
   <tm-app>
-    <!-- 顶部渐变背景 -->
-    <view class="top-bg"></view>
-
     <!-- 主内容区域 -->
     <tm-sheet :margin="[0, 0]" :padding="[0, 0]" :transprent="true" class="main-content">
       <dx-home v-if="acc === 0" />
-      <dx-activity :category-list="categoryList" v-else-if="acc === 1" />
-      <dx-team :category-list="categoryList" v-else-if="acc === 3" />
-      <dx-member v-else-if="acc === 4" />
     </tm-sheet>
-
-    <!-- 底部安全区域占位 -->
-    <view class="safe-area"></view>
-
     <!-- 底部导航栏 -->
     <tm-tabbar
-      :autoSelect="false"
+      :autoSelect="true"
       v-model:active="acc"
       :showSafe="false"
       @change="tabbarChange"
       class="custom-tabbar"
     >
       <tm-tabbar-item
-        @click="acc = 0"
-        activeColor="#3c8af8"
-        open-type="reLaunch"
-        text="首页"
-        icon="tmicon-md-home"
-        class="tabbar-item"
-      />
-      <tm-tabbar-item
-        @click="acc = 1"
-        activeColor="#3c8af8"
-        text="找活动"
+        :activeColor="acc === 1 ? '#ff8c42' : '#999'"
+        text="第二课堂"
         icon="tmicon-flag-fill"
+        url="/pages/index/index"
         class="tabbar-item"
       />
       <tm-tabbar-item
-        :shadow="5"
-        btn-top
-        fontColor="white"
-        activeColor="white"
-        linear="top"
-        linearDeep="accent"
-        color="#3c8af8"
-        icon="tmicon-paperplane-fill"
-        url="/others/publish/publish"
-        class="publish-btn"
-      />
-      <tm-tabbar-item
-        @click="acc = 3"
-        activeColor="#3c8af8"
-        text="找组织"
+        :activeColor="acc === 3 ? '#ff8c42' : '#999'"
+        text="校园生活"
         icon="tmicon-layergroup-fill"
+        url="/teams/index/index"
         class="tabbar-item"
       />
       <tm-tabbar-item
-        @click="acc = 4"
-        activeColor="#3c8af8"
+        :activeColor="acc === 4 ? '#ff8c42' : '#999'"
         text="我的"
         icon="tmicon-md-person"
+        url="/pages/user/profile"
         class="tabbar-item"
       />
     </tm-tabbar>
@@ -69,27 +39,16 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { getCategory } from '@/common/index';
+import DxHome from "@/components/dx-home/dx-home.vue";
 
-const categoryList = ref<any[]>([]);
 const acc = ref(0);
 
 onMounted(() => {
-  getCategory({ level: 1 }).then((res) => {
-    if (res.code === 1000) {
-      categoryList.value = [
-        { name: '全部', _id: '0' },
-        ...res.data,
-      ];
-    }
-  });
 });
 
+// 监听 tabbar 的 change 事件
 function tabbarChange(e: number) {
-  const titles = ['首页', '找活动', '', '找组织', '我的'];
-  if (titles[e]) {
-    uni.setNavigationBarTitle({ title: titles[e] });
-  }
+  acc.value = e;
 }
 </script>
 
@@ -115,11 +74,11 @@ function tabbarChange(e: number) {
   left: 0;
   width: 100%;
   height: 220rpx;
-  background: linear-gradient(135deg, #3c8af8, #2962ff, #5a7dfd);
+  background: linear-gradient(135deg, #ff8c42, #ff6b35, #ff9a3d);
   background-size: 300% 300%;
   z-index: -1;
   animation: gradientBG 10s ease infinite alternate;
-  box-shadow: 0 10rpx 30rpx rgba(59, 130, 248, 0.2);
+  box-shadow: 0 10rpx 30rpx rgba(255, 140, 66, 0.2);
 }
 
 @keyframes gradientBG {
@@ -137,7 +96,7 @@ function tabbarChange(e: number) {
   border-top-left-radius: 40rpx;
   border-top-right-radius: 40rpx;
   margin-top: 200rpx;
-  box-shadow: 0 -12rpx 40rpx rgba(59, 130, 248, 0.12);
+  box-shadow: 0 -12rpx 40rpx rgba(255, 140, 66, 0.12);
   padding: 30rpx 24rpx 0;
   overflow: hidden;
   transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -177,7 +136,7 @@ function tabbarChange(e: number) {
     left: 50%;
     width: 0;
     height: 4rpx;
-    background: #3c8af8;
+    background: #ff8c42;
     border-radius: 2rpx;
     transform: translateX(-50%);
     transition: width 0.3s ease;
@@ -198,19 +157,19 @@ function tabbarChange(e: number) {
   align-items: center;
   justify-content: center;
   box-shadow:
-    0 12rpx 30rpx rgba(60, 138, 248, 0.4),
-    0 4rpx 12rpx rgba(60, 138, 248, 0.3);
+    0 12rpx 30rpx rgba(255, 140, 66, 0.4),
+    0 4rpx 12rpx rgba(255, 140, 66, 0.3);
   animation: floatPulse 3.5s ease-in-out infinite;
   transform-origin: center;
-  background: linear-gradient(135deg, #3c8af8, #2962ff);
+  background: linear-gradient(135deg, #ff8c42, #ff6b35);
   border: 6rpx solid #ffffff;
 
   &:active {
     transform: scale(0.9) rotate(5deg);
     animation: none;
     box-shadow:
-      0 8rpx 20rpx rgba(60, 138, 248, 0.5),
-      0 2rpx 8rpx rgba(60, 138, 248, 0.4);
+      0 8rpx 20rpx rgba(255, 140, 66, 0.5),
+      0 2rpx 8rpx rgba(255, 140, 66, 0.4);
   }
 }
 
@@ -218,14 +177,14 @@ function tabbarChange(e: number) {
   0%, 100% {
     transform: translateY(0) scale(1);
     box-shadow:
-      0 12rpx 30rpx rgba(60, 138, 248, 0.4),
-      0 4rpx 12rpx rgba(60, 138, 248, 0.3);
+      0 12rpx 30rpx rgba(255, 140, 66, 0.4),
+      0 4rpx 12rpx rgba(255, 140, 66, 0.3);
   }
   50% {
     transform: translateY(-12rpx) scale(1.05);
     box-shadow:
-      0 18rpx 40rpx rgba(60, 138, 248, 0.55),
-      0 6rpx 16rpx rgba(60, 138, 248, 0.4);
+      0 18rpx 40rpx rgba(255, 140, 66, 0.55),
+      0 6rpx 16rpx rgba(255, 140, 66, 0.4);
   }
 }
 

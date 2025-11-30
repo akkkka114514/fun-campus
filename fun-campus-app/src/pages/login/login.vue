@@ -172,7 +172,6 @@ import { useAppStore } from '@/stores/app';
 import { useUserStore } from '@/stores/user';
 import { openLink } from '@/common/tools';
 import { onLoad } from '@dcloudio/uni-app';
-const appStore = useAppStore();
 const userStore = useUserStore();
 let captchaBase64Image = ref('static/captcha-placeholder.png'); // 默认占位图
 const loginForm = ref({
@@ -328,14 +327,14 @@ function usernamePasswordLogin(){
     captchaCode: loginForm.value.captchaCode,
     captchaUuid: loginForm.value.captchaUuid
   }).then(res => {
+    console.log(res)
     if (res.code === 0) {
       userStore.setUserInfo(res.data);
-      console.log('登录成功')
       uni.reLaunch({
         url: '/pages/index/index',
       });
     } else {
-      console.log(res)
+      uni.$tm.u.toast(res.message);
       captcha();
     }
   }).catch(err => {
@@ -343,10 +342,9 @@ function usernamePasswordLogin(){
     uni.$tm.u.toast('登录请求失败');
   });
 }
-function getDeviceInfo() {
+function getDeviceInfo() : void {
   try {
     const info = uni.getSystemInfoSync();
-    console.log('设备信息:', info.platform);
     if (info.platform === 'ios') loginForm.value.loginDevice = 3
     if (info.platform === 'android') loginForm.value.loginDevice = 2
     if (info.platform === 'h5') loginForm.value.loginDevice = 4

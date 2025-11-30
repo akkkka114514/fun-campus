@@ -18,16 +18,25 @@ import net.lab1024.sa.admin.module.business.funcampus.organizerActivity.domain.e
 import net.lab1024.sa.admin.module.business.funcampus.organizerActivity.manager.OrganizerActivityManager;
 import net.lab1024.sa.admin.module.business.funcampus.portalOrganizerUser.domain.entity.PortalOrganizerUserEntity;
 import net.lab1024.sa.admin.module.business.funcampus.portalOrganizerUser.manager.PortalOrganizerUserManager;
+import net.lab1024.sa.admin.module.business.funcampus.portalUser.domain.entity.PortalUserEntity;
+import net.lab1024.sa.admin.module.business.funcampus.portalUser.domain.vo.PortalUserVO;
+import net.lab1024.sa.admin.module.business.funcampus.portalUser.manager.PortalUserManager;
+import net.lab1024.sa.admin.module.business.funcampus.schoolInfo.domain.entity.SchoolInfoEntity;
+import net.lab1024.sa.admin.module.business.funcampus.schoolInfo.manager.SchoolInfoManager;
 import net.lab1024.sa.base.common.code.UnexpectedErrorCode;
 import net.lab1024.sa.base.common.code.UserErrorCode;
+import net.lab1024.sa.base.common.domain.PageParam;
 import net.lab1024.sa.base.common.domain.PageResult;
+import net.lab1024.sa.base.common.domain.RequestUser;
 import net.lab1024.sa.base.common.domain.ResponseDTO;
 import net.lab1024.sa.base.common.util.SmartPageUtil;
+import net.lab1024.sa.base.common.util.SmartRequestUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import lombok.extern.slf4j.Slf4j;
 
 import jakarta.annotation.Resource;
+import software.amazon.awssdk.services.s3.endpoints.internal.Value;
 
 import java.util.List;
 
@@ -62,6 +71,12 @@ public class ActivityWithScheduleService {
 
     @Resource
     private ActivityEnrollNumDao activityEnrollNumDao;
+
+    @Resource
+    private PortalUserManager portalUserManager;
+
+    @Resource
+    private SchoolInfoManager schoolInfoManager;
 
     /**
      * 同时添加活动和活动时间表
@@ -304,5 +319,23 @@ public class ActivityWithScheduleService {
         // TODO: 实现批量拒绝审核逻辑
         log.warn("ActivityWithScheduleService.batchRejectReview not implemented");
         return ResponseDTO.ok("功能未实现");
+    }
+
+    public ResponseDTO<Page<ActivityWithScheduleVO>> notStartAndPendingEnrollActivityPageGlobal(Long pageNum, Long pageSize){
+        Page<ActivityWithScheduleVO> page = new Page<>(pageNum, pageSize);
+        Page<ActivityWithScheduleVO> result =activityDao.notStartAndPendingEnrollActivityGlobal(page);
+        return ResponseDTO.ok(result);
+    }
+
+    public ResponseDTO<Page<ActivityWithScheduleVO>> notStartAndPendingEnrollActivityPage(Long pageNum, Long pageSize){
+        Page<ActivityWithScheduleVO> page = new Page<>(pageNum, pageSize);
+        Long userId = SmartRequestUtil.getRequestUserId();
+        PortalUserEntity portalUserEntity =portalUserManager.getById(userId);
+        if(portalUserEntity==null||portalUserEntity.getDeletedFlag()) {
+            return ResponseDTO.error(UnexpectedErrorCode.BUSINESS_HANDING, "用户不存在");
+        }
+        Long schoolId = portalUserEntity.getSchoolId();
+        Page<ActivityWithScheduleVO> result =activityDao.notStartAndPendingEnrollActivity(page,schoolId);
+        return ResponseDTO.ok(result);
     }
 }

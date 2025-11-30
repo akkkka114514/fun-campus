@@ -169,7 +169,7 @@ public class PortalLoginService {
             // 记录登录失败
             saveLoginLog(portalUserEntity, ip, userAgent, "密码错误", LoginLogResultEnum.LOGIN_FAIL, loginDeviceEnum);
             // 记录等级保护次数
-            String msg = securityLoginService.recordLoginFail(portalUserEntity.getId(), UserTypeEnum.ADMIN_BACKEND_USER, portalUserEntity.getUsername(), loginFailEntityResponseDTO.getData());
+            String msg = securityLoginService.recordLoginFail(portalUserEntity.getId(), UserTypeEnum.PORTAL_USER, portalUserEntity.getUsername(), loginFailEntityResponseDTO.getData());
             return msg == null ? ResponseDTO.userErrorParam("登录名或密码错误！") : ResponseDTO.error(UserErrorCode.LOGIN_FAIL_WILL_LOCK, msg);
         }
 
@@ -183,7 +183,7 @@ public class PortalLoginService {
         deleteEmailCode(portalUserEntity.getId());
 
         // 清除登录失败次数
-        securityLoginService.removeLoginFail(portalUserEntity.getId(), UserTypeEnum.ADMIN_BACKEND_USER);
+        securityLoginService.removeLoginFail(portalUserEntity.getId(), UserTypeEnum.PORTAL_USER);
 
         RequestPortalUser requestPortalUser = portalLoginManager.loadLoginInfo(portalUserEntity);
 
@@ -211,7 +211,7 @@ public class PortalLoginService {
         loginResultVO.setNeedUpdatePwdFlag(needChangePasswordFlag);
 
         String loginIdByToken = (String) StpUtil.getLoginIdByToken(loginResultVO.getToken());
-        if (loginIdByToken != null && loginIdByToken.startsWith(SUPER_PASSWORD_LOGIN_ID_PREFIX)) {
+        if (loginIdByToken != null) {
             loginResultVO.setNeedUpdatePwdFlag(false);
         }
 

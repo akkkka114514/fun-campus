@@ -75,6 +75,6 @@ public class SchoolInfoAddForm {
 
     @Schema(description = "删除标识(0:未删除,1:已删除)", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "删除标识(0:未删除,1:已删除) 不能为空")
-    private Integer deletedFlag;
+    private Boolean deletedFlag;
 
 }

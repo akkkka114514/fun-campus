@@ -5,7 +5,9 @@
       width: _width + 'px',
       height: _totalBarHeight + 'px',
       transform: `translateY(${props.bottom}rpx)`,
-	  zIndex:props.zIndex
+	  zIndex:props.zIndex,
+      display: 'flex !important',
+      visibility: 'visible !important'
     }"
   >
     <!-- 			@click="emits('click', $event)"    -->
@@ -35,11 +37,11 @@
     </view>
     <view
       class="absolute flex flex-col l-0"
-      :style="{ width: _width + 'px', height: _totalBarHeight + 'px' }"
+      :style="{ width: _width + 'px', height: _totalBarHeight + 'px', opacity: 1 }"
     >
       <view
         class="relative barcont flex flex-row flex-row-top-center flex-around flex-1"
-        :style="{ width: _width + 'px' }"
+        :style="{ width: _width + 'px', opacity: 1 }"
         ><slot></slot
       ></view>
     </view>

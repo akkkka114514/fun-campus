@@ -127,4 +127,37 @@
         WHERE
             activity.id = #{id}
     </select>
+    <select id="notStartAndPendingEnrollActivityGlobal" resultMap="ActivityWithScheduleVO">
+        SELECT
+            <include refid="base_columns"/>,
+            activity_schedule.enroll_start_time,
+            activity_schedule.enroll_end_time,
+            activity_schedule.activity_start_time,
+            activity_schedule.activity_end_time,
+            activity_schedule.signin_start_time,
+            activity_schedule.signin_end_time
+        FROM activity
+        LEFT JOIN activity_schedule ON activity.id = activity_schedule.activity_id
+        WHERE
+            activity.status = 0
+            OR activity.status = 1
+            AND activivty.deleted_flag = 0;
+    </select>
+    <select id="notStartAndPendingEnrollActivityGlobal" resultMap="ActivityWithScheduleVO">
+        select
+            <include refid="base_columns"/>,
+            activity_schedule.enroll_start_time,
+            activity_schedule.enroll_end_time,
+            activity_schedule.activity_start_time,
+            activity_schedule.activity_end_time,
+            activity_schedule.signin_start_time,
+            activity_schedule.signin_end_time
+        from activity
+        left join activity_schedule on activity.id = activity_schedule.activity_id
+        where
+            activity.status = 0
+            or activity.status = 1
+            and activity.deleted_flag = 0
+            and activity.activity_school_id = #{schoolId}
+    </select>
 </mapper>

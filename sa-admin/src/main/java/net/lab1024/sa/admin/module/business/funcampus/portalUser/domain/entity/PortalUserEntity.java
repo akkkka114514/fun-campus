@@ -77,13 +77,13 @@ public class PortalUserEntity {
     private String avatar;
 
     /**
-     * 学校名
+     * 学校id
      */
-    private String schoolName;
+    private Long schoolId;
 
     /**
-     * 学院名
+     * 学院id
      */
-    private String collegeName;
+    private Long collegeId;
 
 }

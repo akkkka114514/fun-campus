@@ -54,13 +54,8 @@ interceptor.response(function (res : any) {
 export const axios = request;
 
 // 应用初始化
-export const init = (params = {}) => request.post('api/index/init', 'dx-func-activity', params);
 
-// 获取分类
-export const getCategory = (params = {}) => request.post('api/index/category', 'dx-func-activity', params);
-
-export const indexHome = (params = {}) => request.post('api/index/home', 'dx-func-activity', params);
-export const indexHelp = (params = {}) => request.post('api/index/help', 'dx-func-activity', params);
+export const indexHome = (params = {}) => request.get('index', 'dx-func-activity', params);
 
 // 登陆
 export const login = (params: any = {}) => request.post('portal/login', 'dx-func-user', params);

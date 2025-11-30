@@ -627,17 +627,12 @@ export class Http {
         }
     }
 
-    public request(url: string, data: any = {}, options: RequestOptionsConfig = {
-        header: {},
-        method: this.config.method,
-        timeout: this.config.timeout,
-        dataType: this.config.dataType,
-        responseType: this.config.responseType,
-        sslVerify: this.config.sslVerify,
-        withCredentials: this.config.withCredentials,
-        firstIpv4: this.config.firstIpv4,
-        retryCount: this.config.retryCount
-    }) {
+    public request(url: string, data: any = {}, options: RequestOptionsConfig = {}) {
+        // 确保this.config已初始化
+        if (!this.config) {
+            this.config = this.useConfig({});
+        }
+        
         // 初始化配置
         this.initConfig(options);
         // 判断该请求队列是否存在，如果存在则中断请求
@@ -693,13 +688,13 @@ export class Http {
                     header: {
                         ...options.header
                     },
-                    method: options.method,
-                    timeout: options.timeout,
-                    dataType: options.dataType,
-                    responseType: options.responseType,
-                    sslVerify: options.sslVerify,
-                    withCredentials: options.withCredentials,
-                    firstIpv4: options.firstIpv4,
+                    method: options.method || this.config.method,
+                    timeout: options.timeout || this.config.timeout,
+                    dataType: options.dataType || this.config.dataType,
+                    responseType: options.responseType || this.config.responseType,
+                    sslVerify: options.sslVerify !== undefined ? options.sslVerify : this.config.sslVerify,
+                    withCredentials: options.withCredentials !== undefined ? options.withCredentials : this.config.withCredentials,
+                    firstIpv4: options.firstIpv4 !== undefined ? options.firstIpv4 : this.config.firstIpv4,
                     success: (res: UniApp.RequestSuccessCallbackResult) => {
                         if (res.statusCode !== this.config.tokenExpiredCode) {
                             resolve(res.data);
@@ -712,7 +707,7 @@ export class Http {
                         }
                     },
                     fail: (err: UniApp.GeneralCallbackResult) => {
-                        this.retryCount = options.retryCount ?? 3;
+                        this.retryCount = options.retryCount ?? this.config.retryCount ?? 3;
 
                         if (this.retryCount === 0) {
                             reject(err);
@@ -721,7 +716,7 @@ export class Http {
                                 console.warn(`【LwuRequest Debug】自动重试次数：${this.retryCount}`);
                             }
                             this.retryCount--;
-                            setTimeout(this.request, this.retryTimeout.shift());
+                            setTimeout(() => this.request(url, data, options), this.retryTimeout.shift());
                             // 网络异常或者断网处理
                             this.config.networkExceptionHandle && this.config.networkExceptionHandle();
                         }

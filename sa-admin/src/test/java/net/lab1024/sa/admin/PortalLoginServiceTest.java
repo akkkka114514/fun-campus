@@ -3,12 +3,10 @@ package net.lab1024.sa.admin;
 import net.lab1024.sa.admin.module.business.funcampus.portalLogin.domain.PortalLoginResultVO;
 import net.lab1024.sa.admin.module.business.funcampus.portalLogin.service.PortalLoginService;
 import net.lab1024.sa.admin.module.system.login.domain.LoginForm;
-import net.lab1024.sa.admin.module.system.login.domain.LoginResultVO;
 import net.lab1024.sa.base.module.support.captcha.domain.CaptchaVO;
 import net.lab1024.sa.base.common.domain.ResponseDTO;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 

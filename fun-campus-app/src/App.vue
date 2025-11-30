@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { onLaunch, onShow, onHide } from '@dcloudio/uni-app';
-import { init } from '@/common/index'
 import { useAppStore } from '@/stores/app'
 onLaunch((e) => {
 	console.log('App Launch',e);
@@ -19,16 +18,17 @@ onLaunch((e) => {
 onShow(() => {
 	console.log('App Show');
 	const appStore = useAppStore();
-	init().then(res => {
-		if (res.code === 1000) {
-			appStore.setAppInfo(res.data);
-		}
-	})
+
 });
 onHide(() => {
 	console.log('App Hide');
 });
 </script>
+<template>
+  <tm-app>
+    <router-view />
+  </tm-app>
+</template>
 <style>
 /* #ifdef APP-NVUE */
 @import './tmui/scss/nvue.css';
@@ -47,6 +47,12 @@ view {
 	border-radius: 16rpx;
 	box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.03);
 	overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.bg-white:hover {
+  box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.08);
+  transform: translateY(-2rpx);
 }
 
 .align-center {
@@ -82,8 +88,8 @@ view {
 }
 
 .input-select:focus {
-	border-color: #3c8af8;
-	box-shadow: 0 0 0 2rpx rgba(60, 138, 248, 0.2);
+	border-color: #ff8c42;
+	box-shadow: 0 0 0 2rpx rgba(255, 140, 66, 0.2);
 }
 
 .no-select{
@@ -104,6 +110,7 @@ view {
 	box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.03);
 	overflow: hidden;
 	transition: all 0.3s ease;
+  position: relative;
 }
 
 .card:hover {
@@ -111,20 +118,67 @@ view {
 	transform: translateY(-4rpx);
 }
 
+.card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+}
+
+.card:hover::before {
+  transform: translateX(100%);
+}
+
 /* 按钮样式优化 */
 .btn-primary {
-	background: linear-gradient(120deg, #3c8af8, #2962ff);
+	background: linear-gradient(120deg, #ff8c42, #ff6b35);
 	color: white;
 	border: none;
 	border-radius: 50rpx;
 	padding: 20rpx 30rpx;
 	font-weight: 500;
 	transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
 
 .btn-primary:active {
 	transform: scale(0.98);
 	opacity: 0.9;
+}
+
+.btn-primary::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.5);
+  opacity: 0;
+  border-radius: 100%;
+  transform: scale(1, 1) translate(-50%);
+  transform-origin: 50% 50%;
+}
+
+.btn-primary:focus:not(:active)::after {
+  animation: ripple 1s ease-out;
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0, 0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(50, 50);
+    opacity: 0;
+  }
 }
 
 /* 文本样式增强 */
@@ -195,30 +249,66 @@ view {
 	border-radius: 20rpx !important;
 	background-color: rgba(248, 249, 250, 0.8) !important;
 	border: 2rpx solid #e9ecef !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.tm-input::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+}
+
+.tm-input:focus-within::before {
+  transform: translateX(100%);
 }
 
 .tm-input:focus-within {
-	border-color: #3c8af8 !important;
-	box-shadow: 0 0 0 2rpx rgba(60, 138, 248, 0.2) !important;
+	border-color: #4a6fcc !important;
+	box-shadow: 0 0 0 2rpx rgba(74, 111, 204, 0.2) !important;
 	background-color: #fff !important;
 }
 
 /* 按钮美化 */
 .tm-button {
-	transition: all 0.3s ease;
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 	border-radius: 20rpx !important;
 	font-weight: 500;
 	letter-spacing: 1rpx;
-	box-shadow: 0 10rpx 20rpx rgba(60, 138, 248, 0.3) !important;
+	box-shadow: 0 10rpx 20rpx rgba(74, 111, 204, 0.3) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.tm-button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+}
+
+.tm-button:hover::before {
+  transform: translateX(100%);
 }
 
 .tm-button:active {
 	transform: scale(0.98);
-	box-shadow: 0 5rpx 15rpx rgba(60, 138, 248, 0.2) !important;
+	box-shadow: 0 5rpx 15rpx rgba(74, 111, 204, 0.2) !important;
 }
 
 .tm-button:hover {
-	box-shadow: 0 15rpx 25rpx rgba(60, 138, 248, 0.4) !important;
+	box-shadow: 0 15rpx 25rpx rgba(74, 111, 204, 0.4) !important;
 	transform: translateY(-3rpx);
 }
 
@@ -231,6 +321,24 @@ view {
 .tm-avatar {
 	transition: all 0.3s ease;
 	box-shadow: 0 4rpx 10rpx rgba(0,0,0,0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.tm-avatar::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+}
+
+.tm-avatar:hover::before {
+  transform: translateX(100%);
 }
 
 .tm-avatar:hover {
@@ -248,7 +356,7 @@ view {
 }
 
 .tm-icon:hover {
-	transform: scale(1.1);
+	transform: scale(1.2) rotate(10deg);
 }
 
 /* 分割线美化 */
@@ -260,10 +368,53 @@ view {
 .tm-sheet {
 	border-radius: 16rpx;
 	transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.tm-sheet::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+}
+
+.tm-sheet:hover::before {
+  transform: translateX(100%);
 }
 
 .tm-sheet:hover {
 	transform: translateY(-4rpx);
 	box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.08);
+}
+
+/* 鼠标跟随效果背景 */
+.mouse-trail {
+  position: fixed;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 140, 66, 0.8) 0%, rgba(255, 140, 66, 0) 70%);
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  transition: width 0.3s ease, height 0.3s ease, opacity 0.3s ease;
+}
+
+/* 动态背景 */
+.animated-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
 }
 </style>

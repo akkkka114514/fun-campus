@@ -46,10 +46,10 @@ public class PortalUserVO {
     @Schema(description = "头像")
     private String avatar;
 
-    @Schema(description = "学校名")
-    private String schoolName;
+    @Schema(description = "学校id")
+    private String schoolId;
 
-    @Schema(description = "学院名")
-    private String collegeName;
+    @Schema(description = "学院id")
+    private String collegeId;
 
 }

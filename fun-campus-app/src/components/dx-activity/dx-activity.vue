@@ -1,15 +1,5 @@
 <template>
   <view class="bg-white">
-    <view class="activity-top">
-      <view class="px-30 pt-30 pb-10">
-        <tm-input prefix="tmicon-search" v-model="param.keyword"></tm-input>
-      </view>
-      <view>
-        <tm-tabs @change="tabsChange" showTabsLineAni :item-width="80" :width="750" :height="90" default-name="1">
-          <tm-tabs-pane v-for="(item, index) in props.categoryList" :key="index" :name="item._id" :title="item.name"></tm-tabs-pane>
-        </tm-tabs>
-      </view>
-    </view>
     <view class="list px-30 flex flex-between flex-wrap round-3" :class="{'pb-30':list.length}">
       <view class="item pb-20 mt-30 round-3" v-for="(item, index) in list" :key="index" @click="openLink('others/activity/detail?id=' + item._id)">
         <image :src="item.cover" style="width: 100%; height: 250rpx"></image>
@@ -17,7 +7,6 @@
           <view class="title text-overflow-2"> {{ item.title }} </view>
           <view class="flex align-center flex-between mt-10">
             <text class="tips">{{ timeText(item.start_date) }}</text>
-            <!-- <text class="price">免费</text> -->
           </view>
           <view class="flex-col-top-center mt-10">
             <tm-icon name="tmicon-position" color="#6d6868" :font-size="24"></tm-icon>
@@ -36,53 +25,42 @@
   </view>
 </template>
 <script lang="ts" setup>
-import { ref, reactive,watch } from 'vue';
+import { ref, reactive,watch, computed } from 'vue';
 import { activityList } from '@/common/index'
 import { openLink,timeText } from '@/common/tools';
 import { debounce } from '@/tmui/tool/function/util';
-const props = defineProps<{
-  categoryList: any[];
-}>();
+
+const props = defineProps({
+  activeTab: {
+    type: Number,
+    default: 0
+  }
+});
+
 const hasMore = ref(true);
 const loading = ref(false);
 const list = ref<any[]>([]);
-const param = reactive<any>({
-  parent_id: '',
-  nextDate: '',
-  keyword: '',
-  limit:20
-})
-watch(()=>param.keyword, () => {
-  debounce(()=>{
-    getActivityList();
-  }, 500)
-})
-function tabsChange(e: string) {
-  param.parent_id = e;
-  getActivityList();
-}
-function getActivityList(is_more = false) {
-  uni.showLoading({
-    title: '加载中...'
-  })
-  activityList(param).then((res) => {
-    console.log('res', res);
-    if (res.code === 1000) {
-      if (res.data.length < param.limit || res.data.length === 0) {
-        hasMore.value = false
-      }
-      if (is_more) {
-        list.value = list.value.concat(res.data)
-      } else {
-        list.value = res.data
-      }
+
+// 使用计算属性来响应父组件传递的 activeTab 值变化
+const currentTab = computed(() => props.activeTab);
+
+// 监听 tab 变化，重新加载数据
+watch(currentTab, (newVal) => {
+  loadData(newVal);
+}, { immediate: true });
+
+function loadData(tabIndex: number) {
+  loading.value = true;
+  // 模拟 API 调用，实际应该根据 tabIndex 请求不同的数据
+  activityList({ page: 1, type: tabIndex }).then((res: any) => {
+    if (res.code == 1000) {
+      list.value = res.data.list;
+      hasMore.value = res.data.hasMore;
     }
-  }).finally(() => {
-    uni.hideLoading()
+    loading.value = false;
   });
 }
-getActivityList();
-//
+
 </script>
 <style lang="scss" scoped>
 .activity-top {
@@ -100,14 +78,20 @@ getActivityList();
 
 .list {
   // #ifdef MP-WEIXIN || APP-PLUS
-  padding-top: 190rpx;
+  padding-top: 110rpx;
   // #endif
   // #ifdef H5
-  padding-top: calc(130rpx + 35px);
+  padding-top: calc(50rpx + 35px);
   // #endif
   .item {
     width: calc((100vw - 90rpx) / 2);
     box-shadow: 0 0 10rpx rgb(230, 230, 230);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    
+    &:hover {
+      transform: translateY(-10rpx);
+      box-shadow: 0 20rpx 30rpx rgba(255, 140, 66, 0.2);
+    }
   }
 }
 </style>

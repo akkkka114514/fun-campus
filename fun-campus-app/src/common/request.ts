@@ -1,6 +1,8 @@
 import { request } from './config';
+import {useUserStore} from "@/stores/user";
 
 class Request {
+	userStore = useUserStore();
 	interceptor = {
 		//请求之前拦截
 		request: (cb: (options: any) => any) => {
@@ -42,7 +44,17 @@ class Request {
 
 		// 对于验证码等不需要参数的GET请求，直接使用action路径
 		const requestData = Object.keys(data).length > 0 ? options.data : {};
-		return request.get('/' + action, requestData)
+		
+		// 添加认证头
+		const token = this.userStore.userInfo.token;
+		const requestOptions = token ? { 
+			header: { 
+				'Authorization': `Bearer ${token}`,
+				'Content-Type': 'application/json'
+			} 
+		} : {};
+		
+		return request.get('/' + action, requestData, requestOptions)
 			.then((result: any) => {
 				result = this.responseAfterFun(result);
 				return Promise.resolve(result);
@@ -69,9 +81,11 @@ class Request {
 		}
 
 		// 确保使用JSON格式发送数据
+		const token = this.userStore.userInfo.token;
 		const requestOptions = {
 			header: {
-				'Content-Type': 'application/json'
+				'Content-Type': 'application/json',
+				...(token ? { 'Authorization': `Bearer ${token}` } : {})
 			}
 		};
 

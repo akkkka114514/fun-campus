@@ -29,13 +29,11 @@ public class PortalUserAddForm{
     @NotNull(message = "性别 不能为空")
     private Boolean gender;
 
-    @Schema(description = "学校名", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotBlank(message = "学校名 不能为空")
-    private String schoolName;
+    @Schema(description = "学校id", requiredMode = Schema.RequiredMode.REQUIRED)
+    private Long schoolId;
 
-    @Schema(description = "学院名", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotBlank(message = "学院名 不能为空")
-    private String collegeName;
+    @Schema(description = "学院id", requiredMode = Schema.RequiredMode.REQUIRED)
+    private Long collegeId;
     @Schema(description = "是否已删除", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "是否已删除 不能为空")
     private Boolean deletedFlag;

@@ -169,6 +169,13 @@ class themeColors {
 		
 		//当前颜色对象。
 		let nowColor = { ...this.colors[index] };
+		// 添加防护检查，确保 nowColor 和其 rgba 属性存在
+		if (!nowColor || !nowColor.rgba) {
+			console.error('Invalid color object or missing rgba property:', nowColor);
+			// 使用默认颜色作为后备
+			nowColor = this.getColor('primary');
+		}
+		
 		config.borderWidth = isNaN(parseInt(String(config['borderWidth']))) ? 0 : config['borderWidth']??0;
 		config.borderStyle = config['borderStyle'] ? config['borderStyle'] : 'solid';
 		config.borderColor = config['borderColor'] || '';
@@ -198,22 +205,29 @@ class themeColors {
 		/**该颜色在人眼中属于深，还是浅，以适配文本色 */
 		let isDarkColor = false;
 
-		isDarkColor = isDarkColorFun(nowColor.rgba.r, nowColor.rgba.g, nowColor.rgba.b)
-		//黑
-		if (nowColor.hsla.h == 0 && nowColor.hsla.s == 0 && nowColor.hsla.l == 0) {
-			isBlack = true;
-		}
-		//白
-		if (nowColor.hsla.h == 0 && nowColor.hsla.s == 0 && nowColor.hsla.l == 100) {
-			isWhite = true;
-		}
-		//灰
-		if (nowColor.hsla.h == 0 && nowColor.hsla.s == 0 && nowColor.hsla.l < 100) {
-			isGrey = true;
-		}
-		//黑或者白
-		if (nowColor.hsla.h == 0 && nowColor.hsla.s == 0) {
-			isBlackAndWhite = true;
+		// 添加防护检查，确保 nowColor.rgba 存在后再访问其属性
+		if (nowColor && nowColor.rgba) {
+			isDarkColor = isDarkColorFun(nowColor.rgba.r, nowColor.rgba.g, nowColor.rgba.b)
+			//黑
+			if (nowColor.hsla.h == 0 && nowColor.hsla.s == 0 && nowColor.hsla.l == 0) {
+				isBlack = true;
+			}
+			//白
+			if (nowColor.hsla.h == 0 && nowColor.hsla.s == 0 && nowColor.hsla.l == 100) {
+				isWhite = true;
+			}
+			//灰
+			if (nowColor.hsla.h == 0 && nowColor.hsla.s == 0 && nowColor.hsla.l < 100) {
+				isGrey = true;
+			}
+			//黑或者白
+			if (nowColor.hsla.h == 0 && nowColor.hsla.s == 0) {
+				isBlackAndWhite = true;
+			}
+		} else {
+			console.error('Invalid color object: missing rgba property');
+			// 使用默认值
+			isDarkColor = false;
 		}
 
 		let css: cssstyle = {};

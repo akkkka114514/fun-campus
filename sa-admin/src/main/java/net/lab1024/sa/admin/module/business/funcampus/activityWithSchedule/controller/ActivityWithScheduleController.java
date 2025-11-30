@@ -1,20 +1,22 @@
 package net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
+import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.constant.IndexActivityPageConst;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleAddForm;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleQueryForm;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleUpdateForm;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityWithScheduleVO;
+import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.vo.IndexActivityVO;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.service.ActivityWithScheduleService;
+import net.lab1024.sa.base.common.code.UserErrorCode;
 import net.lab1024.sa.base.common.domain.PageResult;
 import net.lab1024.sa.base.common.domain.ResponseDTO;
 import net.lab1024.sa.base.module.support.repeatsubmit.annoation.RepeatSubmit;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -34,36 +36,65 @@ public class ActivityWithScheduleController {
     private ActivityWithScheduleService activityWithScheduleService;
 
     @Operation(summary = "添加活动和时间表 @author akkkka114514")
-    @PostMapping("/activityWithSchedule/add")
+    @PostMapping("/activity/add")
     @RepeatSubmit(intervalMilliSecond = 3 * 1000 )
     public ResponseDTO<String> addActivityWithSchedule(@RequestBody @Valid ActivityWithScheduleAddForm addForm) {
         return activityWithScheduleService.addActivityWithSchedule(addForm);
     }
 
     @Operation(summary = "删除活动和时间表 @author akkkka114514")
-    @PostMapping("/activityWithSchedule/delete")
+    @PostMapping("/activity/delete")
     @RepeatSubmit(intervalMilliSecond = 3 * 1000 )
     public ResponseDTO<String> deleteActivityWithSchedule(@RequestBody Long activityId) {
         return activityWithScheduleService.deleteActivityWithSchedule(activityId);
     }
 
     @Operation(summary = "更新活动和时间表 @author akkkka114514")
-    @PostMapping("/activityWithSchedule/update")
+    @PostMapping("/activity/update")
     @RepeatSubmit(intervalMilliSecond = 3 * 1000 )
     public ResponseDTO<String> updateActivityWithSchedule(@RequestBody @Valid ActivityWithScheduleUpdateForm updateForm) {
         return activityWithScheduleService.updateActivityWithSchedule(updateForm);
     }
 
     @Operation(summary = "查询活动和时间表 @author akkkka114514")
-    @PostMapping("/activityWithSchedule/query")
+    @PostMapping("/activity/query")
     public ResponseDTO<PageResult<ActivityWithScheduleVO>> queryActivityWithSchedule(@RequestBody @Valid ActivityWithScheduleQueryForm queryForm) {
         return activityWithScheduleService.queryActivityWithSchedule(queryForm);
     }
 
     @Operation(summary = "批量删除活动和时间表 @author akkkka114514")
-    @PostMapping("/activityWithSchedule/batchDelete")
+    @PostMapping("/activity/batchDelete")
     @RepeatSubmit(intervalMilliSecond = 3 * 1000 )
     public ResponseDTO<String> batchDelete(@RequestBody List<Long> ids) {
         return activityWithScheduleService.batchDelete(ids);
+    }
+
+    @Operation(summary = "首页活动列表 @author akkkka114514")
+    @GetMapping("/index")
+    public ResponseDTO<IndexActivityVO> index(@RequestParam Integer activeActivityPage,
+            @RequestParam Long pageNum, @RequestParam Long pageSize) {
+        if(activeActivityPage == null){
+            return ResponseDTO.error(UserErrorCode.PARAM_ERROR);
+        }
+        if(!activeActivityPage.equals(IndexActivityPageConst.MY_SCHOOL_ACTIVITY) &&
+                !activeActivityPage.equals(IndexActivityPageConst.GLOBAL_ACTIVITY) ){
+            return ResponseDTO.error(UserErrorCode.PARAM_ERROR);
+        }
+        if(pageNum == null || pageNum < 1|| pageSize == null || pageSize < 1){
+            return ResponseDTO.error(UserErrorCode.PARAM_ERROR);
+        }
+        Page<ActivityWithScheduleVO> mySchool;
+        Page<ActivityWithScheduleVO> global;
+        if(activeActivityPage.equals(IndexActivityPageConst.MY_SCHOOL_ACTIVITY)){
+            mySchool = activityWithScheduleService.notStartAndPendingEnrollActivityPage(pageNum, pageSize).getData();
+            global =activityWithScheduleService.notStartAndPendingEnrollActivityPageGlobal(1L, pageSize).getData();
+        }else {
+            mySchool= activityWithScheduleService.notStartAndPendingEnrollActivityPage(1L, pageSize).getData();
+            global =activityWithScheduleService.notStartAndPendingEnrollActivityPageGlobal(pageNum, pageSize).getData();
+        }
+        IndexActivityVO indexActivityVO = new IndexActivityVO();
+        indexActivityVO.setMySchool(mySchool);
+        indexActivityVO.setGlobal(global);
+        return ResponseDTO.ok(indexActivityVO);
     }
 }

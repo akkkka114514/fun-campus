@@ -39,4 +39,8 @@ public interface ActivityDao extends BaseMapper<ActivityEntity> {
     Page<ActivityWithScheduleVO> getByIds(List<Long> ids);
 
     ActivityWithScheduleVO getActivityWithScheduleById(Long id);
+
+    Page<ActivityWithScheduleVO> notStartAndPendingEnrollActivityGlobal(Page<?> page);
+
+    Page<ActivityWithScheduleVO> notStartAndPendingEnrollActivity(Page<?> page, Long schoolId);
 }

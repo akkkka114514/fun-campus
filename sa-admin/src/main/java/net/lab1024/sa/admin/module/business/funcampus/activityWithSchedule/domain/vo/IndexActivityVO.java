@@ -10,6 +10,6 @@ import lombok.Data;
  */
 @Data
 public class IndexActivityVO {
-    private Page<ActivityWithScheduleVO> mySchool;
-    private Page<ActivityWithScheduleVO> global;
+    private Page<ActivityWithScheduleVO> mySchoolActivities;
+    private Page<ActivityWithScheduleVO> globalActivities;
 }

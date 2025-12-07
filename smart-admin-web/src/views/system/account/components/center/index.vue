@@ -77,8 +77,6 @@
 <script setup>
   import { onMounted, reactive, ref } from 'vue';
   import { regular } from '/@/constants/regular-const.js';
-  import DepartmentTreeSelect from '/@/components/system/department-tree-select/index.vue';
-  import PositionSelect from '/@/components/system/position-select/index.vue';
   import SmartEnumSelect from '/@/components/framework/smart-enum-select/index.vue';
   import { loginApi } from '/@/api/system/login-api.js';
   import { useUserStore } from '/@/store/modules/system/user.js';

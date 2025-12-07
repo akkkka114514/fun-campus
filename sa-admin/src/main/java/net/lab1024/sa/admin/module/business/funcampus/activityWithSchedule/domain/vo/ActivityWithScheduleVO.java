@@ -55,12 +55,4 @@ public class ActivityWithScheduleVO {
     @Schema(description = "签到结束时间")
     private LocalDateTime signinEndTime;
 
-    @Schema(description = "创建时间")
-    private LocalDateTime createTime;
-
-    @Schema(description = "修改时间")
-    private LocalDateTime updateTime;
-
-    @Schema(description = "是否已删除")
-    private Boolean deletedFlag;
 }

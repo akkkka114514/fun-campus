@@ -12,13 +12,12 @@
           <tm-avatar
               :size="120"
               :round="30"
-              :img="userStore.userInfo.avatar || defaultAvatar"
               class="user-avatar"
           ></tm-avatar>
 
           <view class="user-details" @click="openLink('pages/user/edit')">
-            <view class="username">{{ userStore.userInfo.nickname || '未设置昵称' }}</view>
-            <view class="user-id">ID: {{ userStore.userInfo.id || '未知' }}</view>
+            <view class="username">{{ '未设置昵称' }}</view>
+            <view class="user-id">ID: {{ '未知' }}</view>
             <tm-icon name="tmicon-edit" :font-size="24" color="#ffffff" class="edit-icon" @click="openLink('pages/user/edit')"></tm-icon>
           </view>
         </view>
@@ -140,10 +139,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useUserStore } from '@/stores/user'
 import { openLink } from '@/common/tools'
 
-const userStore = useUserStore()
 const defaultAvatar = '/static/default-avatar.png'
 
 // 统计数据（实际项目中应该从接口获取）
@@ -160,7 +157,6 @@ const handleLogout = () => {
     content: '确定要退出登录吗？',
     success: function (res) {
       if (res.confirm) {
-        userStore.logout()
         openLink('pages/login/login')
       }
     }

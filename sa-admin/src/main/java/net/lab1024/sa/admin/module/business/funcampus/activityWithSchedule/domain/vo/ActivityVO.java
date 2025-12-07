@@ -41,13 +41,4 @@ public class ActivityVO {
     @Schema(description = "活动所属组织")
     private Long activityOrganizerId;
 
-    @Schema(description = "是否已删除")
-    private Boolean deletedFlag;
-
-    @Schema(description = "创建时间")
-    private LocalDateTime createTime;
-
-    @Schema(description = "修改时间")
-    private LocalDateTime updateTime;
-
 }

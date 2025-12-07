@@ -338,4 +338,6 @@ public class ActivityWithScheduleService {
         Page<ActivityWithScheduleVO> result =activityDao.notStartAndPendingEnrollActivity(page,schoolId);
         return ResponseDTO.ok(result);
     }
+
+    public
 }

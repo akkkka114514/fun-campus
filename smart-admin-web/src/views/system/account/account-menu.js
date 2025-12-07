@@ -21,11 +21,6 @@ export const ACCOUNT_MENU = {
     menuName: '我的消息',
     components: markRaw(defineAsyncComponent(() => import('./components/message/index.vue'))),
   },
-  NOTICE: {
-    menuId: 'notice',
-    menuName: '通知公告',
-    components: markRaw(defineAsyncComponent(() => import('./components/notice/index.vue'))),
-  },
   LOGIN_LOG: {
     menuId: 'login-log',
     menuName: '登录日志',

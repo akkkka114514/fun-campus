@@ -73,4 +73,16 @@ public class ActivityWithScheduleAddForm {
     @NotNull(message = "签到结束时间 不能为空")
     @Future
     private LocalDateTime signinEndTime;
+
+    private String description;
+
+    private boolean enrollNeedReview;
+
+    private boolean needSignOut;
+
+    private String attachment;
+
+    private Long category;
+
+    private String coverImg;
 }

@@ -1,16 +1,21 @@
 <template>
-  <tm-app color="white">
+  <tm-app>
     <view class="login-container">
+      <iframe
+          src="/activity/src/components/special-effect/particle-matrix.html"
+          class="background-iframe"
+          frameborder="0"
+      ></iframe>
       <view class="login-box">
         <view class="title text-center text-size-xl text-weight-b mb-50">欢迎登录</view>
-        <tm-form class="login-form" @submit="usernamePasswordLogin" ref="form" v-model="loginForm" :label-width="0" :transprent=true>
+        <tm-form class="login-form" @submit="login" ref="form" v-model="loginForm" :label-width="0" :transprent=true>
           <tm-form-item required field="username" :rules="[{ required: true, message: '请输入账号' }]">
-            <tm-input 
-              :inputPadding="[30, 0]" 
-              :round="26" 
-              prefix="tmicon-account" 
-              v-model.lazy="loginForm.username" 
-              placeholder="请输入账号" 
+            <tm-input
+              :inputPadding="[30, 0]"
+              :round="26"
+              prefix="tmicon-account"
+              v-model.lazy="loginForm.username"
+              placeholder="请输入账号"
               :showBottomBotder="false"
               clearable
               class="custom-input"
@@ -20,13 +25,13 @@
             </tm-input>
           </tm-form-item>
           <tm-form-item required field="password" :rules="[{ required: true, message: '请输入密码' }]">
-            <tm-input 
-              :inputPadding="[30, 0]" 
-              type="password" 
-              :round="26" 
-              prefix="tmicon-lock" 
-              v-model.lazy="loginForm.password" 
-              placeholder="请输入密码" 
+            <tm-input
+              :inputPadding="[30, 0]"
+              type="password"
+              :round="26"
+              prefix="tmicon-lock"
+              v-model.lazy="loginForm.password"
+              placeholder="请输入密码"
               :showBottomBotder="false"
               clearable
               class="custom-input"
@@ -50,7 +55,7 @@
             >
             </tm-input>
             <image
-                :src="captchaBase64Image"
+                :src="captchaImage"
                 class="captcha-image"
                 @click="captcha"
             >
@@ -59,13 +64,13 @@
         </tm-form-item>
 
           <tm-form-item :border="false">
-            <tm-button 
-              :margin="[20]" 
-              :shadow="0" 
-              :round="26" 
-              size="normal" 
-              form-type="submit" 
-              block 
+            <tm-button
+              :margin="[20]"
+              :shadow="0"
+              :round="26"
+              size="normal"
+              form-type="submit"
+              block
               label="立即登录"
               type="primary"
               class="login-button"
@@ -84,10 +89,10 @@
         <view class="flex-center pt-30">
           <view>
             <!-- 短信验证码 -->
-            <tm-avatar 
-              :round="25" 
-              :size="60" 
-              icon="tmicon-bell" 
+            <tm-avatar
+              :round="25"
+              :size="60"
+              icon="tmicon-bell"
               @click="openLink('pages/login/mobile')"
               class="social-icon"
             ></tm-avatar>
@@ -96,12 +101,11 @@
           <!-- #ifdef H5 -->
           <view class="ml-50" v-if="isWeixin">
             <!-- 公众号 -->
-            <tm-avatar 
-              :round="25" 
-              :size="60" 
-              color="#38b434" 
-              icon="tmicon-weixin" 
-              @click="wechatLogin"
+            <tm-avatar
+              :round="25"
+              :size="60"
+              color="#38b434"
+              icon="tmicon-weixin"
               class="social-icon"
             ></tm-avatar>
           </view>
@@ -110,11 +114,11 @@
           <!-- #ifdef MP-WEIXIN -->
           <view class="ml-50">
             <!-- 小程序 -->
-            <tm-avatar 
-              :round="25" 
-              :size="60" 
-              color="#38b434" 
-              icon="tmicon-weixin" 
+            <tm-avatar
+              :round="25"
+              :size="60"
+              color="#38b434"
+              icon="tmicon-weixin"
               @click="showWin = true"
               class="social-icon"
             ></tm-avatar>
@@ -122,17 +126,6 @@
           <!-- #endif -->
 
           <!-- #ifdef APP-PLUS -->
-          <view class="ml-50" v-if="isShowMobileLogin">
-            <!-- 手机一键登录 -->
-            <tm-avatar 
-              :round="25" 
-              :size="60" 
-              color="#f08d49" 
-              icon="tmicon-md-phone-portrait" 
-              @click="mobileLogin"
-              class="social-icon"
-            ></tm-avatar>
-          </view>
           <!-- #endif -->
         </view>
       </view>
@@ -157,7 +150,7 @@
           </view>
         </view>
         <view class="mt-50 pt-30 px-30">
-          <tm-button :margin="[10]" :shadow="0" :round="20" size="small" block label="立即登录" @click="usernamePasswordLogin"></tm-button>
+          <tm-button :margin="[10]" :shadow="0" :round="20" size="small" block label="立即登录" @click="login"></tm-button>
         </view>
       </view>
     </tm-drawer>
@@ -166,14 +159,14 @@
 </template>
 
 <script lang="ts" setup>
+import axios, {AxiosRequestConfig} from "axios";
 import { ref, computed, onMounted } from 'vue';
-import { login, getCaptcha } from '@/common';
-import { useAppStore } from '@/stores/app';
-import { useUserStore } from '@/stores/user';
 import { openLink } from '@/common/tools';
 import { onLoad } from '@dcloudio/uni-app';
-const userStore = useUserStore();
-let captchaBase64Image = ref('static/captcha-placeholder.png'); // 默认占位图
+import { getCaptcha, usernamePasswordLogin } from "@/common/Api";
+// 移除了ParticleMatrix的导入
+
+let captchaImage = ref("");
 const loginForm = ref({
   username: '',
   password: '',
@@ -220,30 +213,6 @@ async function uploadAvatar() {
 function inputBlur(e: any) {
   nickname.value = e.detail.value;
 }
-function toAuthLogin() {
-  uni.login({
-    provider: 'weixin', //使用微信登录
-    success: function (res) {
-      if (res.code) {
-        login({
-          code: res.code,
-          nickname: nickname.value,
-          avatar: avatarUrl.value,
-          loginType: 'mpWechat',
-        }).then(res => {
-          if (res.code === 1000) {
-            userStore.setUserInfo(res.data);
-            uni.reLaunch({
-              url: '/pages/index/index',
-            });
-          } else {
-            uni.$tm.u.toast(res.message);
-          }
-        });
-      }
-    }
-  });
-}
 // #endif
 // #ifdef H5
 const isWeixin = computed(() => {
@@ -251,97 +220,41 @@ const isWeixin = computed(() => {
   return window.navigator.userAgent.toLowerCase().includes('micromessenger');
 });
 
-function wechatLogin() {
-  // 微信登录
-  console.log('微信登录');
-  login({
-    url: window.location.href,
-    loginType: 'wechat',
-  }).then(res => {
-    console.log(res);
-    if (res.code === 1000) {
-      window.location.href = res.data;
-    } else {
-      uni.$tm.u.toast(res.message);
-    }
-  });
-}
 // #endif
 // #ifdef APP-PLUS
-const isShowMobileLogin = ref(false);
-function mobileLogin() {
-  uni.login({
-	provider: 'univerify',
-	univerifyStyle: { // 自定义登录框样式
-    //参考`univerifyStyle 数据结构`
-  },
-	success(res:any){ // 登录成功
-		console.log(res.authResult);  // {openid:'登录授权唯一标识',access_token:'接口返回的 token'}
-    login({
-      openid: res.authResult.openid,
-      access_token: res.authResult.access_token,
-      loginType: 'mobile',
-    }).then(res => {
-      if (res.code === 1000) {
-        uni.closeAuthView();
-        userStore.setUserInfo(res.data);
-        uni.reLaunch({
-          url: '/pages/index/index',
-        });
-      } else {
-        uni.$tm.u.toast(res.message);
-      }
-    });
-	},
-	fail(res){  // 登录失败
-		console.log(res)
-	}
-})
-
-}
 // #endif
 
 function captcha() {
-  getCaptcha().then(res => {
-    // 设置验证码图片URL
-    if (res.code === 0 && res.data) {
-      captchaBase64Image.value = res.data.captchaBase64Image;
-      loginForm.value.captchaUuid = res.data.captchaUuid;
-    } else {
-      console.log('获取验证码失败:', res.message || res);
-      uni.$tm.u.toast(res.message || '获取验证码失败');
+  getCaptcha().then(res=>{
+    if(res.data.code===0){
+      captchaImage.value = res.data.data.captchaBase64Image;
+      loginForm.value.captchaUuid = res.data.data.captchaUuid;
+    }else{
+      uni.$tm.u.toast(res.data.message);
     }
-  }).catch(err => {
-    console.error('获取验证码异常:', err);
-    uni.$tm.u.toast('获取验证码失败');
-  });
+  })
 }
 
-function usernamePasswordLogin(){
-  console.log(loginForm)
-  login({
-    username: loginForm.value.username,
-    password: loginForm.value.password,
-    emailCode: loginForm.value.emailCode,
-    loginDevice: loginForm.value.loginDevice,
-    captchaCode: loginForm.value.captchaCode,
-    captchaUuid: loginForm.value.captchaUuid
-  }).then(res => {
-    console.log(res)
-    if (res.code === 0) {
-      userStore.setUserInfo(res.data);
+function login(){
+  usernamePasswordLogin(loginForm.value.username,
+      loginForm.value.password,
+      loginForm.value.loginDevice,
+      loginForm.value.emailCode,
+      loginForm.value.captchaCode,
+      loginForm.value.captchaUuid)
+  .then(res=>{
+    console.log(res.data.data)
+    if (res.data.code===0){
+      uni.setStorage({key:'userInfo', data:res.data.data})
       uni.reLaunch({
-        url: '/pages/index/index',
+        url: '/pages/index/index'
       });
-    } else {
-      uni.$tm.u.toast(res.message);
-      captcha();
+    }else {
+      uni.$tm.u.toast(res.data.message);
     }
-  }).catch(err => {
-    console.error('登录请求出错:', err);
-    uni.$tm.u.toast('登录请求失败');
-  });
+  })
 }
+
 function getDeviceInfo() : void {
   try {
     const info = uni.getSystemInfoSync();
@@ -363,37 +276,8 @@ onMounted(() => {
 
 onLoad((e: any) => {
   // #ifdef H5
-  if (e.code && e.state) {
-    // 微信登录
-    console.log(e);
-    login({
-      code: e.code,
-      state: e.state,
-      loginType: 'wechat',
-    }).then(res => {
-      console.log(res);
-      if (res.code === 1000) {
-        userStore.setUserInfo(res.data);
-        uni.reLaunch({
-          url: '/pages/index/index',
-        });
-      } else {
-        uni.$tm.u.toast(res.message);
-      }
-    });
-  }
   // #endif
   // #ifdef APP-PLUS
-  uni.preLogin({
-    provider: 'univerify',
-    success() {  //预登录成功
-      isShowMobileLogin.value = true;
-    },
-    fail(err) {  // 预登录失败
-      isShowMobileLogin.value = false;
-      console.log(err);
-    }
-  })
   // #endif
 });
 </script>
@@ -423,32 +307,27 @@ onLoad((e: any) => {
   align-items: center;
   min-height: 100vh;
   padding: 40rpx;
-  background: linear-gradient(135deg, #3c8af8 0%, #2962ff 100%);
-  
-  &::before {
-    content: "";
+  .background-iframe {
     position: absolute;
-    top: 0;
-    left: 0;
     width: 100%;
     height: 100%;
-    background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 60%);
+    border: none;
+    z-index: 1;
   }
-
   .login-box {
     width: 100%;
     max-width: 750rpx;
     background: rgba(255, 255, 255, 0.95);
     border-radius: 30rpx;
-    box-shadow: 0 20rpx 50rpx rgba(0,0,0,0.15), 
+    box-shadow: 0 20rpx 50rpx rgba(0,0,0,0.15),
                 inset 0 1px 0 rgba(255,255,255,0.5);
     padding: 70rpx 60rpx;
     margin-bottom: 50rpx;
     border: 1px solid rgba(230, 230, 230, 0.8);
     backdrop-filter: blur(10rpx);
     position: relative;
-    z-index: 2;
-      
+    z-index: 10;
+
       .title {
         margin-bottom: 60rpx;
         color: #222;
@@ -456,7 +335,7 @@ onLoad((e: any) => {
         letter-spacing: 1px;
         position: relative;
         font-size: 36rpx;
-        
+
         &::after {
           content: "";
           position: absolute;
@@ -468,24 +347,24 @@ onLoad((e: any) => {
           border-radius: 3rpx;
         }
       }
-      
+
       .login-tips {
         color: #3c8af8;
         font-size: 26rpx;
         margin-top: 40rpx;
         display: flex;
         justify-content: space-between;
-        
+
         .tip-link {
           transition: all 0.3s ease;
           position: relative;
           padding: 8rpx 0;
-          
+
           &:hover {
             color: #2962ff;
             transform: translateY(-3rpx);
           }
-          
+
           &::after {
             content: "";
             position: absolute;
@@ -496,23 +375,25 @@ onLoad((e: any) => {
             background: #2962ff;
             transition: width 0.3s ease;
           }
-          
+
           &:hover::after {
             width: 100%;
           }
         }
       }
     }
-  
+
   .footer {
     width: 100%;
     max-width: 750rpx;
     text-align: center;
-    
+    z-index: 2;
+    position: relative;
+
     .tm-divider {
       margin-bottom: 30rpx;
     }
-    
+
     .flex-center {
       display: flex;
       justify-content: center;

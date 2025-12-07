@@ -5,7 +5,7 @@
       width: _width + 'px',
       height: _totalBarHeight + 'px',
       transform: `translateY(${props.bottom}rpx)`,
-	  zIndex:props.zIndex,
+      zIndex:props.zIndex,
       display: 'flex !important',
       visibility: 'visible !important'
     }"
@@ -25,9 +25,9 @@
         :border="0"
         borderDirection="top"
         :text="props.text"
-        :transprent="false"
-        :linear="props.linear"
-        :linearDeep="props.linearDeep"
+        :transprent="props.transprent"
+        :linear="props.dark ? '' : 'linear'"
+        :linearDeep="props.dark ? '' : 'accent'"
         :margin="[0, 0]"
         :padding="[0, 0]"
         :height="_BarHeight"
@@ -82,7 +82,7 @@ const props = defineProps({
   },
   color: {
     type: [String],
-    default: "white",
+    default: "#1a1a1a",
   },
   text: {
     type: [Boolean],
@@ -94,7 +94,7 @@ const props = defineProps({
   },
   shadow: {
     type: [Number],
-    default: 0,
+    default: 3,
   },
   //如果为0取当前窗口宽度。
   width: {

@@ -59,11 +59,6 @@ import static cn.dev33.satoken.SaManager.log;
 @Service
 public class PortalLoginService {
 
-    /**
-     * 万能密码的 sa token loginId 前缀
-     */
-    private static final String SUPER_PASSWORD_LOGIN_ID_PREFIX = "S";
-
     @Resource
     private PortalUserService portalUserService;
 
@@ -289,13 +284,7 @@ public class PortalLoginService {
         }
 
         try {
-            // 如果是 万能密码 登录的用户
-            String employeeIdStr = null;
-            if (loginId.startsWith(SUPER_PASSWORD_LOGIN_ID_PREFIX)) {
-                employeeIdStr = loginId.split(StringConst.COLON)[2];
-            } else {
-                employeeIdStr = loginId.substring(2);
-            }
+            String employeeIdStr = loginId.substring(2);
 
             Long userId = Long.parseLong(employeeIdStr);
             log.debug("PortalLoginService.getPortalUserIdByLoginId completed, userId={}", userId);

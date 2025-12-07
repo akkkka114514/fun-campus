@@ -70,7 +70,7 @@ public class ActivityWithScheduleController {
     }
 
     @Operation(summary = "首页活动列表 @author akkkka114514")
-    @GetMapping("/index")
+    @GetMapping("/portal/homeData")
     public ResponseDTO<IndexActivityVO> index(@RequestParam Integer activeActivityPage,
             @RequestParam Long pageNum, @RequestParam Long pageSize) {
         if(activeActivityPage == null){
@@ -83,18 +83,24 @@ public class ActivityWithScheduleController {
         if(pageNum == null || pageNum < 1|| pageSize == null || pageSize < 1){
             return ResponseDTO.error(UserErrorCode.PARAM_ERROR);
         }
-        Page<ActivityWithScheduleVO> mySchool;
-        Page<ActivityWithScheduleVO> global;
+        Page<ActivityWithScheduleVO> mySchoolActivities;
+        Page<ActivityWithScheduleVO> globalActivities;
         if(activeActivityPage.equals(IndexActivityPageConst.MY_SCHOOL_ACTIVITY)){
-            mySchool = activityWithScheduleService.notStartAndPendingEnrollActivityPage(pageNum, pageSize).getData();
-            global =activityWithScheduleService.notStartAndPendingEnrollActivityPageGlobal(1L, pageSize).getData();
+            mySchoolActivities = activityWithScheduleService.notStartAndPendingEnrollActivityPage(pageNum, pageSize).getData();
+            globalActivities =activityWithScheduleService.notStartAndPendingEnrollActivityPageGlobal(1L, pageSize).getData();
         }else {
-            mySchool= activityWithScheduleService.notStartAndPendingEnrollActivityPage(1L, pageSize).getData();
-            global =activityWithScheduleService.notStartAndPendingEnrollActivityPageGlobal(pageNum, pageSize).getData();
+            mySchoolActivities= activityWithScheduleService.notStartAndPendingEnrollActivityPage(1L, pageSize).getData();
+            globalActivities =activityWithScheduleService.notStartAndPendingEnrollActivityPageGlobal(pageNum, pageSize).getData();
         }
         IndexActivityVO indexActivityVO = new IndexActivityVO();
-        indexActivityVO.setMySchool(mySchool);
-        indexActivityVO.setGlobal(global);
+        indexActivityVO.setMySchoolActivities(mySchoolActivities);
+        indexActivityVO.setGlobalActivities(globalActivities);
         return ResponseDTO.ok(indexActivityVO);
+    }
+
+    @Operation(description = "活动详情页 @author akkkka114514")
+    @GetMapping("portal/activity/detail")
+    public ResponseDTO<ActivityWithScheduleVO> detail(@RequestParam Long activityId) {
+        return activityWithScheduleService.detail(activityId);
     }
 }

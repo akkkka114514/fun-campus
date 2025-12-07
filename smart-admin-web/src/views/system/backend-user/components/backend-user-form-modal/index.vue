@@ -55,11 +55,8 @@
   import { nextTick, reactive, ref } from 'vue';
   import { backendUserApi } from '/src/api/system/backend-user-api';
   import { roleApi } from '/@/api/system/role-api';
-  import DepartmentTreeSelect from '/@/components/system/department-tree-select/index.vue';
   import SmartEnumSelect from '/@/components/framework/smart-enum-select/index.vue';
-  import PositionSelect from '/@/components/system/position-select/index.vue';
   import { GENDER_ENUM } from '/@/constants/common-const';
-  import { regular } from '/@/constants/regular-const';
   import { SmartLoading } from '/@/components/framework/smart-loading';
   import { smartSentry } from '/@/lib/smart-sentry';
   // ----------------------- 以下是字段定义 emits props ---------------------

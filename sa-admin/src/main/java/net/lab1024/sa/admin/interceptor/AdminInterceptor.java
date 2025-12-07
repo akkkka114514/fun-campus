@@ -8,12 +8,16 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import net.lab1024.sa.admin.module.business.funcampus.portalLogin.domain.RequestPortalUser;
+import net.lab1024.sa.admin.module.business.funcampus.portalLogin.service.PortalLoginService;
 import net.lab1024.sa.admin.module.system.login.domain.RequestBackendUser;
 import net.lab1024.sa.admin.module.system.login.service.LoginService;
 import net.lab1024.sa.base.common.annoation.NoNeedLogin;
 import net.lab1024.sa.base.common.code.SystemErrorCode;
 import net.lab1024.sa.base.common.code.UserErrorCode;
+import net.lab1024.sa.base.common.domain.RequestUser;
 import net.lab1024.sa.base.common.domain.ResponseDTO;
+import net.lab1024.sa.base.common.enumeration.UserTypeEnum;
 import net.lab1024.sa.base.common.util.SmartRequestUtil;
 import net.lab1024.sa.base.common.util.SmartResponseUtil;
 import org.springframework.http.HttpMethod;
@@ -39,6 +43,8 @@ import java.lang.reflect.Method;
 public class AdminInterceptor implements HandlerInterceptor {
     @Resource
     private LoginService loginService;
+    @Resource
+    private PortalLoginService portalLoginService;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -58,31 +64,38 @@ public class AdminInterceptor implements HandlerInterceptor {
             // --------------- 第一步： 根据token 获取用户 ---------------
 
             String tokenValue = StpUtil.getTokenValue();
+
             String loginId = (String) StpUtil.getLoginIdByToken(tokenValue);
-            RequestBackendUser requestBackendUser = loginService.getLoginBackendUser(loginId, request);
+            RequestUser requestUser=null;
+            String url=request.getRequestURL().toString();
+            if(url.contains("portal")){
+                requestUser = portalLoginService.getLoginPortalUser(loginId, request);
+            }else if(url.contains("backend")) {
+                requestUser = loginService.getLoginBackendUser(loginId, request);
+            }
 
             // --------------- 第二步： 校验 登录 ---------------
 
             Method method = ((HandlerMethod) handler).getMethod();
             NoNeedLogin noNeedLogin = ((HandlerMethod) handler).getMethodAnnotation(NoNeedLogin.class);
             if (noNeedLogin != null) {
-                updateActiveTimeout(requestBackendUser);
-                SmartRequestUtil.setRequestUser(requestBackendUser);
+                updateActiveTimeout(requestUser);
+                SmartRequestUtil.setRequestUser(requestUser);
                 return true;
             }
 
-            if (requestBackendUser == null) {
+            if (requestUser == null) {
                 SmartResponseUtil.write(response, ResponseDTO.error(UserErrorCode.LOGIN_STATE_INVALID));
                 return false;
             }
 
             // 更新活跃
-            updateActiveTimeout(requestBackendUser);
+            updateActiveTimeout(requestUser);
 
 
             // --------------- 第三步： 校验 权限 ---------------
 
-            SmartRequestUtil.setRequestUser(requestBackendUser);
+            SmartRequestUtil.setRequestUser(requestUser);
             if (SaAnnotationStrategy.instance.isAnnotationPresent.apply(method, SaIgnore.class)) {
                 return true;
             }
@@ -119,8 +132,8 @@ public class AdminInterceptor implements HandlerInterceptor {
     /**
      * 更新活跃时间
      */
-    private void updateActiveTimeout(RequestBackendUser requestBackendUser) {
-        if (requestBackendUser == null) {
+    private void updateActiveTimeout(RequestUser requestUser) {
+        if (requestUser == null) {
             return;
         }
         StpUtil.updateLastActiveToNow();

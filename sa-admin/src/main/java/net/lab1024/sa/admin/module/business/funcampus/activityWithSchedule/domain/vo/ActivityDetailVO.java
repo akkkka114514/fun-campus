@@ -1,28 +1,24 @@
-package net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.entity;
+package net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.vo;
 
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.Data;
+import net.lab1024.sa.admin.module.business.funcampus.portalUser.domain.vo.PortalUserVO;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import lombok.Data;
 
 /**
- * 活动管理 实体类
- *
- * @Author akkkka114514
- * @Date 2025-09-04 13:41:42
- * @Copyright akkkka114514
+ * author:akkkka114514
+ * create at 2025-12-07 16:01
  */
-
 @Data
-@TableName("activity")
-public class ActivityEntity {
+public class ActivityDetailVO {
 
     /**
-     * 主键
+     * 活动主键
      */
     @TableId(type = IdType.AUTO)
     private Long id;
@@ -52,38 +48,14 @@ public class ActivityEntity {
      */
     private Integer enrollNumLimit;
 
-    /**
-     * 活动所属学校
-     */
-    private Long activitySchoolId;
-
-    /**
-     * 活动所属组织
-     */
-    private Long activityOrganizerId;
-
-    /**
-     * 是否删除
-     */
-    private Boolean deletedFlag;
-
-    /**
-     * 创建时间
-     */
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createTime;
-
-    /**
-     * 修改时间
-     */
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updateTime;
-
-
     private String description;
-
+    /**
+    * 报名需审核
+    */
     private boolean enrollNeedReview;
-
+    /**
+    * 需要签退
+    */
     private boolean needSignOut;
 
     private String attachment;
@@ -91,4 +63,30 @@ public class ActivityEntity {
     private Long category;
 
     private String coverImg;
+    /**
+    * 报名的用户
+    */
+    private PortalUserVO[] enrollUsers;
+    /**
+    * 报名人数
+    */
+    private Integer enrollNum;
+    /**
+    * 签到人数
+    */
+    private Integer signInNum;
+    /**
+    * 没有签到的用户
+    */
+    private PortalUserVO[] notSignInUsers;
+
+    /**
+    * 允许报名的年级
+    */
+    private Integer[] canEnrollGrade;
+
+    /**
+    * 允许报名的学院
+    */
+    private Integer[] canEnrollCollege;
 }

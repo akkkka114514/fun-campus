@@ -14,7 +14,13 @@
         activity.activity_organizer_id,
         activity.deleted_flag,
         activity.create_time,
-        activity.update_time
+        activity.update_time,
+        activity.description,
+        activity.enroll_need_review,
+        activity.need_sign_out,
+        activity.attachment,
+        activity.category,
+        activity.cover_img
     </sql>
 
     <resultMap id="ActivityWithScheduleVO" type="net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityWithScheduleVO">
@@ -141,9 +147,9 @@
         WHERE
             activity.status = 0
             OR activity.status = 1
-            AND activivty.deleted_flag = 0;
+            AND activity.deleted_flag = 0
     </select>
-    <select id="notStartAndPendingEnrollActivityGlobal" resultMap="ActivityWithScheduleVO">
+    <select id="notStartAndPendingEnrollActivity" resultMap="ActivityWithScheduleVO">
         select
             <include refid="base_columns"/>,
             activity_schedule.enroll_start_time,

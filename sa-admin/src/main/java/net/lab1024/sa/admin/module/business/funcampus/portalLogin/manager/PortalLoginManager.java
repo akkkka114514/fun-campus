@@ -56,7 +56,7 @@ public class PortalLoginManager {
     public RequestPortalUser loadLoginInfo(PortalUserEntity portalUserEntity) {
         // 基础信息
         RequestPortalUser requestPortalUser = SmartBeanUtil.copy(portalUserEntity, RequestPortalUser.class);
-        requestPortalUser.setUserType(UserTypeEnum.ADMIN_BACKEND_USER);
+        requestPortalUser.setUserType(UserTypeEnum.PORTAL_USER);
         return requestPortalUser;
     }
     /**

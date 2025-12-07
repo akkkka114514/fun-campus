@@ -21,6 +21,7 @@
         </tm-grid-item>
       </tm-grid>
     </view>
+    
     <!-- 活动列表 -->
     <view class="activity-list">
       <!-- 水平选项卡 -->
@@ -50,49 +51,85 @@
           ></view>
         </view>
       </view>
-      <dx-activity></dx-activity>
+      
+      <!-- 活动卡片列表 -->
+      <view class="activity-cards">
+        <view class="card-list">
+          <view 
+            v-for="(activity, index) in (activeTab === 0 ? mySchoolActivities : globalActivities)" 
+            :key="index" 
+            class="card-item"
+            @click="goToActivityDetail(activity.id)"
+          >
+            <view class="card-content">
+              <tm-text :font-size="28" :label="activity.title" class="card-title"></tm-text>
+              <tm-text :font-size="24" :label="activity.description" class="card-desc"></tm-text>
+              <view class="card-footer">
+                <tm-text :font-size="22" :label="activity.position" class="card-location"></tm-text>
+              </view>
+            </view>
+          </view>
+          
+          <!-- 示例卡片，用于演示样式 -->
+          <view class="card-item" v-if="(activeTab === 0 ? mySchoolActivities : globalActivities).length === 0">
+            <view class="card-content">
+              <tm-text :font-size="28" :label="(activeTab === 0 ? '本校特色活动' : '全国大型活动')" class="card-title"></tm-text>
+              <tm-text :font-size="24" label="暂无相关活动信息" class="card-desc"></tm-text>
+              <view class="card-footer">
+                <tm-text :font-size="22" label="敬请期待" class="card-time"></tm-text>
+                <tm-text :font-size="22" label="" class="card-location"></tm-text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { openLink,timeText } from '@/common/tools';
-import { useAppStore } from '@/stores/app'
-import { indexHome,followTeam } from '@/common/index'
-import DxActivity from "@/components/dx-activity/dx-activity.vue";
+import { openLink } from '@/common/tools';
+import axios from "axios";
+import { homeData } from "@/common/Api";
 
-const appStore = useAppStore();
-const activityGlobal = ref<any>([]);
-const activityMySchool = ref<any>([]);
-const team = ref<any>([]);
 const activeTab = ref(0);
+const globalActivities= ref([]);
+const mySchoolActivities = ref([]);
 
 function init() {
-	indexHome(
-      {
-        activeActivityPage: 1,
-        page: 1,
-        pageSize: 20
-      }
-  ).then(res => {
-    console.log(res);
-	})
+  uni.getStorage({
+    key: 'userInfo',
+    success: function(res){
+      console.log(res.data.token)
+      axios.defaults.headers.common['Authorization'] = 'Bearer ' + res.data.token;
+    },
+    fail: function(){
+      uni.$tm.u.toast('请先登录');
+    }
+  })
+  
+  // 获取首页活动数据
+  homeData(1, 1, 10).then(res => {
+    console.log(res.data)
+    // 解析活动数据并保存
+    if (res.data.code === 0) {
+      globalActivities.value = res.data.data.globalActivities.records || [];
+      mySchoolActivities.value = res.data.data.mySchoolActivities.records || [];
+    }
+  }).catch(e => {
+    uni.$tm.u.toast(e);
+  })
+}
+
+// 跳转到活动详情页
+function goToActivityDetail(id) {
+  openLink(`/pages/activity/detail?id=${id}`);
 }
 
 onMounted(() => {
   init();
 });
-
-function toFollow(id: string) {
-	// 关注
-  followTeam({id}).then(res=>{
-    uni.$tm.u.toast(res.message);
-    if(res.code===1000){
-      init()
-    }
-  })
-}
 </script>
 <style lang="scss" scoped>
 .home-container {
@@ -513,5 +550,97 @@ function toFollow(id: string) {
   border-radius: 3rpx;
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   background-color: #ff8c42;
+}
+
+/* 活动卡片样式 */
+.activity-cards {
+  padding: 0 20rpx;
+}
+
+.card-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.card-item {
+  width: 100%;
+  background: #ffffff;
+  border-radius: 16rpx;
+  box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.05);
+  margin-bottom: 20rpx;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+  
+  &:active {
+    transform: scale(0.99);
+  }
+  
+  &:hover {
+    transform: translateY(-5rpx);
+    box-shadow: 0 12rpx 25rpx rgba(0, 0, 0, 0.1);
+  }
+}
+
+.card-cover {
+  width: 100%;
+  height: 240rpx;
+  object-fit: cover;
+}
+
+.card-content {
+  padding: 20rpx;
+}
+
+.card-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 10rpx;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-desc {
+  font-size: 26rpx;
+  color: #666;
+  margin-bottom: 20rpx;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 15rpx;
+  border-top: 1rpx solid #f0f0f0;
+}
+
+.card-time, .card-location {
+  font-size: 24rpx;
+  color: #999;
+  display: flex;
+  align-items: center;
+  
+  &::before {
+    margin-right: 10rpx;
+    font-size: 24rpx;
+  }
+}
+
+.card-time::before {
+  content: "🕐";
+}
+
+.card-location::before {
+  content: "📍";
 }
 </style>

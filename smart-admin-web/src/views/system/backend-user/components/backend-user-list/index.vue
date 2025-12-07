@@ -110,12 +110,10 @@
   import { PAGE_SIZE } from '/@/constants/common-const';
   import { SmartLoading } from '/@/components/framework/smart-loading';
   import BackendUserFormModal from '/@/views/system/backend-user/components/backend-user-form-modal/index.vue';
-  import BackendUserDepartmentFormModal from '../employee-department-form-modal/index.vue';
   import BackendUserPasswordDialog from '/src/views/system/backend-user/components/backend-user-password-dialog/index.vue';
   import { PAGE_SIZE_OPTIONS, showTableTotal } from '/@/constants/common-const';
   import { smartSentry } from '/@/lib/smart-sentry';
   import TableOperator from '/@/components/support/table-operator/index.vue';
-  import { TABLE_ID_CONST } from '/@/constants/support/table-id-const';
 
   // ----------------------- 以下是字段定义 emits props ---------------------
 
@@ -338,6 +336,8 @@
       onCancel() {},
     });
   }
+}
+
 </script>
 <style scoped lang="less">
   .header {

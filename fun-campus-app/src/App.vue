@@ -42,6 +42,25 @@ view {
 }
 
 /* 全局美化样式 */
+.uni-page-head {
+  background: linear-gradient(120deg, #1a1a1a, #2c2c2c) !important;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.uni-page-head:hover {
+  box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.5);
+  transform: translateY(-2rpx);
+}
+
+/* 黑色背景下的适配 */
+@media (prefers-color-scheme: dark) {
+  .uni-page-head {
+    background: linear-gradient(120deg, #1a1a1a, #2c2c2c) !important;
+    box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.5);
+  }
+}
+
 .bg-white {
 	background-color: #fff;
 	border-radius: 16rpx;

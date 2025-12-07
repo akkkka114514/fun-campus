@@ -127,7 +127,7 @@ const props = defineProps({
   },
   color: {
     type: [String],
-    default: "white",
+    default: "#1a1a1a",
   },
   text: {
     type: [Boolean],

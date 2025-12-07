@@ -29,8 +29,6 @@ public class PortalLoginController {
 
     @Resource
     private PortalLoginService portalUserLoginService;
-    @Resource
-    private LoginService loginService;
 
     @Operation(summary = "Portal用户登录")
     @PostMapping("/portal/login")
@@ -51,6 +49,6 @@ public class PortalLoginController {
     @GetMapping("/portal/login/getCaptcha")
     @NoNeedLogin
     public ResponseDTO<CaptchaVO> getCaptcha() {
-        return loginService.getCaptcha();
+        return portalUserLoginService.getCaptcha();
     }
 }

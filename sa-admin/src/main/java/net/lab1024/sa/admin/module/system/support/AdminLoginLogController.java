@@ -15,6 +15,7 @@ import net.lab1024.sa.base.module.support.loginlog.domain.LoginLogQueryForm;
 import net.lab1024.sa.base.module.support.loginlog.domain.LoginLogVO;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -28,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @Tag(name = SwaggerTagConst.Support.LOGIN_LOG)
+@RequestMapping("backend")
 public class AdminLoginLogController extends SupportBaseController {
 
     @Resource

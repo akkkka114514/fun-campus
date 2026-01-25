@@ -72,4 +72,20 @@ public class BackendUserEntity {
     @TableField("password")
     private String password;
 
+    //学校id
+    @TableField("school_id")
+    private Long schoolId;
+
+    //学院id
+    @TableField("college_id")
+    private Long collegeId;
+
+    //组织id
+    @TableField("organization_id")
+    private Long organizationId;
+
+    //是否具有审核权限
+    @TableField("can_review")
+    private Boolean canReview;
+
 }

@@ -39,6 +39,6 @@ public class ActivityVO {
     private Long activitySchoolId;
 
     @Schema(description = "活动所属组织")
-    private Long activityOrganizerId;
+    private Long activityOrganizationId;
 
 }

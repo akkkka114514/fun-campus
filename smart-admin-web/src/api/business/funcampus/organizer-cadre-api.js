@@ -7,27 +7,27 @@
  */
 import { postRequest, getRequest } from '/@/lib/axios';
 
-export const organizerCadreApi = {
+export const organizationCadreApi = {
 
   /**
    * 分页查询  @author  akkkka114514
    */
   queryPage : (param) => {
-    return postRequest('/organizerCadre/queryPage', param);
+    return postRequest('/organizationCadre/queryPage', param);
   },
 
   /**
    * 增加  @author  akkkka114514
    */
   add: (param) => {
-      return postRequest('/organizerCadre/add', param);
+      return postRequest('/organizationCadre/add', param);
   },
 
   /**
    * 修改  @author  akkkka114514
    */
   update: (param) => {
-      return postRequest('/organizerCadre/update', param);
+      return postRequest('/organizationCadre/update', param);
   },
 
 
@@ -35,14 +35,14 @@ export const organizerCadreApi = {
    * 删除  @author  akkkka114514
    */
   delete: (id) => {
-      return getRequest(`/organizerCadre/delete/${id}`);
+      return getRequest(`/organizationCadre/delete/${id}`);
   },
 
   /**
    * 批量删除  @author  akkkka114514
    */
   batchDelete: (idList) => {
-      return postRequest('/organizerCadre/batchDelete', idList);
+      return postRequest('/organizationCadre/batchDelete', idList);
   },
 
 };

@@ -217,6 +217,18 @@ public class LoginService implements StpInterface {
         loginResultVO.setIp(requestBackendUser.getIp());
         loginResultVO.setUserAgent(requestBackendUser.getUserAgent());
 
+        // 获取角色权限
+        List<RoleVO> roleList = roleBackendUserService.getRoleIdList(requestBackendUser.getUserId());
+        if (CollectionUtils.isNotEmpty(roleList)) {
+            // 注意：LoginResultVO没有setRoleList方法，暂时注释掉
+            // loginResultVO.setRoleList(roleList);
+            // 获取菜单权限
+            List<Long> roleIdList = roleList.stream().map(RoleVO::getRoleId).collect(Collectors.toList());
+            // 注意：RequestBackendUser没有administratorFlag字段，使用默认值false
+            List<MenuVO> menuAndPointsList = roleMenuService.getMenuList(roleIdList, false);
+            loginResultVO.setMenuList(menuAndPointsList);
+        }
+
         // 上次登录信息
         LoginLogVO loginLogVO = loginLogService.queryLastByUserId(requestBackendUser.getUserId(), UserTypeEnum.ADMIN_BACKEND_USER, LoginLogResultEnum.LOGIN_SUCCESS);
         if (loginLogVO != null) {

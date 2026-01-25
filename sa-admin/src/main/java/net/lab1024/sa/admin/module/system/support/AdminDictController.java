@@ -29,6 +29,7 @@ import java.util.List;
  */
 @Tag(name = SwaggerTagConst.Support.DICT)
 @RestController
+@RequestMapping("backend")
 public class AdminDictController extends SupportBaseController {
 
     @Resource

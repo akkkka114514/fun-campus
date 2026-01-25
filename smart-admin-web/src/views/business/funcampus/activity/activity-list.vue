@@ -150,7 +150,7 @@
         },
         {
             title: '活动所属组织',
-            dataIndex: 'activityOrganizerId',
+            dataIndex: 'activityOrganizationId',
             ellipsis: true,
         },
         {

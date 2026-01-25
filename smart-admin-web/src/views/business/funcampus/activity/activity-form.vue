@@ -27,8 +27,8 @@
         <a-form-item label="报名人数限制"  name="enrollNumLimit">
           <a-input-number style="width: 100%" v-model:value="form.enrollNumLimit" placeholder="报名人数限制" />
         </a-form-item>
-        <a-form-item label="活动所属组织"  name="activityOrganizerId">
-          <a-input-number style="width: 100%" v-model:value="form.activityOrganizerId" placeholder="活动所属组织" />
+        <a-form-item label="活动所属组织"  name="activityOrganizationId">
+          <a-input-number style="width: 100%" v-model:value="form.activityOrganizationId" placeholder="活动所属组织" />
         </a-form-item>
     </a-form>
 
@@ -86,7 +86,7 @@
       position: undefined, //活动地点
       scoreCanGet: undefined, //能得到的学分
       enrollNumLimit: undefined, //报名人数限制
-      activityOrganizerId: undefined, //活动所属组织
+      activityOrganizationId: undefined, //活动所属组织
   };
 
   let form = reactive({ ...formDefault });
@@ -96,7 +96,7 @@
       position: [{ required: true, message: '活动地点 必填' }],
       scoreCanGet: [{ required: true, message: '能得到的学分 必填' }],
       enrollNumLimit: [{ required: true, message: '报名人数限制 必填' }],
-      activityOrganizerId: [{ required: true, message: '活动所属组织 必填' }],
+      activityOrganizationId: [{ required: true, message: '活动所属组织 必填' }],
   };
 
   // 点击确定，验证表单

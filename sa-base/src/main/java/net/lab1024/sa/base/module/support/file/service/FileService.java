@@ -53,6 +53,9 @@ public class FileService {
     private IFileStorageService fileStorageService;
 
     @Resource
+    private FileStorageCloudServiceImpl fileStorageCloudServiceImpl;
+
+    @Resource
     private FileDao fileDao;
 
     @Resource
@@ -202,5 +205,25 @@ public class FileService {
         return SmartPageUtil.convert2PageResult(page, list);
     }
 
+    /**
+     * 生成预签名上传 URL
+     *
+     * @param originalFileName
+     * @param folderType
+     * @return
+     */
+    public ResponseDTO<Map<String, Object>> generatePresignedUploadUrl(String originalFileName, Integer folderType) {
+        FileFolderTypeEnum folderTypeEnum = SmartEnumUtil.getEnumByValue(folderType, FileFolderTypeEnum.class);
+        if (null == folderTypeEnum) {
+            return ResponseDTO.userErrorParam("文件夹错误");
+        }
+
+        if (StringUtils.isBlank(originalFileName)) {
+            return ResponseDTO.userErrorParam("原始文件名不能为空");
+        }
+
+        // 调用底层存储服务生成预签名上传 URL
+        return fileStorageCloudServiceImpl.generatePresignedUploadUrl(originalFileName, folderTypeEnum.getFolder());
+    }
 
 }

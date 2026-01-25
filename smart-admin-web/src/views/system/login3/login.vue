@@ -151,6 +151,7 @@
         buildRoutes();
         router.push('/home');
       } catch (e) {
+        console.log(e);
         if (e.data && e.data.code !== 0) {
           loginForm.captchaCode = '';
           getCaptcha();

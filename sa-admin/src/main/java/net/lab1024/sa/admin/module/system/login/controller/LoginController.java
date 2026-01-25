@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.*;
  * @Email lab1024@163.com
  * @Copyright <a href="https://1024lab.net">1024创新实验室</a>
  */
-@RestController("backend")
+@RestController
 @Tag(name = AdminSwaggerTagConst.System.SYSTEM_LOGIN)
 public class LoginController {
 
@@ -40,7 +40,7 @@ public class LoginController {
     private Level3ProtectConfigService level3ProtectConfigService;
 
     @NoNeedLogin
-    @PostMapping("/login")
+    @PostMapping("/backend/login")
     @Operation(summary = "登录 @author 卓大")
     public ResponseDTO<LoginResultVO> login(@Valid @RequestBody LoginForm loginForm, HttpServletRequest request) {
         String ip = JakartaServletUtil.getClientIP(request);
@@ -48,7 +48,7 @@ public class LoginController {
         return loginService.login(loginForm, ip, userAgent);
     }
 
-    @GetMapping("/login/getLoginInfo")
+    @GetMapping("/backend/login/getLoginInfo")
     @Operation(summary = "获取登录结果信息  @author 卓大")
     public ResponseDTO<LoginResultVO> getLoginInfo() {
         String tokenValue = StpUtil.getTokenValue();
@@ -58,20 +58,20 @@ public class LoginController {
     }
 
     @Operation(summary = "退出登录  @author 卓大")
-    @GetMapping("/login/logout")
+    @GetMapping("/backend/login/logout")
     public ResponseDTO<String> logout() {
         return loginService.logout(SmartRequestUtil.getRequestUser());
     }
 
     @Operation(summary = "获取验证码  @author 卓大")
-    @GetMapping("/login/getCaptcha")
+    @GetMapping("/backend/login/getCaptcha")
     @NoNeedLogin
     public ResponseDTO<CaptchaVO> getCaptcha() {
         return loginService.getCaptcha();
     }
 
     @NoNeedLogin
-    @GetMapping("/login/sendEmailCode/{loginName}")
+    @GetMapping("/backend/login/sendEmailCode/{loginName}")
     @Operation(summary = "获取邮箱登录验证码 @author 卓大")
     public ResponseDTO<String> sendEmailCode(@PathVariable String loginName) {
         return loginService.sendEmailCode(loginName);
@@ -79,7 +79,7 @@ public class LoginController {
 
 
     @NoNeedLogin
-    @GetMapping("/login/getTwoFactorLoginFlag")
+    @GetMapping("/backend/login/getTwoFactorLoginFlag")
     @Operation(summary = "获取双因子登录标识 @author 卓大")
     public ResponseDTO<Boolean> getTwoFactorLoginFlag() {
         // 双因子登录

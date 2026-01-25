@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = SwaggerTagConst.Support.JOB)
 @RestController
 @ConditionalOnBean(SmartJobAutoConfiguration.class)
+@RequestMapping("backend")
 public class AdminSmartJobController extends SupportBaseController {
 
     @Autowired

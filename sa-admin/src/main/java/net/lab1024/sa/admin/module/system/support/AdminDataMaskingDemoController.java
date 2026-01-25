@@ -11,6 +11,7 @@ import net.lab1024.sa.base.module.support.datamasking.DataMasking;
 import net.lab1024.sa.base.module.support.datamasking.DataMaskingTypeEnum;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ import java.util.List;
 
 @RestController
 @Tag(name = SwaggerTagConst.Support.DATA_MASKING)
+@RequestMapping("backend")
 public class AdminDataMaskingDemoController extends SupportBaseController {
 
     @Operation(summary = "数据脱敏demo @author 1024创新实验室-主任-卓大")

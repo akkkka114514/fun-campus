@@ -16,10 +16,7 @@ import net.lab1024.sa.base.module.support.securityprotect.domain.LoginFailQueryF
 import net.lab1024.sa.base.module.support.securityprotect.domain.LoginFailVO;
 import net.lab1024.sa.base.module.support.securityprotect.service.Level3ProtectConfigService;
 import net.lab1024.sa.base.module.support.securityprotect.service.SecurityLoginService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * 网络安全
@@ -33,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @Tag(name = SwaggerTagConst.Support.PROTECT)
+@RequestMapping("backend")
 public class AdminProtectController extends SupportBaseController {
 
     @Resource

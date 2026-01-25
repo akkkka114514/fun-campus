@@ -38,4 +38,14 @@ public class BackendUserVO {
     @Schema(description = "邮箱")
     private String email;
 
+    @Schema(description = "所属学校id")
+    private Long schoolId;
+
+    @Schema(description = "所属学院id")
+    private Long collegeId;
+
+    @Schema(description = "所属组织id")
+    private Long organizationId;
+
+
 }

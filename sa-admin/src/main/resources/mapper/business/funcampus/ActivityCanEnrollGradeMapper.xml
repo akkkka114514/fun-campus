@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollGrade.dao.ActivityCanEnrollGradeDao">
+
+    <!-- 查询结果列 -->
+    <sql id="base_columns">
+        activity_can_enroll_grade.id,
+        activity_can_enroll_grade.activity_id,
+        activity_can_enroll_grade.can_enroll_grade,
+        activity_can_enroll_grade.deleted_flag,
+        activity_can_enroll_grade.create_time,
+        activity_can_enroll_grade.update_time
+    </sql>
+
+    <!-- 分页查询 -->
+    <select id="queryPage" resultType="net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollGrade.domain.vo.ActivityCanEnrollGradeVO">
+        SELECT
+        <include refid="base_columns"/>
+        FROM activity_can_enroll_grade
+    </select>
+
+    <update id="batchUpdateDeleted">
+        update activity_can_enroll_grade set deleted_flag = #{deletedFlag}
+        where id in
+        <foreach collection="idList" open="(" close=")" separator="," item="item">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="updateDeleted">
+        update activity_can_enroll_grade set deleted_flag = #{deletedFlag}
+        where id = #{id}
+    </update>
+
+</mapper>

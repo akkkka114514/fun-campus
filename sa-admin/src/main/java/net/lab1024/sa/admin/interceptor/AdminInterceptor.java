@@ -64,10 +64,12 @@ public class AdminInterceptor implements HandlerInterceptor {
             // --------------- 第一步： 根据token 获取用户 ---------------
 
             String tokenValue = StpUtil.getTokenValue();
+            log.info("tokenValue:{}", tokenValue);
 
             String loginId = (String) StpUtil.getLoginIdByToken(tokenValue);
-            RequestUser requestUser=null;
             String url=request.getRequestURL().toString();
+            RequestUser requestUser=null;
+            log.info("request url:{}",url);
             if(url.contains("portal")){
                 requestUser = portalLoginService.getLoginPortalUser(loginId, request);
             }else if(url.contains("backend")) {

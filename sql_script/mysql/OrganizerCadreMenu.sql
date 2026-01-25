@@ -3,20 +3,20 @@
 # 如果你一切都是按照默认，那么下面的 SQL 基本不用改
 
 INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
-VALUES ( '组织干事用户', 2, 0, '/organizer-cadre/list', '/business/organizer-cadre/organizer-cadre-list.vue', false, false, true, false, 1, 1 );
+VALUES ( '组织干事用户', 2, 0, '/organization-cadre/list', '/business/organization-cadre/organization-cadre-list.vue', false, false, true, false, 1, 1 );
 
 # 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
 SET @parent_id = NULL;
 SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '组织干事用户';
 
 INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'organizerCadre:query', 'organizerCadre:query', @parent_id, 1 );
+VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'organizationCadre:query', 'organizationCadre:query', @parent_id, 1 );
 
 INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'organizerCadre:add', 'organizerCadre:add', @parent_id, 1 );
+VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'organizationCadre:add', 'organizationCadre:add', @parent_id, 1 );
 
 INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'organizerCadre:update', 'organizerCadre:update', @parent_id, 1 );
+VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'organizationCadre:update', 'organizationCadre:update', @parent_id, 1 );
 
 INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'organizerCadre:delete', 'organizerCadre:delete', @parent_id, 1 );
+VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'organizationCadre:delete', 'organizationCadre:delete', @parent_id, 1 );

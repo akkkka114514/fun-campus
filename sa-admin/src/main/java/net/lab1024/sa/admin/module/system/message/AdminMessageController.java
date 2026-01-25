@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @Tag(name = AdminSwaggerTagConst.System.SYSTEM_MESSAGE)
 @RestController
+@RequestMapping("backend")
 public class AdminMessageController {
 
     @Autowired

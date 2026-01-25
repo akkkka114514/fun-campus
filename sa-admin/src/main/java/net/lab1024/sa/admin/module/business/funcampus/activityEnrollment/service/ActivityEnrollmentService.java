@@ -25,8 +25,6 @@ import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.dao.A
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityWithScheduleVO;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
-import net.lab1024.sa.admin.module.business.funcampus.organizerActivity.domain.entity.OrganizerActivityEntity;
-import net.lab1024.sa.admin.module.business.funcampus.organizerActivity.manager.OrganizerActivityManager;
 import net.lab1024.sa.admin.module.business.funcampus.portalUser.dao.PortalUserDao;
 import net.lab1024.sa.admin.module.business.funcampus.portalUser.domain.entity.PortalUserEntity;
 import net.lab1024.sa.admin.module.business.funcampus.portalUser.domain.vo.PortalUserVO;
@@ -74,8 +72,6 @@ public class ActivityEnrollmentService {
     private TransactionTemplate transactionTemplate;
     @Resource
     private PortalUserDao portalUserDao;
-    @Resource
-    private OrganizerActivityManager organizerActivityManager;
     @Resource
     private ActivityDao activityDao;
     @Resource

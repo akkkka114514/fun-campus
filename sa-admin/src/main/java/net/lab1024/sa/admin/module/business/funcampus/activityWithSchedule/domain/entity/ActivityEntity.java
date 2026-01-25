@@ -7,6 +7,8 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
+
 import lombok.Data;
 
 /**
@@ -33,7 +35,7 @@ public class ActivityEntity {
     private String title;
 
     /**
-     * 活动状态，1-》等待报名，2->报名结束，3-》等待签到，4-》活动结束
+     * 活动状态
      */
     private Integer status;
 
@@ -55,12 +57,17 @@ public class ActivityEntity {
     /**
      * 活动所属学校
      */
-    private Long activitySchoolId;
+    private Long activityBelongToSchoolId;
 
     /**
      * 活动所属组织
      */
-    private Long activityOrganizerId;
+    private Long activityBelongToOrganizationId;
+
+    /**
+     * 活动所属学院
+     */
+    private Long activityBelongToCollegeId;
 
     /**
      * 是否删除
@@ -79,16 +86,39 @@ public class ActivityEntity {
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
 
-
+    /**
+     * 描述
+     */
     private String description;
 
+    /**
+     * 报名需审核
+     */
     private boolean enrollNeedReview;
 
+    /**
+     * 需要签退
+     */
     private boolean needSignOut;
 
+    /**
+     * 附件
+     */
     private String attachment;
 
-    private Long category;
+    /**
+     * 分类
+     */
+    private Long categoryId;
 
+    /**
+     * 封面图片
+     */
     private String coverImg;
+
+    /**
+     * 活动管理员和发起者
+     */
+    private Long activityManagerId;
+
 }

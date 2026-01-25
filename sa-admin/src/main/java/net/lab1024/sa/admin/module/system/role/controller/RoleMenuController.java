@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @Tag(name = AdminSwaggerTagConst.System.SYSTEM_ROLE_MENU)
+@RequestMapping("backend")
 public class RoleMenuController {
 
     @Resource

@@ -31,6 +31,8 @@ import software.amazon.awssdk.services.s3.model.*;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -241,4 +243,60 @@ public class FileStorageCloudServiceImpl implements IFileStorageService {
         return ResponseDTO.ok();
     }
 
+    /**
+     * 生成预签名上传 URL
+     */
+    public ResponseDTO<Map<String, Object>> generatePresignedUploadUrl(String originalFileName, String path) {
+        try {
+            // 构建文件 key
+            String fileType = FilenameUtils.getExtension(originalFileName);
+            String uuid = IdUtil.fastSimpleUUID();
+            String time = LocalDateTimeUtil.format(LocalDateTime.now(), DatePattern.PURE_DATETIME_FORMATTER);
+            String fileKey = path + uuid + "_" + time + "." + fileType;
+
+            // 根据路径确定 ACL 权限
+            ObjectCannedACL acl = this.getACL(path);
+
+            // 创建预签名上传请求
+            S3Presigner.Builder presignerBuilder = S3Presigner.builder()
+                    .region(Region.of(cloudConfig.getRegion()));
+            
+            // 如果配置了端点，则使用它
+            if (StringUtils.isNotBlank(cloudConfig.getEndpoint())) {
+                presignerBuilder.endpointOverride(java.net.URI.create(cloudConfig.getEndpoint()));
+            }
+            
+            S3Presigner presigner = presignerBuilder.build();
+
+            // 设置上传策略
+            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                    .bucket(cloudConfig.getBucketName())
+                    .key(fileKey)
+                    .acl(acl)
+                    .build();
+
+            // 生成预签名上传 URL，有效期1小时
+            PutObjectPresignRequest presignRequest =
+                    PutObjectPresignRequest.builder()
+                            .signatureDuration(Duration.ofHours(1))
+                            .putObjectRequest(putObjectRequest)
+                            .build();
+
+            PresignedPutObjectRequest presignedRequest =
+                    presigner.presignPutObject(presignRequest);
+
+            // 准备返回数据
+            Map<String, Object> result = new HashMap<>();
+            result.put("url", presignedRequest.url().toString());
+            result.put("fileKey", fileKey);
+            result.put("fileName", originalFileName);
+            result.put("expiresAt", presignedRequest.expiration());
+            result.put("acl", acl.toString());
+
+            return ResponseDTO.ok(result);
+        } catch (Exception e) {
+            log.error("生成预签名上传URL失败", e);
+            return ResponseDTO.error(SystemErrorCode.SYSTEM_ERROR, "生成预签名上传URL失败: " + e.getMessage());
+        }
+    }
 }

@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @Tag(name = SwaggerTagConst.Support.OPERATE_LOG)
+@RequestMapping("backend")
 public class AdminOperateLogController extends SupportBaseController {
 
     @Resource

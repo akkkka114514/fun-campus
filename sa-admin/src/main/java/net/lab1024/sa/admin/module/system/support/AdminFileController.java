@@ -12,9 +12,9 @@ import net.lab1024.sa.base.constant.SwaggerTagConst;
 import net.lab1024.sa.base.module.support.file.domain.form.FileQueryForm;
 import net.lab1024.sa.base.module.support.file.domain.vo.FileVO;
 import net.lab1024.sa.base.module.support.file.service.FileService;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 /**
  * 文件服务
@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @Tag(name = SwaggerTagConst.Support.FILE)
+@RequestMapping("backend")
 public class AdminFileController extends SupportBaseController {
 
     @Resource

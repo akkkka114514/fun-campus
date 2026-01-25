@@ -11,16 +11,16 @@ import { postRequest, getRequest } from '/@/lib/axios';
 export const tableColumnApi = {
   // 修改表格列 @author zhuoda
   updateTableColumn: (param) => {
-    return postRequest('/support/tableColumn/update', param);
+    return postRequest('/backend/tableColumn/update', param);
   },
 
   // 查询表格列 @author zhuoda
   getColumns: (tableId) => {
-    return getRequest(`/support/tableColumn/getColumns/${tableId}`);
+    return getRequest(`/backend/tableColumn/getColumns/${tableId}`);
   },
 
   // 删除表格列 @author zhuoda
   deleteColumns: (tableId) => {
-    return getRequest(`/support/tableColumn/delete/${tableId}`);
+    return getRequest(`/backend/tableColumn/delete/${tableId}`);
   },
 };

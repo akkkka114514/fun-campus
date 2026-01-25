@@ -5,6 +5,8 @@ import net.lab1024.sa.base.module.support.file.domain.vo.FileDownloadVO;
 import net.lab1024.sa.base.module.support.file.domain.vo.FileUploadVO;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Map;
+
 /**
  * 接口
  *
@@ -50,7 +52,6 @@ public interface IFileStorageService {
      * @return
      */
     ResponseDTO<String> delete(String fileKey);
-
 
     /**
      * 获取文件类型

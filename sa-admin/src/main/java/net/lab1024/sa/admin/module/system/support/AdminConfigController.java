@@ -16,6 +16,7 @@ import net.lab1024.sa.base.module.support.config.domain.ConfigUpdateForm;
 import net.lab1024.sa.base.module.support.config.domain.ConfigVO;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -29,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @Tag(name = SwaggerTagConst.Support.CONFIG)
 @RestController
+@RequestMapping("backend")
 public class AdminConfigController extends SupportBaseController {
 
     @Resource

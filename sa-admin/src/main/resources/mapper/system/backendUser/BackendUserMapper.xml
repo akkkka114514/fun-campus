@@ -113,4 +113,22 @@
             </if>
         </where>
     </select>
+
+    <select id="getBackendUserByCollegeId" resultType="net.lab1024.sa.admin.module.system.backendUser.domain.vo.SimpleBackendUserVO">
+        select id,username
+            from backend_user
+        where college_id = #{collegeId}
+            and deleted_flag = 0
+            and disabled_flag = 0
+            and can_review = 1
+    </select>
+
+    <select id="getBackendUserByOrganizationId" resultType="net.lab1024.sa.admin.module.system.backendUser.domain.vo.SimpleBackendUserVO">
+        select id,username
+            from backend_user
+        where organization_id = #{organizationId}
+            and deleted_flag = 0
+            and disabled_flag = 0
+            and can_review = 1
+    </select>
 </mapper>

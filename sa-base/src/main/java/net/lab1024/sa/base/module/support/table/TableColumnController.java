@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @Tag(name = SwaggerTagConst.Support.TABLE_COLUMN)
+@RequestMapping("backend")
 public class TableColumnController extends SupportBaseController {
 
     @Resource

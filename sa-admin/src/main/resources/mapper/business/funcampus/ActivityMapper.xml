@@ -11,7 +11,7 @@
         activity.score_can_get,
         activity.enroll_num_limit,
         activity.activity_school_id,
-        activity.activity_organizer_id,
+        activity.activity_organization_id,
         activity.deleted_flag,
         activity.create_time,
         activity.update_time,
@@ -31,7 +31,7 @@
         <result property="scoreCanGet" column="score_can_get"/>
         <result property="enrollNumLimit" column="enroll_num_limit"/>
         <result property="activitySchoolId" column="activity_school_id"/>
-        <result property="activityOrganizerId" column="activity_organizer_id"/>
+        <result property="activityOrganizationId" column="activity_organization_id"/>
         <result property="enrollStartTime" column="enroll_start_time"/>
         <result property="enrollEndTime" column="enroll_end_time"/>
         <result property="activityStartTime" column="activity_start_time"/>

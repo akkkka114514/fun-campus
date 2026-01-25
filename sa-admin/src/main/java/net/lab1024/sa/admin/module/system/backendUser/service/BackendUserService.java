@@ -1,14 +1,27 @@
 package net.lab1024.sa.admin.module.system.backendUser.service;
+import java.time.LocalDateTime;
 
 import cn.dev33.satoken.stp.StpUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.google.common.collect.Lists;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
+import net.lab1024.sa.admin.module.business.funcampus.collegeInfo.domain.vo.SimpleCollegeInfoVO;
+import net.lab1024.sa.admin.module.business.funcampus.collegeInfo.service.CollegeInfoService;
+import net.lab1024.sa.admin.module.business.funcampus.organizationInfo.domain.vo.SimpleOrganizationInfoVO;
+import net.lab1024.sa.admin.module.business.funcampus.organizationInfo.service.OrganizationInfoService;
+import net.lab1024.sa.admin.module.business.funcampus.portalUser.domain.entity.PortalUserEntity;
+import net.lab1024.sa.admin.module.business.funcampus.portalUser.manager.PortalUserManager;
+import net.lab1024.sa.admin.module.business.funcampus.schoolInfo.domain.entity.SchoolInfoEntity;
+import net.lab1024.sa.admin.module.business.funcampus.schoolInfo.manager.SchoolInfoManager;
+import net.lab1024.sa.admin.module.business.funcampus.schoolInfo.service.SchoolInfoService;
 import net.lab1024.sa.admin.module.system.backendUser.domain.entity.BackendUserEntity;
 import net.lab1024.sa.admin.module.system.backendUser.dao.BackendUserDao;
 import net.lab1024.sa.admin.module.system.backendUser.domain.form.*;
 import net.lab1024.sa.admin.module.system.backendUser.domain.vo.BackendUserVO;
+import net.lab1024.sa.admin.module.system.backendUser.domain.vo.SimpleBackendUserVO;
 import net.lab1024.sa.admin.module.system.backendUser.manager.BackendUserManager;
 import net.lab1024.sa.admin.module.system.login.service.LoginService;
 import net.lab1024.sa.admin.module.system.role.dao.RoleBackendUserDao;
@@ -21,8 +34,10 @@ import net.lab1024.sa.base.common.domain.ResponseDTO;
 import net.lab1024.sa.base.common.enumeration.UserTypeEnum;
 import net.lab1024.sa.base.common.util.SmartBeanUtil;
 import net.lab1024.sa.base.common.util.SmartPageUtil;
+import net.lab1024.sa.base.common.util.SmartRequestUtil;
 import net.lab1024.sa.base.module.support.securityprotect.service.SecurityPasswordService;
 import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +55,7 @@ import java.util.stream.Collectors;
  * @Copyright  <a href="https://1024lab.net">1024创新实验室</a>
  */
 @Service
+@Slf4j
 public class BackendUserService extends ServiceImpl<BackendUserDao, BackendUserEntity> {
     @Resource
     private BackendUserDao backendUserDao;
@@ -56,6 +72,12 @@ public class BackendUserService extends ServiceImpl<BackendUserDao, BackendUserE
     @Resource
     @Lazy
     private LoginService loginService;
+
+    @Resource
+    private CollegeInfoService collegeInfoService;
+
+    @Resource
+    private OrganizationInfoService organizationInfoService;
 
     public BackendUserEntity getById(Long backendUserId) {
         return backendUserDao.selectById(backendUserId);
@@ -99,7 +121,19 @@ public class BackendUserService extends ServiceImpl<BackendUserDao, BackendUserE
             return ResponseDTO.userErrorParam("登录名重复");
         }
 
-        BackendUserEntity entity = SmartBeanUtil.copy(backendUserAddForm, BackendUserEntity.class);
+        BackendUserEntity entity = new BackendUserEntity();
+        entity.setUpdateTime(LocalDateTime.now());
+        entity.setCreateTime(LocalDateTime.now());
+        entity.setDeletedFlag(false);
+        entity.setDisabledFlag(false);
+        entity.setRoleId(backendUserAddForm.getRoleIdList().get(0));
+        entity.setUsername(backendUserAddForm.getUsername());
+        entity.setSchoolId(backendUserAddForm.getSchoolId());
+        entity.setCollegeId(backendUserAddForm.getCollegeId());
+        entity.setOrganizationId(backendUserAddForm.getOrganizationId());
+        entity.setCanReview(backendUserAddForm.getCanReview());
+
+
         // 设置密码 随机密码
         String randomPassword = securityPasswordService.randomPassword();
         entity.setPassword(SecurityPasswordService.getEncryptPwd(randomPassword));
@@ -320,6 +354,31 @@ public class BackendUserService extends ServiceImpl<BackendUserDao, BackendUserE
      */
     public BackendUserEntity getByUsername(String loginName) {
         return backendUserDao.getByUsername(loginName, false);
+    }
+
+    /**
+     * 获取学院审核人列表
+     */
+    public Map<Long, List<SimpleBackendUserVO>> getCollegeReviewerList() {
+        List<SimpleCollegeInfoVO> collegeInfoList = collegeInfoService.getCollegeInfoByUserId();
+        Map<Long , List<SimpleBackendUserVO>> collegeReviewerList = new HashMap<>();
+        collegeInfoList.forEach(e -> {
+            List<SimpleBackendUserVO> backendUserList = backendUserDao.getBackendUserByCollegeId(e.getId());
+            collegeReviewerList.put(e.getId(), backendUserList);
+        });
+        return collegeReviewerList;
+    }
+    /**
+     * 获取组织审核人列表
+     */
+    public Map<Long, List<SimpleBackendUserVO>> getOrganizationReviewerList() {
+        List<SimpleOrganizationInfoVO> organizationInfoList = organizationInfoService.getOrganizationInfoByUserId();
+        Map<Long , List<SimpleBackendUserVO>> organizationReviewerList = new HashMap<>();
+        organizationInfoList.forEach(e -> {
+            List<SimpleBackendUserVO> backendUserList = backendUserDao.getBackendUserByOrganizationId(e.getId());
+            organizationReviewerList.put(e.getId(), backendUserList);
+        });
+        return organizationReviewerList;
     }
 
 }

@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import net.lab1024.sa.admin.module.system.backendUser.domain.entity.BackendUserEntity;
 import net.lab1024.sa.admin.module.system.backendUser.domain.form.BackendUserQueryForm;
 import net.lab1024.sa.admin.module.system.backendUser.domain.vo.BackendUserVO;
+import net.lab1024.sa.admin.module.system.backendUser.domain.vo.SimpleBackendUserVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Component;
@@ -84,5 +85,13 @@ public interface BackendUserDao extends BaseMapper<BackendUserEntity> {
     void updateDisableFlag(@Param("id") Long id, @Param("disabledFlag") Boolean disabledFlag);
 
 
+    /**
+     * 根据collegeId查询有审核权限的属于学院的后台用户
+     */
+    List<SimpleBackendUserVO> getBackendUserByCollegeId(@Param("collegeId") Long collegeId);
+    /**
+     * 根据organizationId查询有审核权限的属于组织的后台用户
+     */
+    List<SimpleBackendUserVO> getBackendUserByOrganizationId(@Param("organizationId") Long organizationId);
 
 }

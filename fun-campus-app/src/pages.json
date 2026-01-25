@@ -116,6 +116,14 @@
 				"navigationBarTextStyle": "white"
 			}
 		},
+		{
+			"path":"pages/activity/publish",
+			"style":{
+				"navigationBarTitleText":"发布活动",
+				"navigationBarBackgroundColor": "#3c8af8",
+				"navigationBarTextStyle": "white"
+			}
+		},
 	],
 	"subPackages": [ //分包配置，参考：https://uniapp.dcloud.io/collocation/pages?id=分包配置
 		{

@@ -27,6 +27,7 @@ import java.util.List;
  */
 @RestController
 @Tag(name = SwaggerTagConst.Support.RELOAD)
+@RequestMapping("backend")
 public class AdminReloadController extends SupportBaseController {
 
     @Resource

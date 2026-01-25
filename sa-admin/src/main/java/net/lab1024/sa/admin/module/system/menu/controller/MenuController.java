@@ -29,6 +29,7 @@ import java.util.List;
  */
 @RestController
 @Tag(name = AdminSwaggerTagConst.System.SYSTEM_MENU)
+@RequestMapping("backend")
 public class MenuController {
 
     @Resource

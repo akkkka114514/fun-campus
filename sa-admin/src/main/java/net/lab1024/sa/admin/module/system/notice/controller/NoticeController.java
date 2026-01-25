@@ -34,6 +34,7 @@ import java.util.List;
 @Tag(name = AdminSwaggerTagConst.System.SYSTEM_NOTICE)
 @RestController
 @OperateLog
+@RequestMapping("backend")
 public class NoticeController {
 
     @Resource

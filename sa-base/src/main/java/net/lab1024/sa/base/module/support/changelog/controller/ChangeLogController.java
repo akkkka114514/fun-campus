@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @Tag(name = SwaggerTagConst.Support.CHANGE_LOG)
+@RequestMapping("backend")
 public class ChangeLogController extends SupportBaseController {
 
     @Resource

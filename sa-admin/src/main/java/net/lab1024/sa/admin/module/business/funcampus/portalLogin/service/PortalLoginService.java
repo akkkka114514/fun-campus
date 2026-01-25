@@ -8,7 +8,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import net.lab1024.sa.admin.module.business.funcampus.portalLogin.domain.PortalLoginResultVO;
 import net.lab1024.sa.admin.module.business.funcampus.portalLogin.domain.RequestPortalUser;
 import net.lab1024.sa.admin.module.business.funcampus.portalLogin.manager.PortalLoginManager;
-import net.lab1024.sa.admin.module.business.funcampus.portalOrganizerUser.manager.PortalOrganizerUserManager;
 import net.lab1024.sa.admin.module.business.funcampus.portalUser.manager.PortalUserManager;
 import net.lab1024.sa.admin.module.system.login.domain.LoginForm;
 import net.lab1024.sa.admin.module.system.login.domain.LoginResultVO;
@@ -98,8 +97,6 @@ public class PortalLoginService {
     @Resource
     private PortalLoginManager portalLoginManager;
 
-    @Resource
-    private PortalOrganizerUserManager portalOrganizerUserManager;
 
     /**
      * 获取验证码

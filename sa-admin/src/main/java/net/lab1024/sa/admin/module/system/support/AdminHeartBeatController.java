@@ -13,6 +13,7 @@ import net.lab1024.sa.base.module.support.heartbeat.domain.HeartBeatRecordQueryF
 import net.lab1024.sa.base.module.support.heartbeat.domain.HeartBeatRecordVO;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @Tag(name = SwaggerTagConst.Support.HEART_BEAT)
 @RestController
+@RequestMapping("backend")
 public class AdminHeartBeatController extends SupportBaseController {
 
     @Resource

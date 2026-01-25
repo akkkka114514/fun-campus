@@ -16,13 +16,11 @@ import net.lab1024.sa.base.constant.SwaggerTagConst;
 import net.lab1024.sa.base.module.support.file.domain.vo.FileDownloadVO;
 import net.lab1024.sa.base.module.support.file.domain.vo.FileUploadVO;
 import net.lab1024.sa.base.module.support.file.service.FileService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * 文件服务
@@ -35,6 +33,7 @@ import java.io.IOException;
  */
 @RestController
 @Tag(name = SwaggerTagConst.Support.FILE)
+@RequestMapping("portal")
 public class FileController extends SupportBaseController {
 
     @Resource
@@ -69,5 +68,11 @@ public class FileController extends SupportBaseController {
         SmartResponseUtil.setDownloadFileHeader(response, fileDownloadVO.getMetadata().getFileName(), fileDownloadVO.getMetadata().getFileSize());
         // 下载
         response.getOutputStream().write(fileDownloadVO.getData());
+    }
+
+    @Operation(summary = "生成文件预签名url @author akkkka114514")
+    @PostMapping("/file/uploadUrl/presign")
+    public ResponseDTO<Map<String, Object>> generatePresignedUploadUrl(@RequestParam String originalFileName, @RequestParam Integer folderType) {
+        return fileService.generatePresignedUploadUrl(originalFileName, folderType);
     }
 }

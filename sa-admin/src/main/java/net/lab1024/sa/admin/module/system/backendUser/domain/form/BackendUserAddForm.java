@@ -1,10 +1,8 @@
 package net.lab1024.sa.admin.module.system.backendUser.domain.form;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
+import jdk.jfr.BooleanFlag;
 import lombok.Data;
 import net.lab1024.sa.base.common.enumeration.GenderEnum;
 import net.lab1024.sa.base.common.swagger.SchemaEnum;
@@ -45,5 +43,23 @@ public class BackendUserAddForm {
     @NotNull(message = "角色列表不能为空")
     @Size(min = 1, message = "至少需要选择一个角色")
     private List<Long> roleIdList;
+
+    @Schema(description = "所属学校id")
+    @NotNull(message = "所属学校id不能为空")
+    @Min(value = 1, message = "所属学校id不能小于1")
+    private Long schoolId;
+
+    @Schema(description = "所属学院id")
+    @Min(value = 1, message = "所属学院id不能小于1")
+    private Long collegeId;
+
+    @Schema(description = "所属组织id")
+    @Min(value = 1, message = "所属组织id不能小于1")
+    private Long organizationId;
+
+
+    @Schema(description = "有审核权限")
+    @BooleanFlag
+    private Boolean canReview;
 
 }

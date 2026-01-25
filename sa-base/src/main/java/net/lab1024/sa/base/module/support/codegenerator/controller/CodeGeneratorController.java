@@ -34,6 +34,7 @@ import java.util.List;
  */
 @Tag(name = SwaggerTagConst.Support.CODE_GENERATOR)
 @Controller
+@RequestMapping("backend")
 public class CodeGeneratorController extends SupportBaseController {
 
     @Resource

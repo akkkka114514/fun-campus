@@ -18,8 +18,8 @@
         <a-form-item label="与portalUser共享id"  name="id">
           <a-input-number style="width: 100%" v-model:value="form.id" placeholder="与portalUser共享id" />
         </a-form-item>
-        <a-form-item label="所属organizer"  name="organizerId">
-          <a-input-number style="width: 100%" v-model:value="form.organizerId" placeholder="所属organizer" />
+        <a-form-item label="所属organization"  name="organizationId">
+          <a-input-number style="width: 100%" v-model:value="form.organizationId" placeholder="所属organization" />
         </a-form-item>
         <a-form-item label="创建时间"  name="createTime">
           <a-date-picker show-time valueFormat="YYYY-MM-DD HH:mm:ss" v-model:value="form.createTime" style="width: 100%" placeholder="创建时间" />
@@ -45,7 +45,7 @@
   import _ from 'lodash';
   import { message } from 'ant-design-vue';
   import { SmartLoading } from '/@/components/framework/smart-loading';
-  import { organizerCadreApi } from '/@/api/business/organizer-cadre/organizer-cadre-api';
+  import { organizationCadreApi } from '/@/api/business/organization-cadre/organization-cadre-api';
   import { smartSentry } from '/@/lib/smart-sentry';
   import BooleanSelect from '/@/components/framework/boolean-select/index.vue';
 
@@ -84,7 +84,7 @@
 
   const formDefault = {
       id: undefined, //与portalUser共享id
-      organizerId: undefined, //所属organizer
+      organizationId: undefined, //所属organization
       createTime: undefined, //创建时间
       updateTime: undefined, //修改时间
       deletedFlag: undefined, //删除flag
@@ -94,7 +94,7 @@
 
   const rules = {
       id: [{ required: true, message: '与portalUser共享id 必填' }],
-      organizerId: [{ required: true, message: '所属organizer 必填' }],
+      organizationId: [{ required: true, message: '所属organization 必填' }],
       createTime: [{ required: true, message: '创建时间 必填' }],
       updateTime: [{ required: true, message: '修改时间 必填' }],
       deletedFlag: [{ required: true, message: '删除flag 必填' }],
@@ -115,9 +115,9 @@
     SmartLoading.show();
     try {
       if (form.id) {
-        await organizerCadreApi.update(form);
+        await organizationCadreApi.update(form);
       } else {
-        await organizerCadreApi.add(form);
+        await organizationCadreApi.add(form);
       }
       message.success('操作成功');
       emits('reloadList');

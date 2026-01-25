@@ -13,12 +13,12 @@ export const roleMenuApi = {
    * @description: 获取角色关联菜单权限
    */
   getRoleSelectedMenu: (roleId) => {
-    return getRequest(`role/menu/getRoleSelectedMenu/${roleId}`);
+    return getRequest(`backend/role/menu/getRoleSelectedMenu/${roleId}`);
   },
   /**
    * @description: 更新角色权限
    */
   updateRoleMenu: (data) => {
-    return postRequest('role/menu/updateRoleMenu', data);
+    return postRequest('backend/role/menu/updateRoleMenu', data);
   },
 };

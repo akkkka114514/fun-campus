@@ -28,6 +28,7 @@ import java.util.List;
  */
 @RestController
 @Tag(name = AdminSwaggerTagConst.System.SYSTEM_ROLE_BACKEND_USER)
+@RequestMapping("backend")
 public class RoleBackendUserController {
 
     @Resource

@@ -16,7 +16,7 @@
           ></tm-avatar>
 
           <view class="user-details" @click="openLink('pages/user/edit')">
-            <view class="username">{{ '未设置昵称' }}</view>
+            <view class="username">{{ username }}</view>
             <view class="user-id">ID: {{ '未知' }}</view>
             <tm-icon name="tmicon-edit" :font-size="24" color="#ffffff" class="edit-icon" @click="openLink('pages/user/edit')"></tm-icon>
           </view>
@@ -96,6 +96,12 @@
           </view>
           <text class="menu-label">我的评价</text>
         </view>
+        <view class="menu-item" @click="openLink('pages/activity/publish')">
+          <view class="menu-icon publish">
+            <tm-icon name="tmicon-message-fill" :font-size="48" color="#ffffff"></tm-icon>
+          </view>
+          <text class="menu-label">发布活动</text>
+        </view>
       </view>
     </view>
 
@@ -138,7 +144,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import {onMounted, ref} from 'vue'
 import { openLink } from '@/common/tools'
 
 const defaultAvatar = '/static/default-avatar.png'
@@ -149,6 +155,7 @@ const stats = ref({
   pendingCheckout: 1,
   pendingReview: 2
 })
+var username=ref('')
 
 // 处理退出登录
 const handleLogout = () => {
@@ -162,6 +169,10 @@ const handleLogout = () => {
     }
   })
 }
+
+onMounted(()=>{
+  username.value=uni.getStorageSync('userInfo').userName
+})
 </script>
 
 <style lang="scss" scoped>

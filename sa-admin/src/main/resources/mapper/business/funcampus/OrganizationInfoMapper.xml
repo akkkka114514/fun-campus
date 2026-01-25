@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="net.lab1024.sa.admin.module.business.funcampus.organizationInfo.dao.OrganizationInfoDao">
+
+    <!-- 查询结果列 -->
+    <sql id="base_columns">
+        organization_info.id,
+        organization_info.school_id,
+        organization_info.name,
+        organization_info.deleted_flag,
+        organization_info.create_time,
+        organization_info.update_time
+    </sql>
+
+    <!-- 分页查询 -->
+    <select id="queryPage" resultType="net.lab1024.sa.admin.module.business.funcampus.organizationInfo.domain.vo.OrganizationInfoVO">
+        SELECT
+        <include refid="base_columns"/>
+        FROM organization_info
+    </select>
+
+    <update id="batchUpdateDeleted">
+        update organization_info set deleted_flag = #{deletedFlag}
+        where id in
+        <foreach collection="idList" open="(" close=")" separator="," item="item">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="updateDeleted">
+        update organization_info set deleted_flag = #{deletedFlag}
+        where id = #{id}
+    </update>
+    <select id="getOrganizationInfoByUserId" resultType="net.lab1024.sa.admin.module.business.funcampus.organizationInfo.domain.vo.SimpleOrganizationInfoVO">
+        select id,name
+        from organization_info
+        where school_id =
+              (select school_id
+               from backend_user
+               where id = #{userId})
+    </select>
+</mapper>

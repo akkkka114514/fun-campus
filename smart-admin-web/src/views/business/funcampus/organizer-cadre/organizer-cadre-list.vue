@@ -12,8 +12,8 @@
             <a-form-item label="与portalUser共享id" class="smart-query-form-item">
                 <a-input style="width: 200px" v-model:value="queryForm.id" placeholder="与portalUser共享id" />
             </a-form-item>
-            <a-form-item label="所属organizer" class="smart-query-form-item">
-                <a-input style="width: 200px" v-model:value="queryForm.organizerId" placeholder="所属organizer" />
+            <a-form-item label="所属organization" class="smart-query-form-item">
+                <a-input style="width: 200px" v-model:value="queryForm.organizationId" placeholder="所属organization" />
             </a-form-item>
             <a-form-item label="删除flag" class="smart-query-form-item">
                 <a-input style="width: 200px" v-model:value="queryForm.deletedFlag" placeholder="删除flag" />
@@ -100,7 +100,7 @@
             />
         </div>
 
-        <OrganizerCadreForm  ref="formRef" @reloadList="queryData"/>
+        <OrganizationCadreForm  ref="formRef" @reloadList="queryData"/>
 
     </a-card>
 </template>
@@ -108,11 +108,11 @@
     import { reactive, ref, onMounted } from 'vue';
     import { message, Modal } from 'ant-design-vue';
     import { SmartLoading } from '/@/components/framework/smart-loading';
-    import { organizerCadreApi } from '/@/api/business/organizer-cadre/organizer-cadre-api';
+    import { organizationCadreApi } from '/@/api/business/organization-cadre/organization-cadre-api';
     import { PAGE_SIZE_OPTIONS } from '/@/constants/common-const';
     import { smartSentry } from '/@/lib/smart-sentry';
     import TableOperator from '/@/components/support/table-operator/index.vue';
-    import OrganizerCadreForm from './organizer-cadre-form.vue';
+    import OrganizationCadreForm from './organization-cadre-form.vue';
 
     // ---------------------------- 表格列 ----------------------------
 
@@ -123,8 +123,8 @@
             ellipsis: true,
         },
         {
-            title: '所属organizer',
-            dataIndex: 'organizerId',
+            title: '所属organization',
+            dataIndex: 'organizationId',
             ellipsis: true,
         },
         {
@@ -154,7 +154,7 @@
 
     const queryFormState = {
         id: undefined, //与portalUser共享id
-        organizerId: undefined, //所属organizer
+        organizationId: undefined, //所属organization
         deletedFlag: undefined, //删除flag
         pageNum: 1,
         pageSize: 10,
@@ -186,7 +186,7 @@
     async function queryData() {
         tableLoading.value = true;
         try {
-            let queryResult = await organizerCadreApi.queryPage(queryForm);
+            let queryResult = await organizationCadreApi.queryPage(queryForm);
             tableData.value = queryResult.data.list;
             total.value = queryResult.data.total;
         } catch (e) {
@@ -229,7 +229,7 @@
             let deleteForm = {
                 goodsIdList: selectedRowKeyList.value,
             };
-            await organizerCadreApi.delete(data.id);
+            await organizationCadreApi.delete(data.id);
             message.success('删除成功');
             queryData();
         } catch (e) {
@@ -267,7 +267,7 @@
     async function requestBatchDelete() {
         try {
             SmartLoading.show();
-            await organizerCadreApi.batchDelete(selectedRowKeyList.value);
+            await organizationCadreApi.batchDelete(selectedRowKeyList.value);
             message.success('删除成功');
             queryData();
         } catch (e) {

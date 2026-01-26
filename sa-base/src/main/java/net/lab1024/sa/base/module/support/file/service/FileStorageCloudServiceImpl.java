@@ -22,11 +22,14 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.*;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
@@ -259,11 +262,23 @@ public class FileStorageCloudServiceImpl implements IFileStorageService {
 
             // 创建预签名上传请求
             S3Presigner.Builder presignerBuilder = S3Presigner.builder()
-                    .region(Region.of(cloudConfig.getRegion()));
+                    .region(Region.of(cloudConfig.getRegion()))
+                    .credentialsProvider(
+                            StaticCredentialsProvider.create(
+                                    AwsBasicCredentials.create(cloudConfig.getAccessKey(), cloudConfig.getSecretKey())))
+                    .serviceConfiguration(S3Configuration.builder()
+                            .pathStyleAccessEnabled(true)
+                            .chunkedEncodingEnabled(false)
+                            .build());
             
             // 如果配置了端点，则使用它
             if (StringUtils.isNotBlank(cloudConfig.getEndpoint())) {
-                presignerBuilder.endpointOverride(java.net.URI.create(cloudConfig.getEndpoint()));
+                String endpointUrl = cloudConfig.getEndpoint();
+                // 确保端点URL格式正确
+                if (!endpointUrl.startsWith("http://") && !endpointUrl.startsWith("https://")) {
+                    endpointUrl = "http://" + endpointUrl;
+                }
+                presignerBuilder.endpointOverride(java.net.URI.create(endpointUrl));
             }
             
             S3Presigner presigner = presignerBuilder.build();

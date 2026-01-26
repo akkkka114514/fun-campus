@@ -71,7 +71,7 @@ public class FileController extends SupportBaseController {
     }
 
     @Operation(summary = "生成文件预签名url @author akkkka114514")
-    @PostMapping("/file/uploadUrl/presign")
+    @GetMapping("/file/uploadUrl/presign")
     public ResponseDTO<Map<String, Object>> generatePresignedUploadUrl(@RequestParam String originalFileName, @RequestParam Integer folderType) {
         return fileService.generatePresignedUploadUrl(originalFileName, folderType);
     }

@@ -63,3 +63,4 @@ export const timeText = computed(() => (time: number) => {
   let week = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
   return arr[0] + ' ' + week[Number(arr[1])]
 })
+

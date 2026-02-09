@@ -10,8 +10,9 @@
         activity.position,
         activity.score_can_get,
         activity.enroll_num_limit,
-        activity.activity_school_id,
-        activity.activity_organization_id,
+        activity.activity_belong_to_school_id,
+        activity.activity_belong_to_organization_id,
+        activity.activity_belong_to_college_id,
         activity.deleted_flag,
         activity.create_time,
         activity.update_time,
@@ -19,8 +20,9 @@
         activity.enroll_need_review,
         activity.need_sign_out,
         activity.attachment,
-        activity.category,
+        activity.category_id,
         activity.cover_img
+        activity.activity_manager_id,
     </sql>
 
     <resultMap id="ActivityWithScheduleVO" type="net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityWithScheduleVO">
@@ -30,8 +32,9 @@
         <result property="position" column="position"/>
         <result property="scoreCanGet" column="score_can_get"/>
         <result property="enrollNumLimit" column="enroll_num_limit"/>
-        <result property="activitySchoolId" column="activity_school_id"/>
-        <result property="activityOrganizationId" column="activity_organization_id"/>
+        <result property="activityBelongToSchoolId" column="activity_belong_to_school_id"/>
+        <result property="activityBelongToOrganizationId" column="activity_belong_to_organization_id"/>
+        <result property="activityBelongToCollegeId" column="activity_belong_to_college_id"/>
         <result property="enrollStartTime" column="enroll_start_time"/>
         <result property="enrollEndTime" column="enroll_end_time"/>
         <result property="activityStartTime" column="activity_start_time"/>
@@ -41,6 +44,12 @@
         <result property="deletedFlag" column="deleted_flag"/>
         <result property="createTime" column="create_time"/>
         <result property="updateTime" column="update_time"/>
+        <result property="description" column="description"/>
+        <result property="enrollNeedReview" column="enroll_need_review"/>
+        <result property="needSignOut" column="need_sign_out"/>
+        <result property="attachment" column="attachment"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="activityManagerId" column="activity_manager_id"/>
     </resultMap>
 
     <update id="batchUpdateDeleted">
@@ -164,6 +173,6 @@
             activity.status = 0
             or activity.status = 1
             and activity.deleted_flag = 0
-            and activity.activity_school_id = #{schoolId}
+            and activity.activity_belong_to_school_id = #{schoolId}
     </select>
 </mapper>

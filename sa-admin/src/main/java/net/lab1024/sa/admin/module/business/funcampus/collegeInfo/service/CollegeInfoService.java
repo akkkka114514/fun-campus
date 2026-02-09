@@ -46,8 +46,10 @@ public class CollegeInfoService {
      * 分页查询
      */
     public PageResult<CollegeInfoVO> queryPage(CollegeInfoQueryForm queryForm) {
+        log.info("CollegeInfoService.queryPage called, queryForm={}", queryForm);
         Page<?> page = SmartPageUtil.convert2PageQuery(queryForm);
         List<CollegeInfoVO> list = collegeInfoDao.queryPage(page, queryForm);
+        log.info("CollegeInfoService.queryPage result: count={}", list.size());
         return SmartPageUtil.convert2PageResult(page, list);
     }
 
@@ -55,8 +57,14 @@ public class CollegeInfoService {
      * 添加
      */
     public ResponseDTO<String> add(CollegeInfoAddForm addForm) {
+        log.info("CollegeInfoService.add called, addForm={}", addForm);
         CollegeInfoEntity collegeInfoEntity = SmartBeanUtil.copy(addForm, CollegeInfoEntity.class);
-        collegeInfoDao.insert(collegeInfoEntity);
+        int result = collegeInfoDao.insert(collegeInfoEntity);
+        if (result > 0) {
+            log.info("CollegeInfoService.add success: new record created with id={}", collegeInfoEntity.getId());
+        } else {
+            log.error("CollegeInfoService.add failed: no record created");
+        }
         return ResponseDTO.ok();
     }
 
@@ -65,8 +73,14 @@ public class CollegeInfoService {
      *
      */
     public ResponseDTO<String> update(CollegeInfoUpdateForm updateForm) {
+        log.info("CollegeInfoService.update called, updateForm={}", updateForm);
         CollegeInfoEntity collegeInfoEntity = SmartBeanUtil.copy(updateForm, CollegeInfoEntity.class);
-        collegeInfoDao.updateById(collegeInfoEntity);
+        int result = collegeInfoDao.updateById(collegeInfoEntity);
+        if (result > 0) {
+            log.info("CollegeInfoService.update success: record updated with id={}", updateForm.getId());
+        } else {
+            log.warn("CollegeInfoService.update warning: no records updated");
+        }
         return ResponseDTO.ok();
     }
 
@@ -74,11 +88,14 @@ public class CollegeInfoService {
      * 批量删除
      */
     public ResponseDTO<String> batchDelete(List<Long> idList) {
+        log.info("CollegeInfoService.batchDelete called, idList size={}", CollectionUtils.isNotEmpty(idList) ? idList.size() : 0);
         if (CollectionUtils.isEmpty(idList)){
+            log.debug("CollegeInfoService.batchDelete: idList is empty");
             return ResponseDTO.ok();
         }
 
-        collegeInfoDao.batchUpdateDeleted(idList, true);
+        int result = collegeInfoDao.batchUpdateDeleted(idList, true);
+        log.info("CollegeInfoService.batchDelete result: {} records marked as deleted", result);
         return ResponseDTO.ok();
     }
 
@@ -86,11 +103,18 @@ public class CollegeInfoService {
      * 单个删除
      */
     public ResponseDTO<String> delete(Long id) {
+        log.info("CollegeInfoService.delete called, id={}", id);
         if (null == id){
+            log.warn("CollegeInfoService.delete: id is null");
             return ResponseDTO.ok();
         }
 
-        collegeInfoDao.updateDeleted(id, true);
+        int result = collegeInfoDao.updateDeleted(id, true);
+        if (result > 0) {
+            log.info("CollegeInfoService.delete success: record with id={} marked as deleted", id);
+        } else {
+            log.warn("CollegeInfoService.delete warning: no records deleted");
+        }
         return ResponseDTO.ok();
     }
 
@@ -99,9 +123,12 @@ public class CollegeInfoService {
      */
     public List<SimpleCollegeInfoVO> getCollegeInfoByUserId() {
         Long userId = SmartRequestUtil.getRequestUserId();
+        log.info("CollegeInfoService.getCollegeInfoByUserId called, userId={}", userId);
         List<SimpleCollegeInfoVO> collegeInfoList = this.collegeInfoDao.getCollegeInfoByUserId(userId);
         if (CollectionUtils.isEmpty(collegeInfoList)){
             log.error("通过userid:{}获取的schoolid获取的collegeInfo为空", userId);
+        } else {
+            log.info("CollegeInfoService.getCollegeInfoByUserId result: count={}", collegeInfoList.size());
         }
         return collegeInfoList;
     }

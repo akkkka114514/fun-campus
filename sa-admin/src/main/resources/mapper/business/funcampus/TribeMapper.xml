@@ -11,7 +11,8 @@
         tribe.belong_to,
         tribe.deleted_flag,
         tribe.create_time,
-        tribe.update_time
+        tribe.update_time,
+        tribe.school_id
     </sql>
 
     <!-- 分页查询 -->

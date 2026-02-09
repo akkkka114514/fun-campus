@@ -49,4 +49,7 @@ public class TribeAddForm {
     @NotNull(message = "修改时间 不能为空")
     private LocalDateTime updateTime;
 
+    @Schema(description = "所属学校id", requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotNull(message = "所属学校id 不能为空")
+    private Long schoolId;
 }

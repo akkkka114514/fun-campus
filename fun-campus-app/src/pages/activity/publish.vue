@@ -56,6 +56,11 @@ import {ref, onMounted} from 'vue';
 import {
   initActivityPublishPage
 } from "@/common/Api";
+import dxBelongSetting from '@/components/dx-form-section/belong-setting.vue';
+import dxBasicInfo from '@/components/dx-form-section/basic-info.vue';
+import dxParticipationSetting from '@/components/dx-form-section/participation-setting.vue';
+import dxCoverUpload from '@/components/dx-cover-upload/cover-upload.vue';
+import dxAttachmentUpload from '@/components/dx-attachment-upload/attachment-upload.vue';
 
 // 表单数据
 const formData = ref({
@@ -133,6 +138,9 @@ const organizationReviewers = ref<Map<number, Array<{id: number, name: string}>>
 
 // 活动归属类型选择改变事件
 const onBelongToTypeChange = (e: any) => {
+  if (!e.detail){
+    return;
+  }
   belongToType.value = e.detail.value;
   // 清除之前的选择
   formData.value.activityBelongToOrganizationId = -1;
@@ -143,6 +151,9 @@ const onBelongToTypeChange = (e: any) => {
 
 // 参与类型改变事件
 const onParticipationTypeChangeRadio = (e: any) => {
+  if(!e.detail){
+    return;
+  }
   participationType.value = e.detail.value;
 };
 
@@ -289,7 +300,7 @@ onMounted(()=> {
 <style lang="scss">
 .publish-activity-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #ff8c42, #ff6b35);
+  background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
   padding: 20rpx;
 
   .header {
@@ -299,16 +310,16 @@ onMounted(()=> {
     .title {
       font-size: 48rpx;
       font-weight: bold;
-      color: #fff;
-      text-shadow: 2rpx 2rpx 4rpx rgba(0, 0, 0, 0.3);
+      color: #ffffff;
+      text-shadow: 2rpx 2rpx 4rpx rgba(0, 0, 0, 0.5);
     }
   }
 
   .form-container {
-    background: #fff;
+    background: #2d2d2d;
     border-radius: 20rpx;
     padding: 40rpx;
-    box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.1);
+    box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.3);
 
     .form-item {
       margin-bottom: 40rpx;
@@ -316,112 +327,8 @@ onMounted(()=> {
       .label {
         font-size: 32rpx;
         font-weight: bold;
-        color: #333;
+        color: #e0e0e0;
         margin-bottom: 20rpx;
-      }
-
-      .input {
-        width: 100%;
-        height: 80rpx;
-        border: 2rpx solid #e0e0e0;
-        border-radius: 12rpx;
-        padding: 0 20rpx;
-        font-size: 30rpx;
-        color: #333;
-
-        &:focus {
-          border-color: #ff8c42;
-          box-shadow: 0 0 10rpx rgba(255, 140, 66, 0.3);
-        }
-      }
-
-      .textarea {
-        width: 100%;
-        min-height: 200rpx;
-        border: 2rpx solid #e0e0e0;
-        border-radius: 12rpx;
-        padding: 20rpx;
-        font-size: 30rpx;
-        color: #333;
-        line-height: 1.5;
-
-        &:focus {
-          border-color: #ff8c42;
-          box-shadow: 0 0 10rpx rgba(255, 140, 66, 0.3);
-        }
-      }
-
-      .picker {
-        width: 100%;
-        height: 80rpx;
-        border: 2rpx solid #e0e0e0;
-        border-radius: 12rpx;
-        padding: 0 20rpx;
-        font-size: 30rpx;
-        color: #333;
-        display: flex;
-        align-items: center;
-        background: #fafafa;
-      }
-
-      .radio-item {
-        display: inline-block;
-        margin-right: 40rpx;
-        font-size: 30rpx;
-        color: #333;
-        align-items: center;
-
-        radio {
-          transform: scale(0.8);
-        }
-      }
-      
-      .upload-area {
-        width: 100%;
-        height: 200rpx;
-        border: 2rpx dashed #e0e0e0;
-        border-radius: 12rpx;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: #fafafa;
-        overflow: hidden;
-        
-        &.active {
-          border-color: #ff8c42;
-          background-color: rgba(255, 140, 66, 0.1);
-        }
-      }
-      
-      .upload-placeholder {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        color: #999;
-        
-        .upload-icon {
-          font-size: 60rpx;
-          margin-bottom: 10rpx;
-        }
-      }
-      
-      .cover-preview-container {
-        width: 100%;
-        height: 300rpx;
-        overflow: hidden;
-        border-radius: 12rpx;
-        border: 2rpx solid #eee;
-        margin-bottom: 20rpx;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: #f8f8f8;
-      }
-      
-      .cover-preview {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
       }
     }
   }
@@ -433,17 +340,17 @@ onMounted(()=> {
     .submit-button {
       width: 100%;
       height: 100rpx;
-      background: linear-gradient(to right, #ff8c42, #ff6b35);
-      color: white;
+      background: linear-gradient(to right, #ffffff, #e0e0e0);
+      color: #1a1a1a;
       border: none;
       border-radius: 50rpx;
       font-size: 36rpx;
       font-weight: bold;
-      box-shadow: 0 10rpx 20rpx rgba(255, 140, 66, 0.4);
+      box-shadow: 0 10rpx 20rpx rgba(0, 0, 0, 0.4);
 
       &:active {
         transform: translateY(2rpx);
-        box-shadow: 0 5rpx 10rpx rgba(255, 140, 66, 0.4);
+        box-shadow: 0 5rpx 10rpx rgba(0, 0, 0, 0.4);
       }
     }
   }

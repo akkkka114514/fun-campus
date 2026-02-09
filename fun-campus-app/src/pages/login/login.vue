@@ -243,15 +243,14 @@ function login(){
       loginForm.value.captchaCode,
       loginForm.value.captchaUuid)
   .then(res=>{
-    console.log(res.data.data)
+    console.log(res.data)
     if (res.data.code===0){
       uni.setStorage({key:'userInfo', data:res.data.data})
       uni.reLaunch({
         url: '/pages/index/index'
       });
-    }else {
-      uni.$tm.u.toast(res.data.message);
     }
+    uni.$tm.u.toast(res.data.msg);
   })
 }
 

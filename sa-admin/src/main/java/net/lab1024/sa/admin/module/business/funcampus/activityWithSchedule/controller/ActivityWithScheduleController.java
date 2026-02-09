@@ -147,4 +147,11 @@ public class ActivityWithScheduleController {
 
         return ResponseDTO.ok(initPublishActivityPageVO);
     }
+
+    @Operation(summary = "添加待审核活动 @author akkkka114514")
+    @PostMapping("/activity/submit")
+    public ResponseDTO<Void> submitActivity(@RequestBody @Valid ActivityWithScheduleAddForm addForm) {
+        System.out.println(addForm.toString());
+        return null;
+    }
 }

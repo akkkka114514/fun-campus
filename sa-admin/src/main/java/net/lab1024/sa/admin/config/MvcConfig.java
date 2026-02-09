@@ -2,6 +2,7 @@ package net.lab1024.sa.admin.config;
 
 import jakarta.annotation.Resource;
 import net.lab1024.sa.admin.interceptor.AdminInterceptor;
+import net.lab1024.sa.admin.interceptor.RequestLogInterceptor;
 import net.lab1024.sa.base.config.SwaggerConfig;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -22,11 +23,25 @@ public class MvcConfig implements WebMvcConfigurer {
 
     @Resource
     private AdminInterceptor adminInterceptor;
-
-
+    
+    @Resource
+    private RequestLogInterceptor requestLogInterceptor;
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
+        // 注册请求日志拦截器（最先执行）
+        registry.addInterceptor(requestLogInterceptor)
+                .addPathPatterns("/**")
+                .excludePathPatterns(
+                        "/swagger-ui/**",
+                        "/v3/api-docs/**",
+                        "/webjars/**",
+                        "/favicon.ico",
+                        "/error",
+                        "/actuator/**"
+                );
+        
+        // 注册管理员拦截器
         registry.addInterceptor(adminInterceptor)
                 .excludePathPatterns(SwaggerConfig.SWAGGER_WHITELIST)
                 .addPathPatterns("/**");

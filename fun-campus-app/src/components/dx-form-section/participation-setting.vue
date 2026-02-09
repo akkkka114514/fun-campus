@@ -1,5 +1,5 @@
 <template>
-  <view class="participation-setting-section">
+  <view class="participation-setting-section" @click="hideSearchResults">
     <!-- 是否需要审核 -->
     <view class="form-item">
       <view class="label">报名需审核</view>
@@ -30,6 +30,152 @@
       </radio-group>
     </view>
 
+    <!-- 时间设置 -->
+    <view class="form-item">
+      <view class="label">报名开始时间</view>
+      <tm-time-picker
+        v-model="localFormData.enrollStartTime"
+        :start="minDate"
+        :end="maxDate"
+        title="选择报名开始时间"
+        :showDetail="{year: true, month: true, day: true, hour: true, minute: true}"
+        format="YYYY/MM/DD HH:mm"
+      >
+        <view class="picker-display" :class="{'placeholder': !localFormData.enrollStartTime}">
+          {{ localFormData.enrollStartTime ? formatDate(localFormData.enrollStartTime) : '请选择报名开始时间' }}
+        </view>
+      </tm-time-picker>
+    </view>
+
+    <view class="form-item">
+      <view class="label">报名结束时间</view>
+      <tm-time-picker
+        v-model="localFormData.enrollEndTime"
+        :start="localFormData.enrollStartTime || minDate"
+        :end="maxDate"
+        title="选择报名结束时间"
+        :showDetail="{year: true, month: true, day: true, hour: true, minute: true}"
+        format="YYYY/MM/DD HH:mm"
+        :disabled="!localFormData.enrollStartTime"
+        @confirm="validateEnrollEndTime"
+      >
+        <view class="picker-display" :class="{'placeholder': !localFormData.enrollEndTime}">
+          {{ localFormData.enrollEndTime ? formatDate(localFormData.enrollEndTime) : '请选择报名结束时间' }}
+        </view>
+      </tm-time-picker>
+    </view>
+
+    <view class="form-item">
+      <view class="label">活动开始时间</view>
+      <tm-time-picker
+        v-model="localFormData.activityStartTime"
+        :start="localFormData.enrollEndTime || minDate"
+        :end="maxDate"
+        title="选择活动开始时间"
+        :showDetail="{year: true, month: true, day: true, hour: true, minute: true}"
+        format="YYYY/MM/DD HH:mm"
+        :disabled="!localFormData.enrollEndTime"
+        @confirm="validateActivityStartTime"
+      >
+        <view class="picker-display" :class="{'placeholder': !localFormData.activityStartTime}">
+          {{ localFormData.activityStartTime ? formatDate(localFormData.activityStartTime) : '请选择活动开始时间' }}
+        </view>
+      </tm-time-picker>
+    </view>
+
+    <view class="form-item">
+      <view class="label">活动结束时间</view>
+      <tm-time-picker
+        v-model="localFormData.activityEndTime"
+        :start="localFormData.activityStartTime || minDate"
+        :end="maxDate"
+        title="选择活动结束时间"
+        :showDetail="{year: true, month: true, day: true, hour: true, minute: true}"
+        format="YYYY/MM/DD HH:mm"
+        :disabled="!localFormData.activityStartTime"
+        @confirm="validateActivityEndTime"
+      >
+        <view class="picker-display" :class="{'placeholder': !localFormData.activityEndTime}">
+          {{ localFormData.activityEndTime ? formatDate(localFormData.activityEndTime) : '请选择活动结束时间' }}
+        </view>
+      </tm-time-picker>
+    </view>
+
+    <view class="form-item">
+      <view class="label">签到开始时间</view>
+      <tm-time-picker
+        v-model="localFormData.checkInStartTime"
+        :start="localFormData.activityEndTime || minDate"
+        :end="maxDate"
+        title="选择签到开始时间"
+        :showDetail="{year: true, month: true, day: true, hour: true, minute: true}"
+        format="YYYY/MM/DD HH:mm"
+        :disabled="!localFormData.activityEndTime"
+        @confirm="validateCheckInStartTime"
+      >
+        <view class="picker-display" :class="{'placeholder': !localFormData.checkInStartTime}">
+          {{ localFormData.checkInStartTime ? formatDate(localFormData.checkInStartTime) : '请选择签到开始时间' }}
+        </view>
+      </tm-time-picker>
+    </view>
+
+    <view class="form-item">
+      <view class="label">签到结束时间</view>
+      <tm-time-picker
+        v-model="localFormData.checkInEndTime"
+        :start="localFormData.checkInStartTime || minDate"
+        :end="maxDate"
+        title="选择签到结束时间"
+        :showDetail="{year: true, month: true, day: true, hour: true, minute: true}"
+        format="YYYY/MM/DD HH:mm"
+        :disabled="!localFormData.checkInStartTime"
+        @confirm="validateCheckInEndTime"
+      >
+        <view class="picker-display" :class="{'placeholder': !localFormData.checkInEndTime}">
+          {{ localFormData.checkInEndTime ? formatDate(localFormData.checkInEndTime) : '请选择签到结束时间' }}
+        </view>
+      </tm-time-picker>
+    </view>
+
+    <!-- 签退时间设置 (当需要签退时显示) -->
+    <view v-if="localFormData.needSignOut">
+      <view class="form-item">
+        <view class="label">签退开始时间</view>
+        <tm-time-picker
+          v-model="localFormData.checkOutStartTime"
+          :start="localFormData.checkInEndTime || minDate"
+          :end="maxDate"
+          title="选择签退开始时间"
+          :showDetail="{year: true, month: true, day: true, hour: true, minute: true}"
+          format="YYYY/MM/DD HH:mm"
+          :disabled="!localFormData.checkInEndTime"
+          @confirm="validateCheckOutStartTime"
+        >
+          <view class="picker-display" :class="{'placeholder': !localFormData.checkOutStartTime}">
+            {{ localFormData.checkOutStartTime ? formatDate(localFormData.checkOutStartTime) : '请选择签退开始时间' }}
+          </view>
+        </tm-time-picker>
+      </view>
+
+      <view class="form-item">
+        <view class="label">签退结束时间</view>
+        <tm-time-picker
+          v-model="localFormData.checkOutEndTime"
+          :start="localFormData.checkOutStartTime || minDate"
+          :end="maxDate"
+          title="选择签退结束时间"
+          :showDetail="{year: true, month: true, day: true, hour: true, minute: true}"
+          format="YYYY/MM/DD HH:mm"
+          :disabled="!localFormData.checkOutStartTime"
+          @confirm="validateCheckOutEndTime"
+        >
+          <view class="picker-display" :class="{'placeholder': !localFormData.checkOutEndTime}">
+            {{ localFormData.checkOutEndTime ? formatDate(localFormData.checkOutEndTime) : '请选择签退结束时间' }}
+          </view>
+        </tm-time-picker>
+      </view>
+    </view>
+
     <!-- 参与对象选择 -->
     <view class="form-item">
       <view class="label">参与对象</view>
@@ -50,16 +196,23 @@
       <!-- 院系选择 -->
       <view class="form-item">
         <view class="label">选择院系</view>
-        <view class="multi-selector" @click="showCollegeMultiSelector = true">
-          <view class="picker" :class="{'placeholder': selectedColleges.length === 0}">
+        <view class="picker-trigger" @click="showCollegeSelector = true">
+          <view class="picker-display" :class="{'placeholder': selectedColleges.length === 0}">
             {{
               selectedColleges.length > 0 ? 
-              selectedColleges.map(id => {
-                const college = colleges.find(c => c.id === id);
-                return college ? college.name : '';
-              }).join(', ') : 
+              selectedColleges.map(id => getCollegeNameById(id)).join(', ') : 
               '请选择院系(可多选)'
             }}
+          </view>
+          <view class="selected-tags">
+            <view 
+              v-for="id in selectedColleges" 
+              :key="'selected-college-' + id" 
+              class="tag-item"
+            >
+              {{ getCollegeNameById(id) }}
+              <text class="remove-tag" @click.stop="removeCollege(id)">×</text>
+            </view>
           </view>
         </view>
       </view>
@@ -67,16 +220,23 @@
       <!-- 年级选择 -->
       <view class="form-item">
         <view class="label">选择年级</view>
-        <view class="multi-selector" @click="showGradeMultiSelector = true">
-          <view class="picker" :class="{'placeholder': selectedGrades.length === 0}">
+        <view class="picker-trigger" @click="showGradeSelector = true">
+          <view class="picker-display" :class="{'placeholder': selectedGrades.length === 0}">
             {{
               selectedGrades.length > 0 ? 
-              selectedGrades.map(id => {
-                const grade = grades.find(g => g.id === id);
-                return grade ? grade.name : '';
-              }).join(', ') : 
+              selectedGrades.map(id => getGradeNameById(id)).join(', ') : 
               '请选择年级(可多选)'
             }}
+          </view>
+          <view class="selected-tags">
+            <view 
+              v-for="id in selectedGrades" 
+              :key="'selected-grade-' + id" 
+              class="tag-item"
+            >
+              {{ getGradeNameById(id) }}
+              <text class="remove-tag" @click.stop="removeGrade(id)">×</text>
+            </view>
           </view>
         </view>
       </view>
@@ -86,16 +246,17 @@
     <view v-if="localParticipationType === 'tribe'">
       <view class="form-item">
         <view class="label">活动部落</view>
-        <view class="search-container">
+        <view class="search-container" @click.stop>
           <view class="search-input-wrapper">
             <input 
               class="search-input" 
               v-model="tribeSearchKeyword" 
               placeholder="搜索活动部落"
+              @focus="showSearchResults = true"
             />
             <button class="search-button" @click="onTribeSearchClick">搜索</button>
           </view>
-          <view class="search-results" v-if="filteredTribes.length > 0">
+          <view class="search-results" v-if="showSearchResults && filteredTribes.length > 0">
             <view 
               v-for="(tribe, index) in filteredTribes" 
               :key="tribe.id" 
@@ -119,53 +280,56 @@
       </view>
     </view>
     
-    <!-- 院系多选弹窗 -->
-    <view v-if="showCollegeMultiSelector" class="selector-popup">
-      <view class="popup-overlay" @click="showCollegeMultiSelector = false"></view>
-      <view class="popup-content">
-        <view class="popup-header">
-          <text class="popup-title">选择院系</text>
-          <view class="popup-actions">
-            <button class="popup-btn" @click="clearSelectedColleges">清空</button>
-            <button class="popup-btn confirm-btn" @click="confirmCollegesSelection">确定</button>
-          </view>
-        </view>
-        <scroll-view class="selector-list" scroll-y="true">
-          <label v-for="(college, index) in colleges" :key="college.id" class="selector-item">
-            <checkbox
+    <!-- 院系选择抽屉 -->
+    <tm-drawer 
+      v-model:show="showCollegeSelector"
+      title="选择院系"
+      placement="bottom"
+      :mask="true"
+      :overlayClick="true"
+      :closeable="true"
+      :teleport="true"
+      :inContent="false"
+    >
+      <view class="drawer-content">
+        <scroll-view class="checkbox-list" scroll-y="true">
+          <tm-checkbox-group v-model="tempSelectedColleges">
+            <tm-checkbox
+              v-for="(college, index) in colleges"
+              :key="college.id"
               :value="college.id"
-              :checked="selectedColleges.includes(college.id)"
-              @change="onCollegeCheckboxChange($event, college.id)"
+              :label="college.name"
             />
-            <text>{{ college.name }}</text>
-          </label>
+          </tm-checkbox-group>
+          <tm-button label="确定" @click="confirmCollegeSelection" />
         </scroll-view>
       </view>
-    </view>
+    </tm-drawer>
     
-    <!-- 年级多选弹窗 -->
-    <view v-if="showGradeMultiSelector" class="selector-popup">
-      <view class="popup-overlay" @click="showGradeMultiSelector = false"></view>
-      <view class="popup-content">
-        <view class="popup-header">
-          <text class="popup-title">选择年级</text>
-          <view class="popup-actions">
-            <button class="popup-btn" @click="clearSelectedGrades">清空</button>
-            <button class="popup-btn confirm-btn" @click="confirmGradesSelection">确定</button>
-          </view>
-        </view>
-        <scroll-view class="selector-list" scroll-y="true">
-          <label v-for="(grade, index) in grades" :key="grade.id" class="selector-item">
-            <checkbox
+    <!-- 年级选择抽屉 -->
+    <tm-drawer 
+      v-model:show="showGradeSelector"
+      title="选择年级"
+      :overlayClick="true"
+      :closeable="true"
+      :teleport="true"
+      :inContent="false"
+      placement="bottom"
+    >
+      <view class="drawer-content">
+        <scroll-view class="checkbox-list" scroll-y="true">
+          <tm-checkbox-group v-model="tempSelectedGrades">
+            <tm-checkbox
+              v-for="(grade, index) in grades"
+              :key="grade.id"
               :value="grade.id"
-              :checked="selectedGrades.includes(grade.id)"
-              @change="onGradeCheckboxChange($event, grade.id)"
+              :label="grade.name"
             />
-            <text>{{ grade.name }}</text>
-          </label>
+          </tm-checkbox-group>
+          <tm-button label="确定" @click="confirmGradeSelection"></tm-button>
         </scroll-view>
       </view>
-    </view>
+    </tm-drawer>
   </view>
 </template>
 
@@ -178,6 +342,14 @@ interface FormData {
   needSignOut: boolean;
   canEnrollCollegeIdList: number[];
   canEnrollGradeIdList: number[];
+  enrollStartTime: string | number | Date;
+  enrollEndTime: string | number | Date;
+  activityStartTime: string | number | Date;
+  activityEndTime: string | number | Date;
+  checkInStartTime: string | number | Date;
+  checkInEndTime: string | number | Date;
+  checkOutStartTime: string | number | Date;
+  checkOutEndTime: string | number | Date;
 }
 
 interface Tribe {
@@ -207,6 +379,8 @@ interface Emits {
   (e: 'update:participationType', value: string): void;
   (e: 'change', value: FormData): void;
   (e: 'participationTypeChange', value: string): void;
+  (e: 'collegeSelectionComplete', value: number[]): void;
+  (e: 'gradeSelectionComplete', value: number[]): void;
 }
 
 const props = defineProps<Props>();
@@ -215,39 +389,44 @@ const emit = defineEmits<Emits>();
 const localFormData = ref<FormData>({...props.modelValue});
 const localParticipationType = ref<string>(props.participationType);
 
-// 监听外部值的变化
-watch(() => props.modelValue, (newValue) => {
-  localFormData.value = {...newValue};
-}, { deep: true });
+// 设置最小日期为当前时间
+const minDate = new Date();
+// 设置最大日期为当前时间往后一年
+const maxDate = new Date();
+maxDate.setFullYear(maxDate.getFullYear() + 1);
 
-watch(() => props.participationType, (newValue) => {
-  localParticipationType.value = newValue;
-});
-
-// 监听内部值的变化并同步到父组件
-watch(localFormData, (newValue) => {
-  emit('update:modelValue', {...newValue});
-  emit('change', {...newValue});
-}, { deep: true });
-
-watch(localParticipationType, (newValue) => {
-  emit('update:participationType', newValue);
-  emit('participationTypeChange', newValue);
-}, { immediate: true });
+// 格式化日期显示
+const formatDate = (date: string | number | Date) => {
+  if (!date) return '';
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hour = String(d.getHours()).padStart(2, '0');
+  const minute = String(d.getMinutes()).padStart(2, '0');
+  return `${year}/${month}/${day} ${hour}:${minute}`;
+};
 
 // 已选择的院系和年级
 const selectedColleges = ref<number[]>(localFormData.value.canEnrollCollegeIdList || []);
 const selectedGrades = ref<number[]>(localFormData.value.canEnrollGradeIdList || []);
 
+// 临时选择状态（用于弹窗确认前的临时存储）
+const tempSelectedColleges = ref<number[]>([...selectedColleges.value]);
+const tempSelectedGrades = ref<number[]>([...selectedGrades.value]);
+
+// 控制弹窗显示
+const showCollegeSelector = ref(false);
+const showGradeSelector = ref(false);
+
 // 已选择的部落
 const selectedTribes = ref<number[]>([]);
 
-// 控制多选弹窗显示
-const showCollegeMultiSelector = ref(false);
-const showGradeMultiSelector = ref(false);
-
 // 搜索部落的关键词
 const tribeSearchKeyword = ref('');
+
+// 控制搜索结果显示
+const showSearchResults = ref(false);
 
 // 活动部落数据（从API获取）
 const tribes = ref<Tribe[]>([]);
@@ -282,56 +461,83 @@ const onParticipationTypeChange = (e: any) => {
 const onCollegeCheckboxChange = (e: any, id: number) => {
   const checked = e.detail.checked;
   if (checked) {
-    if (!selectedColleges.value.includes(id)) {
-      selectedColleges.value.push(id);
+    if (!tempSelectedColleges.value.includes(id)) {
+      tempSelectedColleges.value.push(id);
     }
   } else {
-    const index = selectedColleges.value.indexOf(id);
+    const index = tempSelectedColleges.value.indexOf(id);
     if (index > -1) {
-      selectedColleges.value.splice(index, 1);
+      tempSelectedColleges.value.splice(index, 1);
     }
   }
-  // 同步到formData
-  localFormData.value.canEnrollCollegeIdList = [...selectedColleges.value];
 };
 
 // 年级复选框改变事件
 const onGradeCheckboxChange = (e: any, id: number) => {
   const checked = e.detail.checked;
   if (checked) {
-    if (!selectedGrades.value.includes(id)) {
-      selectedGrades.value.push(id);
+    if (!tempSelectedGrades.value.includes(id)) {
+      tempSelectedGrades.value.push(id);
     }
   } else {
-    const index = selectedGrades.value.indexOf(id);
+    const index = tempSelectedGrades.value.indexOf(id);
     if (index > -1) {
-      selectedGrades.value.splice(index, 1);
+      tempSelectedGrades.value.splice(index, 1);
     }
   }
-  // 同步到formData
-  localFormData.value.canEnrollGradeIdList = [...selectedGrades.value];
 };
 
 // 确认院系选择
-const confirmCollegesSelection = () => {
-  showCollegeMultiSelector.value = false;
+const confirmCollegeSelection = () => {
+  console.log(tempSelectedColleges.value)
+  selectedColleges.value = [...tempSelectedColleges.value];
+  localFormData.value.canEnrollCollegeIdList = [...tempSelectedColleges.value];
+  emit('collegeSelectionComplete', [...tempSelectedColleges.value]);
+  showCollegeSelector.value = false;
 };
 
 // 确认年级选择
-const confirmGradesSelection = () => {
-  showGradeMultiSelector.value = false;
+const confirmGradeSelection = () => {
+  selectedGrades.value = [...tempSelectedGrades.value];
+  localFormData.value.canEnrollGradeIdList = [...tempSelectedGrades.value];
+  console.log('年级选择完成:'+tempSelectedGrades.value)
+  emit('gradeSelectionComplete', [...tempSelectedGrades.value]);
+  showGradeSelector.value = false;
 };
 
 // 清空院系选择
 const clearSelectedColleges = () => {
-  selectedColleges.value = [];
-  localFormData.value.canEnrollCollegeIdList = [];
+  tempSelectedColleges.value = [];
 };
 
 // 清空年级选择
 const clearSelectedGrades = () => {
-  selectedGrades.value = [];
-  localFormData.value.canEnrollGradeIdList = [];
+  tempSelectedGrades.value = [];
+};
+
+// 互斥打开drawer的函数
+const openCollegeDrawer = () => {
+  // 关闭其他drawer
+  showGradeSelector.value = false;
+  // 打开当前drawer
+  showCollegeSelector.value = true;
+};
+
+const openGradeDrawer = () => {
+  // 关闭其他drawer
+  showCollegeSelector.value = false;
+  // 打开当前drawer
+  showGradeSelector.value = true;
+};
+
+// 处理院系drawer取消事件（包括外部点击）
+const handleCollegeCancel = () => {
+  showCollegeSelector.value = false;
+};
+
+// 处理年级drawer取消事件（包括外部点击）
+const handleGradeCancel = () => {
+  showGradeSelector.value = false;
 };
 
 // 根据ID获取部落名称
@@ -362,24 +568,186 @@ const onTribeSearchClick = async () => {
   if (tribeSearchKeyword.value.trim()) {
     try {
       const response = await querySimpleTribeList(tribeSearchKeyword.value);
-      if (response.data.flag) {
+      if (response.data.ok) {
         // 过滤掉已选择的部落
         tribes.value = response.data.data.filter((tribe: any) => 
           !selectedTribes.value.includes(tribe.id)
         );
+        showSearchResults.value = true;
       } else {
         console.error('获取部落列表失败:', response.data.msg);
         tribes.value = [];
+        showSearchResults.value = false;
       }
     } catch (error) {
       console.error('搜索部落时发生错误:', error);
       tribes.value = [];
+      showSearchResults.value = false;
     }
   } else {
     // 如果搜索关键词为空，则清空搜索结果
     tribes.value = [];
+    showSearchResults.value = false;
   }
 };
+
+// 点击其他地方隐藏搜索结果
+const hideSearchResults = () => {
+  showSearchResults.value = false;
+};
+
+// 根据ID获取院系名称
+const getCollegeNameById = (id: number) => {
+  const college = props.colleges.find(c => c.id === id);
+  return college ? college.name : '';
+};
+
+// 根据ID获取年级名称
+const getGradeNameById = (id: number) => {
+  const grade = props.grades.find(g => g.id === id);
+  return grade ? grade.name : '';
+};
+
+// 验证报名结束时间
+const validateEnrollEndTime = (value: any) => {
+  if (localFormData.value.enrollStartTime && value) {
+    const startTime = new Date(localFormData.value.enrollStartTime);
+    const endTime = new Date(value);
+    if (endTime <= startTime) {
+      uni.showToast({
+        title: '报名结束时间必须晚于报名开始时间',
+        icon: 'none'
+      });
+      localFormData.value.enrollEndTime = '';
+    }
+  }
+};
+
+// 验证活动开始时间
+const validateActivityStartTime = (value: any) => {
+  if (localFormData.value.enrollEndTime && value) {
+    const enrollEndTime = new Date(localFormData.value.enrollEndTime);
+    const activityStartTime = new Date(value);
+    if (activityStartTime <= enrollEndTime) {
+      uni.showToast({
+        title: '活动开始时间必须晚于报名结束时间',
+        icon: 'none'
+      });
+      localFormData.value.activityStartTime = '';
+    }
+  }
+};
+
+// 验证活动结束时间
+const validateActivityEndTime = (value: any) => {
+  if (localFormData.value.activityStartTime && value) {
+    const startTime = new Date(localFormData.value.activityStartTime);
+    const endTime = new Date(value);
+    if (endTime <= startTime) {
+      uni.showToast({
+        title: '活动结束时间必须晚于活动开始时间',
+        icon: 'none'
+      });
+      localFormData.value.activityEndTime = '';
+    }
+  }
+};
+
+// 验证签到开始时间
+const validateCheckInStartTime = (value: any) => {
+  if (localFormData.value.activityEndTime && value) {
+    const activityEndTime = new Date(localFormData.value.activityEndTime);
+    const checkInStartTime = new Date(value);
+    if (checkInStartTime <= activityEndTime) {
+      uni.showToast({
+        title: '签到开始时间必须晚于活动结束时间',
+        icon: 'none'
+      });
+      localFormData.value.checkInStartTime = '';
+    }
+  }
+};
+
+// 验证签到结束时间
+const validateCheckInEndTime = (value: any) => {
+  if (localFormData.value.checkInStartTime && value) {
+    const startTime = new Date(localFormData.value.checkInStartTime);
+    const endTime = new Date(value);
+    if (endTime <= startTime) {
+      uni.showToast({
+        title: '签到结束时间必须晚于签到开始时间',
+        icon: 'none'
+      });
+      localFormData.value.checkInEndTime = '';
+    }
+  }
+};
+
+// 验证签退开始时间
+const validateCheckOutStartTime = (value: any) => {
+  if (localFormData.value.checkInEndTime && value) {
+    const checkInEndTime = new Date(localFormData.value.checkInEndTime);
+    const checkOutStartTime = new Date(value);
+    if (checkOutStartTime <= checkInEndTime) {
+      uni.showToast({
+        title: '签退开始时间必须晚于签到结束时间',
+        icon: 'none'
+      });
+      localFormData.value.checkOutStartTime = '';
+    }
+  }
+};
+
+// 验证签退结束时间
+const validateCheckOutEndTime = (value: any) => {
+  if (localFormData.value.checkOutStartTime && value) {
+    const startTime = new Date(localFormData.value.checkOutStartTime);
+    const endTime = new Date(value);
+    if (endTime <= startTime) {
+      uni.showToast({
+        title: '签退结束时间必须晚于签退开始时间',
+        icon: 'none'
+      });
+      localFormData.value.checkOutEndTime = '';
+    }
+  }
+};
+
+// 移除已选择的院系
+const removeCollege = (id: number) => {
+  const index = selectedColleges.value.indexOf(id);
+  if (index > -1) {
+    selectedColleges.value.splice(index, 1);
+    tempSelectedColleges.value = [...selectedColleges.value];
+    // 同步到formData
+    localFormData.value.canEnrollCollegeIdList = [...selectedColleges.value];
+  }
+};
+
+// 移除已选择的年级
+const removeGrade = (id: number) => {
+  const index = selectedGrades.value.indexOf(id);
+  if (index > -1) {
+    selectedGrades.value.splice(index, 1);
+    tempSelectedGrades.value = [...selectedGrades.value];
+    // 同步到formData
+    localFormData.value.canEnrollGradeIdList = [...selectedGrades.value];
+  }
+};
+
+// 监听弹窗显示状态，同步临时选择状态
+watch(showCollegeSelector, (newVal) => {
+  if (newVal) {
+    tempSelectedColleges.value = [...selectedColleges.value];
+  }
+});
+
+watch(showGradeSelector, (newVal) => {
+  if (newVal) {
+    tempSelectedGrades.value = [...selectedGrades.value];
+  }
+});
+
 </script>
 
 <style lang="scss" scoped>
@@ -389,7 +757,7 @@ const onTribeSearchClick = async () => {
   .label {
     font-size: 32rpx;
     font-weight: bold;
-    color: #333;
+    color: #e0e0e0;
     margin-bottom: 20rpx;
   }
 
@@ -397,7 +765,7 @@ const onTribeSearchClick = async () => {
     display: inline-block;
     margin-right: 40rpx;
     font-size: 30rpx;
-    color: #333;
+    color: #e0e0e0;
     align-items: center;
 
     radio {
@@ -406,117 +774,71 @@ const onTribeSearchClick = async () => {
   }
 }
 
-/* 多选器样式 */
-.multi-selector {
+/* Picker容器样式 */
+.picker-container {
   position: relative;
 }
 
-.multi-selector .picker {
+.picker-display {
   width: 100%;
   height: 80rpx;
-  border: 2rpx solid #e0e0e0;
+  border: 2rpx solid #555;
   border-radius: 12rpx;
   padding: 0 20rpx;
   font-size: 30rpx;
-  color: #333;
+  color: #e0e0e0;
   display: flex;
   align-items: center;
-  background: #fafafa;
-}
-
-.multi-selector .picker.placeholder {
-  color: #999;
-}
-
-/* 弹窗样式 */
-.selector-popup {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 1000;
-}
-
-.popup-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-}
-
-.popup-content {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  max-height: 70vh;
-  background: #fff;
-  border-radius: 20rpx 20rpx 0 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.popup-header {
-  display: flex;
+  background: #2a2a2a;
   justify-content: space-between;
-  align-items: center;
-  padding: 20rpx 30rpx;
-  border-bottom: 1rpx solid #eee;
 }
 
-.popup-title {
-  font-size: 36rpx;
-  font-weight: bold;
-  color: #333;
+.picker-display.placeholder {
+  color: #888;
 }
 
-.popup-actions {
+.picker-display::after {
+  content: '▼';
+  color: #888;
+  font-size: 24rpx;
+}
+
+/* 选中标签样式 */
+.selected-tags {
+  margin-top: 20rpx;
   display: flex;
-  gap: 20rpx;
+  flex-wrap: wrap;
+  gap: 15rpx;
 }
 
-.popup-btn {
-  padding: 10rpx 20rpx;
-  font-size: 28rpx;
-  border: 1rpx solid #ddd;
-  border-radius: 8rpx;
-  background: #f5f5f5;
-  color: #333;
-}
-
-.confirm-btn {
-  border-color: #ff8c42;
-  background: #ff8c42;
+.tag-item {
+  display: flex;
+  align-items: center;
+  padding: 8rpx 16rpx;
+  background: linear-gradient(135deg, #ff8c42, #ff6b35);
+  border-radius: 20rpx;
+  font-size: 24rpx;
   color: white;
+  box-shadow: 0 2rpx 8rpx rgba(255, 140, 66, 0.3);
 }
 
-.selector-list {
-  flex: 1;
-  padding: 20rpx;
-}
-
-.selector-item {
-  display: flex;
-  align-items: center;
-  padding: 20rpx 0;
-  border-bottom: 1rpx solid #f0f0f0;
-}
-
-.selector-item:last-child {
-  border-bottom: none;
-}
-
-.selector-item checkbox {
-  margin-right: 20rpx;
+.remove-tag {
+  margin-left: 8rpx;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
 }
 
 /* 部落搜索相关样式 */
 .search-container {
   position: relative;
   width: 100%;
+}
+
+/* 点击容器外隐藏搜索结果 */
+.search-container:focus-within .search-results {
+  display: block;
 }
 
 .search-input-wrapper {
@@ -532,7 +854,7 @@ const onTribeSearchClick = async () => {
   border-radius: 12rpx 0 0 12rpx;
   padding: 0 20rpx;
   font-size: 30rpx;
-  color: #333;
+  color: #ffffff;
   transition: all 0.3s ease;
 }
 
@@ -576,8 +898,9 @@ const onTribeSearchClick = async () => {
 
 .search-result-item {
   padding: 20rpx;
-  border-bottom: 1rpx solid #f0f0f0;
+  border-bottom: 1rpx solid #444;
   cursor: pointer;
+  color: #000000;
 }
 
 .search-result-item:last-child {

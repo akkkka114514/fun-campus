@@ -57,7 +57,7 @@ public class CodeGeneratorTemplateService {
 
     private static final String PROJECT_BASE_PATH="D:/ideaWorkspace/fun-campus";
     private static final String JAVA_PROJECT_PATH = PROJECT_BASE_PATH + "/sa-admin/src/main/java/net/lab1024/sa/admin/module/business/funcampus/";
-    private static final String JS_BASE_PATH = PROJECT_BASE_PATH + "/smart-admin-web-javascript/src";
+    private static final String JS_BASE_PATH = PROJECT_BASE_PATH + "/smart-admin-web/src";
     private static final String JS_CONST_PATH = JS_BASE_PATH + "/constants/business/funcampus/";
     private static final String JS_API_PATH = JS_BASE_PATH + "/api/business/funcampus/";
     private static final String SQL_PATH = PROJECT_BASE_PATH + "/sql_script/mysql/";

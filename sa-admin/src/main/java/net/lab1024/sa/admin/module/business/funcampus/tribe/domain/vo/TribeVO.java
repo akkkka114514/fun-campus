@@ -40,4 +40,7 @@ public class TribeVO {
     @Schema(description = "修改时间")
     private LocalDateTime updateTime;
 
+    @Schema(description = "所属学校id")
+    private Long schoolId;
+
 }

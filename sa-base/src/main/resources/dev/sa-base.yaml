@@ -78,6 +78,14 @@ spring:
   profiles:
     active: dev
 
+# 日志配置
+logging:
+  level:
+    net.lab1024.sa: DEBUG
+    net.lab1024.sa.base.module.support.job: WARN
+    p6spy: WARN
+
+
 # 健康检查
 management:
   endpoints:

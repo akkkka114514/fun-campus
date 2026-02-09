@@ -15,6 +15,7 @@ import net.lab1024.sa.base.common.domain.PageResult;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import net.lab1024.sa.base.common.util.SmartRequestUtil;
 import org.apache.commons.collections4.CollectionUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.Resource;
@@ -27,6 +28,7 @@ import jakarta.annotation.Resource;
  * @Copyright akkkka114514
  */
 
+@Slf4j
 @Service
 public class OrganizationInfoService {
 
@@ -37,8 +39,10 @@ public class OrganizationInfoService {
      * 分页查询
      */
     public PageResult<OrganizationInfoVO> queryPage(OrganizationInfoQueryForm queryForm) {
+        log.info("OrganizationInfoService.queryPage called, queryForm={}", queryForm);
         Page<?> page = SmartPageUtil.convert2PageQuery(queryForm);
         List<OrganizationInfoVO> list = organizationInfoDao.queryPage(page, queryForm);
+        log.info("OrganizationInfoService.queryPage result: count={}", list.size());
         return SmartPageUtil.convert2PageResult(page, list);
     }
 
@@ -46,8 +50,14 @@ public class OrganizationInfoService {
      * 添加
      */
     public ResponseDTO<String> add(OrganizationInfoAddForm addForm) {
+        log.info("OrganizationInfoService.add called, addForm={}", addForm);
         OrganizationInfoEntity organizationInfoEntity = SmartBeanUtil.copy(addForm, OrganizationInfoEntity.class);
-        organizationInfoDao.insert(organizationInfoEntity);
+        int result = organizationInfoDao.insert(organizationInfoEntity);
+        if (result > 0) {
+            log.info("OrganizationInfoService.add success: new record created with id={}", organizationInfoEntity.getId());
+        } else {
+            log.error("OrganizationInfoService.add failed: no record created");
+        }
         return ResponseDTO.ok();
     }
 
@@ -56,8 +66,14 @@ public class OrganizationInfoService {
      *
      */
     public ResponseDTO<String> update(OrganizationInfoUpdateForm updateForm) {
+        log.info("OrganizationInfoService.update called, updateForm={}", updateForm);
         OrganizationInfoEntity organizationInfoEntity = SmartBeanUtil.copy(updateForm, OrganizationInfoEntity.class);
-        organizationInfoDao.updateById(organizationInfoEntity);
+        int result = organizationInfoDao.updateById(organizationInfoEntity);
+        if (result > 0) {
+            log.info("OrganizationInfoService.update success: record updated with id={}", updateForm.getId());
+        } else {
+            log.warn("OrganizationInfoService.update warning: no records updated");
+        }
         return ResponseDTO.ok();
     }
 
@@ -65,11 +81,14 @@ public class OrganizationInfoService {
      * 批量删除
      */
     public ResponseDTO<String> batchDelete(List<Long> idList) {
+        log.info("OrganizationInfoService.batchDelete called, idList size={}", CollectionUtils.isNotEmpty(idList) ? idList.size() : 0);
         if (CollectionUtils.isEmpty(idList)){
+            log.debug("OrganizationInfoService.batchDelete: idList is empty");
             return ResponseDTO.ok();
         }
 
-        organizationInfoDao.batchUpdateDeleted(idList, true);
+        int result = organizationInfoDao.batchUpdateDeleted(idList, true);
+        log.info("OrganizationInfoService.batchDelete result: {} records marked as deleted", result);
         return ResponseDTO.ok();
     }
 
@@ -77,17 +96,26 @@ public class OrganizationInfoService {
      * 单个删除
      */
     public ResponseDTO<String> delete(Long id) {
+        log.info("OrganizationInfoService.delete called, id={}", id);
         if (null == id){
+            log.warn("OrganizationInfoService.delete: id is null");
             return ResponseDTO.ok();
         }
 
-        organizationInfoDao.updateDeleted(id, true);
+        int result = organizationInfoDao.updateDeleted(id, true);
+        if (result > 0) {
+            log.info("OrganizationInfoService.delete success: record with id={} marked as deleted", id);
+        } else {
+            log.warn("OrganizationInfoService.delete warning: no records deleted");
+        }
         return ResponseDTO.ok();
     }
 
     public List<SimpleOrganizationInfoVO> getOrganizationInfoByUserId() {
-        Long userId =SmartRequestUtil.getRequestUserId();
-
-        return organizationInfoDao.getOrganizationInfoByUserId(userId);
+        Long userId = SmartRequestUtil.getRequestUserId();
+        log.info("OrganizationInfoService.getOrganizationInfoByUserId called, userId={}", userId);
+        List<SimpleOrganizationInfoVO> result = organizationInfoDao.getOrganizationInfoByUserId(userId);
+        log.info("OrganizationInfoService.getOrganizationInfoByUserId result: count={}", result.size());
+        return result;
     }
 }

@@ -13,6 +13,7 @@ import net.lab1024.sa.base.common.domain.ResponseDTO;
 import net.lab1024.sa.base.common.domain.PageResult;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.commons.collections4.CollectionUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.Resource;
@@ -25,6 +26,7 @@ import jakarta.annotation.Resource;
  * @Copyright akkkka114514
  */
 
+@Slf4j
 @Service
 public class ActivityReviewLogService {
 
@@ -35,8 +37,10 @@ public class ActivityReviewLogService {
      * 分页查询
      */
     public PageResult<ActivityReviewLogVO> queryPage(ActivityReviewLogQueryForm queryForm) {
+        log.info("ActivityReviewLogService.queryPage called, queryForm={}", queryForm);
         Page<?> page = SmartPageUtil.convert2PageQuery(queryForm);
         List<ActivityReviewLogVO> list = activityReviewLogDao.queryPage(page, queryForm);
+        log.info("ActivityReviewLogService.queryPage result: count={}", list.size());
         return SmartPageUtil.convert2PageResult(page, list);
     }
 
@@ -44,8 +48,14 @@ public class ActivityReviewLogService {
      * 添加
      */
     public ResponseDTO<String> add(ActivityReviewLogAddForm addForm) {
+        log.info("ActivityReviewLogService.add called, addForm={}", addForm);
         ActivityReviewLogEntity activityReviewLogEntity = SmartBeanUtil.copy(addForm, ActivityReviewLogEntity.class);
-        activityReviewLogDao.insert(activityReviewLogEntity);
+        int result = activityReviewLogDao.insert(activityReviewLogEntity);
+        if (result > 0) {
+            log.info("ActivityReviewLogService.add success: new record created with id={}", activityReviewLogEntity.getId());
+        } else {
+            log.error("ActivityReviewLogService.add failed: no record created");
+        }
         return ResponseDTO.ok();
     }
 
@@ -54,8 +64,14 @@ public class ActivityReviewLogService {
      *
      */
     public ResponseDTO<String> update(ActivityReviewLogUpdateForm updateForm) {
+        log.info("ActivityReviewLogService.update called, updateForm={}", updateForm);
         ActivityReviewLogEntity activityReviewLogEntity = SmartBeanUtil.copy(updateForm, ActivityReviewLogEntity.class);
-        activityReviewLogDao.updateById(activityReviewLogEntity);
+        int result = activityReviewLogDao.updateById(activityReviewLogEntity);
+        if (result > 0) {
+            log.info("ActivityReviewLogService.update success: record updated with id={}", updateForm.getId());
+        } else {
+            log.warn("ActivityReviewLogService.update warning: no records updated");
+        }
         return ResponseDTO.ok();
     }
 

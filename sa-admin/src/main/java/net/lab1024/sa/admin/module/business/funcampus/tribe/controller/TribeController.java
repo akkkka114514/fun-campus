@@ -72,7 +72,6 @@ public class TribeController {
 
     @Operation(summary = "查询 @author akkkka114514")
     @GetMapping("/tribe/query/simple")
-    @SaCheckPermission("tribe:query")
     public ResponseDTO<List<SimpleTribeVO>> querySimpleList(@RequestParam String keyword) {
         return ResponseDTO.ok(tribeService.querySimpleList(keyword));
     }

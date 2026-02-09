@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.Data;
+import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -15,6 +16,7 @@ import java.util.List;
 * create at 2025-09-18 16:33
 */
 @Data
+@ToString
 public class ActivityWithScheduleAddForm {
     @Schema(description = "活动标题", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "活动标题 不能为空")
@@ -38,12 +40,10 @@ public class ActivityWithScheduleAddForm {
 
 
     @Schema(description = "活动所属学校", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "活动所属学校 不能为空")
     @Min(value = 0L, message = "活动所属学校 不能小于0")
     private Long activityBelongToSchoolId;
 
     @Schema(description = "活动所属组织")
-    @NotNull(message = "活动所属组织 不能为空")
     @Min(value = 0L, message = "活动所属组织 不能小于0")
     private Long activityBelongToOrganizationId;
     /**
@@ -53,23 +53,6 @@ public class ActivityWithScheduleAddForm {
     @Min(value = 0L, message = "活动所属学院 不能小于0")
     private Long activityBelongToCollegeId;
 
-    /**
-     * 是否删除
-     */
-    @Schema(description = "是否已删除")
-    private Boolean deletedFlag;
-
-    /**
-     * 创建时间
-     */
-    @Schema(description = "创建时间")
-    private LocalDateTime createTime;
-
-    /**
-     * 修改时间
-     */
-    @Schema(description = "修改时间")
-    private LocalDateTime updateTime;
 
     /**
      * 描述

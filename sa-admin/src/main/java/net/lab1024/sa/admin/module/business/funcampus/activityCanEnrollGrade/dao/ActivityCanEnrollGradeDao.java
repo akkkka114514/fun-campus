@@ -33,11 +33,11 @@ public interface ActivityCanEnrollGradeDao extends BaseMapper<ActivityCanEnrollG
     /**
      * 更新删除状态
      */
-    long updateDeleted(@Param("id")Long id,@Param("deletedFlag")boolean deletedFlag);
+    int updateDeleted(@Param("id")Long id,@Param("deletedFlag")boolean deletedFlag);
 
     /**
      * 批量更新删除状态
      */
-    void batchUpdateDeleted(@Param("idList")List<Long> idList,@Param("deletedFlag")boolean deletedFlag);
+    int batchUpdateDeleted(@Param("idList")List<Long> idList,@Param("deletedFlag")boolean deletedFlag);
 
 }

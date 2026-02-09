@@ -62,5 +62,8 @@ public class TribeEntity {
      */
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
-
+    /**
+     * 所属学校id
+     */
+    private Long schoolId;
 }

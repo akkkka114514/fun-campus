@@ -131,7 +131,7 @@ const onDescriptionInput = (e: any) => {
   .label {
     font-size: 32rpx;
     font-weight: bold;
-    color: #333;
+    color: #ffffff;
     margin-bottom: 20rpx;
   }
 
@@ -153,12 +153,17 @@ const onDescriptionInput = (e: any) => {
   .textarea {
     width: 100%;
     min-height: 200rpx;
-    border: 2rpx solid #e0e0e0;
+    border: 2rpx solid #555;
     border-radius: 12rpx;
     padding: 20rpx;
     font-size: 30rpx;
-    color: #333;
+    color: #e0e0e0;
+    background: #2a2a2a;
     line-height: 1.5;
+
+    &::placeholder {
+      color: #888;
+    }
 
     &:focus {
       border-color: #ff8c42;

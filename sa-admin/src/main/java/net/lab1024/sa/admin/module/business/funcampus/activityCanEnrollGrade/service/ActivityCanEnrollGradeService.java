@@ -13,6 +13,7 @@ import net.lab1024.sa.base.common.domain.ResponseDTO;
 import net.lab1024.sa.base.common.domain.PageResult;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.commons.collections4.CollectionUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.Resource;
@@ -25,6 +26,7 @@ import jakarta.annotation.Resource;
  * @Copyright akkkka114514
  */
 
+@Slf4j
 @Service
 public class ActivityCanEnrollGradeService {
 
@@ -35,8 +37,10 @@ public class ActivityCanEnrollGradeService {
      * 分页查询
      */
     public PageResult<ActivityCanEnrollGradeVO> queryPage(ActivityCanEnrollGradeQueryForm queryForm) {
+        log.info("ActivityCanEnrollGradeService.queryPage called, queryForm={}", queryForm);
         Page<?> page = SmartPageUtil.convert2PageQuery(queryForm);
         List<ActivityCanEnrollGradeVO> list = activityCanEnrollGradeDao.queryPage(page, queryForm);
+        log.info("ActivityCanEnrollGradeService.queryPage result: count={}", list.size());
         return SmartPageUtil.convert2PageResult(page, list);
     }
 
@@ -44,8 +48,14 @@ public class ActivityCanEnrollGradeService {
      * 添加
      */
     public ResponseDTO<String> add(ActivityCanEnrollGradeAddForm addForm) {
+        log.info("ActivityCanEnrollGradeService.add called, addForm={}", addForm);
         ActivityCanEnrollGradeEntity activityCanEnrollGradeEntity = SmartBeanUtil.copy(addForm, ActivityCanEnrollGradeEntity.class);
-        activityCanEnrollGradeDao.insert(activityCanEnrollGradeEntity);
+        int result = activityCanEnrollGradeDao.insert(activityCanEnrollGradeEntity);
+        if (result > 0) {
+            log.info("ActivityCanEnrollGradeService.add success: new record created with id={}", activityCanEnrollGradeEntity.getId());
+        } else {
+            log.error("ActivityCanEnrollGradeService.add failed: no record created");
+        }
         return ResponseDTO.ok();
     }
 
@@ -54,8 +64,14 @@ public class ActivityCanEnrollGradeService {
      *
      */
     public ResponseDTO<String> update(ActivityCanEnrollGradeUpdateForm updateForm) {
+        log.info("ActivityCanEnrollGradeService.update called, updateForm={}", updateForm);
         ActivityCanEnrollGradeEntity activityCanEnrollGradeEntity = SmartBeanUtil.copy(updateForm, ActivityCanEnrollGradeEntity.class);
-        activityCanEnrollGradeDao.updateById(activityCanEnrollGradeEntity);
+        int result = activityCanEnrollGradeDao.updateById(activityCanEnrollGradeEntity);
+        if (result > 0) {
+            log.info("ActivityCanEnrollGradeService.update success: record updated with id={}", updateForm.getId());
+        } else {
+            log.warn("ActivityCanEnrollGradeService.update warning: no records updated");
+        }
         return ResponseDTO.ok();
     }
 
@@ -63,11 +79,14 @@ public class ActivityCanEnrollGradeService {
      * 批量删除
      */
     public ResponseDTO<String> batchDelete(List<Long> idList) {
+        log.info("ActivityCanEnrollGradeService.batchDelete called, idList size={}", CollectionUtils.isNotEmpty(idList) ? idList.size() : 0);
         if (CollectionUtils.isEmpty(idList)){
+            log.debug("ActivityCanEnrollGradeService.batchDelete: idList is empty");
             return ResponseDTO.ok();
         }
 
-        activityCanEnrollGradeDao.batchUpdateDeleted(idList, true);
+        int result = activityCanEnrollGradeDao.batchUpdateDeleted(idList, true);
+        log.info("ActivityCanEnrollGradeService.batchDelete result: {} records marked as deleted", result);
         return ResponseDTO.ok();
     }
 
@@ -75,11 +94,18 @@ public class ActivityCanEnrollGradeService {
      * 单个删除
      */
     public ResponseDTO<String> delete(Long id) {
+        log.info("ActivityCanEnrollGradeService.delete called, id={}", id);
         if (null == id){
+            log.warn("ActivityCanEnrollGradeService.delete: id is null");
             return ResponseDTO.ok();
         }
 
-        activityCanEnrollGradeDao.updateDeleted(id, true);
+        int result = activityCanEnrollGradeDao.updateDeleted(id, true);
+        if (result > 0) {
+            log.info("ActivityCanEnrollGradeService.delete success: record with id={} marked as deleted", id);
+        } else {
+            log.warn("ActivityCanEnrollGradeService.delete warning: no records deleted");
+        }
         return ResponseDTO.ok();
     }
 }

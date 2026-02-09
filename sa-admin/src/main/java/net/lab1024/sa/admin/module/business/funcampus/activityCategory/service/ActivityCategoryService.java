@@ -14,6 +14,7 @@ import net.lab1024.sa.base.common.domain.ResponseDTO;
 import net.lab1024.sa.base.common.domain.PageResult;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.commons.collections4.CollectionUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.Resource;
@@ -26,6 +27,7 @@ import jakarta.annotation.Resource;
  * @Copyright akkkka114514
  */
 
+@Slf4j
 @Service
 public class ActivityCategoryService {
 
@@ -36,8 +38,10 @@ public class ActivityCategoryService {
      * 分页查询
      */
     public PageResult<ActivityCategoryVO> queryPage(ActivityCategoryQueryForm queryForm) {
+        log.info("ActivityCategoryService.queryPage called, queryForm={}", queryForm);
         Page<?> page = SmartPageUtil.convert2PageQuery(queryForm);
         List<ActivityCategoryVO> list = activityCategoryDao.queryPage(page, queryForm);
+        log.info("ActivityCategoryService.queryPage result: count={}", list.size());
         return SmartPageUtil.convert2PageResult(page, list);
     }
 
@@ -45,8 +49,14 @@ public class ActivityCategoryService {
      * 添加
      */
     public ResponseDTO<String> add(ActivityCategoryAddForm addForm) {
+        log.info("ActivityCategoryService.add called, addForm={}", addForm);
         ActivityCategoryEntity activityCategoryEntity = SmartBeanUtil.copy(addForm, ActivityCategoryEntity.class);
-        activityCategoryDao.insert(activityCategoryEntity);
+        int result = activityCategoryDao.insert(activityCategoryEntity);
+        if (result > 0) {
+            log.info("ActivityCategoryService.add success: new record created with id={}", activityCategoryEntity.getId());
+        } else {
+            log.error("ActivityCategoryService.add failed: no record created");
+        }
         return ResponseDTO.ok();
     }
 
@@ -55,8 +65,14 @@ public class ActivityCategoryService {
      *
      */
     public ResponseDTO<String> update(ActivityCategoryUpdateForm updateForm) {
+        log.info("ActivityCategoryService.update called, updateForm={}", updateForm);
         ActivityCategoryEntity activityCategoryEntity = SmartBeanUtil.copy(updateForm, ActivityCategoryEntity.class);
-        activityCategoryDao.updateById(activityCategoryEntity);
+        int result = activityCategoryDao.updateById(activityCategoryEntity);
+        if (result > 0) {
+            log.info("ActivityCategoryService.update success: record updated with id={}", updateForm.getId());
+        } else {
+            log.warn("ActivityCategoryService.update warning: no records updated");
+        }
         return ResponseDTO.ok();
     }
 
@@ -64,11 +80,14 @@ public class ActivityCategoryService {
      * 批量删除
      */
     public ResponseDTO<String> batchDelete(List<Long> idList) {
+        log.info("ActivityCategoryService.batchDelete called, idList size={}", CollectionUtils.isNotEmpty(idList) ? idList.size() : 0);
         if (CollectionUtils.isEmpty(idList)){
+            log.debug("ActivityCategoryService.batchDelete: idList is empty");
             return ResponseDTO.ok();
         }
 
-        activityCategoryDao.batchUpdateDeleted(idList, true);
+        int result = activityCategoryDao.batchUpdateDeleted(idList, true);
+        log.info("ActivityCategoryService.batchDelete result: {} records marked as deleted", result);
         return ResponseDTO.ok();
     }
 
@@ -76,15 +95,25 @@ public class ActivityCategoryService {
      * 单个删除
      */
     public ResponseDTO<String> delete(Long id) {
+        log.info("ActivityCategoryService.delete called, id={}", id);
         if (null == id){
+            log.warn("ActivityCategoryService.delete: id is null");
             return ResponseDTO.ok();
         }
 
-        activityCategoryDao.updateDeleted(id, true);
+        int result = activityCategoryDao.updateDeleted(id, true);
+        if (result > 0) {
+            log.info("ActivityCategoryService.delete success: record with id={} marked as deleted", id);
+        } else {
+            log.warn("ActivityCategoryService.delete warning: no records deleted");
+        }
         return ResponseDTO.ok();
     }
 
     public List<SimpleActivityCategoryVO> getAll() {
-        return activityCategoryDao.getAll();
+        log.debug("ActivityCategoryService.getAll called");
+        List<SimpleActivityCategoryVO> result = activityCategoryDao.getAll();
+        log.info("ActivityCategoryService.getAll result: count={}", result.size());
+        return result;
     }
 }

@@ -237,28 +237,28 @@ const onReviewerChange = (e: any) => {
   .label {
     font-size: 32rpx;
     font-weight: bold;
-    color: #333;
+    color: #e0e0e0;
     margin-bottom: 20rpx;
   }
 
   .picker {
     width: 100%;
     height: 80rpx;
-    border: 2rpx solid #e0e0e0;
+    border: 2rpx solid #555;
     border-radius: 12rpx;
     padding: 0 20rpx;
     font-size: 30rpx;
-    color: #333;
+    color: #f0f0f0;
     display: flex;
     align-items: center;
-    background: #fafafa;
+    background: #444;
   }
 
   .radio-item {
     display: inline-block;
     margin-right: 40rpx;
     font-size: 30rpx;
-    color: #333;
+    color: #f0f0f0;
     align-items: center;
 
     radio {

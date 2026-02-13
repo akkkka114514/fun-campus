@@ -45,8 +45,9 @@ public class PortalUserAddForm{
     @Schema(description = "手机号", requiredMode = Schema.RequiredMode.REQUIRED)
     private String phone;
 
-    @Schema(description = "头像", requiredMode = Schema.RequiredMode.REQUIRED)
-    @Nullable
+    @Schema(description = "头像", requiredMode = Schema.RequiredMode.AUTO)
     private String avatar;
 
+    @Schema(description = "能否发布活动",requiredMode = Schema.RequiredMode.REQUIRED)
+    private boolean canPublishActivity;
 }

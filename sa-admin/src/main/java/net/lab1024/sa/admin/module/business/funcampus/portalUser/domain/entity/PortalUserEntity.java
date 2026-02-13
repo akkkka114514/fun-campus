@@ -86,4 +86,7 @@ public class PortalUserEntity {
      */
     private Long collegeId;
 
+    //能否发布活动
+    private boolean canPublishActivity;
+
 }

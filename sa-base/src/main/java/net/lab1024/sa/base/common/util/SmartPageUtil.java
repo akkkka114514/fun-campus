@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.toolkit.sql.SqlInjectionUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
+import net.lab1024.sa.base.common.code.UserErrorCode;
 import net.lab1024.sa.base.common.domain.PageParam;
 import net.lab1024.sa.base.common.domain.PageResult;
 import net.lab1024.sa.base.common.exception.BusinessException;
@@ -50,7 +51,8 @@ public class SmartPageUtil {
 
             if (SqlInjectionUtils.check(sortItem.getColumn())) {
                 log.error("《存在SQL注入：》 : {}", sortItem.getColumn());
-                throw new BusinessException("存在SQL注入风险，请联系技术工作人员！");
+                //当后端检测到 SQL 注入尝试时，绝对不能将原始错误信息、数据库结构或注入语句细节返回给前端，否则会泄露系统内部信息，反而帮助攻击者进一步探测漏洞。
+                throw new BusinessException(UserErrorCode.PARAM_ERROR);
             }
             orderItemList.add(sortItem.getIsAsc() ? OrderItem.asc(sortItem.getColumn()) : OrderItem.desc(sortItem.getColumn()));
         }

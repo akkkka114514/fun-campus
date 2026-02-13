@@ -6,6 +6,7 @@ import cn.hutool.core.util.IdUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import net.lab1024.sa.base.common.code.SystemErrorCode;
+import net.lab1024.sa.base.common.code.UserErrorCode;
 import net.lab1024.sa.base.common.domain.ResponseDTO;
 import net.lab1024.sa.base.common.util.SmartStringUtil;
 import net.lab1024.sa.base.config.FileConfig;
@@ -25,6 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.regions.Region;
@@ -41,6 +43,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AccessDeniedException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -249,7 +252,7 @@ public class FileStorageCloudServiceImpl implements IFileStorageService {
     /**
      * 生成预签名上传 URL
      */
-    public ResponseDTO<Map<String, Object>> generatePresignedUploadUrl(String originalFileName, String path) {
+    public ResponseDTO<Map<String, Object>> generatePresignedUploadUrl(String originalFileName, String path, String bucket) {
         try {
             // 构建文件 key
             String fileType = FilenameUtils.getExtension(originalFileName);
@@ -257,6 +260,9 @@ public class FileStorageCloudServiceImpl implements IFileStorageService {
             String time = LocalDateTimeUtil.format(LocalDateTime.now(), DatePattern.PURE_DATETIME_FORMATTER);
             String fileKey = path + uuid + "_" + time + "." + fileType;
 
+            if(!bucketExists(bucket)){
+                return ResponseDTO.error(UserErrorCode.PARAM_ERROR,"不存在该bucket");
+            }
             // 根据路径确定 ACL 权限
             ObjectCannedACL acl = this.getACL(path);
 
@@ -285,7 +291,7 @@ public class FileStorageCloudServiceImpl implements IFileStorageService {
 
             // 设置上传策略
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
-                    .bucket(cloudConfig.getBucketName())
+                    .bucket(bucket)
                     .key(fileKey)
                     .acl(acl)
                     .build();
@@ -299,6 +305,8 @@ public class FileStorageCloudServiceImpl implements IFileStorageService {
 
             PresignedPutObjectRequest presignedRequest =
                     presigner.presignPutObject(presignRequest);
+            log.debug("上传minio预签名request header：{}",
+                    presignedRequest.httpRequest().headers().toString());
 
             // 准备返回数据
             Map<String, Object> result = new HashMap<>();
@@ -312,6 +320,20 @@ public class FileStorageCloudServiceImpl implements IFileStorageService {
         } catch (Exception e) {
             log.error("生成预签名上传URL失败", e);
             return ResponseDTO.error(SystemErrorCode.SYSTEM_ERROR, "生成预签名上传URL失败: " + e.getMessage());
+        }
+    }
+    public boolean bucketExists(String bucketName) {
+        try {
+            s3Client.headBucket(HeadBucketRequest.builder()
+                    .bucket(bucketName)
+                    .build());
+            return true;
+        } catch (NoSuchBucketException e) {
+            log.debug("Bucket [{}] 不存在", bucketName);
+            return false;
+        } catch (SdkClientException e) {
+            log.error("连接MinIO服务失败: {}", e.getMessage());
+            return false;
         }
     }
 }

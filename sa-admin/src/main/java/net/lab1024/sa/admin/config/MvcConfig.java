@@ -1,9 +1,11 @@
 package net.lab1024.sa.admin.config;
 
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import net.lab1024.sa.admin.interceptor.AdminInterceptor;
 import net.lab1024.sa.admin.interceptor.RequestLogInterceptor;
 import net.lab1024.sa.base.config.SwaggerConfig;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -18,6 +20,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * @Email lab1024@163.com
  * @Copyright <a href="https://1024lab.net">1024创新实验室</a>
  */
+@Slf4j
 @Configuration
 public class MvcConfig implements WebMvcConfigurer {
 
@@ -29,7 +32,7 @@ public class MvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        // 注册请求日志拦截器（最先执行）
+        log.info("注册请求日志拦截器");
         registry.addInterceptor(requestLogInterceptor)
                 .addPathPatterns("/**")
                 .excludePathPatterns(
@@ -40,7 +43,6 @@ public class MvcConfig implements WebMvcConfigurer {
                         "/error",
                         "/actuator/**"
                 );
-        
         // 注册管理员拦截器
         registry.addInterceptor(adminInterceptor)
                 .excludePathPatterns(SwaggerConfig.SWAGGER_WHITELIST)

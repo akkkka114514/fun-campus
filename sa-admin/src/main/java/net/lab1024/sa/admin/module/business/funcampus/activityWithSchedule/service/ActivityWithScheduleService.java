@@ -34,6 +34,7 @@ import net.lab1024.sa.base.common.domain.PageParam;
 import net.lab1024.sa.base.common.domain.PageResult;
 import net.lab1024.sa.base.common.domain.RequestUser;
 import net.lab1024.sa.base.common.domain.ResponseDTO;
+import net.lab1024.sa.base.common.exception.BusinessException;
 import net.lab1024.sa.base.common.util.SmartPageUtil;
 import net.lab1024.sa.base.common.util.SmartRequestUtil;
 import org.springframework.stereotype.Service;
@@ -93,20 +94,26 @@ public class ActivityWithScheduleService {
     @Resource
     private GradeInfoManager gradeInfoManager;
 
-    /**
-     * 同时添加活动和活动时间表
-     *
-     * @param addForm 活动和时间表信息
-     * @return ResponseDTO
-     */
-    public ResponseDTO<String> publishActivityWithSchedule(ActivityWithScheduleAddForm addForm) {
-        log.info("ActivityWithScheduleService.addActivityWithSchedule called, title={}", addForm.getTitle());
+    public boolean addNotReviewedOne(ActivityWithScheduleAddForm addForm) {
+        log.info("添加待审核的活动：{}", addForm.toString());
         //检查用户是否有发布活动的权限
+        Long userId = SmartRequestUtil.getRequestUserId();
+        PortalUserEntity portalUser = portalUserManager.getById(userId);
+        if(portalUser==null || portalUser.getDeletedFlag()){
+           throw new BusinessException(UserErrorCode.PARAM_ERROR,"用户行为异常：请求绑定的用户与数据库不一致");
+        }
+        if(portalUser.getDisableFlag()){
+            throw new BusinessException(UserErrorCode.USER_STATUS_ERROR,"用户以封禁");
+        }
+        if(!portalUser.isCanPublishActivity()){
+            throw new BusinessException(UserErrorCode.NO_PERMISSION,"没有发布活动的权限");
+        }
+
         //activityBelongToCollegeId和activityBelongToOrganizationId不能同时为空或同时不为空
         if((addForm.getActivityBelongToCollegeId() != null && addForm.getActivityBelongToOrganizationId() != null)||
             addForm.getActivityBelongToCollegeId() == null && addForm.getActivityBelongToOrganizationId() == null){
-            log.warn("ActivityWithScheduleService.addActivityWithSchedule failed: activityBelongToCollegeId and activityBelongToOrganizationId cannot be both null or both not null");
-            return ResponseDTO.userErrorParam("活动所属学院和活动所属组织不能同时为空或同时不为空");
+            throw new BusinessException(UserErrorCode.PARAM_ERROR,"用户行为异常：活动所属学院和活动所属组织不能同时为空或同时不为空");
+            //TODO多次用户行为异常封禁用户
         }
         //检查活动所属学校是否存在
         LambdaQueryWrapper<SchoolInfoEntity> schoolInfoQw = new LambdaQueryWrapper<>();
@@ -114,8 +121,7 @@ public class ActivityWithScheduleService {
                 .eq(SchoolInfoEntity::getDeletedFlag, false);
         SchoolInfoEntity schoolInfoEntity = schoolInfoManager.getOne(schoolInfoQw);
         if(schoolInfoEntity == null){
-            log.warn("ActivityWithScheduleService.addActivityWithSchedule failed: school not found, schoolId={}", addForm.getActivityBelongToSchoolId());
-            return ResponseDTO.userErrorParam("活动所属学校不存在");
+            throw new BusinessException(UserErrorCode.PARAM_ERROR,"用户行为异常：")
         }
         //如果活动所属学院字段不为null,则说明是学院活动
         //检查学院是否存在,以及与表单中的活动所属学院id一致
@@ -158,31 +164,6 @@ public class ActivityWithScheduleService {
             log.warn("ActivityWithScheduleService.addActivityWithSchedule failed: activity category not found, categoryId={}", addForm.getCategoryId());
             return ResponseDTO.userErrorParam("活动分类不存在");
         }
-
-        //处理封面图片，根据您的问题，您想了解在用户填写活动表单的过程中是否可以提前上传封面图片，以及如何处理这种场景。
-        //关于上传过程的建议
-        //1. 异步上传机制
-        //可以实现拖拽/点击上传功能，让用户在填写表单前就上传封面
-        //图片先上传到服务器并返回一个临时 URL 或 ID
-        //在表单提交时将这个临时 ID 绑定到活动数据上
-        //2. 临时存储策略
-        //上传后的图片可以先存储为临时状态
-        //设置过期时间（例如 24 小时），若用户未完成表单提交，则删除临时文件
-        //表单成功提交后，将临时文件转为正式文件并更新数据库记录
-        //3. 用户体验优化
-        //支持预览功能，用户可即时查看上传效果
-        //提供重新上传按钮，允许替换已上传的图片
-        //显示上传进度条，提升交互体验
-        //后续处理流程
-        //1. 表单提交阶段
-        //将临时图片 ID 与活动数据一起提交
-        //服务器接收到请求后，将临时文件状态改为正式状态
-        //清理未使用的临时文件
-        //2. 异常处理
-        //如果表单提交失败，保留临时图片供用户重试
-        //用户离开页面时提示保存草稿，避免数据丢失
-        //这种方式可以让用户更灵活地处理图片上传，同时保证数据一致性。您可以根据具体业务需求调整临时文件的处理逻辑
-        //TODO 图片上传处理
 
         //如果院系年级不为空，为按院系年级进行参与
         //检查输入的院系年级是否存在

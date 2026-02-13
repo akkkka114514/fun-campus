@@ -18,8 +18,15 @@ import net.lab1024.sa.base.common.code.UserErrorCode;
 import net.lab1024.sa.base.common.domain.RequestUser;
 import net.lab1024.sa.base.common.domain.ResponseDTO;
 import net.lab1024.sa.base.common.enumeration.UserTypeEnum;
+import net.lab1024.sa.base.common.exception.BusinessException;
+import net.lab1024.sa.base.common.repository.DisableIpDocument;
+import net.lab1024.sa.base.common.repository.DisableUserDocument;
 import net.lab1024.sa.base.common.util.SmartRequestUtil;
 import net.lab1024.sa.base.common.util.SmartResponseUtil;
+import org.apache.commons.lang3.ArrayUtils;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -27,6 +34,8 @@ import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.stream.Stream;
 
 /**
  * admin 拦截器
@@ -45,6 +54,8 @@ public class AdminInterceptor implements HandlerInterceptor {
     private LoginService loginService;
     @Resource
     private PortalLoginService portalLoginService;
+    @Resource
+    private MongoTemplate mongoTemplate;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -75,18 +86,21 @@ public class AdminInterceptor implements HandlerInterceptor {
             log.debug("Processing request URL: {}", url);
             
             RequestUser requestUser = null;
-            if (url.contains("portal")) {
+            String system = null;
+            String[] urlSplit = url.split("/");
+            if (ArrayUtils.contains(urlSplit,"portal")) {
                 log.debug("Identified as portal request, attempting to get portal user");
+                system="portal";
                 requestUser = portalLoginService.getLoginPortalUser(loginId, request);
                 log.debug("Portal user retrieved: {}", requestUser != null ? requestUser.getUserId() : "null");
-            } else if (url.contains("backend")) {
+            } else if (ArrayUtils.contains(urlSplit,"backend")) {
                 log.debug("Identified as backend request, attempting to get backend user");
+                system="backend";
                 requestUser = loginService.getLoginBackendUser(loginId, request);
                 log.debug("Backend user retrieved: {}", requestUser != null ? requestUser.getUserId() : "null");
             } else {
-                log.warn("Unknown request type for URL: {}, falling back to backend user", url);
-                requestUser = loginService.getLoginBackendUser(loginId, request);
-                log.debug("Fallback user retrieved: {}", requestUser != null ? requestUser.getUserId() : "null");
+                log.warn("未知路径前缀：{}",url);
+                return false;
             }
 
             // --------------- 第二步： 校验 登录 ---------------
@@ -107,6 +121,24 @@ public class AdminInterceptor implements HandlerInterceptor {
             if (requestUser == null) {
                 log.warn("Authentication failed: requestUser is null for URL: {}, method: {}", url, method.getName());
                 SmartResponseUtil.write(response, ResponseDTO.error(UserErrorCode.LOGIN_STATE_INVALID));
+                return false;
+            }
+
+            Query ipQuery = new Query(
+                    Criteria.where("ip").is(requestUser.getIp())
+                    .andOperator(Criteria.where("deleted").is(false))
+            );
+            Query userQuery = new Query(
+                    Criteria.where("userId").is(requestUser.getUserId())
+                    .andOperator(Criteria.where("system").is(system))
+                    .andOperator(Criteria.where("deleted").is(false))
+            );
+            if(mongoTemplate.exists(ipQuery,DisableIpDocument.class)){
+                log.warn("ip:{}已根据过去行为拦截",requestUser.getIp());
+                return false;
+            }
+            if(mongoTemplate.exists(userQuery, DisableUserDocument.class)){
+                log.warn("user:{},system:{}已根据过去行为拦截",requestUser.getUserId(),system);
                 return false;
             }
 

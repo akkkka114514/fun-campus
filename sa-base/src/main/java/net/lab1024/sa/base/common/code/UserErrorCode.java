@@ -35,9 +35,12 @@ public enum UserErrorCode implements ErrorCode {
     FORM_REPEAT_SUBMIT(30009, "请勿重复提交"),
 
     LOGIN_FAIL_LOCK(30010, "登录连续失败已经被锁定，无法登录"),
+
     LOGIN_FAIL_WILL_LOCK(30011, "登录连续失败将会锁定提醒"),
 
-    LOGIN_ACTIVE_TIMEOUT(30012, "长时间未操作系统，需要重新登录");
+    LOGIN_ACTIVE_TIMEOUT(30012, "长时间未操作系统，需要重新登录"),
+
+    SERVICE_BUSY(30013,"系统繁忙，请稍后再试");
 
     private final int code;
 

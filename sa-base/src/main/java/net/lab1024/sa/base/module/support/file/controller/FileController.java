@@ -70,9 +70,16 @@ public class FileController extends SupportBaseController {
         response.getOutputStream().write(fileDownloadVO.getData());
     }
 
-    @Operation(summary = "生成文件预签名url @author akkkka114514")
+/**
+ * 生成文件预签名URL接口
+ * 该接口用于生成文件上传的预签名URL，用于客户端直接上传文件到对象存储服务
+ *
+ * @author akkkka114514
+ */
+    @Operation(summary = "生成文件预签名url @author akkkka114514",
+                description = "通过预签名url上传headers必须只包含Host和x-amz-acl")
     @GetMapping("/file/uploadUrl/presign")
-    public ResponseDTO<Map<String, Object>> generatePresignedUploadUrl(@RequestParam String originalFileName, @RequestParam Integer folderType) {
-        return fileService.generatePresignedUploadUrl(originalFileName, folderType);
+    public ResponseDTO<Map<String, Object>> generatePresignedUploadUrl(@RequestParam String originalFileName, @RequestParam Integer folderType,@RequestParam String bucket) {
+        return fileService.generatePresignedUploadUrl(originalFileName, folderType,bucket);
     }
 }

@@ -212,7 +212,7 @@ public class FileService {
      * @param folderType
      * @return
      */
-    public ResponseDTO<Map<String, Object>> generatePresignedUploadUrl(String originalFileName, Integer folderType) {
+    public ResponseDTO<Map<String, Object>> generatePresignedUploadUrl(String originalFileName, Integer folderType,String bucket) {
         FileFolderTypeEnum folderTypeEnum = SmartEnumUtil.getEnumByValue(folderType, FileFolderTypeEnum.class);
         if (null == folderTypeEnum) {
             return ResponseDTO.userErrorParam("文件夹错误");
@@ -222,8 +222,11 @@ public class FileService {
             return ResponseDTO.userErrorParam("原始文件名不能为空");
         }
 
+        if (StringUtils.isBlank(bucket)){
+            return ResponseDTO.userErrorParam("minio桶名不能为空");
+        }
         // 调用底层存储服务生成预签名上传 URL
-        return fileStorageCloudServiceImpl.generatePresignedUploadUrl(originalFileName, folderTypeEnum.getFolder());
+        return fileStorageCloudServiceImpl.generatePresignedUploadUrl(originalFileName, folderTypeEnum.getFolder(),bucket);
     }
 
 }

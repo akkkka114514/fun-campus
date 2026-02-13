@@ -1,6 +1,7 @@
 package net.lab1024.sa.base.module.support.redis;
 
 import lombok.extern.slf4j.Slf4j;
+import net.lab1024.sa.base.common.code.UserErrorCode;
 import net.lab1024.sa.base.common.exception.BusinessException;
 import org.redisson.api.RBucket;
 import org.redisson.api.RIdGenerator;
@@ -97,7 +98,7 @@ public class RedissonService {
         } catch (InterruptedException e) {
             log.error("Redisson tryLock", e);
         }
-        throw new BusinessException("业务繁忙,请稍后重试~");
+        throw new BusinessException(UserErrorCode.SERVICE_BUSY);
     }
 
     /**

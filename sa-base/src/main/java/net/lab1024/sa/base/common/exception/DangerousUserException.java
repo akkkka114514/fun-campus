@@ -1,6 +1,8 @@
 package net.lab1024.sa.base.common.exception;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 
 /**
  * author:akkkka114514
@@ -13,13 +15,20 @@ public class DangerousUserException extends RuntimeException{
     private String ip;
     private String detailMsg;
 
-    public DangerousUserException(Long userId ,String ip, String detailMsg,String system){
+    @AllArgsConstructor
+    @Getter
+    public enum System{
+        PORTAL("portal"),
+        BACKEND("backend");
+
+        private final String systemName;
+    }
+
+    public DangerousUserException(Long userId ,String ip, String detailMsg,System system){
         this.userId=userId;
         this.ip=ip;
         this.detailMsg=detailMsg;
-        this.system=system;
+        this.system=system.getSystemName();
     }
 
-    public DangerousUserException() {
-    }
 }

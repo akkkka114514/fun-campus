@@ -2,8 +2,16 @@ package net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.serv
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import net.lab1024.sa.admin.module.business.funcampus.activityCategory.domain.entity.ActivityCategoryEntity;
+import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollCollege.domain.entity.ActivityCanEnrollCollegeEntity;
+import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollCollege.manager.ActivityCanEnrollCollegeManager;
+import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollGrade.domain.entity.ActivityCanEnrollGradeEntity;
+import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollGrade.manager.ActivityCanEnrollGradeManager;
+import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollTribe.domain.entity.ActivityCanEnrollTribeEntity;
+import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollTribe.manager.ActivityCanEnrollTribeManager;
 import net.lab1024.sa.admin.module.business.funcampus.activityCategory.manager.ActivityCategoryManager;
+import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewStage;
+import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.domain.entity.ActivityReviewLogEntity;
+import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.manager.ActivityReviewLogManager;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.constant.ActivityStatus;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.dao.ActivityDao;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.dao.ActivityEnrollNumDao;
@@ -16,25 +24,21 @@ import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domai
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityWithScheduleVO;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.manager.ActivityScheduleManager;
-import net.lab1024.sa.admin.module.business.funcampus.collegeInfo.domain.entity.CollegeInfoEntity;
 import net.lab1024.sa.admin.module.business.funcampus.collegeInfo.manager.CollegeInfoManager;
 import net.lab1024.sa.admin.module.business.funcampus.gradeInfo.manager.GradeInfoManager;
-import net.lab1024.sa.admin.module.business.funcampus.organizationInfo.domain.entity.OrganizationInfoEntity;
 import net.lab1024.sa.admin.module.business.funcampus.organizationInfo.manager.OrganizationInfoManager;
 import net.lab1024.sa.admin.module.business.funcampus.portalUser.domain.entity.PortalUserEntity;
-import net.lab1024.sa.admin.module.business.funcampus.portalUser.domain.vo.PortalUserVO;
 import net.lab1024.sa.admin.module.business.funcampus.portalUser.manager.PortalUserManager;
-import net.lab1024.sa.admin.module.business.funcampus.schoolInfo.domain.entity.SchoolInfoEntity;
 import net.lab1024.sa.admin.module.business.funcampus.schoolInfo.manager.SchoolInfoManager;
 import net.lab1024.sa.admin.module.business.funcampus.tribe.manager.TribeManager;
+import net.lab1024.sa.admin.module.system.backendUser.domain.entity.BackendUserEntity;
 import net.lab1024.sa.admin.module.system.backendUser.manager.BackendUserManager;
 import net.lab1024.sa.base.common.code.UnexpectedErrorCode;
 import net.lab1024.sa.base.common.code.UserErrorCode;
-import net.lab1024.sa.base.common.domain.PageParam;
 import net.lab1024.sa.base.common.domain.PageResult;
-import net.lab1024.sa.base.common.domain.RequestUser;
 import net.lab1024.sa.base.common.domain.ResponseDTO;
 import net.lab1024.sa.base.common.exception.BusinessException;
+import net.lab1024.sa.base.common.exception.DangerousUserException;
 import net.lab1024.sa.base.common.util.SmartPageUtil;
 import net.lab1024.sa.base.common.util.SmartRequestUtil;
 import org.springframework.stereotype.Service;
@@ -42,10 +46,12 @@ import org.springframework.transaction.support.TransactionTemplate;
 import lombok.extern.slf4j.Slf4j;
 
 import jakarta.annotation.Resource;
-import software.amazon.awssdk.services.s3.endpoints.internal.Value;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * 活动和时间表 组合服务
@@ -94,76 +100,121 @@ public class ActivityWithScheduleService {
     @Resource
     private GradeInfoManager gradeInfoManager;
 
-    public boolean addNotReviewedOne(ActivityWithScheduleAddForm addForm) {
+    @Resource
+    private BackendUserManager backendUserManager;
+
+    @Resource
+    private ActivityCanEnrollTribeManager activityCanEnrollTribeManager;
+
+    @Resource
+    private ActivityCanEnrollGradeManager activityCanEnrollGradeManager;
+
+    @Resource
+    private ActivityCanEnrollCollegeManager activityCanEnrollCollegeManager;
+
+    @Resource
+    private ActivityReviewLogManager activityReviewLogManager;
+
+    public void addNotReviewedOne(ActivityWithScheduleAddForm addForm) {
         log.info("添加待审核的活动：{}", addForm.toString());
+
+        //不能提交空列表
+        if(addForm.getCanEnrollTribeIdList().isEmpty()
+                ||addForm.getCanEnrollGradeIdList().isEmpty()
+                ||addForm.getCanEnrollCollegeIdList().isEmpty()){
+            throw new BusinessException(UserErrorCode.PARAM_ERROR);
+        }
+
+
         //检查用户是否有发布活动的权限
         Long userId = SmartRequestUtil.getRequestUserId();
-        PortalUserEntity portalUser = portalUserManager.getById(userId);
-        if(portalUser==null || portalUser.getDeletedFlag()){
-           throw new BusinessException(UserErrorCode.PARAM_ERROR,"用户行为异常：请求绑定的用户与数据库不一致");
+        String ip = SmartRequestUtil.getRequestUser().getIp();
+        PortalUserEntity portalUser=portalUserManager.getOptById(userId)
+                .filter(portalUserEntity -> !portalUserEntity.getDeletedFlag())
+                .filter(portalUserEntity -> !portalUserEntity.getDisableFlag())
+                .orElseThrow(()->new BusinessException(UserErrorCode.USER_STATUS_ERROR));
+
+        if (!portalUser.isCanPublishActivity()) {
+            throw new BusinessException(UserErrorCode.NO_PERMISSION);
         }
-        if(portalUser.getDisableFlag()){
-            throw new BusinessException(UserErrorCode.USER_STATUS_ERROR,"用户以封禁");
+
+        //报名开始时间《报名结束时间《活动开始时间《活动结束时间《签到开始时间《签到结束时间
+        if(!(
+                addForm.getEnrollStartTime().isBefore(addForm.getEnrollEndTime())
+                        &&addForm.getEnrollEndTime().isBefore(addForm.getActivityStartTime())
+                        &&addForm.getActivityStartTime().isBefore(addForm.getActivityEndTime())
+                        &&addForm.getActivityEndTime().isBefore(addForm.getSigninStartTime())
+                        &&addForm.getSigninStartTime().isBefore(addForm.getSigninEndTime())
+        )
+        ){
+            throw new DangerousUserException(userId,ip,
+                    "活动时间不按顺序",
+                    DangerousUserException.System.PORTAL);
         }
-        if(!portalUser.isCanPublishActivity()){
-            throw new BusinessException(UserErrorCode.NO_PERMISSION,"没有发布活动的权限");
+
+        if((addForm.getCanEnrollGradeIdList()==null&&addForm.getCanEnrollCollegeIdList()!=null)||
+                addForm.getCanEnrollGradeIdList()!=null&&addForm.getCanEnrollCollegeIdList()==null){
+            throw new DangerousUserException(userId,ip,
+                    "表单规定必须同时为空或不为空",
+                    DangerousUserException.System.PORTAL);
+        }
+        if((addForm.getCanEnrollCollegeIdList()==null&&addForm.getCanEnrollTribeIdList()==null)||
+                addForm.getCanEnrollCollegeIdList()!=null&&addForm.getCanEnrollTribeIdList()!=null){
+            throw new DangerousUserException(userId,ip,
+                    "表单规定不能同时为空或同时不为空",
+                    DangerousUserException.System.PORTAL);
         }
 
         //activityBelongToCollegeId和activityBelongToOrganizationId不能同时为空或同时不为空
         if((addForm.getActivityBelongToCollegeId() != null && addForm.getActivityBelongToOrganizationId() != null)||
             addForm.getActivityBelongToCollegeId() == null && addForm.getActivityBelongToOrganizationId() == null){
-            throw new BusinessException(UserErrorCode.PARAM_ERROR,"用户行为异常：活动所属学院和活动所属组织不能同时为空或同时不为空");
-            //TODO多次用户行为异常封禁用户
+            throw new DangerousUserException(
+                    userId,ip,
+                    "activityBelongToCollegeId和activityBelongToOrganizationId不能同时为空或同时不为空",
+                    DangerousUserException.System.PORTAL);
         }
         //检查活动所属学校是否存在
-        LambdaQueryWrapper<SchoolInfoEntity> schoolInfoQw = new LambdaQueryWrapper<>();
-        schoolInfoQw.eq(SchoolInfoEntity::getId, addForm.getActivityBelongToSchoolId())
-                .eq(SchoolInfoEntity::getDeletedFlag, false);
-        SchoolInfoEntity schoolInfoEntity = schoolInfoManager.getOne(schoolInfoQw);
-        if(schoolInfoEntity == null){
-            throw new BusinessException(UserErrorCode.PARAM_ERROR,"用户行为异常：")
-        }
+        schoolInfoManager.getOptById(addForm.getActivityBelongToSchoolId())
+                .filter((school)->!school.getDeletedFlag())
+                .filter(school->school.getId().equals(portalUser.getSchoolId()))
+                .orElseThrow(()->new DangerousUserException(
+                        userId,ip,
+                        "活动所属学校不存在",
+                        DangerousUserException.System.PORTAL
+                ));
+
         //如果活动所属学院字段不为null,则说明是学院活动
         //检查学院是否存在,以及与表单中的活动所属学院id一致
         if(addForm.getActivityBelongToCollegeId() != null){
-            LambdaQueryWrapper<CollegeInfoEntity> collegeInfoQw = new LambdaQueryWrapper<>();
-            collegeInfoQw.eq(CollegeInfoEntity::getId, addForm.getActivityBelongToCollegeId())
-                    .eq(CollegeInfoEntity::getDeletedFlag, false);
-            CollegeInfoEntity collegeInfoEntity = collegeInfoManager.getOne(collegeInfoQw);
-            if(collegeInfoEntity == null){
-                log.warn("ActivityWithScheduleService.addActivityWithSchedule failed: college not found, collegeId={}", addForm.getActivityBelongToCollegeId());
-                return ResponseDTO.userErrorParam("活动所属学院不存在");
-            }
-            if(!Objects.equals(collegeInfoEntity.getSchoolId(), addForm.getActivityBelongToSchoolId())){
-                log.warn("ActivityWithScheduleService.addActivityWithSchedule failed: college not belong to school, collegeId={}, schoolId={}", addForm.getActivityBelongToCollegeId(), addForm.getActivityBelongToSchoolId());
-                return ResponseDTO.userErrorParam("活动所属学院不属于活动所属学校");
-            }
+            collegeInfoManager.getOptById(addForm.getActivityBelongToCollegeId())
+                    .filter((college)->!college.getDeletedFlag())
+                    .filter((college)->college.getSchoolId().equals(portalUser.getSchoolId()))
+                    .orElseThrow(()->new DangerousUserException(
+                            userId,ip,
+                            "添加活动传入的collegeId为错误信息",
+                            DangerousUserException.System.PORTAL
+                    ));;
         }
         //如果活动所属组织字段不为null,则说明是组织活动
         //检查组织是否存在,以及与表单中的活动所属组织id一致
         if(addForm.getActivityBelongToOrganizationId() != null){
-            LambdaQueryWrapper<OrganizationInfoEntity> organizationInfoQw = new LambdaQueryWrapper<>();
-            organizationInfoQw.eq(OrganizationInfoEntity::getId, addForm.getActivityBelongToOrganizationId())
-                    .eq(OrganizationInfoEntity::getDeletedFlag, false);
-            OrganizationInfoEntity organizationInfoEntity = organizationInfoManager.getOne(organizationInfoQw);
-            if(organizationInfoEntity == null){
-                log.warn("ActivityWithScheduleService.addActivityWithSchedule failed: organization not found, organizationId={}", addForm.getActivityBelongToOrganizationId());
-                return ResponseDTO.userErrorParam("活动所属组织不存在");
-            }
-            if(!Objects.equals(organizationInfoEntity.getSchoolId(), addForm.getActivityBelongToSchoolId())){
-                log.warn("ActivityWithScheduleService.addActivityWithSchedule failed: organization not belong to school, organizationId={}, schoolId={}", addForm.getActivityBelongToOrganizationId(), addForm.getActivityBelongToSchoolId());
-                return ResponseDTO.userErrorParam("活动所属组织不属于活动所属学校");
-            }
+            organizationInfoManager.getOptById(addForm.getActivityBelongToOrganizationId())
+                    .filter((org)->!org.getDeletedFlag())
+                    .filter((org)->org.getSchoolId().equals(portalUser.getSchoolId()))
+                    .orElseThrow(()->new DangerousUserException(
+                            userId,ip,
+                            "organization不存在或organization的school与其他数据不一致"
+                            ,DangerousUserException.System.PORTAL
+                    ));
         }
-        //检查输入的活动分类是否存在
-        LambdaQueryWrapper<ActivityCategoryEntity> activityCategoryQw = new LambdaQueryWrapper<>();
-        activityCategoryQw.eq(ActivityCategoryEntity::getId, addForm.getCategoryId())
-                .eq(ActivityCategoryEntity::getDeletedFlag, false);
-        ActivityCategoryEntity activityCategoryEntity = activityCategoryManager.getOne(activityCategoryQw);
-        if(activityCategoryEntity == null){
-            log.warn("ActivityWithScheduleService.addActivityWithSchedule failed: activity category not found, categoryId={}", addForm.getCategoryId());
-            return ResponseDTO.userErrorParam("活动分类不存在");
-        }
+
+        activityCategoryManager.getOptById(addForm.getCategoryId())
+                                .filter((cate)->!cate.getDeletedFlag())
+                                .orElseThrow(()->new DangerousUserException(
+                                        userId,ip,
+                                        "活动分类不存在",
+                                        DangerousUserException.System.PORTAL
+                                ));
 
         //如果院系年级不为空，为按院系年级进行参与
         //检查输入的院系年级是否存在
@@ -171,9 +222,29 @@ public class ActivityWithScheduleService {
             if(gradeInfoManager
                     .getBaseMapper()
                     .selectByIds(addForm.getCanEnrollGradeIdList())
-                    .size()!=addForm.getCanEnrollGradeIdList().size()){
-                log.warn("ActivityWithScheduleService.addActivityWithSchedule failed: grade not found, gradeIdList={}", addForm.getCanEnrollGradeIdList());
-                return ResponseDTO.userErrorParam("活动所属年级不存在");
+                    .stream().filter(e->!e.getDeletedFlag())
+                    .count()
+                    != addForm.getCanEnrollGradeIdList().size()){
+                throw new DangerousUserException(
+                        userId,ip,
+                        "提交的年级里有年级不存在",
+                        DangerousUserException.System.PORTAL
+                );
+            }
+        }
+
+        if(addForm.getCanEnrollCollegeIdList()!=null && !addForm.getCanEnrollCollegeIdList().isEmpty()){
+            if(collegeInfoManager.getBaseMapper()
+                    .selectByIds(addForm.getCanEnrollCollegeIdList())
+                    .stream().filter(e->!e.getDeletedFlag())
+                    .count()
+                    != addForm.getCanEnrollCollegeIdList().size()
+            ){
+                throw new DangerousUserException(
+                        userId,ip,
+                        "提交的学院里有学院不存在",
+                        DangerousUserException.System.PORTAL
+                );
             }
         }
 
@@ -184,20 +255,51 @@ public class ActivityWithScheduleService {
             if(tribeManager
                     .getBaseMapper()
                     .selectByIds(addForm.getCanEnrollTribeIdList())
-                    .size()!=addForm.getCanEnrollTribeIdList().size()){
-                log.warn("ActivityWithScheduleService.addActivityWithSchedule failed: tribe not found, tribeIdList={}", addForm.getCanEnrollTribeIdList());
-                return ResponseDTO.userErrorParam("活动所属部落不存在");
+                    .stream().filter(e->!e.getDeletedFlag())
+                    .count()!=addForm.getCanEnrollTribeIdList().size()){
+                throw new DangerousUserException(
+                        userId,ip,
+                        "提交的年级里有部落不存在",
+                        DangerousUserException.System.PORTAL
+                );
             }
         }
 
         //活动中不能有和添加活动标题一致的
-        LambdaQueryWrapper<ActivityEntity> activityEntityQw = new LambdaQueryWrapper<>();
-        activityEntityQw.eq(ActivityEntity::getTitle, addForm.getTitle())
-                .eq(ActivityEntity::getDeletedFlag, false);
-        if(activityManager.getOne(activityEntityQw)!= null){
-            log.warn("ActivityWithScheduleService.addActivityWithSchedule failed: activity with same title already exists, title={}", addForm.getTitle());
-            return ResponseDTO.userErrorParam("已存在相同标题的活动");
+        Optional.ofNullable(
+                activityManager.getOne(
+                        new LambdaQueryWrapper<ActivityEntity>()
+                                .eq(ActivityEntity::getTitle,addForm.getTitle())
+                )
+        ).filter(e->!e.getDeletedFlag())
+                .ifPresent((e)->{
+                    throw new BusinessException(UserErrorCode.PARAM_ERROR,"包含此标题的活动已存在");
+                }
+        );
+
+        if(!Objects.equals(userId, addForm.getActivityManagerId())) {
+            //检查activityManager是否存在且有效
+            Optional.ofNullable(portalUserManager.getById(addForm.getActivityManagerId()))
+                    .filter(e -> !e.getDeletedFlag())
+                    .filter(e -> !e.getDisableFlag())
+                    .filter(e -> e.getSchoolId().equals(addForm.getActivityBelongToSchoolId()))
+                    .orElseThrow(() -> new DangerousUserException(
+                            userId, ip,
+                            "活动管理员校验不正确",
+                            DangerousUserException.System.PORTAL
+                    ));
         }
+        //检查initialReviewer是否存在且有效
+        BackendUserEntity initialReviewer=Optional.ofNullable(backendUserManager.getById(addForm.getInitialReviewer()))
+                .filter(e->!e.getDeletedFlag())
+                .filter(e->!e.getDisabledFlag())
+                .filter(e->e.getSchoolId().equals(portalUser.getSchoolId()))
+                .orElseThrow(()->new DangerousUserException(
+                        userId,ip,
+                        "活动初审人校验不正确",
+                        DangerousUserException.System.PORTAL
+                ));
+
         //要插入的activity
         ActivityEntity activityEntity = new ActivityEntity();
         activityEntity.setId(null);
@@ -206,11 +308,22 @@ public class ActivityWithScheduleService {
         activityEntity.setPosition(addForm.getPosition());
         activityEntity.setScoreCanGet(addForm.getScoreCanGet());
         activityEntity.setEnrollNumLimit(addForm.getEnrollNumLimit());
+        activityEntity.setActivityBelongToSchoolId(addForm.getActivityBelongToSchoolId());
+        activityEntity.setActivityBelongToOrganizationId(addForm.getActivityBelongToOrganizationId());
+        activityEntity.setActivityBelongToCollegeId(addForm.getActivityBelongToCollegeId());
         activityEntity.setDeletedFlag(false);
+        activityEntity.setCreateTime(LocalDateTime.now());
+        activityEntity.setUpdateTime(LocalDateTime.now());
+        activityEntity.setDescription(addForm.getDescription());
+        activityEntity.setEnrollNeedReview(addForm.isEnrollNeedReview());
+        activityEntity.setNeedSignOut(addForm.isNeedSignOut());
+        activityEntity.setAttachment(addForm.getAttachment());
+        activityEntity.setCategoryId(addForm.getCategoryId());
+        activityEntity.setCoverImg(addForm.getCoverImg());
+        activityEntity.setActivityManagerId(addForm.getActivityManagerId());
 
         //要插入的activity时间表
         ActivityScheduleEntity scheduleEntity = new ActivityScheduleEntity();
-        scheduleEntity.setActivityId(null);
         scheduleEntity.setEnrollStartTime(addForm.getEnrollStartTime());
         scheduleEntity.setEnrollEndTime(addForm.getEnrollEndTime());
         scheduleEntity.setActivityStartTime(addForm.getActivityStartTime());
@@ -218,38 +331,103 @@ public class ActivityWithScheduleService {
         scheduleEntity.setSigninStartTime(addForm.getSigninStartTime());
         scheduleEntity.setSigninEndTime(addForm.getSigninEndTime());
         scheduleEntity.setDeletedFlag(false);
+        scheduleEntity.setCreateTime(LocalDateTime.now());
+        scheduleEntity.setUpdateTime(LocalDateTime.now());
 
         //要插入的activityEnrollNum
         ActivityEnrollNum activityEnrollNum = new ActivityEnrollNum();
         activityEnrollNum.setActivityId(null);
         activityEnrollNum.setEnrollNum(0);
+
+        List<ActivityCanEnrollCollegeEntity> collegeList=new ArrayList<>();
+        List<ActivityCanEnrollGradeEntity> gradeList=new ArrayList<>();
+        if(!addForm.getCanEnrollCollegeIdList().isEmpty()&&!addForm.getCanEnrollGradeIdList().isEmpty()){
+            addForm.getCanEnrollCollegeIdList().forEach(id-> {
+                ActivityCanEnrollCollegeEntity college = new ActivityCanEnrollCollegeEntity();
+                college.setId(null);
+                college.setCanEnrollCollege(id);
+                college.setDeletedFlag(false);
+                college.setCreateTime(LocalDateTime.now());
+                college.setUpdateTime(LocalDateTime.now());
+                collegeList.add(college);
+            });
+
+
+            addForm.getCanEnrollGradeIdList().forEach((id)-> {
+                ActivityCanEnrollGradeEntity grade = new ActivityCanEnrollGradeEntity();
+                grade.setId(null);
+                grade.setCanEnrollGrade(id);
+                grade.setDeletedFlag(false);
+                grade.setCreateTime(LocalDateTime.now());
+                grade.setUpdateTime(LocalDateTime.now());
+                gradeList.add(grade);
+            });
+        }
+
+        List<ActivityCanEnrollTribeEntity> tribeList=new ArrayList<>();
+        if(!addForm.getCanEnrollTribeIdList().isEmpty()){
+            addForm.getCanEnrollTribeIdList().forEach((id)->{
+                ActivityCanEnrollTribeEntity tribe = new ActivityCanEnrollTribeEntity();
+                tribe.setId(null);
+                tribe.setCanEnrollTribe(id);
+                tribe.setCreateTime(LocalDateTime.now());
+                tribe.setUpdateTime(LocalDateTime.now());
+                tribe.setDeletedFlag(false);
+
+                tribeList.add(tribe);
+            });
+        }
+
+        ActivityReviewLogEntity activityReviewLog=new ActivityReviewLogEntity();
+        activityReviewLog.setId(null);
+        activityReviewLog.setReviewerId(addForm.getInitialReviewer());
+        activityReviewLog.setReviewerName(initialReviewer.getUsername());
+        activityReviewLog.setReviewStage(ActivityReviewStage.INITIAL_REVIEW);
+        activityReviewLog.setCreateTime(LocalDateTime.now());
+
         //开始事务
-        return transactionTemplate.execute(status -> {
+        transactionTemplate.executeWithoutResult(status -> {
             try {
-                if(!activityManager.save(activityEntity)){
-                    log.error("ActivityWithScheduleService.addActivityWithSchedule failed: failed to save activity, title={}", addForm.getTitle());
+                if (!activityManager.save(activityEntity)) {
+                    log.warn("创建未审核活动事务失败：{}，插入activityEntity失败", addForm.getTitle());
                     status.setRollbackOnly();
-                    return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "保存失败");
                 }
                 Long id = activityEntity.getId();
-                log.debug("ActivityWithScheduleService.addActivityWithSchedule: activity saved, activityId={}", id);
-                
+
                 scheduleEntity.setActivityId(id);
                 activityEnrollNum.setActivityId(id);
-                //保存activity和activity时间表
-                    if (!activityScheduleManager.save(scheduleEntity) ||
-                        activityEnrollNumDao.insert(activityEnrollNum)==0) {
-                        log.error("ActivityWithScheduleService.addActivityWithSchedule failed: failed to save schedule or enrollNum, activityId={}", id);
+                activityReviewLog.setActivityId(id);
+                if(!collegeList.isEmpty()&&!gradeList.isEmpty()){
+                    collegeList.forEach((e)->e.setActivityId(id));
+                    gradeList.forEach(e->e.setActivityId(id));
+                    if(!activityCanEnrollCollegeManager.saveBatch(collegeList)
+                    ||!activityCanEnrollGradeManager.saveBatch(gradeList)){
+                        log.warn("创建未审核活动事务失败：插入能报名的学院或能报名的年级失败：activityId={}",id);
                         status.setRollbackOnly();
-                        return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "保存失败");
                     }
+                }
+                if(!tribeList.isEmpty()){
+                    tribeList.forEach(e->e.setActivityId(id));
+                    if(!activityCanEnrollTribeManager.saveBatch(tribeList)){
+                        log.warn("创建未审核活动事务失败：插入能报名的部落失败：activityId={}",id);
+                        status.setRollbackOnly();
+                    }
+                }
+                if(!activityReviewLogManager.save(activityReviewLog)){
+                    log.warn("创建未审核活动事务失败：插入活动审核记录失败：activityId={}",id);
+                }
+
+                //保存activity和activity时间表
+                if (!activityScheduleManager.save(scheduleEntity) ||
+                        activityEnrollNumDao.insert(activityEnrollNum) == 0) {
+                    log.error("ActivityWithScheduleService.addActivityWithSchedule failed: failed to save schedule or enrollNum, activityId={}", id);
+                    status.setRollbackOnly();
+                }
 
                 log.info("ActivityWithScheduleService.addActivityWithSchedule success: activity created, activityId={}", id);
-                return ResponseDTO.ok("保存成功");
             } catch (Exception e) {
                 log.error("ActivityWithScheduleService.addActivityWithSchedule failed: exception occurred, title={}", addForm.getTitle(), e);
                 status.setRollbackOnly();
-                return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "保存过程中发生异常：" + e.getMessage());
             }
         });
     }

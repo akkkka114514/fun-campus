@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.time.LocalDateTime;
+import java.util.List;
+
 import lombok.Data;
 
 /**
@@ -33,7 +35,7 @@ public class ActivityCanEnrollGradeEntity {
     /**
      * 能报名的年级
      */
-    private Integer canEnrollGrade;
+    private Long canEnrollGrade;
 
     /**
      * 是否删除

@@ -31,6 +31,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * 活动和时间表 组合控制器
@@ -61,8 +62,12 @@ public class ActivityWithScheduleController {
     @Operation(summary = "添加活动和时间表 @author akkkka114514")
     @PostMapping("/activity/add")
     @RepeatSubmit(intervalMilliSecond = 3 * 1000 )
-    public ResponseDTO<String> addActivityWithSchedule(@RequestBody @Valid ActivityWithScheduleAddForm addForm) {
-        return activityWithScheduleService.publishActivityWithSchedule(addForm);
+    public ResponseDTO<Void> addActivityWithSchedule(@RequestBody @Valid ActivityWithScheduleAddForm addForm) {
+        if(Objects.isNull(addForm)){
+            return ResponseDTO.error(UserErrorCode.PARAM_ERROR);
+        }
+        activityWithScheduleService.addNotReviewedOne(addForm);
+        return ResponseDTO.ok();
     }
 
     @Operation(summary = "删除活动和时间表 @author akkkka114514")

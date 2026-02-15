@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.TableField;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
+import jdk.jfr.BooleanFlag;
 import lombok.Data;
 import lombok.ToString;
 
@@ -71,6 +72,7 @@ public class ActivityWithScheduleAddForm {
      * 需要签退
      */
     @Schema(description = "需要签退")
+
     private boolean needSignOut;
 
     /**
@@ -139,10 +141,15 @@ public class ActivityWithScheduleAddForm {
      */
     @Schema(description = "能报名的年级的id")
     private List<@Min(value = 0L, message = "能报名的年级的id不能为负数") Long> canEnrollGradeIdList;
+
+    //能报名的学院的id
+    @Schema(description = "能报名的学院的id")
+    private List<@Min(value = 0L,message = "能报名的学院的id不能为负数") Long> canEnrollCollegeIdList;
     /**
      * 能报名的部落的id
      */
     @Schema(description = "能报名的部落的id")
     private List<@Min(value = 0L, message = "能报名的部落的id不能为负数") Long> canEnrollTribeIdList;
+
 
 }

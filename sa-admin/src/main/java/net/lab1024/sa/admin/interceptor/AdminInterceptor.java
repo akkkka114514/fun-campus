@@ -126,12 +126,12 @@ public class AdminInterceptor implements HandlerInterceptor {
 
             Query ipQuery = new Query(
                     Criteria.where("ip").is(requestUser.getIp())
-                    .andOperator(Criteria.where("deleted").is(false))
+                            .and("deleted").is(false)
             );
             Query userQuery = new Query(
                     Criteria.where("userId").is(requestUser.getUserId())
-                    .andOperator(Criteria.where("system").is(system))
-                    .andOperator(Criteria.where("deleted").is(false))
+                    .and("system").is(system)
+                    .and("deleted").is(false)
             );
             if(mongoTemplate.exists(ipQuery,DisableIpDocument.class)){
                 log.warn("ip:{}已根据过去行为拦截",requestUser.getIp());

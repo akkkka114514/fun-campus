@@ -5,15 +5,13 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import net.lab1024.sa.base.common.code.SystemErrorCode;
 import net.lab1024.sa.base.common.code.UserErrorCode;
-import net.lab1024.sa.base.common.domain.RequestUser;
 import net.lab1024.sa.base.common.domain.ResponseDTO;
 import net.lab1024.sa.base.common.domain.SystemEnvironment;
 import net.lab1024.sa.base.common.enumeration.SystemEnvironmentEnum;
 import net.lab1024.sa.base.common.exception.BusinessException;
-import net.lab1024.sa.base.common.exception.DangerousUserException;
+import net.lab1024.sa.base.common.exception.BusinessException;
 import net.lab1024.sa.base.common.repository.DisableIpDocument;
 import net.lab1024.sa.base.common.repository.DisableUserDocument;
-import net.lab1024.sa.base.common.util.SmartRequestUtil;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -122,12 +120,12 @@ public class GlobalExceptionHandler {
 /**
  * 处理危险用户异常的控制器方法
  * 当检测到危险用户行为时触发此异常处理器
- * @param e DangerousUserException 异常对象，包含危险用户行为的详细信息
+ * @param e BusinessException 异常对象，包含危险用户行为的详细信息
  * @return Void 返回空，此方法主要用于处理异常并记录日志
  */
     @ResponseBody
-    @ExceptionHandler(DangerousUserException.class)
-    public Void dangerousUserException (DangerousUserException e){
+    @ExceptionHandler(BusinessException.class)
+    public Void dangerousUserException (BusinessException e){
     // 记录危险用户行为的警告日志，包含异常消息、详情、用户ID和IP地址
         log.warn(e.getMessage(),e.getDetailMsg(),e.getUserId(),e.getIp());
         //如果没开启

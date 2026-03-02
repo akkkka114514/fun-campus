@@ -55,6 +55,10 @@ public class ActivityScheduleEntity {
      * 签到结束时间
      */
     private LocalDateTime signinEndTime;
+    //签退开始时间
+    private LocalDateTime signoutStartTime;
+    //签退结束时间
+    private LocalDateTime signoutEndTime;
 
     /**
      * 创建时间

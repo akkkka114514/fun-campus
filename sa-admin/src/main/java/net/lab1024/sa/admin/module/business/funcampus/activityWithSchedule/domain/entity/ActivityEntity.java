@@ -120,5 +120,4 @@ public class ActivityEntity {
      * 活动管理员和发起者
      */
     private Long activityManagerId;
-
 }

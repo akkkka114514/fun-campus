@@ -43,4 +43,7 @@ public class ActivityReviewLogVO {
     @Schema(description = "创建时间")
     private LocalDateTime createTime;
 
+    @Schema(description = "是否已删除")
+    private boolean deletedFlag;
+
 }

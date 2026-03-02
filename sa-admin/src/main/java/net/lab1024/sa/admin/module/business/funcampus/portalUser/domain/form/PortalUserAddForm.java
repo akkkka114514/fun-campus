@@ -50,4 +50,7 @@ public class PortalUserAddForm{
 
     @Schema(description = "能否发布活动",requiredMode = Schema.RequiredMode.REQUIRED)
     private boolean canPublishActivity;
+
+    @Schema(description = "年级id",requiredMode = Schema.RequiredMode.REQUIRED)
+    private Long gradeId;
 }

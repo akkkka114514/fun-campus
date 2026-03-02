@@ -1,6 +1,6 @@
 package net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.service;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollCollege.domain.entity.ActivityCanEnrollCollegeEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollCollege.manager.ActivityCanEnrollCollegeManager;
@@ -8,11 +8,8 @@ import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollGrade.dom
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollGrade.manager.ActivityCanEnrollGradeManager;
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollTribe.domain.entity.ActivityCanEnrollTribeEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollTribe.manager.ActivityCanEnrollTribeManager;
-import net.lab1024.sa.admin.module.business.funcampus.activityCategory.manager.ActivityCategoryManager;
-import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewStage;
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.domain.entity.ActivityReviewLogEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.manager.ActivityReviewLogManager;
-import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.constant.ActivityStatus;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.dao.ActivityDao;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.dao.ActivityEnrollNumDao;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEnrollNum;
@@ -24,21 +21,15 @@ import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domai
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityWithScheduleVO;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.manager.ActivityScheduleManager;
-import net.lab1024.sa.admin.module.business.funcampus.collegeInfo.manager.CollegeInfoManager;
-import net.lab1024.sa.admin.module.business.funcampus.gradeInfo.manager.GradeInfoManager;
-import net.lab1024.sa.admin.module.business.funcampus.organizationInfo.manager.OrganizationInfoManager;
 import net.lab1024.sa.admin.module.business.funcampus.portalUser.domain.entity.PortalUserEntity;
 import net.lab1024.sa.admin.module.business.funcampus.portalUser.manager.PortalUserManager;
-import net.lab1024.sa.admin.module.business.funcampus.schoolInfo.manager.SchoolInfoManager;
-import net.lab1024.sa.admin.module.business.funcampus.tribe.manager.TribeManager;
-import net.lab1024.sa.admin.module.system.backendUser.domain.entity.BackendUserEntity;
-import net.lab1024.sa.admin.module.system.backendUser.manager.BackendUserManager;
+import net.lab1024.sa.admin.module.business.funcampus.util.UpdateFormUtil;
+import net.lab1024.sa.base.common.code.SystemErrorCode;
 import net.lab1024.sa.base.common.code.UnexpectedErrorCode;
 import net.lab1024.sa.base.common.code.UserErrorCode;
 import net.lab1024.sa.base.common.domain.PageResult;
 import net.lab1024.sa.base.common.domain.ResponseDTO;
 import net.lab1024.sa.base.common.exception.BusinessException;
-import net.lab1024.sa.base.common.exception.DangerousUserException;
 import net.lab1024.sa.base.common.util.SmartPageUtil;
 import net.lab1024.sa.base.common.util.SmartRequestUtil;
 import org.springframework.stereotype.Service;
@@ -47,11 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import jakarta.annotation.Resource;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 
 /**
  * 活动和时间表 组合服务
@@ -63,6 +50,9 @@ import java.util.Optional;
 @Slf4j
 @Service
 public class ActivityWithScheduleService {
+
+    @Resource
+    private InsertContentFactory factory;
 
     @Resource
     private ActivityManager activityManager;
@@ -83,27 +73,6 @@ public class ActivityWithScheduleService {
     private PortalUserManager portalUserManager;
 
     @Resource
-    private SchoolInfoManager schoolInfoManager;
-
-    @Resource
-    private CollegeInfoManager collegeInfoManager;
-
-    @Resource
-    private OrganizationInfoManager organizationInfoManager;
-
-    @Resource
-    private ActivityCategoryManager activityCategoryManager;
-
-    @Resource
-    private TribeManager tribeManager;
-
-    @Resource
-    private GradeInfoManager gradeInfoManager;
-
-    @Resource
-    private BackendUserManager backendUserManager;
-
-    @Resource
     private ActivityCanEnrollTribeManager activityCanEnrollTribeManager;
 
     @Resource
@@ -118,272 +87,30 @@ public class ActivityWithScheduleService {
     public void addNotReviewedOne(ActivityWithScheduleAddForm addForm) {
         log.info("添加待审核的活动：{}", addForm.toString());
 
-        //不能提交空列表
-        if(addForm.getCanEnrollTribeIdList().isEmpty()
-                ||addForm.getCanEnrollGradeIdList().isEmpty()
-                ||addForm.getCanEnrollCollegeIdList().isEmpty()){
-            throw new BusinessException(UserErrorCode.PARAM_ERROR);
-        }
+        ActivityWithScheduleAddFormValidator addValidator=new ActivityWithScheduleAddFormValidator();
 
+        String reviewerName = addValidator.validate(addForm);
 
-        //检查用户是否有发布活动的权限
-        Long userId = SmartRequestUtil.getRequestUserId();
-        String ip = SmartRequestUtil.getRequestUser().getIp();
-        PortalUserEntity portalUser=portalUserManager.getOptById(userId)
-                .filter(portalUserEntity -> !portalUserEntity.getDeletedFlag())
-                .filter(portalUserEntity -> !portalUserEntity.getDisableFlag())
-                .orElseThrow(()->new BusinessException(UserErrorCode.USER_STATUS_ERROR));
-
-        if (!portalUser.isCanPublishActivity()) {
-            throw new BusinessException(UserErrorCode.NO_PERMISSION);
-        }
-
-        //报名开始时间《报名结束时间《活动开始时间《活动结束时间《签到开始时间《签到结束时间
-        if(!(
-                addForm.getEnrollStartTime().isBefore(addForm.getEnrollEndTime())
-                        &&addForm.getEnrollEndTime().isBefore(addForm.getActivityStartTime())
-                        &&addForm.getActivityStartTime().isBefore(addForm.getActivityEndTime())
-                        &&addForm.getActivityEndTime().isBefore(addForm.getSigninStartTime())
-                        &&addForm.getSigninStartTime().isBefore(addForm.getSigninEndTime())
-        )
-        ){
-            throw new DangerousUserException(userId,ip,
-                    "活动时间不按顺序",
-                    DangerousUserException.System.PORTAL);
-        }
-
-        if((addForm.getCanEnrollGradeIdList()==null&&addForm.getCanEnrollCollegeIdList()!=null)||
-                addForm.getCanEnrollGradeIdList()!=null&&addForm.getCanEnrollCollegeIdList()==null){
-            throw new DangerousUserException(userId,ip,
-                    "表单规定必须同时为空或不为空",
-                    DangerousUserException.System.PORTAL);
-        }
-        if((addForm.getCanEnrollCollegeIdList()==null&&addForm.getCanEnrollTribeIdList()==null)||
-                addForm.getCanEnrollCollegeIdList()!=null&&addForm.getCanEnrollTribeIdList()!=null){
-            throw new DangerousUserException(userId,ip,
-                    "表单规定不能同时为空或同时不为空",
-                    DangerousUserException.System.PORTAL);
-        }
-
-        //activityBelongToCollegeId和activityBelongToOrganizationId不能同时为空或同时不为空
-        if((addForm.getActivityBelongToCollegeId() != null && addForm.getActivityBelongToOrganizationId() != null)||
-            addForm.getActivityBelongToCollegeId() == null && addForm.getActivityBelongToOrganizationId() == null){
-            throw new DangerousUserException(
-                    userId,ip,
-                    "activityBelongToCollegeId和activityBelongToOrganizationId不能同时为空或同时不为空",
-                    DangerousUserException.System.PORTAL);
-        }
-        //检查活动所属学校是否存在
-        schoolInfoManager.getOptById(addForm.getActivityBelongToSchoolId())
-                .filter((school)->!school.getDeletedFlag())
-                .filter(school->school.getId().equals(portalUser.getSchoolId()))
-                .orElseThrow(()->new DangerousUserException(
-                        userId,ip,
-                        "活动所属学校不存在",
-                        DangerousUserException.System.PORTAL
-                ));
-
-        //如果活动所属学院字段不为null,则说明是学院活动
-        //检查学院是否存在,以及与表单中的活动所属学院id一致
-        if(addForm.getActivityBelongToCollegeId() != null){
-            collegeInfoManager.getOptById(addForm.getActivityBelongToCollegeId())
-                    .filter((college)->!college.getDeletedFlag())
-                    .filter((college)->college.getSchoolId().equals(portalUser.getSchoolId()))
-                    .orElseThrow(()->new DangerousUserException(
-                            userId,ip,
-                            "添加活动传入的collegeId为错误信息",
-                            DangerousUserException.System.PORTAL
-                    ));;
-        }
-        //如果活动所属组织字段不为null,则说明是组织活动
-        //检查组织是否存在,以及与表单中的活动所属组织id一致
-        if(addForm.getActivityBelongToOrganizationId() != null){
-            organizationInfoManager.getOptById(addForm.getActivityBelongToOrganizationId())
-                    .filter((org)->!org.getDeletedFlag())
-                    .filter((org)->org.getSchoolId().equals(portalUser.getSchoolId()))
-                    .orElseThrow(()->new DangerousUserException(
-                            userId,ip,
-                            "organization不存在或organization的school与其他数据不一致"
-                            ,DangerousUserException.System.PORTAL
-                    ));
-        }
-
-        activityCategoryManager.getOptById(addForm.getCategoryId())
-                                .filter((cate)->!cate.getDeletedFlag())
-                                .orElseThrow(()->new DangerousUserException(
-                                        userId,ip,
-                                        "活动分类不存在",
-                                        DangerousUserException.System.PORTAL
-                                ));
-
-        //如果院系年级不为空，为按院系年级进行参与
-        //检查输入的院系年级是否存在
-        if(addForm.getCanEnrollGradeIdList()!=null && !addForm.getCanEnrollGradeIdList().isEmpty()){
-            if(gradeInfoManager
-                    .getBaseMapper()
-                    .selectByIds(addForm.getCanEnrollGradeIdList())
-                    .stream().filter(e->!e.getDeletedFlag())
-                    .count()
-                    != addForm.getCanEnrollGradeIdList().size()){
-                throw new DangerousUserException(
-                        userId,ip,
-                        "提交的年级里有年级不存在",
-                        DangerousUserException.System.PORTAL
-                );
-            }
-        }
-
-        if(addForm.getCanEnrollCollegeIdList()!=null && !addForm.getCanEnrollCollegeIdList().isEmpty()){
-            if(collegeInfoManager.getBaseMapper()
-                    .selectByIds(addForm.getCanEnrollCollegeIdList())
-                    .stream().filter(e->!e.getDeletedFlag())
-                    .count()
-                    != addForm.getCanEnrollCollegeIdList().size()
-            ){
-                throw new DangerousUserException(
-                        userId,ip,
-                        "提交的学院里有学院不存在",
-                        DangerousUserException.System.PORTAL
-                );
-            }
-        }
-
-
-        //如果部落不为空，为按部落进行参与
-        //检查输入的部落是否存在
-        if(addForm.getCanEnrollTribeIdList()!=null && !addForm.getCanEnrollTribeIdList().isEmpty()){
-            if(tribeManager
-                    .getBaseMapper()
-                    .selectByIds(addForm.getCanEnrollTribeIdList())
-                    .stream().filter(e->!e.getDeletedFlag())
-                    .count()!=addForm.getCanEnrollTribeIdList().size()){
-                throw new DangerousUserException(
-                        userId,ip,
-                        "提交的年级里有部落不存在",
-                        DangerousUserException.System.PORTAL
-                );
-            }
-        }
-
-        //活动中不能有和添加活动标题一致的
-        Optional.ofNullable(
-                activityManager.getOne(
-                        new LambdaQueryWrapper<ActivityEntity>()
-                                .eq(ActivityEntity::getTitle,addForm.getTitle())
-                )
-        ).filter(e->!e.getDeletedFlag())
-                .ifPresent((e)->{
-                    throw new BusinessException(UserErrorCode.PARAM_ERROR,"包含此标题的活动已存在");
-                }
-        );
-
-        if(!Objects.equals(userId, addForm.getActivityManagerId())) {
-            //检查activityManager是否存在且有效
-            Optional.ofNullable(portalUserManager.getById(addForm.getActivityManagerId()))
-                    .filter(e -> !e.getDeletedFlag())
-                    .filter(e -> !e.getDisableFlag())
-                    .filter(e -> e.getSchoolId().equals(addForm.getActivityBelongToSchoolId()))
-                    .orElseThrow(() -> new DangerousUserException(
-                            userId, ip,
-                            "活动管理员校验不正确",
-                            DangerousUserException.System.PORTAL
-                    ));
-        }
-        //检查initialReviewer是否存在且有效
-        BackendUserEntity initialReviewer=Optional.ofNullable(backendUserManager.getById(addForm.getInitialReviewer()))
-                .filter(e->!e.getDeletedFlag())
-                .filter(e->!e.getDisabledFlag())
-                .filter(e->e.getSchoolId().equals(portalUser.getSchoolId()))
-                .orElseThrow(()->new DangerousUserException(
-                        userId,ip,
-                        "活动初审人校验不正确",
-                        DangerousUserException.System.PORTAL
-                ));
-
-        //要插入的activity
-        ActivityEntity activityEntity = new ActivityEntity();
-        activityEntity.setId(null);
-        activityEntity.setTitle(addForm.getTitle());
-        activityEntity.setStatus(ActivityStatus.NOT_START_ENROLL);
-        activityEntity.setPosition(addForm.getPosition());
-        activityEntity.setScoreCanGet(addForm.getScoreCanGet());
-        activityEntity.setEnrollNumLimit(addForm.getEnrollNumLimit());
-        activityEntity.setActivityBelongToSchoolId(addForm.getActivityBelongToSchoolId());
-        activityEntity.setActivityBelongToOrganizationId(addForm.getActivityBelongToOrganizationId());
-        activityEntity.setActivityBelongToCollegeId(addForm.getActivityBelongToCollegeId());
-        activityEntity.setDeletedFlag(false);
-        activityEntity.setCreateTime(LocalDateTime.now());
-        activityEntity.setUpdateTime(LocalDateTime.now());
-        activityEntity.setDescription(addForm.getDescription());
-        activityEntity.setEnrollNeedReview(addForm.isEnrollNeedReview());
-        activityEntity.setNeedSignOut(addForm.isNeedSignOut());
-        activityEntity.setAttachment(addForm.getAttachment());
-        activityEntity.setCategoryId(addForm.getCategoryId());
-        activityEntity.setCoverImg(addForm.getCoverImg());
-        activityEntity.setActivityManagerId(addForm.getActivityManagerId());
-
-        //要插入的activity时间表
-        ActivityScheduleEntity scheduleEntity = new ActivityScheduleEntity();
-        scheduleEntity.setEnrollStartTime(addForm.getEnrollStartTime());
-        scheduleEntity.setEnrollEndTime(addForm.getEnrollEndTime());
-        scheduleEntity.setActivityStartTime(addForm.getActivityStartTime());
-        scheduleEntity.setActivityEndTime(addForm.getActivityEndTime());
-        scheduleEntity.setSigninStartTime(addForm.getSigninStartTime());
-        scheduleEntity.setSigninEndTime(addForm.getSigninEndTime());
-        scheduleEntity.setDeletedFlag(false);
-        scheduleEntity.setCreateTime(LocalDateTime.now());
-        scheduleEntity.setUpdateTime(LocalDateTime.now());
-
-        //要插入的activityEnrollNum
-        ActivityEnrollNum activityEnrollNum = new ActivityEnrollNum();
-        activityEnrollNum.setActivityId(null);
-        activityEnrollNum.setEnrollNum(0);
-
-        List<ActivityCanEnrollCollegeEntity> collegeList=new ArrayList<>();
-        List<ActivityCanEnrollGradeEntity> gradeList=new ArrayList<>();
+        ActivityEntity activityEntity=factory.buildActivity(addForm);
+        ActivityScheduleEntity scheduleEntity=factory.buildActivitySchedule(addForm);
+        List<ActivityCanEnrollCollegeEntity> collegeList;
+        List<ActivityCanEnrollGradeEntity> gradeList;
         if(!addForm.getCanEnrollCollegeIdList().isEmpty()&&!addForm.getCanEnrollGradeIdList().isEmpty()){
-            addForm.getCanEnrollCollegeIdList().forEach(id-> {
-                ActivityCanEnrollCollegeEntity college = new ActivityCanEnrollCollegeEntity();
-                college.setId(null);
-                college.setCanEnrollCollege(id);
-                college.setDeletedFlag(false);
-                college.setCreateTime(LocalDateTime.now());
-                college.setUpdateTime(LocalDateTime.now());
-                collegeList.add(college);
-            });
-
-
-            addForm.getCanEnrollGradeIdList().forEach((id)-> {
-                ActivityCanEnrollGradeEntity grade = new ActivityCanEnrollGradeEntity();
-                grade.setId(null);
-                grade.setCanEnrollGrade(id);
-                grade.setDeletedFlag(false);
-                grade.setCreateTime(LocalDateTime.now());
-                grade.setUpdateTime(LocalDateTime.now());
-                gradeList.add(grade);
-            });
+            collegeList=factory.buildCanEnrollCollege(addForm);
+            gradeList=factory.buildCanEnrollGrade(addForm);
+        } else {
+            gradeList = null;
+            collegeList = null;
         }
-
-        List<ActivityCanEnrollTribeEntity> tribeList=new ArrayList<>();
+        List<ActivityCanEnrollTribeEntity> tribeList;
         if(!addForm.getCanEnrollTribeIdList().isEmpty()){
-            addForm.getCanEnrollTribeIdList().forEach((id)->{
-                ActivityCanEnrollTribeEntity tribe = new ActivityCanEnrollTribeEntity();
-                tribe.setId(null);
-                tribe.setCanEnrollTribe(id);
-                tribe.setCreateTime(LocalDateTime.now());
-                tribe.setUpdateTime(LocalDateTime.now());
-                tribe.setDeletedFlag(false);
-
-                tribeList.add(tribe);
-            });
+            tribeList=factory.buildCanEnrollTribe(addForm);
+        } else {
+            tribeList = null;
         }
+        ActivityReviewLogEntity activityReviewLog=factory.buildReviewLog(addForm,reviewerName);
+        ActivityEnrollNum activityEnrollNum=factory.buildEnrollNum();
 
-        ActivityReviewLogEntity activityReviewLog=new ActivityReviewLogEntity();
-        activityReviewLog.setId(null);
-        activityReviewLog.setReviewerId(addForm.getInitialReviewer());
-        activityReviewLog.setReviewerName(initialReviewer.getUsername());
-        activityReviewLog.setReviewStage(ActivityReviewStage.INITIAL_REVIEW);
-        activityReviewLog.setCreateTime(LocalDateTime.now());
 
         //开始事务
         transactionTemplate.executeWithoutResult(status -> {
@@ -397,6 +124,7 @@ public class ActivityWithScheduleService {
                 scheduleEntity.setActivityId(id);
                 activityEnrollNum.setActivityId(id);
                 activityReviewLog.setActivityId(id);
+                assert collegeList != null;
                 if(!collegeList.isEmpty()&&!gradeList.isEmpty()){
                     collegeList.forEach((e)->e.setActivityId(id));
                     gradeList.forEach(e->e.setActivityId(id));
@@ -406,6 +134,7 @@ public class ActivityWithScheduleService {
                         status.setRollbackOnly();
                     }
                 }
+                assert tribeList != null;
                 if(!tribeList.isEmpty()){
                     tribeList.forEach(e->e.setActivityId(id));
                     if(!activityCanEnrollTribeManager.saveBatch(tribeList)){
@@ -464,38 +193,90 @@ public class ActivityWithScheduleService {
     }
 
 
-    public ResponseDTO<String> updateActivityWithSchedule(ActivityWithScheduleUpdateForm updateForm) {
+    public void updateActivityWithSchedule(ActivityWithScheduleUpdateForm updateForm) {
         log.info("ActivityWithScheduleService.updateActivityWithSchedule called, activityId={}", updateForm.getId());
-        
-        ActivityEntity activityEntity = new ActivityEntity();
-        activityEntity.setId(updateForm.getId());
-        activityEntity.setTitle(updateForm.getTitle());
-        activityEntity.setStatus(null);
-        activityEntity.setPosition(updateForm.getPosition());
-        activityEntity.setScoreCanGet(updateForm.getScoreCanGet());
-        activityEntity.setEnrollNumLimit(updateForm.getEnrollNumLimit());
-        activityEntity.setDeletedFlag(false);
 
-        ActivityScheduleEntity scheduleEntity = new ActivityScheduleEntity();
-        scheduleEntity.setActivityId(updateForm.getId());
-        scheduleEntity.setEnrollStartTime(updateForm.getEnrollStartTime());
-        scheduleEntity.setEnrollEndTime(updateForm.getEnrollEndTime());
-        scheduleEntity.setActivityStartTime(updateForm.getActivityStartTime());
-        scheduleEntity.setActivityEndTime(updateForm.getActivityEndTime());
-        scheduleEntity.setSigninStartTime(updateForm.getSigninStartTime());
-        scheduleEntity.setSigninEndTime(updateForm.getSigninEndTime());
-        scheduleEntity.setDeletedFlag(false);
-        return transactionTemplate.execute(status -> {
-            boolean activityUpdated = activityManager.updateById(activityEntity);
-            boolean scheduleUpdated = activityScheduleManager.updateById(scheduleEntity);
-            
-            if (!activityUpdated || !scheduleUpdated) {
-                log.error("ActivityWithScheduleService.updateActivityWithSchedule failed: failed to update activity or schedule, activityId={}", updateForm.getId());
+        ActivityWithScheduleUpdateFormValidator updateValidator = new ActivityWithScheduleUpdateFormValidator();
+
+        String reviewerName = updateValidator.validate(updateForm);
+        ActivityEntity activityEntity = UpdateContentFactory.buildActivity(updateForm);
+        boolean isIgnoreActivity=UpdateFormUtil.isEntityPropertiesAllNull(activityEntity,"id");
+        ActivityScheduleEntity activitySchedule = UpdateContentFactory.buildActivitySchedule(updateForm);
+        boolean isIgnoreActivitySchedule = UpdateFormUtil.isEntityPropertiesAllNull(activitySchedule,"activityId");
+        List<ActivityCanEnrollCollegeEntity> collegeList = UpdateContentFactory.buildCanEnrollCollege(updateForm);
+        boolean isIgnoreCollege = collegeList == null;
+        List<ActivityCanEnrollGradeEntity> gradeList = UpdateContentFactory.buildCanEnrollGrade(updateForm);
+        boolean isIgnoreGrade = gradeList == null;
+        List<ActivityCanEnrollTribeEntity> tribeList = UpdateContentFactory.buildCanEnrollTribe(updateForm);
+        boolean isIgnoreTribe = tribeList==null;
+        ActivityReviewLogEntity reviewLog = UpdateContentFactory.buildReviewLog(updateForm,reviewerName);
+        boolean isIgnoreReviewLog = reviewLog==null;
+
+        //活动与年级学院部落的关系需要删掉旧的再插入新的
+        LambdaUpdateWrapper<ActivityCanEnrollCollegeEntity> deleteOldCollege=new LambdaUpdateWrapper<>();
+        deleteOldCollege.eq(ActivityCanEnrollCollegeEntity::getActivityId,updateForm.getId())
+                    .set(ActivityCanEnrollCollegeEntity::getDeletedFlag,true);
+
+        LambdaUpdateWrapper<ActivityCanEnrollGradeEntity> deleteOldGrade = new LambdaUpdateWrapper<>();
+        deleteOldGrade.eq(ActivityCanEnrollGradeEntity::getActivityId,updateForm.getId())
+                .set(ActivityCanEnrollGradeEntity::getDeletedFlag,true);
+
+        LambdaUpdateWrapper<ActivityCanEnrollTribeEntity> deleteOldTribe=new LambdaUpdateWrapper<>();
+        deleteOldTribe.eq(ActivityCanEnrollTribeEntity::getActivityId,updateForm.getId())
+                        .set(ActivityCanEnrollTribeEntity::getDeletedFlag,true);
+
+        transactionTemplate.executeWithoutResult(status -> {
+            try {
+                if (!isIgnoreActivity) {
+                    if(!activityManager.updateById(activityEntity)){
+                        log.warn("更新活动内容的activityEntity失败回滚，activityId:{},update activity entity:{}",
+                                activityEntity.getId(),activityEntity);
+                        status.setRollbackOnly();
+                    }
+                }
+                if(!isIgnoreActivitySchedule){
+                    if(!activityScheduleManager.updateById(activitySchedule)){
+                        log.warn("更新活动内容的activityScheduleEntity失败回滚，activityId:{}，update activity schedule entity:{}"
+                                ,activityEntity.getId()
+                                ,activitySchedule);
+                    }
+                }
+                if(!isIgnoreReviewLog){
+                    if(!activityReviewLogManager.updateById(reviewLog)){
+                        log.warn("更新活动内容的activityReviewLogEntity失败回滚，activityId:{},update review log :{}",
+                                activityEntity.getId(),reviewLog);
+                    }
+                }
+                if(!isIgnoreGrade){
+                    if(!activityCanEnrollGradeManager.update(deleteOldGrade)){
+                        log.warn("更新活动内容中的删除旧的activityCanEnrollGrade失败回滚,activityId：{}",updateForm.getId());
+                    }
+                    if(!activityCanEnrollGradeManager.saveBatch(gradeList)){
+                        log.warn("更新活动内容中的插入新的activityCanEnrollGrade失败回滚，activityId:{}",updateForm.getId());
+                    }
+                }
+                if(!isIgnoreCollege){
+                    if(!activityCanEnrollCollegeManager.update(deleteOldCollege)){
+                        log.warn("更新活动内容中的删除旧的activityCanEnrollCollege失败回滚,activityId：{}",updateForm.getId());
+                    }
+                    if(!activityCanEnrollCollegeManager.saveBatch(collegeList)){
+                        log.warn("更新活动内容中的插入新的activityCanEnrollCollege失败回滚，activityId:{}",updateForm.getId());
+                    }
+                }
+                if(!isIgnoreTribe){
+                    if(!activityCanEnrollTribeManager.update(deleteOldTribe)){
+                        log.warn("更新活动内容中的删除旧的activityCanEnrollTribe失败回滚,activityId：{}",updateForm.getId());
+                    }
+                    if(!activityCanEnrollTribeManager.saveBatch(tribeList)){
+                        log.warn("更新活动内容中的插入新的activityCanEnrollTribe失败回滚，activityId:{}",updateForm.getId());
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("更新活动内容事务失败,activityId:{},{},{},{}",updateForm.getId(), e.getCause(), e.getMessage(), e.getStackTrace());
                 status.setRollbackOnly();
-                return ResponseDTO.error(UnexpectedErrorCode.BUSINESS_HANDING, "更新失败");
+                throw new BusinessException(SystemErrorCode.SYSTEM_ERROR, "更新活动内容失败，请重试");
             }
-            log.info("ActivityWithScheduleService.updateActivityWithSchedule success: activity updated, activityId={}", updateForm.getId());
-            return ResponseDTO.ok("更新成功");
+
         });
     }
     /**
@@ -584,5 +365,6 @@ public class ActivityWithScheduleService {
         Page<ActivityWithScheduleVO> result =activityDao.notStartAndPendingEnrollActivity(page,schoolId);
         return ResponseDTO.ok(result);
     }
+
 
 }

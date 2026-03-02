@@ -16,8 +16,4 @@ import org.springframework.stereotype.Service;
 @Service
 public class PortalUserManager extends ServiceImpl<PortalUserDao, PortalUserEntity> {
 
-    public PortalUserEntity getNotDeletedOne(){
-
-    }
-
 }

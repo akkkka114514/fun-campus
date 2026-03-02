@@ -89,4 +89,6 @@ public class PortalUserEntity {
     //能否发布活动
     private boolean canPublishActivity;
 
+    private Long gradeId;
+
 }

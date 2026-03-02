@@ -1,9 +1,5 @@
 package net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.vo;
 
-import com.baomidou.mybatisplus.annotation.FieldFill;
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -131,6 +127,14 @@ public class ActivityWithScheduleVO {
 
     @Schema(description = "签到结束时间")
     private LocalDateTime signinEndTime;
+
+    //签退开始时间
+    @Schema(description = "签退开始时间")
+    private LocalDateTime signoutStartTime;
+
+    //签退结束时间
+    @Schema(description = "签退结束时间")
+    private LocalDateTime signoutEndTime;
 
     @Schema(description = "创建时间")
     private LocalDateTime createTime;

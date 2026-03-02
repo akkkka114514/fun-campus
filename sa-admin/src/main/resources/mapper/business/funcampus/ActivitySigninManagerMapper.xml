@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="net.lab1024.sa.admin.module.business.funcampus.ActivitySigninManager.dao.ActivitySigninManagerDao">
+
+    <!-- 查询结果列 -->
+    <sql id="base_columns">
+        activity_signin_manager.id,
+        activity_signin_manager.activity_id,
+        activity_signin_manager.portal_user_id,
+        activity_signin_manager.deleted_flag,
+        activity_signin_manager.create_time,
+        activity_signin_manager.update_time,
+        activity_signin_manager.username
+    </sql>
+
+    <!-- 分页查询 -->
+    <select id="queryPage" resultType="net.lab1024.sa.admin.module.business.funcampus.ActivitySigninManager.domain.vo.ActivitySigninManagerVO">
+        SELECT
+        <include refid="base_columns"/>
+        FROM activity_signin_manager
+    </select>
+
+    <update id="batchUpdateDeleted">
+        update activity_signin_manager set deleted_flag = #{deletedFlag}
+        where id in
+        <foreach collection="idList" open="(" close=")" separator="," item="item">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="updateDeleted">
+        update activity_signin_manager set deleted_flag = #{deletedFlag}
+        where id = #{id}
+    </update>
+
+</mapper>

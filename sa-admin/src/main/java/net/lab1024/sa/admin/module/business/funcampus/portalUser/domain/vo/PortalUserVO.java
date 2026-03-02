@@ -52,4 +52,7 @@ public class PortalUserVO {
     @Schema(description = "学院id")
     private String collegeId;
 
+    @Schema(description = "年级id")
+    private Long gradeId;
+
 }

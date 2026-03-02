@@ -21,10 +21,12 @@ import java.util.List;
 public class ActivityWithScheduleAddForm {
     @Schema(description = "活动标题", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "活动标题 不能为空")
+    @NotNull(message = "活动标题 不能为空")
     private String title;
 
     @Schema(description = "活动地点", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "活动地点 不能为空")
+    @NotNull(message = "活动地点 不能为空")
     private String position;
 
     @Schema(description = "能得到的学分", requiredMode = Schema.RequiredMode.REQUIRED)
@@ -54,7 +56,6 @@ public class ActivityWithScheduleAddForm {
     @Min(value = 0L, message = "活动所属学院 不能小于0")
     private Long activityBelongToCollegeId;
 
-
     /**
      * 描述
      */
@@ -72,7 +73,6 @@ public class ActivityWithScheduleAddForm {
      * 需要签退
      */
     @Schema(description = "需要签退")
-
     private boolean needSignOut;
 
     /**
@@ -87,6 +87,7 @@ public class ActivityWithScheduleAddForm {
      */
     @Schema(description = "分类")
     @Min(value = 0L, message = "分类 不能小于0")
+    @NotNull(message = "活动分类 不能为空")
     private Long categoryId;
 
     /**
@@ -94,6 +95,7 @@ public class ActivityWithScheduleAddForm {
      */
     @Schema(description = "封面图片")
     @Size(max = 500, message = "封面图片路径 不能超过500个字符")
+    @NotNull(message = "活动封面 不能为空")
     private String coverImg;
 
     /**
@@ -132,9 +134,19 @@ public class ActivityWithScheduleAddForm {
     @NotNull(message = "签到结束时间 不能为空")
     @Future
     private LocalDateTime signinEndTime;
+    @Schema(description = "签退开始时间",requiredMode = Schema.RequiredMode.REQUIRED)
+    @Future
+    //签退开始时间
+    private LocalDateTime signoutStartTime;
+
+    //签退结束时间
+    @Schema(description = "签退结束时间",requiredMode = Schema.RequiredMode.REQUIRED)
+    @Future
+    private LocalDateTime signoutEndTime;
 
     @Schema(description = "初审人")
     @Min(value = 0L, message = "初审人不能为负数")
+    @NotNull(message = "初审人 不能为空")
     private Long initialReviewer;
     /**
      * 能报名的年级的id
@@ -151,5 +163,6 @@ public class ActivityWithScheduleAddForm {
     @Schema(description = "能报名的部落的id")
     private List<@Min(value = 0L, message = "能报名的部落的id不能为负数") Long> canEnrollTribeIdList;
 
-
+    @Schema(description = "活动签到管理员")
+    private List<@Min(value = 0L,message = "活动签到管理员id不能为负数")Long> activitySigninManagerIdList;
 }

@@ -67,4 +67,7 @@ public class ActivityReviewLogEntity {
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 
+    //是否已删除
+    private boolean deletedFlag;
+
 }

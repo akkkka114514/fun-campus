@@ -1,12 +1,15 @@
 package net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.service;
 
 import java.util.List;
+
+import jakarta.annotation.Nullable;
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.dao.ActivityReviewLogDao;
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.domain.entity.ActivityReviewLogEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.domain.form.ActivityReviewLogAddForm;
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.domain.form.ActivityReviewLogQueryForm;
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.domain.form.ActivityReviewLogUpdateForm;
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.domain.vo.ActivityReviewLogVO;
+import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleUpdateForm;
 import net.lab1024.sa.base.common.util.SmartBeanUtil;
 import net.lab1024.sa.base.common.util.SmartPageUtil;
 import net.lab1024.sa.base.common.domain.ResponseDTO;
@@ -74,5 +77,11 @@ public class ActivityReviewLogService {
         }
         return ResponseDTO.ok();
     }
+
+    public boolean initialReview(@Nullable ActivityWithScheduleUpdateForm updateForm){
+
+    }
+
+    public void cancelReview(){}
 
 }

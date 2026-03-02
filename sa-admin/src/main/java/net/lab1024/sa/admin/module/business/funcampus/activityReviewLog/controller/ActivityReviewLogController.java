@@ -1,10 +1,12 @@
 package net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.controller;
 
+import jakarta.annotation.Nullable;
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.domain.form.ActivityReviewLogAddForm;
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.domain.form.ActivityReviewLogQueryForm;
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.domain.form.ActivityReviewLogUpdateForm;
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.domain.vo.ActivityReviewLogVO;
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.service.ActivityReviewLogService;
+import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleUpdateForm;
 import net.lab1024.sa.base.common.domain.ResponseDTO;
 import net.lab1024.sa.base.common.domain.PageResult;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -51,5 +53,12 @@ public class ActivityReviewLogController {
     public ResponseDTO<String> update(@RequestBody @Valid ActivityReviewLogUpdateForm updateForm) {
         return activityReviewLogService.update(updateForm);
     }
+    @Operation(summary = "活动审核初审 @author akkkka114514")
+    @PostMapping("/review/initial")
+    public boolean initialReview(@RequestBody @Nullable ActivityWithScheduleUpdateForm updateForm,
+                                 @RequestBody ActivityReviewLogAddForm addForm){
+
+    }
+
 
 }

@@ -87,10 +87,6 @@ public class ActivityWithScheduleService {
     public void addNotReviewedOne(ActivityWithScheduleAddForm addForm) {
         log.info("添加待审核的活动：{}", addForm.toString());
 
-        ActivityWithScheduleAddFormValidator addValidator=new ActivityWithScheduleAddFormValidator();
-
-        String reviewerName = addValidator.validate(addForm);
-
         ActivityEntity activityEntity=factory.buildActivity(addForm);
         ActivityScheduleEntity scheduleEntity=factory.buildActivitySchedule(addForm);
         List<ActivityCanEnrollCollegeEntity> collegeList;
@@ -108,7 +104,7 @@ public class ActivityWithScheduleService {
         } else {
             tribeList = null;
         }
-        ActivityReviewLogEntity activityReviewLog=factory.buildReviewLog(addForm,reviewerName);
+        ActivityReviewLogEntity activityReviewLog=factory.buildReviewLog(addForm);
         ActivityEnrollNum activityEnrollNum=factory.buildEnrollNum();
 
 
@@ -196,9 +192,6 @@ public class ActivityWithScheduleService {
     public void updateActivityWithSchedule(ActivityWithScheduleUpdateForm updateForm) {
         log.info("ActivityWithScheduleService.updateActivityWithSchedule called, activityId={}", updateForm.getId());
 
-        ActivityWithScheduleUpdateFormValidator updateValidator = new ActivityWithScheduleUpdateFormValidator();
-
-        String reviewerName = updateValidator.validate(updateForm);
         ActivityEntity activityEntity = UpdateContentFactory.buildActivity(updateForm);
         boolean isIgnoreActivity=UpdateFormUtil.isEntityPropertiesAllNull(activityEntity,"id");
         ActivityScheduleEntity activitySchedule = UpdateContentFactory.buildActivitySchedule(updateForm);
@@ -209,7 +202,7 @@ public class ActivityWithScheduleService {
         boolean isIgnoreGrade = gradeList == null;
         List<ActivityCanEnrollTribeEntity> tribeList = UpdateContentFactory.buildCanEnrollTribe(updateForm);
         boolean isIgnoreTribe = tribeList==null;
-        ActivityReviewLogEntity reviewLog = UpdateContentFactory.buildReviewLog(updateForm,reviewerName);
+        ActivityReviewLogEntity reviewLog = UpdateContentFactory.buildReviewLog(updateForm);
         boolean isIgnoreReviewLog = reviewLog==null;
 
         //活动与年级学院部落的关系需要删掉旧的再插入新的

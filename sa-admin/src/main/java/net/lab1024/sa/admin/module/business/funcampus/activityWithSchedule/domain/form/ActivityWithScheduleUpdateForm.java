@@ -136,6 +136,9 @@ public class ActivityWithScheduleUpdateForm{
     @Schema(description = "初审人")
     @Min(value = 0L, message = "初审人不能为负数")
     private Long initialReviewer;
+
+    @Schema(description = "初审人姓名")
+    private String initialReviewerName;
     /**
      * 能报名的年级的id
      */

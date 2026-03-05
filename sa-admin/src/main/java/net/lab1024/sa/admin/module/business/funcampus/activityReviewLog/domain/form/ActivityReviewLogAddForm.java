@@ -18,7 +18,6 @@ import lombok.Data;
 public class ActivityReviewLogAddForm {
 
     @Schema(description = "主键", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "主键 不能为空")
     private Long id;
 
     @Schema(description = "活动id", requiredMode = Schema.RequiredMode.REQUIRED)
@@ -28,6 +27,15 @@ public class ActivityReviewLogAddForm {
     @Schema(description = "审核人id", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "审核人id 不能为空")
     private Long reviewerId;
+
+    /*
+    指定下一阶段审核人
+    */
+    @Schema(description = "指定下一个审核人id")
+    private Long nextReviewerId;
+
+    @Schema(description = "下一个审核人姓名")
+    private String nextReviewerName;
 
     @Schema(description = "审核人姓名", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "审核人姓名 不能为空")
@@ -41,8 +49,10 @@ public class ActivityReviewLogAddForm {
     @NotNull(message = "审核行为，1-》通过，2-》驳回，3-》建议 不能为空")
     private Integer action;
 
-    @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "创建时间 不能为空")
-    private LocalDateTime createTime;
+    @Schema(description = "拒绝理由")
+    private String rejectReason;
+
+    @Schema(description = "审阅建议")
+    private String checkRemark;
 
 }

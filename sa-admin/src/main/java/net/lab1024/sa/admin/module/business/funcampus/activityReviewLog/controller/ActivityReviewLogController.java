@@ -5,8 +5,10 @@ import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.domain.f
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.domain.form.ActivityReviewLogQueryForm;
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.domain.form.ActivityReviewLogUpdateForm;
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.domain.vo.ActivityReviewLogVO;
+import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.service.ActivityReviewLogAddFormValidator;
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.service.ActivityReviewLogService;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleUpdateForm;
+import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.service.ActivityWithScheduleUpdateFormValidator;
 import net.lab1024.sa.base.common.domain.ResponseDTO;
 import net.lab1024.sa.base.common.domain.PageResult;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -55,9 +57,16 @@ public class ActivityReviewLogController {
     }
     @Operation(summary = "活动审核初审 @author akkkka114514")
     @PostMapping("/review/initial")
-    public boolean initialReview(@RequestBody @Nullable ActivityWithScheduleUpdateForm updateForm,
+    public ResponseDTO<String> initialReview(@RequestBody @Nullable ActivityWithScheduleUpdateForm updateForm,
                                  @RequestBody ActivityReviewLogAddForm addForm){
-
+        if(updateForm!=null){
+            ActivityWithScheduleUpdateFormValidator updateValidator = new ActivityWithScheduleUpdateFormValidator();
+            updateValidator.validate(updateForm);
+        }
+        ActivityReviewLogAddFormValidator addValidator = new ActivityReviewLogAddFormValidator();
+        addValidator.validate(addForm);
+        activityReviewLogService.initialReview(updateForm,addForm);
+        return ResponseDTO.ok();
     }
 
 

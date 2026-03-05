@@ -1,20 +1,15 @@
 package net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import net.lab1024.sa.admin.module.business.funcampus.activityCategory.manager.ActivityCategoryManager;
-import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewStage;
-import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.domain.entity.ActivityReviewLogEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.manager.ActivityReviewLogManager;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleAddForm;
-import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleUpdateForm;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
 import net.lab1024.sa.admin.module.business.funcampus.collegeInfo.manager.CollegeInfoManager;
 import net.lab1024.sa.admin.module.business.funcampus.gradeInfo.manager.GradeInfoManager;
 import net.lab1024.sa.admin.module.business.funcampus.organizationInfo.manager.OrganizationInfoManager;
-import net.lab1024.sa.admin.module.business.funcampus.portalLogin.domain.RequestPortalUser;
 import net.lab1024.sa.admin.module.business.funcampus.portalUser.domain.entity.PortalUserEntity;
 import net.lab1024.sa.admin.module.business.funcampus.portalUser.manager.PortalUserManager;
 import net.lab1024.sa.admin.module.business.funcampus.schoolInfo.manager.SchoolInfoManager;
@@ -22,12 +17,9 @@ import net.lab1024.sa.admin.module.business.funcampus.tribe.manager.TribeManager
 import net.lab1024.sa.admin.module.business.funcampus.tribeUser.service.TribeUserService;
 import net.lab1024.sa.admin.module.system.backendUser.domain.entity.BackendUserEntity;
 import net.lab1024.sa.admin.module.system.backendUser.manager.BackendUserManager;
-import net.lab1024.sa.admin.module.system.login.domain.RequestBackendUser;
 import net.lab1024.sa.base.common.code.UserErrorCode;
-import net.lab1024.sa.base.common.domain.RequestUser;
 import net.lab1024.sa.base.common.exception.BusinessException;
 import net.lab1024.sa.base.common.util.SmartRequestUtil;
-import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Objects;
@@ -65,18 +57,17 @@ public class ActivityWithScheduleAddFormValidator {
     private final Long userId = SmartRequestUtil.getRequestUserId();
     private PortalUserEntity portalUser;
 
-    public String validate(ActivityWithScheduleAddForm addForm){
+    public void validate(ActivityWithScheduleAddForm addForm){
         validatePortalUser();
         validatePortalUserCanPublishActivity();
         validateActivitySchedule(addForm);
         validateActivityBelongTo(addForm);
         validateActivityCategory(addForm);
         validateActivityTitleUnique(addForm);
-        String reviewerName = validateInitialReviewer(addForm);
+        validateInitialReviewer(addForm);
         validateSigninManager(addForm);
         validateActivityParticipateType(addForm);
         validateActivityManager(addForm);
-        return reviewerName;
     }
     //校验活动时间相关
     private void validateActivitySchedule(ActivityWithScheduleAddForm addForm){
@@ -222,14 +213,20 @@ public class ActivityWithScheduleAddFormValidator {
                 );
     }
     //返回username，构建插入内容时要用
-    private String validateInitialReviewer(ActivityWithScheduleAddForm addForm){
+    private void validateInitialReviewer(ActivityWithScheduleAddForm addForm){
         //检查initialReviewer是否存在且有效
         BackendUserEntity initialReviewer=Optional.ofNullable(backendUserManager.getById(addForm.getInitialReviewer()))
                 .filter(e->!e.getDeletedFlag())
                 .filter(e->!e.getDisabledFlag())
                 .filter(e->e.getSchoolId().equals(portalUser.getSchoolId()))
                 .orElseThrow(()->new BusinessException(UserErrorCode.PARAM_ERROR,"活动初审人校验不正确"));
-        return initialReviewer.getUsername();
+        validateInitialReviewerName(addForm,initialReviewer);
+    }
+
+    private void validateInitialReviewerName(ActivityWithScheduleAddForm addForm,BackendUserEntity backendUser){
+        if(!addForm.getInitialReviewerName().equals(backendUser.getUsername())){
+            throw new BusinessException(UserErrorCode.PARAM_ERROR,"传入的初审人用户名与数据库内容不相符");
+        }
     }
 
     private void validateActivityManager(ActivityWithScheduleAddForm addForm){

@@ -114,11 +114,11 @@ public class InsertContentFactory {
         });
         return gradeList;
     }
-    public ActivityReviewLogEntity buildReviewLog(ActivityWithScheduleAddForm addForm,String reviewerName){
+    public ActivityReviewLogEntity buildReviewLog(ActivityWithScheduleAddForm addForm){
         ActivityReviewLogEntity activityReviewLog=new ActivityReviewLogEntity();
         activityReviewLog.setId(null);
         activityReviewLog.setReviewerId(addForm.getInitialReviewer());
-        activityReviewLog.setReviewerName(reviewerName);
+        activityReviewLog.setReviewerName(activityReviewLog.getReviewerName());
         activityReviewLog.setReviewStage(ActivityReviewStage.INITIAL_REVIEW);
         activityReviewLog.setCreateTime(LocalDateTime.now());
         return activityReviewLog;

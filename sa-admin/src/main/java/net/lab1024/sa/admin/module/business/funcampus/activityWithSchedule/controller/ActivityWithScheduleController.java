@@ -14,7 +14,9 @@ import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domai
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityWithScheduleVO;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.vo.IndexActivityVO;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.vo.InitPublishActivityPageVO;
+import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.service.ActivityWithScheduleAddFormValidator;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.service.ActivityWithScheduleService;
+import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.service.ActivityWithScheduleUpdateFormValidator;
 import net.lab1024.sa.admin.module.business.funcampus.collegeInfo.domain.vo.SimpleCollegeInfoVO;
 import net.lab1024.sa.admin.module.business.funcampus.collegeInfo.service.CollegeInfoService;
 import net.lab1024.sa.admin.module.business.funcampus.gradeInfo.domain.vo.SimpleGradeInfoVO;
@@ -66,6 +68,8 @@ public class ActivityWithScheduleController {
         if(Objects.isNull(addForm)){
             return ResponseDTO.error(UserErrorCode.PARAM_ERROR);
         }
+        ActivityWithScheduleAddFormValidator addValidator = new ActivityWithScheduleAddFormValidator();
+        addValidator.validate(addForm);
         activityWithScheduleService.addNotReviewedOne(addForm);
         return ResponseDTO.ok();
     }
@@ -81,7 +85,13 @@ public class ActivityWithScheduleController {
     @PostMapping("/activity/update")
     @RepeatSubmit(intervalMilliSecond = 3 * 1000 )
     public ResponseDTO<String> updateActivityWithSchedule(@RequestBody @Valid ActivityWithScheduleUpdateForm updateForm) {
-        return activityWithScheduleService.updateActivityWithSchedule(updateForm);
+        if(Objects.isNull(updateForm)){
+            return ResponseDTO.error(UserErrorCode.PARAM_ERROR);
+        }
+        ActivityWithScheduleUpdateFormValidator updateValidator = new ActivityWithScheduleUpdateFormValidator();
+        updateValidator.validate(updateForm);
+        activityWithScheduleService.updateActivityWithSchedule(updateForm);
+        return ResponseDTO.ok();
     }
 
     @Operation(summary = "查询活动和时间表 @author akkkka114514")

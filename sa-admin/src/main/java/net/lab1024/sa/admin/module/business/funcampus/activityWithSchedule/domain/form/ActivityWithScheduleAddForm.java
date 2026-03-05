@@ -148,6 +148,11 @@ public class ActivityWithScheduleAddForm {
     @Min(value = 0L, message = "初审人不能为负数")
     @NotNull(message = "初审人 不能为空")
     private Long initialReviewer;
+
+    @Schema(description = "初审人姓名")
+    @NotNull
+    @NotBlank
+    private String initialReviewerName;
     /**
      * 能报名的年级的id
      */

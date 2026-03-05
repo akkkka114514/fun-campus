@@ -69,7 +69,7 @@ public class ActivityWithScheduleUpdateFormValidator {
     private Long schoolId;
 
 
-    public String validate(ActivityWithScheduleUpdateForm updateForm){
+    public void validate(ActivityWithScheduleUpdateForm updateForm){
         validateActivityId(updateForm);
         validateActivityUpdateUserAndTime(updateForm);
         validateActivityBelongTo(updateForm);
@@ -78,7 +78,7 @@ public class ActivityWithScheduleUpdateFormValidator {
         validateActivitySchedule(updateForm);
         validateActivityManager(updateForm);
         validateSignInManager(updateForm);
-        return validateInitialReviewer(updateForm);
+        validateInitialReviewer(updateForm);
     }
 
     private void validateActivityId(ActivityWithScheduleUpdateForm updateForm){
@@ -268,22 +268,30 @@ public class ActivityWithScheduleUpdateFormValidator {
         }
     }
 
-    private String validateInitialReviewer(ActivityWithScheduleUpdateForm updateForm){
+    private void validateInitialReviewer(ActivityWithScheduleUpdateForm updateForm){
         if(updateForm.getInitialReviewer()==null){
-            return null;
+            return;
+        }
+        if(updateForm.getInitialReviewerName()==null){
+            return;
         }
         if(requestUser instanceof RequestPortalUser){
-            return Optional.ofNullable(backendUserManager.getById(updateForm.getInitialReviewer()))
+            BackendUserEntity backendUser=Optional.ofNullable(backendUserManager.getById(updateForm.getInitialReviewer()))
                     .filter(e->!e.getDeletedFlag())
                     .filter(e->!e.getDisabledFlag())
                     .filter(e->e.getSchoolId().equals(portalUser.getSchoolId()))
-                    .orElseThrow(()->new BusinessException(UserErrorCode.PARAM_ERROR,"活动初审人校验不正确"))
-                    .getUsername();
+                    .orElseThrow(()->new BusinessException(UserErrorCode.PARAM_ERROR,"活动初审人校验不正确"));
+            validateInitialReviewerName(updateForm,backendUser);
         }
         if(requestUser instanceof RequestBackendUser){
             throw new BusinessException(UserErrorCode.NO_PERMISSION,"后台用户不允许修改活动初审人");
         }
-        return null;
+    }
+
+    private void validateInitialReviewerName(ActivityWithScheduleUpdateForm updateForm,BackendUserEntity backendUser){
+        if(!updateForm.getInitialReviewerName().equals(backendUser.getUsername())){
+            throw new BusinessException(UserErrorCode.PARAM_ERROR,"传入的初审人用户名与数据库内容不相符");
+        }
     }
 
     private void validateSignInManager(ActivityWithScheduleUpdateForm updateForm){

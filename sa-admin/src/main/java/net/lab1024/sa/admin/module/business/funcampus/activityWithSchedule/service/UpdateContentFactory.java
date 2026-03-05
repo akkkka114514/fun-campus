@@ -112,14 +112,14 @@ public class UpdateContentFactory {
         });
         return gradeList;
     }
-    public static ActivityReviewLogEntity buildReviewLog(ActivityWithScheduleUpdateForm updateForm, String reviewerName){
+    public static ActivityReviewLogEntity buildReviewLog(ActivityWithScheduleUpdateForm updateForm){
         if(updateForm.getInitialReviewer()==null){
             return null;
         }
         ActivityReviewLogEntity activityReviewLog=new ActivityReviewLogEntity();
         activityReviewLog.setId(null);
         activityReviewLog.setReviewerId(updateForm.getInitialReviewer());
-        activityReviewLog.setReviewerName(reviewerName);
+        activityReviewLog.setReviewerName(updateForm.getInitialReviewerName());
         activityReviewLog.setReviewStage(ActivityReviewStage.INITIAL_REVIEW);
         activityReviewLog.setCreateTime(LocalDateTime.now());
         return activityReviewLog;

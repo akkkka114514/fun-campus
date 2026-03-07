@@ -14,8 +14,10 @@ import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.domain.f
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.domain.vo.ActivityReviewLogVO;
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.manager.ActivityReviewLogManager;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
+import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityScheduleEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleUpdateForm;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
+import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.manager.ActivityScheduleManager;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.service.ActivityWithScheduleService;
 import net.lab1024.sa.admin.module.system.login.domain.RequestBackendUser;
 import net.lab1024.sa.base.common.code.UserErrorCode;
@@ -61,6 +63,9 @@ public class ActivityReviewLogService {
 
     @Resource
     private ActivityManager activityManager;
+
+    @Resource
+    private ActivityScheduleManager activityScheduleManager;
 
     /**
      * 分页查询
@@ -183,6 +188,8 @@ public class ActivityReviewLogService {
     }
 
     public void finalReview(@Nullable ActivityWithScheduleUpdateForm updateForm, ActivityReviewLogAddForm addForm){
+        validateAllTimeFuture(addForm.getActivityId());
+
         ActivityReviewLogEntity nextReview = new ActivityReviewLogEntity();
         nextReview.setActivityId(addForm.getActivityId());
         nextReview.setReviewerId(addForm.getNextReviewerId());
@@ -214,5 +221,13 @@ public class ActivityReviewLogService {
                 status.setRollbackOnly();
             }
         });
+    }
+
+    private void validateAllTimeFuture(Long activityId){
+        ActivityScheduleEntity activitySchedule = activityScheduleManager.getById(activityId);
+        LocalDateTime now = LocalDateTime.now();
+        if(activitySchedule.getEnrollStartTime().isBefore(now)||activitySchedule.getEnrollEndTime().isBefore(now)){
+            throw new BusinessException(UserErrorCode.PARAM_ERROR,"报名时间已经开始或已经结束，请重新设置活动时间表");
+        }
     }
 }

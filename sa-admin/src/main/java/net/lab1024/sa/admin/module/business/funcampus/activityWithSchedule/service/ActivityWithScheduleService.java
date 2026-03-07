@@ -10,6 +10,8 @@ import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollTribe.dom
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollTribe.manager.ActivityCanEnrollTribeManager;
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.domain.entity.ActivityReviewLogEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.manager.ActivityReviewLogManager;
+import net.lab1024.sa.admin.module.business.funcampus.activitySigninManager.domain.entity.ActivitySigninManagerEntity;
+import net.lab1024.sa.admin.module.business.funcampus.activitySigninManager.manager.ActivitySigninManagerManager;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.dao.ActivityDao;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.dao.ActivityEnrollNumDao;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEnrollNum;
@@ -84,6 +86,9 @@ public class ActivityWithScheduleService {
     @Resource
     private ActivityReviewLogManager activityReviewLogManager;
 
+    @Resource
+    private ActivitySigninManagerManager signinManagerManager;
+
     public void addNotReviewedOne(ActivityWithScheduleAddForm addForm) {
         log.info("添加待审核的活动：{}", addForm.toString());
 
@@ -106,6 +111,7 @@ public class ActivityWithScheduleService {
         }
         ActivityReviewLogEntity activityReviewLog=factory.buildReviewLog(addForm);
         ActivityEnrollNum activityEnrollNum=factory.buildEnrollNum();
+        List<ActivitySigninManagerEntity> signinManagerList = factory.buildSigninManagerList(addForm);
 
 
         //开始事务
@@ -120,7 +126,6 @@ public class ActivityWithScheduleService {
                 scheduleEntity.setActivityId(id);
                 activityEnrollNum.setActivityId(id);
                 activityReviewLog.setActivityId(id);
-                assert collegeList != null;
                 if(!collegeList.isEmpty()&&!gradeList.isEmpty()){
                     collegeList.forEach((e)->e.setActivityId(id));
                     gradeList.forEach(e->e.setActivityId(id));
@@ -137,6 +142,11 @@ public class ActivityWithScheduleService {
                         log.warn("创建未审核活动事务失败：插入能报名的部落失败：activityId={}",id);
                         status.setRollbackOnly();
                     }
+                }
+                signinManagerList.forEach(e->e.setActivityId(id));
+                if(!signinManagerManager.saveBatch(signinManagerList)){
+                    log.warn("创建未审核活动事务失败：插入签到员失败：activityId={}",id);
+                    status.setRollbackOnly();
                 }
                 if(!activityReviewLogManager.save(activityReviewLog)){
                     log.warn("创建未审核活动事务失败：插入活动审核记录失败：activityId={}",id);
@@ -204,6 +214,9 @@ public class ActivityWithScheduleService {
         boolean isIgnoreTribe = tribeList==null;
         ActivityReviewLogEntity reviewLog = UpdateContentFactory.buildReviewLog(updateForm);
         boolean isIgnoreReviewLog = reviewLog==null;
+        List<ActivitySigninManagerEntity> signinManagerList = UpdateContentFactory.buildSigninManagerList(updateForm);
+        boolean isIgnoreSigninManager = signinManagerList==null;
+
 
         //活动与年级学院部落的关系需要删掉旧的再插入新的
         LambdaUpdateWrapper<ActivityCanEnrollCollegeEntity> deleteOldCollege=new LambdaUpdateWrapper<>();
@@ -217,6 +230,10 @@ public class ActivityWithScheduleService {
         LambdaUpdateWrapper<ActivityCanEnrollTribeEntity> deleteOldTribe=new LambdaUpdateWrapper<>();
         deleteOldTribe.eq(ActivityCanEnrollTribeEntity::getActivityId,updateForm.getId())
                         .set(ActivityCanEnrollTribeEntity::getDeletedFlag,true);
+
+        LambdaUpdateWrapper<ActivitySigninManagerEntity> deleteSignInManager = new LambdaUpdateWrapper<>();
+        deleteSignInManager.eq(ActivitySigninManagerEntity::getActivityId,updateForm.getId())
+                        .set(ActivitySigninManagerEntity::getDeletedFlag,true);
 
         transactionTemplate.executeWithoutResult(status -> {
             try {
@@ -232,36 +249,54 @@ public class ActivityWithScheduleService {
                         log.warn("更新活动内容的activityScheduleEntity失败回滚，activityId:{}，update activity schedule entity:{}"
                                 ,activityEntity.getId()
                                 ,activitySchedule);
+                        status.setRollbackOnly();
                     }
                 }
                 if(!isIgnoreReviewLog){
                     if(!activityReviewLogManager.updateById(reviewLog)){
                         log.warn("更新活动内容的activityReviewLogEntity失败回滚，activityId:{},update review log :{}",
                                 activityEntity.getId(),reviewLog);
+                        status.setRollbackOnly();
                     }
                 }
                 if(!isIgnoreGrade){
                     if(!activityCanEnrollGradeManager.update(deleteOldGrade)){
                         log.warn("更新活动内容中的删除旧的activityCanEnrollGrade失败回滚,activityId：{}",updateForm.getId());
+                        status.setRollbackOnly();
                     }
                     if(!activityCanEnrollGradeManager.saveBatch(gradeList)){
                         log.warn("更新活动内容中的插入新的activityCanEnrollGrade失败回滚，activityId:{}",updateForm.getId());
+                        status.setRollbackOnly();
                     }
                 }
                 if(!isIgnoreCollege){
                     if(!activityCanEnrollCollegeManager.update(deleteOldCollege)){
                         log.warn("更新活动内容中的删除旧的activityCanEnrollCollege失败回滚,activityId：{}",updateForm.getId());
+                        status.setRollbackOnly();
                     }
                     if(!activityCanEnrollCollegeManager.saveBatch(collegeList)){
                         log.warn("更新活动内容中的插入新的activityCanEnrollCollege失败回滚，activityId:{}",updateForm.getId());
+                        status.setRollbackOnly();
                     }
                 }
                 if(!isIgnoreTribe){
                     if(!activityCanEnrollTribeManager.update(deleteOldTribe)){
                         log.warn("更新活动内容中的删除旧的activityCanEnrollTribe失败回滚,activityId：{}",updateForm.getId());
+                        status.setRollbackOnly();
                     }
                     if(!activityCanEnrollTribeManager.saveBatch(tribeList)){
                         log.warn("更新活动内容中的插入新的activityCanEnrollTribe失败回滚，activityId:{}",updateForm.getId());
+                        status.setRollbackOnly();
+                    }
+                }
+                if(!isIgnoreSigninManager){
+                    if(!signinManagerManager.update(deleteSignInManager)){
+                        log.warn("更新活动内容中删除旧的activitySigninManager失败回滚，activityId:{}",updateForm.getId());
+                        status.setRollbackOnly();
+                    }
+                    if(!signinManagerManager.saveBatch(signinManagerList)){
+                        log.warn("更新活动内容中的插入新的activitySigninManager失败回滚，activityId:{}",updateForm.getId());
+                        status.setRollbackOnly();
                     }
                 }
             } catch (Exception e) {
@@ -302,43 +337,6 @@ public class ActivityWithScheduleService {
             log.warn("ActivityWithScheduleService.batchDelete failed: no records deleted");
             return ResponseDTO.error(UnexpectedErrorCode.BUSINESS_HANDING, "删除失败");
         }
-    }
-
-    public ResponseDTO<String> publish(Long activityId){
-        log.info("ActivityWithScheduleService.publish called, activityId={}", activityId);
-        // TODO: 实现发布逻辑
-        log.warn("ActivityWithScheduleService.publish not implemented");
-        return ResponseDTO.ok("功能未实现");
-    }
-    public ResponseDTO<String> cancelPublish(Long activityId){
-        log.info("ActivityWithScheduleService.cancelPublish called, activityId={}", activityId);
-        // TODO: 实现取消发布逻辑
-        log.warn("ActivityWithScheduleService.cancelPublish not implemented");
-        return ResponseDTO.ok("功能未实现");
-    }
-    public ResponseDTO<String> passReview(Long activityId){
-        log.info("ActivityWithScheduleService.passReview called, activityId={}", activityId);
-        // TODO: 实现通过审核逻辑
-        log.warn("ActivityWithScheduleService.passReview not implemented");
-        return ResponseDTO.ok("功能未实现");
-    }
-    public ResponseDTO<String> batchPassReview(List<Long> activityIds){
-        log.info("ActivityWithScheduleService.batchPassReview called, activityIdsCount={}", activityIds != null ? activityIds.size() : 0);
-        // TODO: 实现批量通过审核逻辑
-        log.warn("ActivityWithScheduleService.batchPassReview not implemented");
-        return ResponseDTO.ok("功能未实现");
-    }
-    public ResponseDTO<String> rejectReview(Long activityId){
-        log.info("ActivityWithScheduleService.rejectReview called, activityId={}", activityId);
-        // TODO: 实现拒绝审核逻辑
-        log.warn("ActivityWithScheduleService.rejectReview not implemented");
-        return ResponseDTO.ok("功能未实现");
-    }
-    public ResponseDTO<String> batchRejectReview(List<Long> activityIds){
-        log.info("ActivityWithScheduleService.batchRejectReview called, activityIdsCount={}", activityIds != null ? activityIds.size() : 0);
-        // TODO: 实现批量拒绝审核逻辑
-        log.warn("ActivityWithScheduleService.batchRejectReview not implemented");
-        return ResponseDTO.ok("功能未实现");
     }
 
     public ResponseDTO<Page<ActivityWithScheduleVO>> notStartAndPendingEnrollActivityPageGlobal(Long pageNum, Long pageSize){

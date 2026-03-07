@@ -9,10 +9,13 @@ import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollGrade.dom
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollTribe.domain.entity.ActivityCanEnrollTribeEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewStage;
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.domain.entity.ActivityReviewLogEntity;
+import net.lab1024.sa.admin.module.business.funcampus.activitySigninManager.domain.entity.ActivitySigninManagerEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityScheduleEntity;
+import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleAddForm;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleUpdateForm;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleUpdateForm;
+import net.lab1024.sa.admin.module.business.funcampus.portalUser.manager.PortalUserManager;
 import org.springframework.stereotype.Component;
 
 /**
@@ -123,5 +126,26 @@ public class UpdateContentFactory {
         activityReviewLog.setReviewStage(ActivityReviewStage.INITIAL_REVIEW);
         activityReviewLog.setCreateTime(LocalDateTime.now());
         return activityReviewLog;
+    }
+    public static List<ActivitySigninManagerEntity> buildSigninManagerList(ActivityWithScheduleUpdateForm updateForm){
+        if(updateForm.getActivitySigninManagerIdList()==null){
+            return null;
+        }
+        List<ActivitySigninManagerEntity> result = new ArrayList<>();
+        PortalUserManager portalUserManager=new PortalUserManager();
+
+        updateForm.getActivitySigninManagerIdList().forEach(id -> {
+            ActivitySigninManagerEntity signinManager=new ActivitySigninManagerEntity();
+            signinManager.setId(null);
+            signinManager.setActivityId(updateForm.getId());
+            signinManager.setPortalUserId(id);
+            signinManager.setDeletedFlag(false);
+            signinManager.setCreateTime(LocalDateTime.now());
+            signinManager.setUpdateTime(LocalDateTime.now());
+            signinManager.setUsername(portalUserManager.getById(id).getUsername());
+
+            result.add(signinManager);
+        });
+        return result;
     }
 }

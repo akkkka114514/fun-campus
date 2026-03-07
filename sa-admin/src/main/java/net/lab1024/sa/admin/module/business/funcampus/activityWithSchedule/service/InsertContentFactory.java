@@ -1,15 +1,18 @@
 package net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.service;
 
+import jakarta.annotation.Resource;
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollCollege.domain.entity.ActivityCanEnrollCollegeEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollGrade.domain.entity.ActivityCanEnrollGradeEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollTribe.domain.entity.ActivityCanEnrollTribeEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewStage;
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.domain.entity.ActivityReviewLogEntity;
+import net.lab1024.sa.admin.module.business.funcampus.activitySigninManager.domain.entity.ActivitySigninManagerEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.constant.ActivityStatus;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEnrollNum;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityScheduleEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleAddForm;
+import net.lab1024.sa.admin.module.business.funcampus.portalUser.manager.PortalUserManager;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -22,6 +25,8 @@ import java.util.List;
  */
 @Component
 public class InsertContentFactory {
+    @Resource
+    private PortalUserManager portalUserManager;
     public ActivityEntity buildActivity(ActivityWithScheduleAddForm addForm){
         //要插入的activity
         ActivityEntity activityEntity = new ActivityEntity();
@@ -122,5 +127,23 @@ public class InsertContentFactory {
         activityReviewLog.setReviewStage(ActivityReviewStage.INITIAL_REVIEW);
         activityReviewLog.setCreateTime(LocalDateTime.now());
         return activityReviewLog;
+    }
+
+    public List<ActivitySigninManagerEntity> buildSigninManagerList(ActivityWithScheduleAddForm addForm){
+        List<ActivitySigninManagerEntity> result = new ArrayList<>();
+
+        addForm.getActivitySigninManagerIdList().forEach(id -> {
+            ActivitySigninManagerEntity signinManager=new ActivitySigninManagerEntity();
+            signinManager.setId(null);
+            //缺少activityId，等会在事务里补上
+            signinManager.setPortalUserId(id);
+            signinManager.setDeletedFlag(false);
+            signinManager.setCreateTime(LocalDateTime.now());
+            signinManager.setUpdateTime(LocalDateTime.now());
+            signinManager.setUsername(portalUserManager.getById(id).getUsername());
+
+            result.add(signinManager);
+        });
+        return result;
     }
 }

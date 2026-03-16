@@ -2,12 +2,16 @@ package net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollCollege.
 
 import java.util.List;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollCollege.dao.ActivityCanEnrollCollegeDao;
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollCollege.domain.entity.ActivityCanEnrollCollegeEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollCollege.domain.form.ActivityCanEnrollCollegeAddForm;
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollCollege.domain.form.ActivityCanEnrollCollegeQueryForm;
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollCollege.domain.form.ActivityCanEnrollCollegeUpdateForm;
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollCollege.domain.vo.ActivityCanEnrollCollegeVO;
+import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollCollege.manager.ActivityCanEnrollCollegeManager;
+import net.lab1024.sa.admin.module.business.funcampus.collegeInfo.domain.entity.CollegeInfoEntity;
+import net.lab1024.sa.admin.module.business.funcampus.collegeInfo.manager.CollegeInfoManager;
 import net.lab1024.sa.base.common.util.SmartBeanUtil;
 import net.lab1024.sa.base.common.util.SmartPageUtil;
 import net.lab1024.sa.base.common.domain.ResponseDTO;
@@ -33,6 +37,10 @@ public class ActivityCanEnrollCollegeService {
 
     @Resource
     private ActivityCanEnrollCollegeDao activityCanEnrollCollegeDao;
+    @Resource
+    private ActivityCanEnrollCollegeManager canEnrollCollegeManager;
+    @Resource
+    private CollegeInfoManager collegeInfoManager;
 
     /**
      * 分页查询
@@ -109,4 +117,21 @@ public class ActivityCanEnrollCollegeService {
         }
         return ResponseDTO.ok();
     }
+    //取出所有canEnrollCollege表的collegeId，然后获取所有college的name
+    public List<Long> getCollegeIdsByActivityId(Long activityId){
+        LambdaQueryWrapper<ActivityCanEnrollCollegeEntity> lqw1 = new LambdaQueryWrapper<>();
+        lqw1.eq(ActivityCanEnrollCollegeEntity::getActivityId,activityId)
+                .eq(ActivityCanEnrollCollegeEntity::getDeletedFlag,false)
+                .select(ActivityCanEnrollCollegeEntity::getCanEnrollCollege);
+        List<ActivityCanEnrollCollegeEntity> collegeEntities = canEnrollCollegeManager.list(lqw1);
+        List<Long> collegeIds = null;
+        if(collegeEntities!=null&&!collegeEntities.isEmpty()){
+            collegeIds = collegeEntities
+                    .stream()
+                    .map(ActivityCanEnrollCollegeEntity::getCanEnrollCollege)
+                    .toList();
+        }
+        return collegeIds;
+    }
+
 }

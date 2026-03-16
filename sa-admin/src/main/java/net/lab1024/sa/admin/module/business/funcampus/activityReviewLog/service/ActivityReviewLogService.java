@@ -1,10 +1,14 @@
 package net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.beust.ah.A;
 import jakarta.annotation.Nullable;
+import net.lab1024.sa.admin.module.business.funcampus.activityEnrollment.domain.entity.ActivityEnrollmentEntity;
+import net.lab1024.sa.admin.module.business.funcampus.activityEnrollment.manager.ActivityEnrollmentManager;
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewStage;
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.dao.ActivityReviewLogDao;
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.domain.entity.ActivityReviewLogEntity;
@@ -13,6 +17,9 @@ import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.domain.f
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.domain.form.ActivityReviewLogUpdateForm;
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.domain.vo.ActivityReviewLogVO;
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.manager.ActivityReviewLogManager;
+import net.lab1024.sa.admin.module.business.funcampus.activitySigninManager.domain.entity.ActivitySigninManagerEntity;
+import net.lab1024.sa.admin.module.business.funcampus.activitySigninManager.manager.ActivitySigninManagerManager;
+import net.lab1024.sa.admin.module.business.funcampus.activitySigninManager.service.ActivitySigninManagerService;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityScheduleEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleUpdateForm;
@@ -66,6 +73,15 @@ public class ActivityReviewLogService {
 
     @Resource
     private ActivityScheduleManager activityScheduleManager;
+
+    @Resource
+    private ActivityEnrollmentManager enrollmentManager;
+
+    @Resource
+    private ActivitySigninManagerService  signinManagerService;
+
+    @Resource
+    private ActivitySigninManagerManager signinManagerManager;
 
     /**
      * 分页查询
@@ -203,7 +219,14 @@ public class ActivityReviewLogService {
                 .eq(ActivityReviewLogEntity::getReviewerId,addForm.getReviewerId())
                 .set(ActivityReviewLogEntity::getAction,addForm.getAction())
                 .set(ActivityReviewLogEntity::getRejectReason,addForm.getRejectReason());
+        //活动管理员和签到员一开始就已签到和签退
+        List<ActivityEnrollmentEntity> preSignin;
+        if(updateForm!=null){
+            preSignin = buildPreSignInAndSignOutEntities(updateForm,addForm);
+        }
+        preSignin=buildPreSignInAndSignOutEntities(addForm);
 
+        List<ActivityEnrollmentEntity> finalPreSignin = preSignin;
         transactionTemplate.executeWithoutResult(status->{
             try {
                 if(updateForm!=null){
@@ -215,6 +238,11 @@ public class ActivityReviewLogService {
                 }
                 if(!activityReviewLogManager.save(nextReview)){
                     log.warn("活动终审结果提交操作中，初始化下一阶段审核失败，事务回滚，addform：{}",addForm);
+                    status.setRollbackOnly();
+                }
+                if(!enrollmentManager.saveBatch(finalPreSignin)){
+                    log.warn("活动终审结果提交操作中，活动管理员和签到员提前签到失败，事务回滚，addform：{}",addForm);
+                    status.setRollbackOnly();
                 }
             }catch (Exception e){
                 log.warn("活动终审结果提交操作中，事务回滚：{},{},{},{}",addForm,e.getMessage(),e.getCause(),e.getStackTrace());
@@ -229,5 +257,110 @@ public class ActivityReviewLogService {
         if(activitySchedule.getEnrollStartTime().isBefore(now)||activitySchedule.getEnrollEndTime().isBefore(now)){
             throw new BusinessException(UserErrorCode.PARAM_ERROR,"报名时间已经开始或已经结束，请重新设置活动时间表");
         }
+    }
+
+    //适用于终审updateForm不为null的情况
+    private List<ActivityEnrollmentEntity> buildPreSignInAndSignOutEntities(
+            ActivityWithScheduleUpdateForm updateForm,
+            ActivityReviewLogAddForm addForm){
+        ActivityEnrollmentEntity managerEnrollment = new ActivityEnrollmentEntity();
+        List<ActivityEnrollmentEntity> result = new ArrayList<>();
+
+        ActivityEntity activity = activityManager.getById(addForm.getActivityId());
+        if(updateForm.getActivitySigninManagerIdList()!=null&&!updateForm.getActivitySigninManagerIdList().isEmpty()) {
+            updateForm.getActivitySigninManagerIdList().forEach(
+                    e -> {
+                        ActivityEnrollmentEntity enrollment = new ActivityEnrollmentEntity();
+                        enrollment.setActivityId(updateForm.getId());
+                        enrollment.setUserId(e);
+                        enrollment.setSignInStatus(true);
+                        enrollment.setCreateTime(LocalDateTime.now());
+                        enrollment.setUpdateTime(LocalDateTime.now());
+                        enrollment.setDeletedFlag(false);
+                        if(updateForm.getNeedSignOut()==null){
+                            if (activity.isNeedSignOut()) {
+                                enrollment.setSignOutStatus(true);
+                            }
+                        }else if(updateForm.getNeedSignOut()){
+                            enrollment.setSignOutStatus(true);
+                        }
+
+                    }
+            );
+        }
+        if(updateForm.getActivityManagerId()!=null){
+            managerEnrollment.setActivityId(addForm.getActivityId());
+            managerEnrollment.setUserId(updateForm.getActivityManagerId());
+            managerEnrollment.setSignInStatus(true);
+            managerEnrollment.setCreateTime(LocalDateTime.now());
+            managerEnrollment.setUpdateTime(LocalDateTime.now());
+            managerEnrollment.setDeletedFlag(false);
+            if(updateForm.getNeedSignOut()==null){
+                if (activity.isNeedSignOut()) {
+                    managerEnrollment.setSignOutStatus(true);
+                }
+            }else if(updateForm.getNeedSignOut()){
+                managerEnrollment.setSignOutStatus(true);
+            }
+            result.add(managerEnrollment);
+            return result;
+        }
+        managerEnrollment.setActivityId(addForm.getActivityId());
+        managerEnrollment.setUserId(activity.getActivityManagerId());
+        managerEnrollment.setSignInStatus(true);
+        managerEnrollment.setCreateTime(LocalDateTime.now());
+        managerEnrollment.setUpdateTime(LocalDateTime.now());
+        managerEnrollment.setDeletedFlag(false);
+        if(updateForm.getNeedSignOut()==null){
+            if (activity.isNeedSignOut()) {
+                managerEnrollment.setSignOutStatus(true);
+            }
+        }else if(updateForm.getNeedSignOut()){
+            managerEnrollment.setSignOutStatus(true);
+        }
+        result.add(managerEnrollment);
+        return result;
+
+    }
+    //适用于终审updateForm为null的情况
+    private List<ActivityEnrollmentEntity> buildPreSignInAndSignOutEntities(
+            ActivityReviewLogAddForm addForm) {
+        ActivityEnrollmentEntity managerEnrollment = new ActivityEnrollmentEntity();
+        List<ActivityEnrollmentEntity> result = new ArrayList<>();
+
+        ActivityEntity activity = activityManager.getById(addForm.getActivityId());
+
+        List<ActivitySigninManagerEntity> signinManagerEntities = signinManagerManager.list(
+                ActivitySigninManagerService
+                        .listByActivityIdQw(activity.getId())
+                        .select(ActivitySigninManagerEntity::getPortalUserId)
+        );
+        if (signinManagerEntities != null && !signinManagerEntities.isEmpty()) {
+            signinManagerEntities.forEach(e -> {
+                ActivityEnrollmentEntity enrollment = new ActivityEnrollmentEntity();
+                enrollment.setActivityId(activity.getId());
+                enrollment.setUserId(e.getPortalUserId());
+                enrollment.setSignInStatus(true);
+                enrollment.setCreateTime(LocalDateTime.now());
+                enrollment.setUpdateTime(LocalDateTime.now());
+                enrollment.setDeletedFlag(false);
+                if (activity.isNeedSignOut()) {
+                    enrollment.setSignOutStatus(true);
+                }
+                result.add(enrollment);
+            });
+        }
+
+        managerEnrollment.setActivityId(addForm.getActivityId());
+        managerEnrollment.setUserId(activity.getActivityManagerId());
+        managerEnrollment.setSignInStatus(true);
+        managerEnrollment.setCreateTime(LocalDateTime.now());
+        managerEnrollment.setUpdateTime(LocalDateTime.now());
+        managerEnrollment.setDeletedFlag(false);
+        if (activity.isNeedSignOut()) {
+            managerEnrollment.setSignOutStatus(true);
+        }
+        result.add(managerEnrollment);
+        return result;
     }
 }

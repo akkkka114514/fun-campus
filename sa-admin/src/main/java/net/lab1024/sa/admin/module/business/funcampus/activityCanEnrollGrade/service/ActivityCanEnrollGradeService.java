@@ -1,12 +1,15 @@
 package net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollGrade.service;
 
 import java.util.List;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollGrade.dao.ActivityCanEnrollGradeDao;
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollGrade.domain.entity.ActivityCanEnrollGradeEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollGrade.domain.form.ActivityCanEnrollGradeAddForm;
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollGrade.domain.form.ActivityCanEnrollGradeQueryForm;
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollGrade.domain.form.ActivityCanEnrollGradeUpdateForm;
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollGrade.domain.vo.ActivityCanEnrollGradeVO;
+import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollGrade.manager.ActivityCanEnrollGradeManager;
 import net.lab1024.sa.base.common.util.SmartBeanUtil;
 import net.lab1024.sa.base.common.util.SmartPageUtil;
 import net.lab1024.sa.base.common.domain.ResponseDTO;
@@ -32,6 +35,8 @@ public class ActivityCanEnrollGradeService {
 
     @Resource
     private ActivityCanEnrollGradeDao activityCanEnrollGradeDao;
+    @Resource
+    private ActivityCanEnrollGradeManager canEnrollGradeManager;
 
     /**
      * 分页查询
@@ -107,5 +112,20 @@ public class ActivityCanEnrollGradeService {
             log.warn("ActivityCanEnrollGradeService.delete warning: no records deleted");
         }
         return ResponseDTO.ok();
+    }
+
+    public List<Long> getGradeIdByActivityId(Long activityId){
+        LambdaQueryWrapper<ActivityCanEnrollGradeEntity> qw = new LambdaQueryWrapper<>();
+        qw.eq(ActivityCanEnrollGradeEntity::getActivityId,activityId)
+            .eq(ActivityCanEnrollGradeEntity::getDeletedFlag,false)
+            .select(ActivityCanEnrollGradeEntity::getCanEnrollGrade);
+        List<ActivityCanEnrollGradeEntity> list = canEnrollGradeManager.list(qw);
+        if(list==null || list.isEmpty()){
+            return null;
+        }
+        return list
+                .stream()
+                .map(ActivityCanEnrollGradeEntity::getCanEnrollGrade)
+                .toList();
     }
 }

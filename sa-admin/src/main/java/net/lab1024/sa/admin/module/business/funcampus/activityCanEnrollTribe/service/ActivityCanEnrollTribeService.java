@@ -1,12 +1,15 @@
 package net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollTribe.service;
 
 import java.util.List;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollTribe.dao.ActivityCanEnrollTribeDao;
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollTribe.domain.entity.ActivityCanEnrollTribeEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollTribe.domain.form.ActivityCanEnrollTribeAddForm;
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollTribe.domain.form.ActivityCanEnrollTribeQueryForm;
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollTribe.domain.form.ActivityCanEnrollTribeUpdateForm;
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollTribe.domain.vo.ActivityCanEnrollTribeVO;
+import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollTribe.manager.ActivityCanEnrollTribeManager;
 import net.lab1024.sa.base.common.util.SmartBeanUtil;
 import net.lab1024.sa.base.common.util.SmartPageUtil;
 import net.lab1024.sa.base.common.domain.ResponseDTO;
@@ -32,6 +35,8 @@ public class ActivityCanEnrollTribeService {
 
     @Resource
     private ActivityCanEnrollTribeDao activityCanEnrollTribeDao;
+    @Resource
+    private ActivityCanEnrollTribeManager canEnrollTribeManager;
 
     /**
      * 分页查询
@@ -107,5 +112,20 @@ public class ActivityCanEnrollTribeService {
             log.warn("ActivityCanEnrollTribeService.delete warning: no records deleted");
         }
         return ResponseDTO.ok();
+    }
+
+    public List<Long> getTribeIdsByActivityId(Long activityId){
+        LambdaQueryWrapper<ActivityCanEnrollTribeEntity> qw = new LambdaQueryWrapper<>();
+        qw.eq(ActivityCanEnrollTribeEntity::getActivityId,activityId)
+            .eq(ActivityCanEnrollTribeEntity::getDeletedFlag,false)
+            .select(ActivityCanEnrollTribeEntity::getCanEnrollTribe);
+        List<ActivityCanEnrollTribeEntity> list = canEnrollTribeManager.list(qw);
+        if(list==null||list.isEmpty()){
+            return null;
+        }
+        return list
+                .stream()
+                .map(ActivityCanEnrollTribeEntity::getCanEnrollTribe)
+                .toList();
     }
 }

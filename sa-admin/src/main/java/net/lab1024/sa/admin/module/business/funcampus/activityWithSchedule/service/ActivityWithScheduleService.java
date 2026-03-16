@@ -1,13 +1,22 @@
 package net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollCollege.domain.entity.ActivityCanEnrollCollegeEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollCollege.manager.ActivityCanEnrollCollegeManager;
+import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollCollege.service.ActivityCanEnrollCollegeService;
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollGrade.domain.entity.ActivityCanEnrollGradeEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollGrade.manager.ActivityCanEnrollGradeManager;
+import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollGrade.service.ActivityCanEnrollGradeService;
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollTribe.domain.entity.ActivityCanEnrollTribeEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollTribe.manager.ActivityCanEnrollTribeManager;
+import net.lab1024.sa.admin.module.business.funcampus.activityCanEnrollTribe.service.ActivityCanEnrollTribeService;
+import net.lab1024.sa.admin.module.business.funcampus.activityCategory.domain.entity.ActivityCategoryEntity;
+import net.lab1024.sa.admin.module.business.funcampus.activityCategory.manager.ActivityCategoryManager;
+import net.lab1024.sa.admin.module.business.funcampus.activityEnrollment.domain.entity.ActivityEnrollmentEntity;
+import net.lab1024.sa.admin.module.business.funcampus.activityEnrollment.manager.ActivityEnrollmentManager;
+import net.lab1024.sa.admin.module.business.funcampus.activityEnrollment.service.ActivityEnrollmentService;
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.domain.entity.ActivityReviewLogEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityReviewLog.manager.ActivityReviewLogManager;
 import net.lab1024.sa.admin.module.business.funcampus.activitySigninManager.domain.entity.ActivitySigninManagerEntity;
@@ -20,12 +29,23 @@ import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domai
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleAddForm;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleQueryForm;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleUpdateForm;
+import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityDetailVO;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityWithScheduleVO;
+import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.vo.EnrollerVO;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.manager.ActivityScheduleManager;
+import net.lab1024.sa.admin.module.business.funcampus.collegeInfo.domain.entity.CollegeInfoEntity;
+import net.lab1024.sa.admin.module.business.funcampus.collegeInfo.manager.CollegeInfoManager;
+import net.lab1024.sa.admin.module.business.funcampus.gradeInfo.domain.entity.GradeInfoEntity;
+import net.lab1024.sa.admin.module.business.funcampus.gradeInfo.manager.GradeInfoManager;
 import net.lab1024.sa.admin.module.business.funcampus.portalUser.domain.entity.PortalUserEntity;
+import net.lab1024.sa.admin.module.business.funcampus.portalUser.domain.vo.PortalUserVO;
 import net.lab1024.sa.admin.module.business.funcampus.portalUser.manager.PortalUserManager;
+import net.lab1024.sa.admin.module.business.funcampus.tribe.domain.entity.TribeEntity;
+import net.lab1024.sa.admin.module.business.funcampus.tribe.manager.TribeManager;
 import net.lab1024.sa.admin.module.business.funcampus.util.UpdateFormUtil;
+import net.lab1024.sa.admin.module.system.backendUser.domain.entity.BackendUserEntity;
+import net.lab1024.sa.admin.module.system.backendUser.manager.BackendUserManager;
 import net.lab1024.sa.base.common.code.SystemErrorCode;
 import net.lab1024.sa.base.common.code.UnexpectedErrorCode;
 import net.lab1024.sa.base.common.code.UserErrorCode;
@@ -34,13 +54,17 @@ import net.lab1024.sa.base.common.domain.ResponseDTO;
 import net.lab1024.sa.base.common.exception.BusinessException;
 import net.lab1024.sa.base.common.util.SmartPageUtil;
 import net.lab1024.sa.base.common.util.SmartRequestUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import lombok.extern.slf4j.Slf4j;
 
 import jakarta.annotation.Resource;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 活动和时间表 组合服务
@@ -88,6 +112,34 @@ public class ActivityWithScheduleService {
 
     @Resource
     private ActivitySigninManagerManager signinManagerManager;
+
+    @Resource
+    private ActivityCategoryManager activityCategoryManager;
+
+    @Resource
+    private CollegeInfoManager collegeInfoManager;
+
+    @Resource
+    private GradeInfoManager gradeInfoManager;
+
+    @Resource
+    private TribeManager tribeManager;
+
+    @Resource
+    private ActivityCanEnrollCollegeService canEnrollCollegeService;
+
+    @Resource
+    private ActivityCanEnrollTribeService canEnrollTribeService;
+
+    @Resource
+    private ActivityCanEnrollGradeService canEnrollGradeService;
+
+    @Resource
+    private ActivityEnrollmentService enrollmentService;
+
+    @Resource
+    private ActivityEnrollmentManager enrollmentManager;
+
 
     public void addNotReviewedOne(ActivityWithScheduleAddForm addForm) {
         log.info("添加待审核的活动：{}", addForm.toString());
@@ -357,5 +409,125 @@ public class ActivityWithScheduleService {
         return ResponseDTO.ok(result);
     }
 
+    public ActivityDetailVO detail(Long activityId){
+        ActivityEntity activity = activityManager.getById(activityId);
+        if(activity==null||activity.getDeletedFlag()){
+            throw new BusinessException(UserErrorCode.PARAM_ERROR,"活动不存在");
+        }
+        ActivityScheduleEntity activitySchedule = activityScheduleManager.getByActivityId(activityId);
+        ActivityCategoryEntity activityCategory = activityCategoryManager.getById(activity.getCategoryId());
+        ActivityEnrollNum activityEnrollNum = activityEnrollNumDao.selectById(activityId);
 
+        List<Long> collegeIds = canEnrollCollegeService.getCollegeIdsByActivityId(activityId);
+        List<Long> tribeIds = canEnrollTribeService.getTribeIdsByActivityId(activityId);
+        List<Long> gradeIds = canEnrollGradeService.getGradeIdByActivityId(activityId);
+
+        List<String> collegeNames=null;
+        List<String> tribeNames=null;
+        List<String> gradeNames=null;
+        List<EnrollerVO> enrollers = new ArrayList<>();
+        if(gradeIds!=null&&collegeIds!=null){
+            collegeNames=collegeInfoManager
+                    .listByIds(collegeIds)
+                    .stream()
+                    .map(CollegeInfoEntity::getName)
+                    .toList();
+            gradeNames = gradeInfoManager
+                    .listByIds(gradeIds)
+                    .stream()
+                    .map(GradeInfoEntity::getName)
+                    .toList();
+        }
+        if(tribeIds!=null){
+            tribeNames = tribeManager
+                    .listByIds(tribeIds)
+                    .stream()
+                    .map(TribeEntity::getName)
+                    .toList();
+        }
+
+        // 构建查询条件：获取活动报名用户 ID 及签到状态
+        LambdaQueryWrapper<ActivityEnrollmentEntity> activityEnrollmentQw = 
+                ActivityEnrollmentService.listByActivityIdQw(activityId)
+                .select(ActivityEnrollmentEntity::getUserId)
+                .select(ActivityEnrollmentEntity::getSignInStatus);
+        List<ActivityEnrollmentEntity> enrollmentEntities = enrollmentManager.list(activityEnrollmentQw);
+                
+        // 将报名用户列表转换为 Map<userId, signInStatus>，便于快速查找签到状态
+        if (enrollmentEntities != null && !enrollmentEntities.isEmpty()) {
+            Map<Long, Boolean> userSignInStatus = enrollmentEntities.stream().collect(Collectors.toMap(
+                    ActivityEnrollmentEntity::getUserId,
+                    ActivityEnrollmentEntity::getSignInStatus
+            ));
+                    
+            // 提取所有报名用户的 ID 列表
+            List<Long> enrollerIds = enrollmentEntities
+                    .stream()
+                    .map(ActivityEnrollmentEntity::getUserId)
+                    .toList();
+                    
+            // 批量查询 Portal 用户信息
+            List<PortalUserEntity> portalUsers = portalUserManager.listByIds(enrollerIds);
+
+            LambdaQueryWrapper<ActivitySigninManagerEntity> signInManagerQw = new LambdaQueryWrapper<>();
+            signInManagerQw.eq(ActivitySigninManagerEntity::getActivityId,activityId)
+                            .eq(ActivitySigninManagerEntity::getDeletedFlag,false)
+                            .select(ActivitySigninManagerEntity::getPortalUserId);
+            List<ActivitySigninManagerEntity> signinManagerList = signinManagerManager.list(signInManagerQw);
+            List<Long> signinManagerIdList;
+            if(signinManagerList!=null&&!signinManagerList.isEmpty()){
+                signinManagerIdList = signinManagerList.stream().map(ActivitySigninManagerEntity::getPortalUserId).toList();
+            } else {
+                signinManagerIdList = null;
+            }
+            // 组装 EnrollerVO 对象并设置对应的签到状态
+            portalUsers.forEach(e -> {
+                EnrollerVO enroller = new EnrollerVO();
+                enroller.setId(e.getId());
+                enroller.setName(e.getUsername());
+                enroller.setAvatarKey(e.getAvatar());
+                // 从 Map 中获取该用户的签到状态
+                enroller.setSignInStatus(userSignInStatus.get(e.getId()));
+                if(activity.getActivityManagerId().equals(e.getId())){
+                    enroller.setActivityManagerFlag(true);
+                }
+                if(signinManagerIdList!=null&&signinManagerIdList.contains(e.getId())){
+                    enroller.setSigninManagerFlag(true);
+                }
+                enrollers.add(enroller);
+            });
+        }
+        //统计签到人数
+        LambdaQueryWrapper<ActivityEnrollmentEntity> countSignIn = new LambdaQueryWrapper<>();
+        countSignIn.eq(ActivityEnrollmentEntity::getActivityId,activityId)
+                    .eq(ActivityEnrollmentEntity::getSignInStatus,true)
+                    .eq(ActivityEnrollmentEntity::getDeletedFlag,false);
+        long count = enrollmentManager.count(countSignIn);
+
+        ActivityDetailVO activityDetailVO = new ActivityDetailVO();
+        activityDetailVO.setId(activityId);
+        activityDetailVO.setTitle(activity.getTitle());
+        activityDetailVO.setStatus(activity.getStatus());
+        activityDetailVO.setPosition(activityDetailVO.getPosition());
+        activityDetailVO.setScoreCanGet(activity.getScoreCanGet());
+        activityDetailVO.setEnrollNumLimit(activity.getEnrollNumLimit());
+        activityDetailVO.setDescription(activity.getDescription());
+        activityDetailVO.setEnrollNeedReview(activity.isEnrollNeedReview());
+        activityDetailVO.setNeedSignOut(activity.isNeedSignOut());
+        activityDetailVO.setAttachment(activity.getAttachment());
+        activityDetailVO.setCategory(activityCategory.getName());
+        activityDetailVO.setCoverImg(activity.getCoverImg());
+        activityDetailVO.setEnrollUsers(enrollers);
+        activityDetailVO.setEnrollNum(activityEnrollNum.getEnrollNum());
+        activityDetailVO.setSignInNum(count);
+        activityDetailVO.setCanEnrollGrade(gradeNames);
+        activityDetailVO.setCanEnrollCollege(collegeNames);
+        activityDetailVO.setCanEnrollTribe(tribeNames);
+        activityDetailVO.setEnrollStartTime(activitySchedule.getEnrollStartTime());
+        activityDetailVO.setEnrollEndTime(activitySchedule.getEnrollEndTime());
+        activityDetailVO.setActivityStartTime(activitySchedule.getActivityStartTime());
+        activityDetailVO.setActivityEndTime(activitySchedule.getActivityEndTime());
+
+        return activityDetailVO;
+    }
 }

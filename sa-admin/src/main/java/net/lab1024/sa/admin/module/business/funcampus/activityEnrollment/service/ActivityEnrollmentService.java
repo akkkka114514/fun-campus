@@ -27,6 +27,7 @@ import net.lab1024.sa.admin.module.business.funcampus.activityEnrollment.manager
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.constant.ActivityStatus;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.dao.ActivityDao;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.dao.ActivityEnrollNumDao;
+import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEnrollNum;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityWithScheduleVO;
 import net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
@@ -68,7 +69,6 @@ import javax.imageio.ImageIO;
 @Slf4j
 @Service
 public class ActivityEnrollmentService {
-
     @Resource
     private ActivityEnrollmentDao activityEnrollmentDao;
     @Resource
@@ -97,6 +97,7 @@ public class ActivityEnrollmentService {
     private ActivityCanEnrollTribeManager canEnrollTribeManager;
     @Resource
     private TribeUserManager tribeUserManager;
+
 
     /**
      * 分页查询
@@ -241,11 +242,6 @@ public class ActivityEnrollmentService {
             log.warn("ActivityEnrollmentService.signInQRCode failed: user already signed in, activityId={}, userId={}", activityId, userId);
             return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "用户已签到");
         }
-        //检查用户签到审核状态
-        if(enrollmentEntity.getSigninReviewStatus() == ReviewStatus.REJECTED){
-            log.warn("ActivityEnrollmentService.signInQRCode failed: sign-in review rejected, activityId={}, userId={}", activityId, userId);
-            return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "用户报名审核未通过");
-        }
         String uuid = UUID.randomUUID().toString().replace("-", "");
         String redisKey = RedisKey.SIGN_IN_CODE_KEY(userId, activityId);
         redisTemplate.opsForValue().set(redisKey, uuid, 45, TimeUnit.SECONDS);
@@ -318,11 +314,6 @@ public class ActivityEnrollmentService {
         if(enrollmentEntity.getSignInStatus()){
             log.warn("ActivityEnrollmentService.signIn failed: user already signed in, activityId={}, userId={}", activityId, userId);
             return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "用户已签到");
-        }
-        //检查用户签到审核状态
-        if(enrollmentEntity.getSigninReviewStatus() == ReviewStatus.REJECTED){
-            log.warn("ActivityEnrollmentService.signIn failed: sign-in review rejected, activityId={}, userId={}", activityId, userId);
-            return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "用户报名审核未通过");
         }
         LambdaUpdateWrapper<ActivityEnrollmentEntity> updateWrapper = new LambdaUpdateWrapper<>();
         updateWrapper.eq(ActivityEnrollmentEntity::getActivityId, activityId)
@@ -413,5 +404,10 @@ public class ActivityEnrollmentService {
         }
     }
 
+    public static LambdaQueryWrapper<ActivityEnrollmentEntity> listByActivityIdQw(Long activityId){
+        LambdaQueryWrapper<ActivityEnrollmentEntity> qw = new LambdaQueryWrapper<>();
+        return qw.eq(ActivityEnrollmentEntity::getActivityId,activityId)
+            .eq(ActivityEnrollmentEntity::getDeletedFlag,false);
+    }
 
 }

@@ -22,18 +22,6 @@ public class PortalUserVO {
     @Schema(description = "用户名")
     private String username;
 
-    @Schema(description = "密码")
-    private String password;
-
-    @Schema(description = "创建时间")
-    private LocalDateTime createTime;
-
-    @Schema(description = "修改时间")
-    private LocalDateTime updateTime;
-
-    @Schema(description = "是否已删除")
-    private Boolean deletedFlag;
-
     @Schema(description = "是否禁用")
     private Boolean disabledFlag;
 
@@ -47,10 +35,10 @@ public class PortalUserVO {
     private String avatar;
 
     @Schema(description = "学校id")
-    private String schoolId;
+    private Long schoolId;
 
     @Schema(description = "学院id")
-    private String collegeId;
+    private Long collegeId;
 
     @Schema(description = "年级id")
     private Long gradeId;

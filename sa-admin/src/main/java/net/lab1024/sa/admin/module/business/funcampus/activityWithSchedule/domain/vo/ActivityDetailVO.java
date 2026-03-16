@@ -1,14 +1,13 @@
 package net.lab1024.sa.admin.module.business.funcampus.activityWithSchedule.domain.vo;
 
-import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import lombok.Data;
 import net.lab1024.sa.admin.module.business.funcampus.portalUser.domain.vo.PortalUserVO;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * author:akkkka114514
@@ -22,7 +21,6 @@ public class ActivityDetailVO {
      */
     @TableId(type = IdType.AUTO)
     private Long id;
-
     /**
      * 活动标题
      */
@@ -60,13 +58,14 @@ public class ActivityDetailVO {
 
     private String attachment;
 
-    private Long category;
+    private String category;
 
     private String coverImg;
     /**
     * 报名的用户
     */
-    private PortalUserVO[] enrollUsers;
+    private List<EnrollerVO> enrollUsers;
+
     /**
     * 报名人数
     */
@@ -74,19 +73,27 @@ public class ActivityDetailVO {
     /**
     * 签到人数
     */
-    private Integer signInNum;
-    /**
-    * 没有签到的用户
-    */
-    private PortalUserVO[] notSignInUsers;
+    private Long signInNum;
 
     /**
     * 允许报名的年级
     */
-    private Integer[] canEnrollGrade;
+    private List<String> canEnrollGrade;
 
     /**
     * 允许报名的学院
     */
-    private Integer[] canEnrollCollege;
+    private List<String> canEnrollCollege;
+
+    private List<String> canEnrollTribe;
+
+    private LocalDateTime enrollStartTime;
+
+    private LocalDateTime enrollEndTime;
+
+    private LocalDateTime activityStartTime;
+
+    private LocalDateTime activityEndTime;
+
+    //todo 评论
 }

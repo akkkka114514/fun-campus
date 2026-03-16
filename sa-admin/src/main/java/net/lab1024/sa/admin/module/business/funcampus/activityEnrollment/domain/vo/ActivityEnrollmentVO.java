@@ -34,6 +34,6 @@ public class ActivityEnrollmentVO {
     @Schema(description = "是否已删除")
     private Boolean deletedFlag;
 
-    @Schema(description = "签到审核状态")
-    private byte signinReviewStatus;
+    @Schema(description = "是否已签退")
+    private Boolean signOutStatus;
 }

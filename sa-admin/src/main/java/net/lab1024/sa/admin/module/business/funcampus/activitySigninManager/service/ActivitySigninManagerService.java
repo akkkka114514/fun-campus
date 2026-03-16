@@ -1,6 +1,8 @@
 package net.lab1024.sa.admin.module.business.funcampus.activitySigninManager.service;
 
 import java.util.List;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import net.lab1024.sa.admin.module.business.funcampus.activitySigninManager.dao.ActivitySigninManagerDao;
 import net.lab1024.sa.admin.module.business.funcampus.activitySigninManager.domain.entity.ActivitySigninManagerEntity;
 import net.lab1024.sa.admin.module.business.funcampus.activitySigninManager.domain.form.ActivitySigninManagerAddForm;
@@ -81,5 +83,11 @@ public class ActivitySigninManagerService {
 
         activitySigninManagerDao.updateDeleted(id, true);
         return ResponseDTO.ok();
+    }
+
+    public static LambdaQueryWrapper<ActivitySigninManagerEntity> listByActivityIdQw(Long activityId){
+        LambdaQueryWrapper<ActivitySigninManagerEntity> qw = new LambdaQueryWrapper<>();
+        return qw.eq(ActivitySigninManagerEntity::getActivityId,activityId)
+                .eq(ActivitySigninManagerEntity::getDeletedFlag,false);
     }
 }

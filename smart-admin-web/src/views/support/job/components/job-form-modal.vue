@@ -35,7 +35,7 @@
           <a-textarea
               :auto-size="{ minRows: 2, maxRows: 4 }"
               v-model:value="updateForm.jobClass"
-              placeholder="示例：net.lab1024.sa.base.module.support.job.sample.SmartJobSample1"
+              placeholder="示例：sample.job.support.module.com.akkkka.SmartJobSample1"
               :maxlength="200"
               :showCount="true"
           />

@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.akkkka.admin.module.system.backendUser.dao.BackendUserDao">
+
+    <select id="queryBackendUser" resultType="com.akkkka.admin.module.system.backendUser.domain.vo.BackendUserVO">
+        SELECT
+        backend_user.*
+        FROM backend_user
+        <where>
+            <if test="queryForm.keyword != null and queryForm.keyword != ''">
+                AND INSTR(backend_user.username,#{queryForm.keyword})
+            </if>
+            <if test="queryForm.disabledFlag != null">
+                AND backend_user.disabled_flag = #{queryForm.disabledFlag}
+            </if>
+            <if test="queryForm.deletedFlag != null">
+                AND backend_user.deleted_flag = #{queryForm.deletedFlag}
+            </if>
+        </where>
+    </select>
+
+    <update id="updateDisableFlag">
+        UPDATE backend_user
+        SET disabled_flag = #{disabledFlag}
+        WHERE id = #{id}
+    </update>
+
+    <select id="getByUsername" resultType="com.akkkka.admin.module.system.backendUser.domain.entity.BackendUserEntity">
+        SELECT *
+        FROM backend_user
+        <where>
+            username = #{username}
+            <if test="deletedFlag != null">
+                AND deleted_flag = #{deletedFlag}
+            </if>
+        </where>
+    </select>
+
+    <select id="getByEmail" resultType="com.akkkka.admin.module.system.backendUser.domain.entity.BackendUserEntity">
+        SELECT *
+        FROM backend_user
+        <where>
+            email = #{email}
+            <if test="deletedFlag != null">
+                AND deleted_flag = #{deletedFlag}
+            </if>
+        </where>
+    </select>
+
+    <select id="listAll" resultType="com.akkkka.admin.module.system.backendUser.domain.vo.BackendUserVO">
+        SELECT *
+        FROM backend_user
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="getBackendUserId" resultType="java.lang.Long">
+        SELECT id
+        FROM backend_user
+        <where>
+            <if test="deletedFlag != null">
+                AND deleted_flag = #{deletedFlag}
+            </if>
+        </where>
+    </select>
+
+    <select id="getBackendUserByIds" resultType="com.akkkka.admin.module.system.backendUser.domain.vo.BackendUserVO">
+        SELECT * FROM backend_user
+        where id IN
+        <foreach collection="ids" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="getBackendUserById" resultType="com.akkkka.admin.module.system.backendUser.domain.vo.BackendUserVO">
+        SELECT backend_user.*,
+        FROM backend_user
+    </select>
+
+    <select id="selectBackendUserByDisabledAndDeleted" resultType="com.akkkka.admin.module.system.backendUser.domain.vo.BackendUserVO">
+        SELECT
+        backend_user.*
+        FROM backend_user
+        <where>
+            <if test="disabledFlag != null">
+                AND backend_user.disabled_flag = #{disabledFlag}
+            </if>
+            <if test="deletedFlag != null">
+                AND backend_user.deleted_flag = #{deletedFlag}
+            </if>
+        </where>
+    </select>
+
+    <update id="updatePassword">
+        UPDATE backend_user
+        SET password = #{password}
+        WHERE id = #{id}
+    </update>
+
+
+    <select id="getByFieldExcludingId" resultType="com.akkkka.admin.module.system.backendUser.domain.entity.BackendUserEntity">
+        SELECT *
+        FROM backend_user
+        <where>
+            <if test="field != null">
+                AND ${field} = #{value}
+            </if>
+            <if test="deletedFlag != null">
+                AND deleted_flag = #{deletedFlag}
+            </if>
+            <if test="excludeId != null">
+                AND id != #{excludeId}
+            </if>
+        </where>
+    </select>
+
+    <select id="getBackendUserByCollegeId" resultType="com.akkkka.admin.module.system.backendUser.domain.vo.SimpleBackendUserVO">
+        select id,username
+            from backend_user
+        where college_id = #{collegeId}
+            and deleted_flag = 0
+            and disabled_flag = 0
+            and can_review = 1
+    </select>
+
+    <select id="getBackendUserByOrganizationId" resultType="com.akkkka.admin.module.system.backendUser.domain.vo.SimpleBackendUserVO">
+        select id,username
+            from backend_user
+        where organization_id = #{organizationId}
+            and deleted_flag = 0
+            and disabled_flag = 0
+            and can_review = 1
+    </select>
+</mapper>

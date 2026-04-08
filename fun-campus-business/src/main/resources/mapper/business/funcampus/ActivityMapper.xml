@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.akkkka.admin.module.business.funcampus.activityWithSchedule.dao.ActivityDao">
+
+    <!-- 查询结果列 -->
+    <sql id="base_columns">
+        activity.id,
+        activity.title,
+        activity.status,
+        activity.position,
+        activity.score_can_get,
+        activity.enroll_num_limit,
+        activity.activity_belong_to_school_id,
+        activity.activity_belong_to_organization_id,
+        activity.activity_belong_to_college_id,
+        activity.deleted_flag,
+        activity.create_time,
+        activity.update_time,
+        activity.description,
+        activity.enroll_need_review,
+        activity.need_sign_out,
+        activity.attachment,
+        activity.category_id,
+        activity.cover_img
+        activity.activity_manager_id,
+    </sql>
+
+    <resultMap id="ActivityWithScheduleVO" type="com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityWithScheduleVO">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="status" column="status"/>
+        <result property="position" column="position"/>
+        <result property="scoreCanGet" column="score_can_get"/>
+        <result property="enrollNumLimit" column="enroll_num_limit"/>
+        <result property="activityBelongToSchoolId" column="activity_belong_to_school_id"/>
+        <result property="activityBelongToOrganizationId" column="activity_belong_to_organization_id"/>
+        <result property="activityBelongToCollegeId" column="activity_belong_to_college_id"/>
+        <result property="enrollStartTime" column="enroll_start_time"/>
+        <result property="enrollEndTime" column="enroll_end_time"/>
+        <result property="activityStartTime" column="activity_start_time"/>
+        <result property="activityEndTime" column="activity_end_time"/>
+        <result property="signinStartTime" column="signin_start_time"/>
+        <result property="signinEndTime" column="signin_end_time"/>
+        <result property="deletedFlag" column="deleted_flag"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="description" column="description"/>
+        <result property="enrollNeedReview" column="enroll_need_review"/>
+        <result property="needSignOut" column="need_sign_out"/>
+        <result property="attachment" column="attachment"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="activityManagerId" column="activity_manager_id"/>
+    </resultMap>
+
+    <update id="batchUpdateDeleted">
+        update activity set deleted_flag = #{deletedFlag}
+        where id in
+        <foreach collection="idList" open="(" close=")" separator="," item="item">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="updateDeleted">
+        update activity set deleted_flag = #{deletedFlag}
+        where id = #{id}
+    </update>
+    
+    <!-- 批量更新活动状态 -->
+    <update id="updateStatusBatch" parameterType="java.util.Map">
+        UPDATE activity 
+        SET status = CASE id 
+            <foreach collection="statusMap" index="key" item="value">
+                WHEN #{key} THEN #{value}
+            </foreach>
+        END
+        WHERE id IN 
+        <foreach collection="statusMap.keys" open="(" close=")" separator="," item="key">
+            #{key}
+        </foreach>
+    </update>
+
+    
+    <select id="queryActivityWithSchedule" resultMap="ActivityWithScheduleVO">
+        SELECT
+        <include refid="base_columns"/>,
+        activity_schedule.enroll_start_time,
+        activity_schedule.enroll_end_time,
+        activity_schedule.activity_start_time,
+        activity_schedule.activity_end_time,
+        activity_schedule.signin_start_time,
+        activity_schedule.signin_end_time
+        FROM activity
+        LEFT JOIN activity_schedule ON activity.id = activity_schedule.activity_id
+        WHERE
+        <if test="queryForm.keyword != null and queryForm.keyword != ''">
+            AND INSTR(activity.title,#{queryForm.keyword})
+        </if>
+        <if test="queryForm.status != null">
+            AND activity.status = #{queryForm.status}
+        </if>
+        <if test="queryForm.deletedFlag != null">
+            AND activity.deleted_flag = #{queryForm.deletedFlag}
+        </if>
+    </select>
+
+    <update id="batchDelete">
+        UPDATE activity
+        SET deleted_flag = 1
+        WHERE id IN
+        <foreach collection="ids" open="(" close=")" separator="," item="item">
+            #{item}
+        </foreach>
+    </update>
+    <select id="getByIds" resultMap="ActivityWithScheduleVO">
+        SELECT
+        <include refid="base_columns"/>,
+        activity_schedule.enroll_start_time,
+        activity_schedule.enroll_end_time,
+        activity_schedule.activity_start_time,
+        activity_schedule.activity_end_time,
+        activity_schedule.signin_start_time,
+        activity_schedule.signin_end_time
+        FROM activity
+        LEFT JOIN activity_schedule ON activity.id = activity_schedule.activity_id
+        WHERE
+            activity.id IN
+        <foreach collection="ids" open="(" close=")" separator="," item="item">
+            #{item}
+        </foreach>
+    </select>
+    <select id="getActivityWithScheduleById" resultMap="ActivityWithScheduleVO">
+        SELECT
+        <include refid="base_columns"/>,
+        activity_schedule.enroll_start_time,
+        activity_schedule.enroll_end_time,
+        activity_schedule.activity_start_time,
+        activity_schedule.activity_end_time,
+        activity_schedule.signin_start_time,
+        activity_schedule.signin_end_time
+        FROM activity
+        LEFT JOIN activity_schedule ON activity.id = activity_schedule.activity_id
+        WHERE
+            activity.id = #{id}
+    </select>
+    <select id="notStartAndPendingEnrollActivityGlobal" resultMap="ActivityWithScheduleVO">
+        SELECT
+            <include refid="base_columns"/>,
+            activity_schedule.enroll_start_time,
+            activity_schedule.enroll_end_time,
+            activity_schedule.activity_start_time,
+            activity_schedule.activity_end_time,
+            activity_schedule.signin_start_time,
+            activity_schedule.signin_end_time
+        FROM activity
+        LEFT JOIN activity_schedule ON activity.id = activity_schedule.activity_id
+        WHERE
+            activity.status = 0
+            OR activity.status = 1
+            AND activity.deleted_flag = 0
+    </select>
+    <select id="notStartAndPendingEnrollActivity" resultMap="ActivityWithScheduleVO">
+        select
+            <include refid="base_columns"/>,
+            activity_schedule.enroll_start_time,
+            activity_schedule.enroll_end_time,
+            activity_schedule.activity_start_time,
+            activity_schedule.activity_end_time,
+            activity_schedule.signin_start_time,
+            activity_schedule.signin_end_time
+        from activity
+        left join activity_schedule on activity.id = activity_schedule.activity_id
+        where
+            activity.status = 0
+            or activity.status = 1
+            and activity.deleted_flag = 0
+            and activity.activity_belong_to_school_id = #{schoolId}
+    </select>
+</mapper>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.akkkka.admin.module.business.funcampus.activityCategory.dao.ActivityCategoryDao">
+
+    <!-- 查询结果列 -->
+    <sql id="base_columns">
+        activity_category.id,
+        activity_category.name,
+        activity_category.create_time,
+        activity_category.update_time,
+        activity_category.deleted_flag
+    </sql>
+
+    <!-- 分页查询 -->
+    <select id="queryPage" resultType="com.akkkka.admin.module.business.funcampus.activityCategory.domain.vo.ActivityCategoryVO">
+        SELECT
+        <include refid="base_columns"/>
+        FROM activity_category
+    </select>
+
+    <update id="batchUpdateDeleted">
+        update activity_category set deleted_flag = #{deletedFlag}
+        where id in
+        <foreach collection="idList" open="(" close=")" separator="," item="item">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="updateDeleted">
+        update activity_category set deleted_flag = #{deletedFlag}
+        where id = #{id}
+    </update>
+
+    <select id="getAll" resultType="com.akkkka.admin.module.business.funcampus.activityCategory.domain.vo.SimpleActivityCategoryVO">
+        select id, name
+        from activity_category
+        where deleted_flag = 0
+    </select>
+
+</mapper>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.akkkka.admin.module.business.funcampus.tribe.dao.TribeDao">
+
+    <!-- 查询结果列 -->
+    <sql id="base_columns">
+        tribe.id,
+        tribe.name,
+        tribe.category_id,
+        tribe.president_id,
+        tribe.belong_to,
+        tribe.deleted_flag,
+        tribe.create_time,
+        tribe.update_time,
+        tribe.school_id
+    </sql>
+
+    <!-- 分页查询 -->
+    <select id="queryPage" resultType="com.akkkka.admin.module.business.funcampus.tribe.domain.vo.TribeVO">
+        SELECT
+        <include refid="base_columns"/>
+        FROM tribe
+    </select>
+
+    <update id="batchUpdateDeleted">
+        update tribe set deleted_flag = #{deletedFlag}
+        where id in
+        <foreach collection="idList" open="(" close=")" separator="," item="item">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="updateDeleted">
+        update tribe set deleted_flag = #{deletedFlag}
+        where id = #{id}
+    </update>
+
+    <select id="querySimpleList" resultType="com.akkkka.admin.module.business.funcampus.tribe.domain.vo.SimpleTribeVO">
+        SELECT
+        tribe.id,
+        tribe.name
+        FROM tribe
+        WHERE tribe.deleted_flag = 0
+        <if test="schoolId != null">
+            AND tribe.school_id = #{schoolId}
+        </if>
+        <if test="keyword != null">
+            AND tribe.name LIKE CONCAT('%',#{keyword},'%')
+        </if>
+    </select>
+</mapper>

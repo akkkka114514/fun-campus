@@ -1,0 +1,9 @@
+package com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form;
+
+/**
+ * author:akkkka114514
+ * create at 2026-04-18 14:25
+ */
+public class ActivityScheduleUpdateForm extends ActivityScheduleAddForm{
+    private Long activityId;
+}

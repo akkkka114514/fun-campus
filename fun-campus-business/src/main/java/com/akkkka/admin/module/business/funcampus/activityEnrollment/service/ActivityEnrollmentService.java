@@ -13,7 +13,7 @@ import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.form
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.vo.ActivityEnrollmentVO;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.manager.ActivityEnrollmentManager;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.dto.EnrollersChangeDTO;
-import com.akkkka.admin.module.business.funcampus.activitySigninManager.service.SignInManagerDomainService;
+import com.akkkka.admin.module.business.funcampus.activitySigninManager.service.SignInManagerValidator;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.constant.ActivityStatus;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.dao.ActivityEnrollNumDao;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
@@ -75,9 +75,9 @@ public class ActivityEnrollmentService {
 
     private final ActivityValidator activityValidator;
 
-    private final ActivityEnrollmentDomainService enrollmentDomainService;
+    private final ActivityEnrollmentValidator enrollmentDomainService;
 
-    private final SignInManagerDomainService signInManagerDomainService;
+    private final SignInManagerValidator signInManagerValidator;
 
     private final RedisTemplate<String,String> redisTemplate;
 
@@ -200,7 +200,7 @@ public class ActivityEnrollmentService {
         enrollmentEntity.validateSignInStatus();
         //检查操作user是否为该活动的signin manager
         Long signInManagerId = SmartRequestUtil.getRequestUserId();
-        signInManagerDomainService.validateUserPermission(signInManagerId,activityId);
+        signInManagerValidator.validateUserPermission(signInManagerId,activityId);
 
         portalUserValidator.validatePortalUserId(needSignInUserId);
         LambdaUpdateWrapper<ActivityEnrollmentEntity> updateWrapper = new LambdaUpdateWrapper<>();

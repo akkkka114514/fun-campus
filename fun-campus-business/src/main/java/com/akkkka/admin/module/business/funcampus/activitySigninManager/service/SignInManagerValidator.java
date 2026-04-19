@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @AllArgsConstructor
-public class SignInManagerDomainService {
+public class SignInManagerValidator {
     private final ActivitySigninManagerManager signinManagerManager;
 
     public void validateUserPermission(Long userId,Long activityId){

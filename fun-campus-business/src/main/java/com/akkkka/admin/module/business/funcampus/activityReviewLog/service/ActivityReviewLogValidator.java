@@ -2,7 +2,7 @@ package com.akkkka.admin.module.business.funcampus.activityReviewLog.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import jakarta.annotation.Resource;
-import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewAction;
+import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewEvent;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewStage;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.entity.ActivityReviewLogEntity;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.form.ActivityReviewLogAddForm;
@@ -107,11 +107,11 @@ public class ActivityReviewLogValidator {
 
     private void validateReviewAction(ActivityReviewLogAddForm addForm){
         if(addForm.getReviewStage().equals(ActivityReviewStage.CHECK)){
-            if(!addForm.getAction().equals(ActivityReviewAction.SUGGEST)){
+            if(!addForm.getAction().equals(ActivityReviewEvent.SUGGEST)){
                 throw new BusinessException(UserErrorCode.NO_PERMISSION,"活动审阅人不具有建议之外的权限");
             }
         }else{
-            if(addForm.getAction().equals(ActivityReviewAction.SUGGEST)){
+            if(addForm.getAction().equals(ActivityReviewEvent.SUGGEST)){
                 throw new BusinessException(UserErrorCode.NO_PERMISSION,"活动审核人不具有建议权限");
             }
         }

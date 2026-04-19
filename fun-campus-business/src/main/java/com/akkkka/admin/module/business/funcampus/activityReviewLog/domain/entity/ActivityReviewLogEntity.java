@@ -41,6 +41,10 @@ public class ActivityReviewLogEntity {
      */
     private String reviewerName;
 
+    private Long nextReviewerId;
+
+    private String nextReviewerName;
+
     /**
      * 审核阶段，1-》初审，2-》审阅，3-》终审，4-》完结审核
      */

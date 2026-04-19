@@ -27,48 +27,6 @@ import java.util.List;
 public class InsertContentFactory {
     @Resource
     private PortalUserManager portalUserManager;
-    public ActivityEntity buildActivity(ActivityWithScheduleAddForm addForm){
-        //要插入的activity
-        ActivityEntity activityEntity = new ActivityEntity();
-        activityEntity.setId(null);
-        activityEntity.setTitle(addForm.getTitle());
-        activityEntity.setStatus(ActivityStatus.NOT_START_ENROLL);
-        activityEntity.setPosition(addForm.getPosition());
-        activityEntity.setScoreCanGet(addForm.getScoreCanGet());
-        activityEntity.setEnrollNumLimit(addForm.getEnrollNumLimit());
-        activityEntity.setActivityBelongToSchoolId(addForm.getActivityBelongToSchoolId());
-        activityEntity.setActivityBelongToOrganizationId(addForm.getActivityBelongToOrganizationId());
-        activityEntity.setActivityBelongToCollegeId(addForm.getActivityBelongToCollegeId());
-        activityEntity.setDeletedFlag(false);
-        activityEntity.setCreateTime(LocalDateTime.now());
-        activityEntity.setUpdateTime(LocalDateTime.now());
-        activityEntity.setDescription(addForm.getDescription());
-        activityEntity.setEnrollNeedReview(addForm.isEnrollNeedReview());
-        activityEntity.setNeedSignOut(addForm.isNeedSignOut());
-        activityEntity.setAttachment(addForm.getAttachment());
-        activityEntity.setCategoryId(addForm.getCategoryId());
-        activityEntity.setCoverImg(addForm.getCoverImg());
-        activityEntity.setActivityManagerId(addForm.getActivityManagerId());
-        return activityEntity;
-    }
-
-    public ActivityScheduleEntity buildActivitySchedule(ActivityWithScheduleAddForm addForm){
-        //要插入的activity时间表
-        ActivityScheduleEntity scheduleEntity = new ActivityScheduleEntity();
-        scheduleEntity.setEnrollStartTime(addForm.getEnrollStartTime());
-        scheduleEntity.setEnrollEndTime(addForm.getEnrollEndTime());
-        scheduleEntity.setActivityStartTime(addForm.getActivityStartTime());
-        scheduleEntity.setActivityEndTime(addForm.getActivityEndTime());
-        scheduleEntity.setSigninStartTime(addForm.getSigninStartTime());
-        scheduleEntity.setSigninEndTime(addForm.getSigninEndTime());
-        scheduleEntity.setSignoutStartTime(addForm.getSignoutStartTime());
-        scheduleEntity.setSigninEndTime(addForm.getSignoutEndTime());
-        scheduleEntity.setDeletedFlag(false);
-        scheduleEntity.setCreateTime(LocalDateTime.now());
-        scheduleEntity.setUpdateTime(LocalDateTime.now());
-        return scheduleEntity;
-    }
-
     public ActivityEnrollNum buildEnrollNum(){
         //要插入的activityEnrollNum
         ActivityEnrollNum activityEnrollNum = new ActivityEnrollNum();
@@ -118,15 +76,6 @@ public class InsertContentFactory {
             gradeList.add(grade);
         });
         return gradeList;
-    }
-    public ActivityReviewLogEntity buildReviewLog(ActivityWithScheduleAddForm addForm){
-        ActivityReviewLogEntity activityReviewLog=new ActivityReviewLogEntity();
-        activityReviewLog.setId(null);
-        activityReviewLog.setReviewerId(addForm.getInitialReviewer());
-        activityReviewLog.setReviewerName(activityReviewLog.getReviewerName());
-        activityReviewLog.setReviewStage(ActivityReviewStage.INITIAL_REVIEW);
-        activityReviewLog.setCreateTime(LocalDateTime.now());
-        return activityReviewLog;
     }
 
     public List<ActivitySigninManagerEntity> buildSigninManagerList(ActivityWithScheduleAddForm addForm){

@@ -267,11 +267,6 @@
             <groupId>org.apache.tika</groupId>
             <artifactId>tika-core</artifactId>
         </dependency>
-        <!--对mybatis plus的功能做补充-->
-        <dependency>
-            <groupId>com.github.jeffreyning</groupId>
-            <artifactId>mybatisplus-plus</artifactId>
-        </dependency>
         <!--二维码生成和扫描-->
         <dependency>
             <groupId>com.google.zxing</groupId>
@@ -291,6 +286,10 @@
             <groupId>com.github.houbb</groupId>
             <artifactId>sensitive-word</artifactId>
             <version>0.29.4</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.cola</groupId>
+            <artifactId>cola-component-statemachine</artifactId>
         </dependency>
     </dependencies>
 

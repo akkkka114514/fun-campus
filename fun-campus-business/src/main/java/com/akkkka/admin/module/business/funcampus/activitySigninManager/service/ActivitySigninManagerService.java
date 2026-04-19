@@ -2,13 +2,15 @@ package com.akkkka.admin.module.business.funcampus.activitySigninManager.service
 
 import java.util.List;
 
+import com.akkkka.admin.module.business.funcampus.activityCanEnrollGrade.domain.entity.ActivityCanEnrollGradeEntity;
+import com.akkkka.admin.module.business.funcampus.activitySigninManager.domain.vo.ActivitySigninManagerVO;
+import com.akkkka.admin.module.business.funcampus.activitySigninManager.manager.ActivitySigninManagerManager;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.dao.ActivitySigninManagerDao;
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.domain.entity.ActivitySigninManagerEntity;
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.domain.form.ActivitySigninManagerAddForm;
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.domain.form.ActivitySigninManagerQueryForm;
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.domain.form.ActivitySigninManagerUpdateForm;
-import net.lab1024.sa.admin.module.business.funcampus.ActivitySigninManager.domain.vo.ActivitySigninManagerVO;
 import com.akkkka.common.util.SmartBeanUtil;
 import com.akkkka.common.util.SmartPageUtil;
 import com.akkkka.common.domain.ResponseDTO;
@@ -18,6 +20,9 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.Resource;
+import org.springframework.transaction.support.TransactionTemplate;
+
+import static cn.dev33.satoken.SaManager.log;
 
 /**
  * 活动签到管理员 Service
@@ -33,6 +38,11 @@ public class ActivitySigninManagerService {
     @Resource
     private ActivitySigninManagerDao activitySigninManagerDao;
 
+    @Resource
+    private TransactionTemplate transactionTemplate;
+
+    @Resource
+    private ActivitySigninManagerManager signinManagerManager;
     /**
      * 分页查询
      */
@@ -89,5 +99,14 @@ public class ActivitySigninManagerService {
         LambdaQueryWrapper<ActivitySigninManagerEntity> qw = new LambdaQueryWrapper<>();
         return qw.eq(ActivitySigninManagerEntity::getActivityId,activityId)
                 .eq(ActivitySigninManagerEntity::getDeletedFlag,false);
+    }
+
+    public void doSaveBatchTransaction(List<ActivitySigninManagerEntity> list){
+        transactionTemplate.executeWithoutResult(status -> {
+            if(!signinManagerManager.saveBatch(list)){
+                log.warn("事务失败：插入活动签到管理员失败：List<ActivitySigninManagerEntity>={}",list);
+                status.setRollbackOnly();
+            }
+        });
     }
 }

@@ -53,8 +53,9 @@
         <tika.version>3.1.0</tika.version>
         <httpcomponents.version>5.5</httpcomponents.version>
         <lombok.version>1.18.36</lombok.version>
-        <mybatisplus-plus.version>1.7.5-RELEASE</mybatisplus-plus.version>
         <zxing.version>3.5.3</zxing.version>
+        <cola.version>4.0.1</cola.version>
+        <sensitive-word.version>0.29.4</sensitive-word.version>
     </properties>
 
     <dependencyManagement>
@@ -337,12 +338,6 @@
             </dependency>
 
             <dependency>
-                <groupId>com.github.jeffreyning</groupId>
-                <artifactId>mybatisplus-plus</artifactId>
-                <version>${mybatisplus-plus.version}</version>
-            </dependency>
-
-            <dependency>
                 <groupId>com.google.zxing</groupId>
                 <artifactId>core</artifactId>
                 <version>${zxing.version}</version>
@@ -351,6 +346,16 @@
                 <groupId>com.google.zxing</groupId>
                 <artifactId>javase</artifactId>
                 <version>${zxing.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.cola</groupId>
+                <artifactId>cola-component-statemachine</artifactId>
+                <version>${cola.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.houbb</groupId>
+                <artifactId>sensitive-word</artifactId>
+                <version>${sensitive-word.version}</version>
             </dependency>
         </dependencies>
 

@@ -2,6 +2,7 @@ package com.akkkka.admin.module.business.funcampus.activityCanEnrollCollege.serv
 
 import java.util.List;
 
+import com.akkkka.admin.module.business.funcampus.activityCanEnrollGrade.domain.entity.ActivityCanEnrollGradeEntity;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.akkkka.admin.module.business.funcampus.activityCanEnrollCollege.dao.ActivityCanEnrollCollegeDao;
 import com.akkkka.admin.module.business.funcampus.activityCanEnrollCollege.domain.entity.ActivityCanEnrollCollegeEntity;
@@ -21,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.Resource;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * 活动能报名的学院 Service
@@ -39,7 +41,7 @@ public class ActivityCanEnrollCollegeService {
     @Resource
     private ActivityCanEnrollCollegeManager canEnrollCollegeManager;
     @Resource
-    private CollegeInfoManager collegeInfoManager;
+    private TransactionTemplate transactionTemplate;
 
     /**
      * 分页查询
@@ -132,5 +134,12 @@ public class ActivityCanEnrollCollegeService {
         }
         return collegeIds;
     }
-
+    public void doSaveBatchTransaction(List<ActivityCanEnrollCollegeEntity> list){
+        transactionTemplate.executeWithoutResult(status -> {
+            if(!canEnrollCollegeManager.saveBatch(list)){
+                log.warn("事务失败：插入能报名的学院失败：List<ActivityCanEnrollCollegeEntity>={}",list);
+                status.setRollbackOnly();
+            }
+        });
+    }
 }

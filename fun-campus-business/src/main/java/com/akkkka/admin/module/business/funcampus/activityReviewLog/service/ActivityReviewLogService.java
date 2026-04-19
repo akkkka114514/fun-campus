@@ -7,12 +7,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import cn.hutool.core.lang.Assert;
+import com.akkkka.admin.module.business.funcampus.activityEnrollment.service.ActivityEnrollmentValidator;
+import com.akkkka.admin.module.business.funcampus.portalUser.service.PortalUserValidator;
+import com.akkkka.common.code.ErrorCode;
+import com.akkkka.common.code.SystemErrorCode;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import jakarta.annotation.Nullable;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.entity.ActivityEnrollmentEntity;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.manager.ActivityEnrollmentManager;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.service.ActivityEnrollmentService;
-import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewAction;
+import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewEvent;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewStage;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.dao.ActivityReviewLogDao;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.dto.EnrollersChangeDTO;
@@ -47,7 +53,6 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.Resource;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
@@ -99,6 +104,9 @@ public class ActivityReviewLogService {
     
     private ActivityEnrollmentService enrollmentService;
 
+    private PortalUserValidator portalUserValidator;
+    private ActivityEnrollmentValidator enrollmentValidator;
+
     /**
      * 分页查询
      */
@@ -140,8 +148,10 @@ public class ActivityReviewLogService {
         }
         return ResponseDTO.ok();
     }
+
+    public void submitDraft()
     //初审和终审有驳回权限，驳回后需从头再走一遍审核流程
-    public void initialReview(@Nullable ActivityWithScheduleUpdateForm updateForm, ActivityReviewLogAddForm addForm){
+    public void doInitialReview(@Nullable ActivityWithScheduleUpdateForm updateForm, ActivityReviewLogAddForm addForm){
         ActivityReviewLogEntity nextReview = new ActivityReviewLogEntity();
         nextReview.setActivityId(addForm.getActivityId());
         nextReview.setReviewerId(addForm.getNextReviewerId());
@@ -451,7 +461,7 @@ public class ActivityReviewLogService {
         uw.eq(ActivityReviewLogEntity::getActivityId,addForm.getActivityId())
                         .eq(ActivityReviewLogEntity::getReviewStage,ActivityReviewStage.ENROLL_REVIEW)
                         .eq(ActivityReviewLogEntity::getDeletedFlag,false)
-                        .set(ActivityReviewLogEntity::getAction,ActivityReviewAction.APPROVED);
+                        .set(ActivityReviewLogEntity::getAction, ActivityReviewEvent.APPROVED);
         transactionTemplate.executeWithoutResult(status->{
             try {
                 assert finalEnrollersChangeDTO != null;
@@ -486,11 +496,102 @@ public class ActivityReviewLogService {
         });
 
     }
+    private enum SignInAndOut{
+        SIGN_IN,
+        SIGN_OUT;
+    }
+    private record DoubleUws(
+            LambdaUpdateWrapper<ActivityEnrollmentEntity> toAdd,
+            LambdaUpdateWrapper<ActivityEnrollmentEntity> toDel){}
     //TODO 要写结束活动操作，提交完结总结，相关代表性的照片或附件
     //TODO 活动超时未完结，扣减管理员信誉分
     //差异化扣分
-    public void endReview(){
-        
+    public void endReview(Long reviewLogId,
+                          List<Long> signInUserIds,
+                          List<Long> signOutUserIds,
+                          Map<Long,BigDecimal> userGradeScore){
+        ActivityReviewLogEntity reviewLog = activityReviewLogManager.getById(reviewLogId);
+        if(reviewLog==null){
+            throw new BusinessException(UserErrorCode.PARAM_ERROR);
+        }
+        Long activityId = reviewLog.getActivityId();
+        DoubleUws signInChanges = getSignInOrOutUw(activityId,SignInAndOut.SIGN_IN,signInUserIds);
+        DoubleUws signOutChanges = getSignInOrOutUw(activityId,SignInAndOut.SIGN_OUT,signOutUserIds);
+
+        enrollmentValidator.validateEnrollmentsExist(activityId,userGradeScore.keySet().stream().toList());
+        enrollmentValidator.validateEnrollmentsExist(activityId,signInUserIds);
+        enrollmentValidator.validateEnrollmentsExist(activityId,signOutUserIds);
+
+        List<PortalUserEntity> setScore = new ArrayList<>(64);
+        userGradeScore.forEach((key,value)->{
+            PortalUserEntity portalUser = new PortalUserEntity();
+            portalUser.setId(key);
+            portalUser.setGradeScore(value);
+            setScore.add(portalUser);
+        });
+
+        transactionTemplate.executeWithoutResult(status -> {
+            try {
+                Assert.isTrue(enrollmentManager.update(signInChanges.toAdd));
+                Assert.isTrue(enrollmentManager.update(signInChanges.toDel));
+                Assert.isTrue(enrollmentManager.update(signOutChanges.toAdd));
+                Assert.isTrue(enrollmentManager.update(signOutChanges.toDel));
+                Assert.isTrue(portalUserManager.updateBatchById(setScore));
+            }catch (Exception e){
+                status.setRollbackOnly();
+                throw new BusinessException(SystemErrorCode.SYSTEM_ERROR,"reviewLogId:"+reviewLogId+"终审事务失败："+e.getMessage(),e);
+            }
+        });
+
     }
 
+    //找出signInUser和signoutUser中和数据库变化的部分，做成UpdateWrapper
+    private DoubleUws getSignInOrOutUw(
+            Long activityId,SignInAndOut signInAndOut,List<Long> signInOrOutUserIds){
+        LambdaQueryWrapper<ActivityEnrollmentEntity> userQw = new LambdaQueryWrapper<>();
+        if(signInAndOut.equals(SignInAndOut.SIGN_IN)){
+            userQw.eq(ActivityEnrollmentEntity::getActivityId,activityId)
+                    .eq(ActivityEnrollmentEntity::getDeletedFlag,false)
+                    .eq(ActivityEnrollmentEntity::getSignInStatus,true)
+                    .select(ActivityEnrollmentEntity::getUserId);
+        }else{
+            userQw.eq(ActivityEnrollmentEntity::getActivityId,activityId)
+                    .eq(ActivityEnrollmentEntity::getDeletedFlag,false)
+                    .eq(ActivityEnrollmentEntity::getSignOutStatus,true)
+                    .select(ActivityEnrollmentEntity::getUserId);
+        }
+
+        List<ActivityEnrollmentEntity> dbUsers=enrollmentManager.list(userQw);
+        assert dbUsers!=null;
+        List<Long> dbUserIds = dbUsers
+                .stream()
+                .map(ActivityEnrollmentEntity::getUserId)
+                .toList();
+        //signInUser里有dbSignInUser没有的是要添加的
+        List<Long> toAddUserIds = signInOrOutUserIds.stream()
+                .filter(id -> !dbUserIds.contains(id))
+                .toList();
+        //dbSignInUser里有signInUser没有的是要添加的
+        List<Long> toDeleteSignInUserIds = dbUserIds.stream()
+                .filter(id->!signInOrOutUserIds.contains(id))
+                .toList();
+        LambdaUpdateWrapper<ActivityEnrollmentEntity> toAddUserUw=new LambdaUpdateWrapper<>();
+        toAddUserUw.in(ActivityEnrollmentEntity::getUserId,toAddUserIds)
+                .eq(ActivityEnrollmentEntity::getDeletedFlag,false);
+        if(signInAndOut.equals(SignInAndOut.SIGN_IN)){
+            toAddUserUw.set(ActivityEnrollmentEntity::getSignInStatus,true);
+        }else{
+            toAddUserUw.set(ActivityEnrollmentEntity::getSignOutStatus,true);
+        }
+
+        LambdaUpdateWrapper<ActivityEnrollmentEntity> toDeleteUserUw=new LambdaUpdateWrapper<>();
+        toDeleteUserUw.in(ActivityEnrollmentEntity::getUserId,toDeleteSignInUserIds)
+                .eq(ActivityEnrollmentEntity::getDeletedFlag,false);
+        if(signInAndOut.equals(SignInAndOut.SIGN_IN)){
+            toAddUserUw.set(ActivityEnrollmentEntity::getSignInStatus,false);
+        }else{
+            toAddUserUw.set(ActivityEnrollmentEntity::getSignOutStatus,false);
+        }
+        return new DoubleUws(toAddUserUw,toDeleteUserUw);
+    }
 }

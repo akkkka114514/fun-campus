@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.Resource;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * 活动能报名的年级 Service
@@ -37,6 +38,8 @@ public class ActivityCanEnrollGradeService {
     private ActivityCanEnrollGradeDao activityCanEnrollGradeDao;
     @Resource
     private ActivityCanEnrollGradeManager canEnrollGradeManager;
+    @Resource
+    private TransactionTemplate transactionTemplate;
 
     /**
      * 分页查询
@@ -127,5 +130,14 @@ public class ActivityCanEnrollGradeService {
                 .stream()
                 .map(ActivityCanEnrollGradeEntity::getCanEnrollGrade)
                 .toList();
+    }
+
+    public void doSaveBatchTransaction(List<ActivityCanEnrollGradeEntity> list){
+        transactionTemplate.executeWithoutResult(status -> {
+            if(!canEnrollGradeManager.saveBatch(list)){
+                log.warn("事务失败：插入能报名的年级失败：List<ActivityCanEnrollGradeEntity>={}",list);
+                status.setRollbackOnly();
+            }
+        });
     }
 }

@@ -2,6 +2,7 @@ package com.akkkka.admin.module.business.funcampus.activityCanEnrollTribe.servic
 
 import java.util.List;
 
+import com.akkkka.admin.module.business.funcampus.activityCanEnrollGrade.domain.entity.ActivityCanEnrollGradeEntity;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.akkkka.admin.module.business.funcampus.activityCanEnrollTribe.dao.ActivityCanEnrollTribeDao;
 import com.akkkka.admin.module.business.funcampus.activityCanEnrollTribe.domain.entity.ActivityCanEnrollTribeEntity;
@@ -20,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.Resource;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * 活动能报名的部落 Service
@@ -37,6 +39,8 @@ public class ActivityCanEnrollTribeService {
     private ActivityCanEnrollTribeDao activityCanEnrollTribeDao;
     @Resource
     private ActivityCanEnrollTribeManager canEnrollTribeManager;
+    @Resource
+    private TransactionTemplate transactionTemplate;
 
     /**
      * 分页查询
@@ -127,5 +131,13 @@ public class ActivityCanEnrollTribeService {
                 .stream()
                 .map(ActivityCanEnrollTribeEntity::getCanEnrollTribe)
                 .toList();
+    }
+    public void doSaveBatchTransaction(List<ActivityCanEnrollTribeEntity> list){
+        transactionTemplate.executeWithoutResult(status -> {
+            if(!canEnrollTribeManager.saveBatch(list)){
+                log.warn("事务失败：插入能报名的部落失败：List<ActivityCanEnrollTribeEntity>={}",list);
+                status.setRollbackOnly();
+            }
+        });
     }
 }

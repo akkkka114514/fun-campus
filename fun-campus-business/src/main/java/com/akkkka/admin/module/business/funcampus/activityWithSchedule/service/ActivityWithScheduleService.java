@@ -3,10 +3,16 @@ package com.akkkka.admin.module.business.funcampus.activityWithSchedule.service;
 import com.akkkka.admin.module.business.funcampus.activityAttachment.domain.entity.ActivityAttachmentEntity;
 import com.akkkka.admin.module.business.funcampus.activityReviewAttachment.domain.entity.ActivityReviewAttachmentEntity;
 import com.akkkka.admin.module.business.funcampus.activityReviewAttachment.manager.ActivityReviewAttachmentManager;
+import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewEvent;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewStage;
+import com.akkkka.admin.module.business.funcampus.activityReviewLog.service.ActivityReviewStateMachineContext;
+import com.akkkka.admin.module.business.funcampus.activitySigninManager.service.ActivitySigninManagerService;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.converter.ActivityAddFormConverter;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.converter.ActivityScheduleAddFormConverter;
 import com.akkkka.admin.module.business.funcampus.portalUser.service.PortalUserValidator;
 import com.akkkka.module.support.file.service.FileService;
 import com.akkkka.module.support.file.service.FileStorageCloudServiceImpl;
+import com.alibaba.cola.statemachine.StateMachine;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -105,14 +111,21 @@ public class ActivityWithScheduleService {
     @Resource
     private FileService fileService;
     private ActivityReviewAttachmentManager reviewAttachmentManager;
+    @Resource
+    private StateMachine<ActivityReviewStage, ActivityReviewEvent, ActivityReviewStateMachineContext> stateMachine;
+    private ActivitySigninManagerService signinManagerService;
 
-    public void addNotReviewedOne(ActivityWithScheduleAddForm addForm) {
+    public void submitDraft(ActivityWithScheduleAddForm addForm) {
         log.info("添加待审核的活动：{}", addForm.toString());
+        //todo 根据这个方法的写法优化其他方法
+        //todo 修改validator
+        //todo 重写定时任务
+        ActivityEntity activityEntity= ActivityAddFormConverter.convert(addForm.getActivityAddForm());
+        ActivityScheduleEntity scheduleEntity= ActivityScheduleAddFormConverter.convert(addForm.getActivityScheduleAddForm());
 
-        ActivityEntity activityEntity=factory.buildActivity(addForm);
-        ActivityScheduleEntity scheduleEntity=factory.buildActivitySchedule(addForm);
         List<ActivityCanEnrollCollegeEntity> collegeList;
         List<ActivityCanEnrollGradeEntity> gradeList;
+
         if(!addForm.getCanEnrollCollegeIdList().isEmpty()&&!addForm.getCanEnrollGradeIdList().isEmpty()){
             collegeList=factory.buildCanEnrollCollege(addForm);
             gradeList=factory.buildCanEnrollGrade(addForm);
@@ -126,59 +139,54 @@ public class ActivityWithScheduleService {
         } else {
             tribeList = null;
         }
-        ActivityReviewLogEntity activityReviewLog=factory.buildReviewLog(addForm);
         ActivityEnrollNum activityEnrollNum=factory.buildEnrollNum();
         List<ActivitySigninManagerEntity> signinManagerList = factory.buildSigninManagerList(addForm);
-
-
-        //开始事务
+        
         transactionTemplate.executeWithoutResult(status -> {
             try {
-                if (!activityManager.save(activityEntity)) {
-                    log.warn("创建未审核活动事务失败：{}，插入activityEntity失败", addForm.getTitle());
-                    status.setRollbackOnly();
-                }
-                Long id = activityEntity.getId();
+                Long id = doSaveActivityTransaction(activityEntity);
 
                 scheduleEntity.setActivityId(id);
                 activityEnrollNum.setActivityId(id);
-                activityReviewLog.setActivityId(id);
+                assert collegeList != null;
                 if(!collegeList.isEmpty()&&!gradeList.isEmpty()){
                     collegeList.forEach((e)->e.setActivityId(id));
                     gradeList.forEach(e->e.setActivityId(id));
-                    if(!activityCanEnrollCollegeManager.saveBatch(collegeList)
-                    ||!activityCanEnrollGradeManager.saveBatch(gradeList)){
-                        log.warn("创建未审核活动事务失败：插入能报名的学院或能报名的年级失败：activityId={}",id);
-                        status.setRollbackOnly();
-                    }
+                    canEnrollGradeService.doSaveBatchTransaction(gradeList);
+                    canEnrollCollegeService.doSaveBatchTransaction(collegeList);
                 }
                 assert tribeList != null;
                 if(!tribeList.isEmpty()){
                     tribeList.forEach(e->e.setActivityId(id));
-                    if(!activityCanEnrollTribeManager.saveBatch(tribeList)){
-                        log.warn("创建未审核活动事务失败：插入能报名的部落失败：activityId={}",id);
-                        status.setRollbackOnly();
-                    }
+                    canEnrollTribeService.doSaveBatchTransaction(tribeList);
                 }
                 signinManagerList.forEach(e->e.setActivityId(id));
-                if(!signinManagerManager.saveBatch(signinManagerList)){
-                    log.warn("创建未审核活动事务失败：插入签到员失败：activityId={}",id);
-                    status.setRollbackOnly();
-                }
-                if(!activityReviewLogManager.save(activityReviewLog)){
-                    log.warn("创建未审核活动事务失败：插入活动审核记录失败：activityId={}",id);
-                }
+                signinManagerService.doSaveBatchTransaction(signinManagerList);
 
-                //保存activity和activity时间表
-                if (!activityScheduleManager.save(scheduleEntity) ||
-                        activityEnrollNumDao.insert(activityEnrollNum) == 0) {
-                    log.error("ActivityWithScheduleService.addActivityWithSchedule failed: failed to save schedule or enrollNum, activityId={}", id);
-                    status.setRollbackOnly();
-                }
+                doSaveActivityScheduleTransaction(scheduleEntity);
 
-                log.info("ActivityWithScheduleService.addActivityWithSchedule success: activity created, activityId={}", id);
+                log.info("活动草稿提交成功, activityId={}", id);
             } catch (Exception e) {
-                log.error("ActivityWithScheduleService.addActivityWithSchedule failed: exception occurred, title={}", addForm.getTitle(), e);
+                log.error("活动草稿提交失败 exception occurred, title={}", activityEntity.getTitle(), e);
+                status.setRollbackOnly();
+            }
+        });
+    }
+
+    private Long doSaveActivityTransaction(ActivityEntity activityEntity){
+        return transactionTemplate.execute(status -> {
+            if (!activityManager.save(activityEntity)) {
+                log.warn("创建未审核活动事务失败：{}，插入activityEntity失败", activityEntity.getTitle());
+                status.setRollbackOnly();
+            }
+            return activityEntity.getId();
+        });
+    }
+    private void doSaveActivityScheduleTransaction(ActivityScheduleEntity schedule){
+        transactionTemplate.executeWithoutResult(status -> {
+            //保存activity和activity时间表
+            if (!activityScheduleManager.save(schedule)) {
+                log.error("创建未审核活动事务失败：{}，插入activityScheduleEntity失败", schedule.getActivityId());
                 status.setRollbackOnly();
             }
         });

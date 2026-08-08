@@ -1,5 +1,8 @@
 package com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.form;
 
+import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewEvent;
+import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewStage;
+import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.entity.ActivityReviewLogEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -17,9 +20,6 @@ import lombok.Data;
 @Data
 public class ActivityReviewLogAddForm {
 
-    @Schema(description = "主键", requiredMode = Schema.RequiredMode.REQUIRED)
-    private Long id;
-
     @Schema(description = "活动id", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "活动id 不能为空")
     private Long activityId;
@@ -28,31 +28,29 @@ public class ActivityReviewLogAddForm {
     @NotNull(message = "审核人id 不能为空")
     private Long reviewerId;
 
-    /*
-    指定下一阶段审核人
-    */
-    @Schema(description = "指定下一个审核人id")
-    private Long nextReviewerId;
-
-    @Schema(description = "下一个审核人姓名")
-    private String nextReviewerName;
-
     @Schema(description = "审核人姓名", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "审核人姓名 不能为空")
     private String reviewerName;
 
     @Schema(description = "审核阶段", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "审核阶段不能为空")
-    private Integer reviewStage;
+    private ActivityReviewStage reviewStage;
 
-    @Schema(description = "审核行为，1-》通过，2-》驳回，3-》建议", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "审核行为，1-》通过，2-》驳回，3-》建议 不能为空")
-    private Integer action;
+    public static ActivityReviewLogEntity convert(ActivityReviewLogAddForm addForm){
+        ActivityReviewLogEntity e = new ActivityReviewLogEntity();
+        e.setId(null);
+        e.setActivityId(addForm.getActivityId());
+        e.setReviewerId(addForm.getReviewerId());
+        e.setReviewerName(addForm.getReviewerName());
+        e.setReviewStage(addForm.getReviewStage());
+        e.setAction(null);
+        e.setRejectReason(null);
+        e.setCheckRemark(null);
+        e.setCreateTime(LocalDateTime.now());
+        e.setUpdateTime(LocalDateTime.now());
+        e.setDeletedFlag(false);
 
-    @Schema(description = "拒绝理由")
-    private String rejectReason;
-
-    @Schema(description = "审阅建议")
-    private String checkRemark;
+        return e;
+    }
 
 }

@@ -1,59 +1,51 @@
 package com.akkkka.admin.module.business.funcampus.activityReviewLog.service;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-
 import cn.hutool.core.lang.Assert;
-import com.akkkka.admin.module.business.funcampus.activityEnrollment.service.ActivityEnrollmentValidator;
-import com.akkkka.admin.module.business.funcampus.portalUser.service.PortalUserValidator;
-import com.akkkka.common.code.ErrorCode;
-import com.akkkka.common.code.SystemErrorCode;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import jakarta.annotation.Nullable;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.entity.ActivityEnrollmentEntity;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.manager.ActivityEnrollmentManager;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.service.ActivityEnrollmentService;
+import com.akkkka.admin.module.business.funcampus.activityEnrollment.service.ActivityEnrollmentValidator;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewEvent;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewStage;
-import com.akkkka.admin.module.business.funcampus.activityReviewLog.dao.ActivityReviewLogDao;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.dto.EnrollersChangeDTO;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.entity.ActivityReviewLogEntity;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.form.ActivityReviewLogAddForm;
-import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.form.ActivityReviewLogQueryForm;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.form.ActivityReviewLogUpdateForm;
-import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.vo.ActivityReviewLogVO;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.manager.ActivityReviewLogManager;
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.domain.entity.ActivitySigninManagerEntity;
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.manager.ActivitySigninManagerManager;
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.service.ActivitySigninManagerService;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityScheduleEntity;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityScheduleUpdateForm;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleUpdateForm;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.RejectedActivityDraftVO;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityScheduleManager;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityValidator;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityWithScheduleService;
 import com.akkkka.admin.module.business.funcampus.portalUser.domain.entity.PortalUserEntity;
 import com.akkkka.admin.module.business.funcampus.portalUser.manager.PortalUserManager;
-import com.akkkka.admin.module.system.login.domain.RequestBackendUser;
+import com.akkkka.admin.module.business.funcampus.portalUser.service.PortalUserValidator;
+import com.akkkka.admin.module.business.funcampus.util.AssertUtil;
+import com.akkkka.admin.module.system.backendUser.domain.entity.BackendUserEntity;
+import com.akkkka.admin.module.system.backendUser.service.BackendUserValidator;
+import com.akkkka.common.code.SystemErrorCode;
 import com.akkkka.common.code.UserErrorCode;
-import com.akkkka.common.domain.RequestUser;
+import com.akkkka.common.domain.IdNameVO;
 import com.akkkka.common.exception.BusinessException;
-import com.akkkka.common.util.SmartBeanUtil;
-import com.akkkka.common.util.SmartPageUtil;
-import com.akkkka.common.domain.ResponseDTO;
-import com.akkkka.common.domain.PageResult;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.akkkka.common.util.SmartRequestUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import jakarta.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
 import org.springframework.transaction.support.TransactionTemplate;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.*;
 
 /**
  * 活动审核日志 Service
@@ -67,401 +59,276 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Service
 @AllArgsConstructor
 public class ActivityReviewLogService {
+    private final TransactionTemplate transactionTemplate;
+    private final ActivityWithScheduleService activityWithScheduleService;
+    private final ActivityReviewLogManager activityReviewLogManager;
+    private final ActivityManager activityManager;
+    private final ActivityScheduleManager activityScheduleManager;
+    private final ActivityEnrollmentManager enrollmentManager;
+    private final ActivitySigninManagerManager signinManagerManager;
+    private final ActivityReviewLogValidator addFormValidator;
+    private final PortalUserManager portalUserManager;
+    private final ActivityEnrollmentService enrollmentService;
+    private final ActivityEnrollmentValidator enrollmentValidator;
+    private final ActivityValidator activityValidator;
+    private final BackendUserValidator backendUserValidator;
+    private final ActivityReviewLogValidator reviewLogValidator;
+    private final ActivitySigninManagerService signinManagerService;
+    private final PortalUserValidator portalUserValidator;
 
-    
-    private ActivityReviewLogDao activityReviewLogDao;
-
-    
-    private TransactionTemplate transactionTemplate;
-
-    
-    private ActivityWithScheduleService activityWithScheduleService;
-
-    
-    private ActivityReviewLogManager activityReviewLogManager;
-
-    
-    private ActivityManager activityManager;
-
-    
-    private ActivityScheduleManager activityScheduleManager;
-
-    
-    private ActivityEnrollmentManager enrollmentManager;
-
-    
-    private ActivitySigninManagerService  signinManagerService;
-
-    
-    private ActivitySigninManagerManager signinManagerManager;
-
-    
-    private ActivityReviewLogValidator addFormValidator;
-
-    
-    private PortalUserManager portalUserManager;
-
-    
-    private ActivityEnrollmentService enrollmentService;
-
-    private PortalUserValidator portalUserValidator;
-    private ActivityEnrollmentValidator enrollmentValidator;
-
-    /**
-     * 分页查询
-     */
-    public PageResult<ActivityReviewLogVO> queryPage(ActivityReviewLogQueryForm queryForm) {
-        log.info("ActivityReviewLogService.queryPage called, queryForm={}", queryForm);
-        Page<?> page = SmartPageUtil.convert2PageQuery(queryForm);
-        List<ActivityReviewLogVO> list = activityReviewLogDao.queryPage(page, queryForm);
-        log.info("ActivityReviewLogService.queryPage result: count={}", list.size());
-        return SmartPageUtil.convert2PageResult(page, list);
+    public IdNameVO getInitialReviewerIdNameByActivityId(Long activityId){
+        ActivityReviewLogEntity entity=activityReviewLogManager.getOne(
+                Wrappers.lambdaQuery(ActivityReviewLogEntity.class)
+                        .eq(ActivityReviewLogEntity::getActivityId,activityId)
+                        .eq(ActivityReviewLogEntity::getReviewStage,ActivityReviewStage.INITIAL_CONTENT_REVIEW)
+                        .eq(ActivityReviewLogEntity::getDeletedFlag,false)
+                        .select(ActivityReviewLogEntity::getReviewerId)
+                        .select(ActivityReviewLogEntity::getReviewerName)
+        );
+        IdNameVO idNameVO = new IdNameVO();
+        idNameVO.setId(entity.getReviewerId());
+        idNameVO.setName(entity.getReviewerName());
+        return idNameVO;
     }
 
-    /**
-     * 添加
-     */
-    public ResponseDTO<String> add(ActivityReviewLogAddForm addForm) {
-        log.info("ActivityReviewLogService.add called, addForm={}", addForm);
-        ActivityReviewLogEntity activityReviewLogEntity = SmartBeanUtil.copy(addForm, ActivityReviewLogEntity.class);
-        int result = activityReviewLogDao.insert(activityReviewLogEntity);
-        if (result > 0) {
-            log.info("ActivityReviewLogService.add success: new record created with id={}", activityReviewLogEntity.getId());
-        } else {
-            log.error("ActivityReviewLogService.add failed: no record created");
+    //每次审核必经过的审核本体的
+    private void doReviewTransaction(ActivityReviewLogUpdateForm currentReview,
+                                    ActivityReviewLogAddForm nextReview){
+        ActivityReviewLogEntity curReviewEntity=reviewLogValidator.validateReviewLogId(currentReview.getId());
+        reviewLogValidator.validateCurrentReviewStage(curReviewEntity.getActivityId(), curReviewEntity.getReviewStage());
+        reviewLogValidator.validateNextReviewStage(curReviewEntity.getActivityId(),nextReview.getReviewStage());
+        reviewLogValidator.validateReviewAction(curReviewEntity.getReviewStage(),currentReview.getAction());
+        LambdaUpdateWrapper<ActivityReviewLogEntity> uw = new LambdaUpdateWrapper<>(ActivityReviewLogUpdateForm.convert(currentReview));
+
+
+        if(!Objects.equals(curReviewEntity.getReviewStage(),
+                ActivityReviewStage.COMPLETION_REVIEW)){
+            activityValidator.validateActivityId(nextReview.getActivityId());
+            BackendUserEntity nextReviewer = backendUserValidator.validateBackendUserId(nextReview.getReviewerId());
+            reviewLogValidator.validateReviewerName(nextReview.getReviewerName(),nextReviewer);
+            reviewLogValidator.validateReviewPermission(nextReviewer);
         }
-        return ResponseDTO.ok();
+        ActivityReviewLogEntity toAdd = ActivityReviewLogAddForm.convert(nextReview);
+        transactionTemplate.executeWithoutResult(status -> {
+            try{
+                if(!activityReviewLogManager.update(uw)){
+                    throw new BusinessException(SystemErrorCode.SYSTEM_ERROR);
+                }
+                if(!activityReviewLogManager.save(toAdd)){
+                    throw new BusinessException(SystemErrorCode.SYSTEM_ERROR);
+                }
+            }catch (Exception e){
+                log.warn("doReviewTransaction add和update抛出异常，事务回滚，update form={}，add form={}",
+                        currentReview,nextReview,e);
+                throw new BusinessException(SystemErrorCode.SYSTEM_ERROR,e);
+            }
+
+        });
+
     }
 
-    /**
-     * 更新
-     *
-     */
-    public ResponseDTO<String> update(ActivityReviewLogUpdateForm updateForm) {
-        log.info("ActivityReviewLogService.update called, updateForm={}", updateForm);
-        ActivityReviewLogEntity activityReviewLogEntity = SmartBeanUtil.copy(updateForm, ActivityReviewLogEntity.class);
-        int result = activityReviewLogDao.updateById(activityReviewLogEntity);
-        if (result > 0) {
-            log.info("ActivityReviewLogService.update success: record updated with id={}", updateForm.getId());
-        } else {
-            log.warn("ActivityReviewLogService.update warning: no records updated");
-        }
-        return ResponseDTO.ok();
-    }
-
-    public void submitDraft()
     //初审和终审有驳回权限，驳回后需从头再走一遍审核流程
-    public void doInitialReview(@Nullable ActivityWithScheduleUpdateForm updateForm, ActivityReviewLogAddForm addForm){
-        ActivityReviewLogEntity nextReview = new ActivityReviewLogEntity();
-        nextReview.setActivityId(addForm.getActivityId());
-        nextReview.setReviewerId(addForm.getNextReviewerId());
-        nextReview.setReviewerName(addForm.getNextReviewerName());
-        nextReview.setReviewStage(ActivityReviewStage.CHECK);
-        nextReview.setCreateTime(LocalDateTime.now());
-        nextReview.setDeletedFlag(false);
-
-        LambdaUpdateWrapper<ActivityReviewLogEntity> update = new LambdaUpdateWrapper<>();
-        update.eq(ActivityReviewLogEntity::getActivityId,addForm.getActivityId())
-                .eq(ActivityReviewLogEntity::getReviewerId,addForm.getReviewerId())
-                .set(ActivityReviewLogEntity::getAction,addForm.getAction())
-                .set(ActivityReviewLogEntity::getRejectReason,addForm.getRejectReason());
-
+    public void passInitial(@Nullable ActivityWithScheduleUpdateForm updateForm,
+                              ActivityReviewLogUpdateForm curReview,
+                              ActivityReviewLogAddForm nextReview){
         transactionTemplate.executeWithoutResult(status->{
             try {
                 if(updateForm!=null){
-                    activityWithScheduleService.updateActivityWithSchedule(updateForm);
+                    activityWithScheduleService.editActivityDraft(nextReview.getActivityId(), updateForm);
                 }
-                if(!activityReviewLogManager.update(update)){
-                    log.warn("活动初审结果提交操作中，填写审核结果失败，事务回滚，addform:{}",addForm);
-                    status.setRollbackOnly();
-                }
-                if(!activityReviewLogManager.save(nextReview)){
-                    log.warn("活动初审结果提交操作中，初始化下一阶段审核失败，事务回滚，addform：{}",addForm);
-                }
+                doReviewTransaction(curReview,nextReview);
             }catch (Exception e){
-                log.warn("活动初审结果提交操作中，事务回滚：{},{},{},{}",addForm,e.getMessage(),e.getCause(),e.getStackTrace());
-                status.setRollbackOnly();
+                log.error("活动初审结果提交操作中，事务回滚：curReview={},nextReview={}",curReview,nextReview,e);
+                throw new BusinessException(SystemErrorCode.SYSTEM_ERROR);
             }
         });
     }
-    /*
-    让审核中的活动取消审核，具体操作是删除当前该活动所有审核阶段的记录。
-    审核中的活动前台不能进行修改，取消审核后前台用户可以进行修改
-     */
-    public void cancelReview(Long activityId){
-        RequestUser requestUser = SmartRequestUtil.getRequestUser();
-        if(requestUser instanceof RequestBackendUser){
-            throw new BusinessException(UserErrorCode.NO_PERMISSION,"后台用户没有取消审核的权限");
-        }
 
-        ActivityEntity activity = activityManager.getById(activityId);
-        if(activity==null||activity.getDeletedFlag()){
-            throw new BusinessException(UserErrorCode.PARAM_ERROR,"该活动不存在或已删除");
-        }
+    public void rejectInitial(ActivityReviewLogUpdateForm curReview){
+        ActivityReviewLogEntity reviewLog = reviewLogValidator.validateReviewLogId(curReview.getId());
+        reviewLogValidator.validateReviewAction(reviewLog.getReviewStage(),curReview.getAction());
+        ActivityReviewLogEntity toUpdate = ActivityReviewLogUpdateForm.convert(curReview);
+        toUpdate.setDeletedFlag(true);
+        Long activityId = reviewLog.getActivityId();
+        transactionTemplate.executeWithoutResult(status -> {
+            try {
+                if(!activityReviewLogManager.updateById(toUpdate)){
+                    throw new BusinessException(SystemErrorCode.SYSTEM_ERROR);
+                }
+                activityWithScheduleService.deleteDraft(activityId);
+            }catch (Exception e){
+                log.error("rejectInitial 事务失败回，curReview={}",curReview,e);
+                throw new BusinessException(SystemErrorCode.SYSTEM_ERROR,e);
+            }
+        });
 
-        if(!activity.getActivityManagerId().equals(SmartRequestUtil.getRequestUserId())){
-            throw new BusinessException(UserErrorCode.NO_PERMISSION,"只有活动发起者才有权限取消活动审核");
-        }
-        LambdaUpdateWrapper<ActivityReviewLogEntity> luw = new LambdaUpdateWrapper<>();
-        luw.eq(ActivityReviewLogEntity::getActivityId,activityId)
-            .eq(ActivityReviewLogEntity::getDeletedFlag,false)
-            .set(ActivityReviewLogEntity::getDeletedFlag,true);
-
-        activityReviewLogManager.update(luw);
     }
 
     /*
     审阅操作
      */
-    public void check(ActivityReviewLogAddForm addForm){
-        ActivityReviewLogEntity nextReview = new ActivityReviewLogEntity();
-        nextReview.setActivityId(addForm.getActivityId());
-        nextReview.setReviewerId(addForm.getNextReviewerId());
-        nextReview.setReviewerName(addForm.getNextReviewerName());
-        nextReview.setReviewStage(ActivityReviewStage.FINAL_REVIEW);
-        nextReview.setCreateTime(LocalDateTime.now());
-        nextReview.setDeletedFlag(false);
-
-        LambdaUpdateWrapper<ActivityReviewLogEntity> luw = new LambdaUpdateWrapper<>();
-        luw.eq(ActivityReviewLogEntity::getActivityId,addForm.getActivityId())
-                .eq(ActivityReviewLogEntity::getReviewStage,ActivityReviewStage.CHECK)
-                .set(ActivityReviewLogEntity::getAction,ActivityReviewStage.CHECK)
-                .set(ActivityReviewLogEntity::getCheckRemark,addForm.getCheckRemark());
+    public void check(ActivityReviewLogUpdateForm currentReview,
+                      ActivityReviewLogAddForm nextReview){
+        currentReview.setAction(ActivityReviewEvent.CHECK_PASS);
+        doReviewTransaction(currentReview,nextReview);
     }
-
-    public void finalReview(@Nullable ActivityWithScheduleUpdateForm updateForm, ActivityReviewLogAddForm addForm){
-        validateAllTimeFuture(addForm.getActivityId());
-        ActivityEntity activity = activityManager.getById(addForm.getActivityId());
-        assert activity!=null;
-        ActivityReviewLogEntity nextReview = new ActivityReviewLogEntity();
-
-        nextReview.setActivityId(addForm.getActivityId());
-        nextReview.setReviewerId(addForm.getNextReviewerId());
-        nextReview.setReviewerName(addForm.getNextReviewerName());
-        nextReview.setCreateTime(LocalDateTime.now());
-        nextReview.setDeletedFlag(false);
-        if(updateForm!=null){
-            //update form指定要改
-            if(updateForm.getEnrollNeedReview()!=null) {
-                if (updateForm.getEnrollNeedReview()) {
-                    nextReview.setReviewStage(ActivityReviewStage.ENROLL_REVIEW);
-                }else{
-                    nextReview.setReviewStage(ActivityReviewStage.END_REVIEW);
-                }
-            }
-        }else{
-            //update form不该，数据库是报名是审核
-            if(activity.isEnrollNeedReview()){
-                nextReview.setReviewStage(ActivityReviewStage.ENROLL_REVIEW);
-            }else {
-                nextReview.setReviewStage(ActivityReviewStage.END_REVIEW);
-            }
-        }
-
-        LambdaUpdateWrapper<ActivityReviewLogEntity> update = new LambdaUpdateWrapper<>();
-        update.eq(ActivityReviewLogEntity::getActivityId,addForm.getActivityId())
-                .eq(ActivityReviewLogEntity::getReviewerId,addForm.getReviewerId())
-                .set(ActivityReviewLogEntity::getAction,addForm.getAction())
-                .set(ActivityReviewLogEntity::getRejectReason,addForm.getRejectReason());
-        //活动管理员和签到员一开始就已签到和签退
-        List<ActivityEnrollmentEntity> preSignin;
-        if(updateForm!=null){
-            preSignin = buildPreSignInAndSignOutEntities(updateForm,addForm);
-        }
-        preSignin=buildPreSignInAndSignOutEntities(addForm);
-
-        List<ActivityEnrollmentEntity> finalPreSignin = preSignin;
+    public void passFinalReview(ActivityReviewLogUpdateForm curReview,
+                                ActivityReviewLogAddForm nextReview,
+                                @Nullable ActivityWithScheduleUpdateForm updateForm){
+        validateAllTimeFuture(nextReview.getActivityId(),updateForm);
+        List<ActivityEnrollmentEntity> managerEnrollments = buildSignInManagerEnrollment(nextReview.getActivityId(),updateForm);
+        managerEnrollments.add(buildActivityManagerEnrollment(nextReview.getActivityId(),updateForm));
         transactionTemplate.executeWithoutResult(status->{
             try {
                 if(updateForm!=null){
-                    activityWithScheduleService.updateActivityWithSchedule(updateForm);
+                    activityWithScheduleService.editActivityDraft(nextReview.getActivityId(), updateForm);
                 }
-                if(!activityReviewLogManager.update(update)){
-                    log.warn("活动终审结果提交操作中，填写审核结果失败，事务回滚，addform:{}",addForm);
-                    status.setRollbackOnly();
-                }
-                if(!activityReviewLogManager.save(nextReview)){
-                    log.warn("活动终审结果提交操作中，初始化下一阶段审核失败，事务回滚，addform：{}",addForm);
-                    status.setRollbackOnly();
-                }
-                if(!enrollmentManager.saveBatch(finalPreSignin)){
-                    log.warn("活动终审结果提交操作中，活动管理员和签到员提前签到失败，事务回滚，addform：{}",addForm);
-                    status.setRollbackOnly();
-                }
+                AssertUtil.ifFalseThrowSysError(enrollmentManager.saveBatch(managerEnrollments));
+                doReviewTransaction(curReview,nextReview);
             }catch (Exception e){
-                log.warn("活动终审结果提交操作中，事务回滚：{},{},{},{}",addForm,e.getMessage(),e.getCause(),e.getStackTrace());
-                status.setRollbackOnly();
+                log.error("活动终审结果提交操作中，事务回滚：curReview={},nextReview={}",curReview,nextReview,e);
+                throw new BusinessException(SystemErrorCode.SYSTEM_ERROR);
             }
         });
     }
 
-    private void validateAllTimeFuture(Long activityId){
-        ActivityScheduleEntity activitySchedule = activityScheduleManager.getById(activityId);
+
+    //终审被拒会返回表单在审核中被修改后的样子
+    public RejectedActivityDraftVO rejectFinal(ActivityReviewLogUpdateForm curReview){
+        ActivityReviewLogEntity reviewLog = reviewLogValidator.validateReviewLogId(curReview.getId());
+        reviewLogValidator.validateReviewAction(reviewLog.getReviewStage(),curReview.getAction());
+        ActivityReviewLogEntity toUpdate = ActivityReviewLogUpdateForm.convert(curReview);
+        toUpdate.setDeletedFlag(true);
+        Long activityId = reviewLog.getActivityId();
+        transactionTemplate.executeWithoutResult(status -> {
+            try {
+                if(!activityReviewLogManager.updateById(toUpdate)){
+                    throw new BusinessException(SystemErrorCode.SYSTEM_ERROR);
+                }
+                activityWithScheduleService.deleteDraft(activityId);
+            }catch (Exception e){
+                log.error("rejectFinal 事务失败回，curReview={}",curReview,e);
+                throw new BusinessException(SystemErrorCode.SYSTEM_ERROR,e);
+            }
+        });
+
+        return activityWithScheduleService.getRejectedActivityDraft(reviewLog.getActivityId());
+    }
+
+    private void validateAllTimeFuture(Long activityId, ActivityWithScheduleUpdateForm updateForm){
         LocalDateTime now = LocalDateTime.now();
+
+        //update表单中的时间表合规
+        if(Objects.nonNull(updateForm) && Objects.nonNull(updateForm.getActivityScheduleUpdateForm())){
+            ActivityScheduleUpdateForm scheduleForm = updateForm.getActivityScheduleUpdateForm();
+            if(scheduleForm.getEnrollStartTime().isAfter(now)&&scheduleForm.getEnrollEndTime().isAfter(now)){
+                return;
+            }
+        }
+        //检查数据库中的时间表
+        ActivityScheduleEntity activitySchedule = activityScheduleManager.getById(activityId);
+
         if(activitySchedule.getEnrollStartTime().isBefore(now)||activitySchedule.getEnrollEndTime().isBefore(now)){
             throw new BusinessException(UserErrorCode.PARAM_ERROR,"报名时间已经开始或已经结束，请重新设置活动时间表");
         }
     }
 
-    //适用于终审updateForm不为null的情况
-    private List<ActivityEnrollmentEntity> buildPreSignInAndSignOutEntities(
-            ActivityWithScheduleUpdateForm updateForm,
-            ActivityReviewLogAddForm addForm){
-        ActivityEnrollmentEntity managerEnrollment = new ActivityEnrollmentEntity();
-        List<ActivityEnrollmentEntity> result = new ArrayList<>();
+    private List<ActivityEnrollmentEntity> buildSignInManagerEnrollment(Long activityId, ActivityWithScheduleUpdateForm updateForm) {
+        ActivityEntity dbActivity = activityManager.getById(activityId);
 
-        ActivityEntity activity = activityManager.getById(addForm.getActivityId());
-        if(updateForm.getActivitySigninManagerIdList()!=null&&!updateForm.getActivitySigninManagerIdList().isEmpty()) {
-            updateForm.getActivitySigninManagerIdList().forEach(
-                    e -> {
-                        ActivityEnrollmentEntity enrollment = new ActivityEnrollmentEntity();
-                        enrollment.setActivityId(updateForm.getId());
-                        enrollment.setUserId(e);
-                        enrollment.setSignInStatus(true);
-                        enrollment.setCreateTime(LocalDateTime.now());
-                        enrollment.setUpdateTime(LocalDateTime.now());
-                        enrollment.setDeletedFlag(false);
-                        if(updateForm.getNeedSignOut()==null){
-                            if (activity.isNeedSignOut()) {
-                                enrollment.setSignOutStatus(true);
-                            }
-                        }else if(updateForm.getNeedSignOut()){
-                            enrollment.setSignOutStatus(true);
-                        }
+        // 获取数据库中现有的签到员ID列表
+        List<Long> dbSignInManagerIds = signinManagerService.getSignInManagerIds(activityId);
 
-                    }
-            );
-        }
-        if(updateForm.getActivityManagerId()!=null){
-            managerEnrollment.setActivityId(addForm.getActivityId());
-            managerEnrollment.setUserId(updateForm.getActivityManagerId());
-            managerEnrollment.setSignInStatus(true);
-            managerEnrollment.setCreateTime(LocalDateTime.now());
-            managerEnrollment.setUpdateTime(LocalDateTime.now());
-            managerEnrollment.setDeletedFlag(false);
-            if(updateForm.getNeedSignOut()==null){
-                if (activity.isNeedSignOut()) {
-                    managerEnrollment.setSignOutStatus(true);
-                }
-            }else if(updateForm.getNeedSignOut()){
-                managerEnrollment.setSignOutStatus(true);
-            }
-            result.add(managerEnrollment);
-            return result;
-        }
-        managerEnrollment.setActivityId(addForm.getActivityId());
-        managerEnrollment.setUserId(activity.getActivityManagerId());
-        managerEnrollment.setSignInStatus(true);
-        managerEnrollment.setCreateTime(LocalDateTime.now());
-        managerEnrollment.setUpdateTime(LocalDateTime.now());
-        managerEnrollment.setDeletedFlag(false);
-        if(updateForm.getNeedSignOut()==null){
-            if (activity.isNeedSignOut()) {
-                managerEnrollment.setSignOutStatus(true);
-            }
-        }else if(updateForm.getNeedSignOut()){
-            managerEnrollment.setSignOutStatus(true);
-        }
-        result.add(managerEnrollment);
-        return result;
+        // 确定需要处理的签到员ID列表
+        List<Long> targetSignInManagerIds = determineTargetSignInManagerIds(updateForm, dbSignInManagerIds);
+
+        // 确定是否需要签退
+        boolean needSignOut = determineNeedSignOut(updateForm, dbActivity);
+
+        // 构建报名记录列表
+        return buildEnrollmentList(activityId, targetSignInManagerIds, needSignOut);
+    }
+
+    private ActivityEnrollmentEntity buildActivityManagerEnrollment(Long activityId, ActivityWithScheduleUpdateForm updateForm){
+        ActivityEntity dbActivity = activityManager.getById(activityId);
+        Long activityManagerId = determineTargetActivityManagerId(updateForm, dbActivity.getActivityManagerId());
+        boolean needSignOut = determineNeedSignOut(updateForm,dbActivity);
+        ActivityEnrollmentEntity enrollment = buildEnrollment(activityId,activityManagerId);
+        enrollment.setSignOutStatus(needSignOut);
+        return enrollment;
 
     }
-    //适用于终审updateForm为null的情况
-    private List<ActivityEnrollmentEntity> buildPreSignInAndSignOutEntities(
-            ActivityReviewLogAddForm addForm) {
-        ActivityEnrollmentEntity managerEnrollment = new ActivityEnrollmentEntity();
-        List<ActivityEnrollmentEntity> result = new ArrayList<>();
 
-        ActivityEntity activity = activityManager.getById(addForm.getActivityId());
-
-        List<ActivitySigninManagerEntity> signinManagerEntities = signinManagerManager.list(
-                ActivitySigninManagerService
-                        .listByActivityIdQw(activity.getId())
-                        .select(ActivitySigninManagerEntity::getPortalUserId)
-        );
-        if (signinManagerEntities != null && !signinManagerEntities.isEmpty()) {
-            signinManagerEntities.forEach(e -> {
-                ActivityEnrollmentEntity enrollment = new ActivityEnrollmentEntity();
-                enrollment.setActivityId(activity.getId());
-                enrollment.setUserId(e.getPortalUserId());
-                enrollment.setSignInStatus(true);
-                enrollment.setCreateTime(LocalDateTime.now());
-                enrollment.setUpdateTime(LocalDateTime.now());
-                enrollment.setDeletedFlag(false);
-                if (activity.isNeedSignOut()) {
-                    enrollment.setSignOutStatus(true);
-                }
-                result.add(enrollment);
-            });
+    private Long determineTargetActivityManagerId(ActivityWithScheduleUpdateForm updateForm,Long dbActivityManagerId){
+        if(Objects.nonNull(updateForm) &&
+            Objects.nonNull(updateForm.getActivityUpdateForm())&&
+            Objects.nonNull(updateForm.getActivityUpdateForm().getActivityManagerId())){
+            return updateForm.getActivityUpdateForm().getActivityManagerId();
         }
+        return dbActivityManagerId;
+    }
 
-        managerEnrollment.setActivityId(addForm.getActivityId());
-        managerEnrollment.setUserId(activity.getActivityManagerId());
-        managerEnrollment.setSignInStatus(true);
-        managerEnrollment.setCreateTime(LocalDateTime.now());
-        managerEnrollment.setUpdateTime(LocalDateTime.now());
-        managerEnrollment.setDeletedFlag(false);
-        if (activity.isNeedSignOut()) {
-            managerEnrollment.setSignOutStatus(true);
+    /**
+     * 确定目标签到员ID列表
+     */
+    private List<Long> determineTargetSignInManagerIds(ActivityWithScheduleUpdateForm updateForm, List<Long> dbSignInManagerIds) {
+        if (Objects.nonNull(updateForm) && Objects.nonNull(updateForm.getActivitySigninManagerIdList())
+                && !updateForm.getActivitySigninManagerIdList().isEmpty()) {
+            return updateForm.getActivitySigninManagerIdList();
         }
-        result.add(managerEnrollment);
+        return dbSignInManagerIds;
+    }
+
+    /**
+     * 确定是否需要签退
+     */
+    private boolean determineNeedSignOut(ActivityWithScheduleUpdateForm updateForm, ActivityEntity dbActivity) {
+        if (Objects.nonNull(updateForm)
+                && Objects.nonNull(updateForm.getActivityUpdateForm())
+                && Objects.nonNull(updateForm.getActivityUpdateForm().getNeedSignOut())) {
+            return updateForm.getActivityUpdateForm().getNeedSignOut();
+        }
+        return dbActivity.getNeedSignOut();
+    }
+
+    /**
+     * 构建报名记录列表
+     */
+    private List<ActivityEnrollmentEntity> buildEnrollmentList(Long activityId, List<Long> userIds, boolean needSignOut) {
+        List<ActivityEnrollmentEntity> result = new LinkedList<>();
+        for (Long userId : userIds) {
+            ActivityEnrollmentEntity enrollment = buildEnrollment(activityId, userId);
+            if (needSignOut) {
+                enrollment.setSignOutStatus(true);
+            }
+            result.add(enrollment);
+        }
         return result;
     }
+
+    private ActivityEnrollmentEntity buildEnrollment(Long activityId,Long userId){
+        ActivityEnrollmentEntity enrollment = new ActivityEnrollmentEntity();
+        enrollment.setActivityId(activityId);
+        enrollment.setUserId(userId);
+        enrollment.setSignInStatus(null);
+        enrollment.setCreateTime(LocalDateTime.now());
+        enrollment.setUpdateTime(LocalDateTime.now());
+        enrollment.setDeletedFlag(false);
+
+        return enrollment;
+    }
+
 
     //审核报名用户，对用户进行筛选
-    public void reviewEnroll(ActivityReviewLogAddForm addForm,@Nullable List<Long> enrollerIds){
-        addFormValidator.validate(addForm);
-        EnrollersChangeDTO enrollersChangeDTO = new EnrollersChangeDTO();
-        if(enrollerIds!=null && !enrollerIds.isEmpty()){
-            List<PortalUserEntity> portalUsers = portalUserManager.listByIds(enrollerIds);
-            if(portalUsers.size()!=enrollerIds.size()){
-                throw new BusinessException(UserErrorCode.PARAM_ERROR,"审核要更改的报名人员异常，请仔细核对");
-            }
-            //如果活动管理员与签到员变动会在convertor体现出来，会有不好的后果。要保证managers没有变动
-            Long activityManagerId = activityManager.getById(addForm.getActivityId()).getActivityManagerId();
-            if(!enrollerIds.contains(activityManagerId)){
-                throw new BusinessException(UserErrorCode.PARAM_ERROR,"报名审核不能更改活动管理员和签到员");
-            }
-
-            List<ActivitySigninManagerEntity> signinManagerlist = signinManagerManager.list(
-                    ActivitySigninManagerService.listByActivityIdQw(addForm.getActivityId())
-                        .select(ActivitySigninManagerEntity::getPortalUserId)
-            );
-            if(!new HashSet<>(enrollerIds).containsAll(
-                    signinManagerlist
-                        .stream()
-                        .map(ActivitySigninManagerEntity::getPortalUserId)
-                        .toList())
-            ){
-                throw new BusinessException(UserErrorCode.PARAM_ERROR,"报名审核不能更改活动管理员和签到员");
-            }
+    public void reviewEnroll(ActivityReviewLogUpdateForm currentReview,
+                             ActivityReviewLogAddForm nextReview,
+                             @Nullable List<Long> enrollerIds){
 
 
-            List<ActivityEnrollmentEntity> activityEnrollmentUserIds = enrollmentManager.list(
-                    ActivityEnrollmentService.listByActivityIdQw(addForm.getActivityId())
-                            .select(ActivityEnrollmentEntity::getUserId)
-            );
+        currentReview.setAction(ActivityReviewEvent.ENROLL_REVIEW_PASS);
+        currentReview.setCheckRemark(null);
+        currentReview.setRejectReason(null);
 
-            assert activityEnrollmentUserIds!=null;
-            assert !activityEnrollmentUserIds.isEmpty();
-
-            enrollersChangeDTO = enrollmentService.convertToEnrollmentChanges(enrollerIds, addForm.getActivityId());
-        }
-        EnrollersChangeDTO finalEnrollersChangeDTO = enrollersChangeDTO;
-
-        ActivityReviewLogEntity nextReviewLog = new ActivityReviewLogEntity();
-        nextReviewLog.setActivityId(addForm.getActivityId());
-        nextReviewLog.setReviewerId(addForm.getReviewerId());
-        nextReviewLog.setReviewerName(addForm.getReviewerName());
-        nextReviewLog.setReviewStage(ActivityReviewStage.END_REVIEW);
-        nextReviewLog.setCreateTime(LocalDateTime.now());
-        nextReviewLog.setDeletedFlag(false);
-
-        LambdaUpdateWrapper<ActivityReviewLogEntity> uw = new LambdaUpdateWrapper<>();
-        uw.eq(ActivityReviewLogEntity::getActivityId,addForm.getActivityId())
-                        .eq(ActivityReviewLogEntity::getReviewStage,ActivityReviewStage.ENROLL_REVIEW)
-                        .eq(ActivityReviewLogEntity::getDeletedFlag,false)
-                        .set(ActivityReviewLogEntity::getAction, ActivityReviewEvent.APPROVED);
         transactionTemplate.executeWithoutResult(status->{
             try {
                 assert finalEnrollersChangeDTO != null;
@@ -479,16 +346,7 @@ public class ActivityReviewLogService {
                         status.setRollbackOnly();
                     }
                 }
-                if (!activityReviewLogManager.save(nextReviewLog)) {
-                    log.warn("活动报名审核，插入活动审核日志失败，activityId:{},reviewAddForm:{}"
-                            , addForm.getActivityId(), addForm);
-                    status.setRollbackOnly();
-                }
-                if (!activityReviewLogManager.update(uw)) {
-                    log.warn("活动报名审核，通过报名审核失败回滚，activityId:{}"
-                            , addForm.getActivityId());
-                    status.setRollbackOnly();
-                }
+                doReviewTransaction(currentReview,nextReview);
             }catch (Exception e){
                 log.warn("活动报名审核，捕捉异常回滚：{}{}{}{}",e.getCause(),e.getStackTrace(),e.getMessage(),e.getLocalizedMessage());
                 status.setRollbackOnly();
@@ -593,5 +451,38 @@ public class ActivityReviewLogService {
             toAddUserUw.set(ActivityEnrollmentEntity::getSignOutStatus,false);
         }
         return new DoubleUws(toAddUserUw,toDeleteUserUw);
+    }
+
+    public ActivityReviewStage getCurReviewStage(Long activityId){
+        ActivityReviewLogEntity reviewLog = activityReviewLogManager.getOne(
+                Wrappers
+                        .lambdaQuery(ActivityReviewLogEntity.class)
+                        .select(ActivityReviewLogEntity::getReviewStage)
+                        .eq(ActivityReviewLogEntity::getActivityId,activityId)
+                        .eq(ActivityReviewLogEntity::getDeletedFlag,false)
+                        .orderByDesc(ActivityReviewLogEntity::getCreateTime)
+                        .last("limit 1")
+        );
+        if(reviewLog==null){
+            return ActivityReviewStage.DRAFT;
+        }
+        return reviewLog.getReviewStage();
+    }
+
+    @Nullable
+    public Long getCurReviewer(Long activityId){
+        ActivityReviewLogEntity reviewLog = activityReviewLogManager.getOne(
+                Wrappers
+                        .lambdaQuery(ActivityReviewLogEntity.class)
+                        .select(ActivityReviewLogEntity::getReviewStage)
+                        .eq(ActivityReviewLogEntity::getActivityId,activityId)
+                        .eq(ActivityReviewLogEntity::getDeletedFlag,false)
+                        .orderByDesc(ActivityReviewLogEntity::getCreateTime)
+                        .last("limit 1")
+        );
+        if(reviewLog==null){
+            return null;
+        }
+        return reviewLog.getReviewerId();
     }
 }

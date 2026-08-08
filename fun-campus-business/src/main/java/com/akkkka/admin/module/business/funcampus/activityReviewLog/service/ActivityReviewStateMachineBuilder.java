@@ -2,15 +2,26 @@ package com.akkkka.admin.module.business.funcampus.activityReviewLog.service;
 
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewEvent;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewStage;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityWithScheduleService;
 import com.alibaba.cola.statemachine.StateMachine;
 import com.alibaba.cola.statemachine.builder.StateMachineBuilder;
 import com.alibaba.cola.statemachine.builder.StateMachineBuilderFactory;
+import lombok.AllArgsConstructor;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Component;
 
 /**
  * author:akkkka114514
  * create at 2026-04-15 20:03
  */
+@Component
+@AllArgsConstructor
 public class ActivityReviewStateMachineBuilder {
+    private ActivityWithScheduleService activityWithScheduleService;
+
+    private static ApplicationEventPublisher eventPublisher = ;
+
     public static StateMachine<ActivityReviewStage, ActivityReviewEvent, ActivityReviewStateMachineContext> build() {
         StateMachineBuilder<ActivityReviewStage, ActivityReviewEvent, ActivityReviewStateMachineContext> builder =
                 StateMachineBuilderFactory.create();
@@ -20,8 +31,10 @@ public class ActivityReviewStateMachineBuilder {
                 .from(ActivityReviewStage.DRAFT)
                 .to(ActivityReviewStage.INITIAL_CONTENT_REVIEW)
                 .on(ActivityReviewEvent.SUBMIT)
-                .when(checkSubmitCondition())
-                .perform(doSubmit());
+                .perform(
+                        (activityReviewStage, s1, activityReviewEvent, activityReviewStateMachineContext) -> {
+
+                        });
 
         // 2. 初审 -> 审阅（通过）
         builder.externalTransition()

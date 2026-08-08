@@ -1,75 +1,73 @@
 package com.akkkka.admin.module.business.funcampus.activityWithSchedule.service;
 
-import com.akkkka.admin.module.business.funcampus.activityAttachment.domain.entity.ActivityAttachmentEntity;
-import com.akkkka.admin.module.business.funcampus.activityReviewAttachment.domain.entity.ActivityReviewAttachmentEntity;
-import com.akkkka.admin.module.business.funcampus.activityReviewAttachment.manager.ActivityReviewAttachmentManager;
-import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewEvent;
-import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewStage;
-import com.akkkka.admin.module.business.funcampus.activityReviewLog.service.ActivityReviewStateMachineContext;
-import com.akkkka.admin.module.business.funcampus.activitySigninManager.service.ActivitySigninManagerService;
-import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.converter.ActivityAddFormConverter;
-import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.converter.ActivityScheduleAddFormConverter;
-import com.akkkka.admin.module.business.funcampus.portalUser.service.PortalUserValidator;
-import com.akkkka.module.support.file.service.FileService;
-import com.akkkka.module.support.file.service.FileStorageCloudServiceImpl;
-import com.alibaba.cola.statemachine.StateMachine;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.akkkka.admin.module.business.funcampus.activityCanEnrollCollege.domain.entity.ActivityCanEnrollCollegeEntity;
 import com.akkkka.admin.module.business.funcampus.activityCanEnrollCollege.manager.ActivityCanEnrollCollegeManager;
 import com.akkkka.admin.module.business.funcampus.activityCanEnrollCollege.service.ActivityCanEnrollCollegeService;
-import com.akkkka.admin.module.business.funcampus.activityCanEnrollGrade.domain.entity.ActivityCanEnrollGradeEntity;
 import com.akkkka.admin.module.business.funcampus.activityCanEnrollGrade.manager.ActivityCanEnrollGradeManager;
 import com.akkkka.admin.module.business.funcampus.activityCanEnrollGrade.service.ActivityCanEnrollGradeService;
-import com.akkkka.admin.module.business.funcampus.activityCanEnrollTribe.domain.entity.ActivityCanEnrollTribeEntity;
 import com.akkkka.admin.module.business.funcampus.activityCanEnrollTribe.manager.ActivityCanEnrollTribeManager;
 import com.akkkka.admin.module.business.funcampus.activityCanEnrollTribe.service.ActivityCanEnrollTribeService;
 import com.akkkka.admin.module.business.funcampus.activityCategory.domain.entity.ActivityCategoryEntity;
 import com.akkkka.admin.module.business.funcampus.activityCategory.manager.ActivityCategoryManager;
+import com.akkkka.admin.module.business.funcampus.activityCategory.service.ActivityCategoryService;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.entity.ActivityEnrollmentEntity;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.manager.ActivityEnrollmentManager;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.service.ActivityEnrollmentService;
+import com.akkkka.admin.module.business.funcampus.activityReviewAttachment.domain.entity.ActivityReviewAttachmentEntity;
+import com.akkkka.admin.module.business.funcampus.activityReviewAttachment.manager.ActivityReviewAttachmentManager;
+import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewEvent;
+import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewStage;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.entity.ActivityReviewLogEntity;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.manager.ActivityReviewLogManager;
+import com.akkkka.admin.module.business.funcampus.activityReviewLog.service.ActivityReviewLogService;
+import com.akkkka.admin.module.business.funcampus.activityReviewLog.service.ActivityReviewStateMachineContext;
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.domain.entity.ActivitySigninManagerEntity;
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.manager.ActivitySigninManagerManager;
+import com.akkkka.admin.module.business.funcampus.activitySigninManager.service.ActivitySigninManagerService;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.dao.ActivityDao;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.dao.ActivityEnrollNumDao;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.converter.ActivityAddFormConverter;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.converter.ActivityScheduleAddFormConverter;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEnrollNum;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityScheduleEntity;
-import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleAddForm;
-import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleQueryForm;
-import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleUpdateForm;
-import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityDetailVO;
-import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityWithScheduleVO;
-import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.EnrollerVO;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.*;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.*;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityScheduleManager;
 import com.akkkka.admin.module.business.funcampus.collegeInfo.domain.entity.CollegeInfoEntity;
 import com.akkkka.admin.module.business.funcampus.collegeInfo.manager.CollegeInfoManager;
+import com.akkkka.admin.module.business.funcampus.collegeInfo.service.CollegeInfoService;
 import com.akkkka.admin.module.business.funcampus.gradeInfo.domain.entity.GradeInfoEntity;
 import com.akkkka.admin.module.business.funcampus.gradeInfo.manager.GradeInfoManager;
+import com.akkkka.admin.module.business.funcampus.gradeInfo.service.GradeInfoService;
+import com.akkkka.admin.module.business.funcampus.organizationInfo.service.OrganizationInfoService;
+import com.akkkka.admin.module.business.funcampus.portalLogin.domain.RequestPortalUser;
 import com.akkkka.admin.module.business.funcampus.portalUser.domain.entity.PortalUserEntity;
 import com.akkkka.admin.module.business.funcampus.portalUser.manager.PortalUserManager;
+import com.akkkka.admin.module.business.funcampus.portalUser.service.PortalUserService;
+import com.akkkka.admin.module.business.funcampus.portalUser.service.PortalUserValidator;
+import com.akkkka.admin.module.business.funcampus.schoolInfo.service.SchoolInfoService;
 import com.akkkka.admin.module.business.funcampus.tribe.domain.entity.TribeEntity;
 import com.akkkka.admin.module.business.funcampus.tribe.manager.TribeManager;
-import com.akkkka.admin.module.business.funcampus.util.UpdateFormUtil;
+import com.akkkka.admin.module.system.backendUser.service.BackendUserService;
+import com.akkkka.admin.module.system.login.domain.RequestBackendUser;
 import com.akkkka.common.code.SystemErrorCode;
 import com.akkkka.common.code.UnexpectedErrorCode;
 import com.akkkka.common.code.UserErrorCode;
-import com.akkkka.common.domain.PageResult;
+import com.akkkka.common.domain.RequestUser;
 import com.akkkka.common.domain.ResponseDTO;
 import com.akkkka.common.exception.BusinessException;
-import com.akkkka.common.util.SmartPageUtil;
 import com.akkkka.common.util.SmartRequestUtil;
+import com.akkkka.module.support.file.service.FileService;
+import com.alibaba.cola.statemachine.StateMachine;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import jakarta.annotation.Resource;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
-import lombok.extern.slf4j.Slf4j;
-
-import jakarta.annotation.Resource;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -86,7 +84,6 @@ import java.util.stream.Collectors;
 @Service
 @AllArgsConstructor
 public class ActivityWithScheduleService {
-    private InsertContentFactory factory;
     private ActivityManager activityManager;
     private ActivityScheduleManager activityScheduleManager;
     private TransactionTemplate transactionTemplate;
@@ -114,58 +111,125 @@ public class ActivityWithScheduleService {
     @Resource
     private StateMachine<ActivityReviewStage, ActivityReviewEvent, ActivityReviewStateMachineContext> stateMachine;
     private ActivitySigninManagerService signinManagerService;
+    private ActivityValidator activityValidator;
+    private ActivityScheduleValidator activityScheduleValidator;
+    private ActivityReviewLogService reviewLogService;
+    private final SchoolInfoService schoolInfoService;
+    private final CollegeInfoService collegeInfoService;
+    private final GradeInfoService gradeInfoService;
+    private final OrganizationInfoService organizationInfoService;
+    private final ActivityCategoryService categoryService;
+    private final PortalUserService portalUserService;
+    @Autowired
+    private BackendUserService backendUserService;
+
+
+    public ActivityWithScheduleVO getDraft(Long activityId){
+        getDraftActivityPart(activityId);
+        getDraftActivitySchedulePart(activityId);
+
+    }
+
+    public ActivityVO getDraftActivityPart(Long activityId){
+        ActivityEntity activity = activityManager.getById(activityId);
+
+        ActivityVO vo = new ActivityVO();
+        vo.setId(activityId);
+        vo.setTitle(activity.getTitle());
+        vo.setStatus(activity.getStatus());
+        vo.setPosition(activity.getPosition());
+        vo.setScoreCanGet(activity.getScoreCanGet());
+        vo.setEnrollNumLimit(activity.getEnrollNumLimit());
+        vo.setActivityBelongToSchoolId(activity.getActivityBelongToSchoolId());
+        vo.setActivityBelongToSchoolName(schoolInfoService.getNameById(activity.getActivityBelongToSchoolId()));
+        vo.setActivityBelongToOrganizationId(activity.getActivityBelongToOrganizationId());
+        vo.setActivityBelongToOrganizationName(organizationInfoService.getNameById(activity.getActivityBelongToOrganizationId()));
+        vo.setActivityBelongToCollegeId(activity.getActivityBelongToCollegeId());
+        vo.setActivityBelongToCollegeName(collegeInfoService.getNameById(activity.getActivityBelongToCollegeId()));
+        vo.setCreateTime(activity.getCreateTime());
+        vo.setUpdateTime(activity.getUpdateTime());
+        vo.setDescription(activity.getDescription());
+        vo.setEnrollNeedReview(activity.getEnrollNeedReview());
+        vo.setNeedSignOut(activity.getNeedSignOut());
+        vo.setAttachment(activity.getAttachment());
+        vo.setCategoryId(activity.getCategoryId());
+        vo.setCategoryName(categoryService.getNameById(activity.getCategoryId()));
+        vo.setCoverImg(activity.getCoverImg());
+        vo.setActivityManager(portalUserService.getById(activity.getActivityManagerId()));
+
+        return vo;
+    }
+
+    public ActivityScheduleVO getDraftActivitySchedulePart(Long activityId){
+        ActivityScheduleEntity schedule = activityScheduleManager.getById(activityId);
+        ActivityScheduleVO vo = new ActivityScheduleVO();
+        vo.setEnrollStartTime(schedule.getEnrollStartTime());
+        vo.setEnrollEndTime(schedule.getEnrollEndTime());
+        vo.setActivityStartTime(schedule.getActivityStartTime());
+        vo.setActivityEndTime(schedule.getActivityEndTime());
+        vo.setSigninStartTime(schedule.getSigninStartTime());
+        vo.setSigninEndTime(schedule.getSigninEndTime());
+        vo.setSignoutStartTime(schedule.getSignoutStartTime());
+        vo.setSignoutEndTime(schedule.getSignoutEndTime());
+        return vo;
+    }
+
+
+    public RejectedActivityDraftVO getRejectedActivityDraft(Long activityId){
+        RejectedActivityDraftVO rejectedActivityDraftVO = new RejectedActivityDraftVO();
+        rejectedActivityDraftVO.setActivityVO(getDraftActivityPart(activityId));
+        rejectedActivityDraftVO.setScheduleVO(getDraftActivitySchedulePart(activityId));
+        rejectedActivityDraftVO.setInitialReviewer(
+                reviewLogService.getInitialReviewerIdNameByActivityId(activityId));
+        rejectedActivityDraftVO.setCanEnrollCollege(
+                canEnrollCollegeService.listIdNameByActivityId(activityId));
+        rejectedActivityDraftVO.setCanEnrollTribe(
+                canEnrollTribeService.getIdNameByActivityId(activityId));
+        rejectedActivityDraftVO.setCanEnrollGrade(
+                canEnrollGradeService.getIdNameByActivityId(activityId));
+        rejectedActivityDraftVO.setEditActivityDraftSelectionsVO(
+                getEditActivityDraftSelections());
+        return rejectedActivityDraftVO;
+
+    }
+
+
+    public void validateParticipateTypeNotEmpty(ActivityWithScheduleAddForm addForm){
+        //不能提交空列表
+        if(addForm.getCanEnrollTribeIdList().isEmpty()
+                &&addForm.getCanEnrollGradeIdList().isEmpty()
+                &&addForm.getCanEnrollCollegeIdList().isEmpty()){
+            throw new BusinessException(UserErrorCode.PARAM_ERROR);
+        }
+    }
 
     public void submitDraft(ActivityWithScheduleAddForm addForm) {
         log.info("添加待审核的活动：{}", addForm.toString());
+        Long userId = SmartRequestUtil.getRequestUserId();
+        portalUserValidator.validateIsCurrentUserPortal();
+        portalUserValidator.validatePortalUserCanPublishActivity();
+        PortalUserEntity portalUser = portalUserValidator.validatePortalUserId(userId);
+        validateParticipateTypeNotEmpty(addForm);
         //todo 根据这个方法的写法优化其他方法
-        //todo 修改validator
         //todo 重写定时任务
         ActivityEntity activityEntity= ActivityAddFormConverter.convert(addForm.getActivityAddForm());
         ActivityScheduleEntity scheduleEntity= ActivityScheduleAddFormConverter.convert(addForm.getActivityScheduleAddForm());
 
-        List<ActivityCanEnrollCollegeEntity> collegeList;
-        List<ActivityCanEnrollGradeEntity> gradeList;
-
-        if(!addForm.getCanEnrollCollegeIdList().isEmpty()&&!addForm.getCanEnrollGradeIdList().isEmpty()){
-            collegeList=factory.buildCanEnrollCollege(addForm);
-            gradeList=factory.buildCanEnrollGrade(addForm);
-        } else {
-            gradeList = null;
-            collegeList = null;
-        }
-        List<ActivityCanEnrollTribeEntity> tribeList;
-        if(!addForm.getCanEnrollTribeIdList().isEmpty()){
-            tribeList=factory.buildCanEnrollTribe(addForm);
-        } else {
-            tribeList = null;
-        }
-        ActivityEnrollNum activityEnrollNum=factory.buildEnrollNum();
-        List<ActivitySigninManagerEntity> signinManagerList = factory.buildSigninManagerList(addForm);
-        
         transactionTemplate.executeWithoutResult(status -> {
             try {
-                Long id = doSaveActivityTransaction(activityEntity);
+                Long activityId = doSaveActivityTransaction(activityEntity,portalUser);
+                scheduleEntity.setActivityId(activityId);
+                doSaveActivityScheduleTransaction(scheduleEntity
+                        ,addForm.getActivityAddForm().getNeedSignOut());
+                canEnrollGradeService.doSaveBatchTransaction(addForm.getCanEnrollGradeIdList(),activityId);
+                canEnrollCollegeService.doSaveBatchTransaction(addForm.getCanEnrollCollegeIdList(),activityId);
+                canEnrollTribeService.doSaveBatchTransaction(addForm.getCanEnrollTribeIdList(),activityId);
+                signinManagerService.doSaveBatchTransaction(
+                        addForm.getActivitySigninManagerIdList(),
+                        addForm.getActivityAddForm().getActivityBelongToSchoolId(),
+                        activityId);
 
-                scheduleEntity.setActivityId(id);
-                activityEnrollNum.setActivityId(id);
-                assert collegeList != null;
-                if(!collegeList.isEmpty()&&!gradeList.isEmpty()){
-                    collegeList.forEach((e)->e.setActivityId(id));
-                    gradeList.forEach(e->e.setActivityId(id));
-                    canEnrollGradeService.doSaveBatchTransaction(gradeList);
-                    canEnrollCollegeService.doSaveBatchTransaction(collegeList);
-                }
-                assert tribeList != null;
-                if(!tribeList.isEmpty()){
-                    tribeList.forEach(e->e.setActivityId(id));
-                    canEnrollTribeService.doSaveBatchTransaction(tribeList);
-                }
-                signinManagerList.forEach(e->e.setActivityId(id));
-                signinManagerService.doSaveBatchTransaction(signinManagerList);
-
-                doSaveActivityScheduleTransaction(scheduleEntity);
-
-                log.info("活动草稿提交成功, activityId={}", id);
+                log.info("活动草稿提交成功, activityId={}", activityId);
             } catch (Exception e) {
                 log.error("活动草稿提交失败 exception occurred, title={}", activityEntity.getTitle(), e);
                 status.setRollbackOnly();
@@ -173,195 +237,194 @@ public class ActivityWithScheduleService {
         });
     }
 
-    private Long doSaveActivityTransaction(ActivityEntity activityEntity){
-        return transactionTemplate.execute(status -> {
-            if (!activityManager.save(activityEntity)) {
-                log.warn("创建未审核活动事务失败：{}，插入activityEntity失败", activityEntity.getTitle());
-                status.setRollbackOnly();
-            }
-            return activityEntity.getId();
-        });
+    public void deleteDraft(Long activityId){
+        doDeleteActivityTransaction(activityId);
+        doDeleteActivityScheduleTransaction(activityId);
+        canEnrollCollegeService.doDeleteBatchTransaction(activityId);
+        canEnrollGradeService.doDeleteBatchTransaction(activityId);
+        canEnrollTribeService.doDeleteBatchTransaction(activityId);
+        signinManagerService.doDeleteBatchTransaction(activityId);
     }
-    private void doSaveActivityScheduleTransaction(ActivityScheduleEntity schedule){
+
+    public Long doSaveActivityTransaction(ActivityEntity entity,PortalUserEntity portalUser){
+        activityValidator.validateAdd(entity,portalUser);
         transactionTemplate.executeWithoutResult(status -> {
-            //保存activity和activity时间表
-            if (!activityScheduleManager.save(schedule)) {
-                log.error("创建未审核活动事务失败：{}，插入activityScheduleEntity失败", schedule.getActivityId());
-                status.setRollbackOnly();
+            try {
+                if(!activityManager.save(entity)){
+                    throw new BusinessException(SystemErrorCode.SYSTEM_ERROR);
+                }//todo根据这个重写事务回滚和事务抛异常
+            }catch (Exception e){
+                log.error("插入activity失败，事务回滚，entity:{}",entity,e);
+                throw new BusinessException(SystemErrorCode.SYSTEM_ERROR);
+            }
+        });
+        return entity.getId();
+    }
+
+    public void doSaveActivityScheduleTransaction(ActivityScheduleEntity schedule,boolean needSignOut){
+        activityScheduleValidator.validateActivityScheduleOrder(schedule,needSignOut);
+        transactionTemplate.executeWithoutResult(status -> {
+            try {
+                if (!activityScheduleManager.save(schedule)) {
+                    throw new BusinessException(SystemErrorCode.SYSTEM_ERROR);
+                }
+            }catch (Exception e){
+                log.error("doSaveActivityScheduleTransaction事务失败回滚：schedule={}",schedule);
             }
         });
     }
 
-    public ResponseDTO<String> deleteActivityWithSchedule(Long activityId) {
-        log.info("ActivityWithScheduleService.deleteActivityWithSchedule called, activityId={}", activityId);
-        
+
+    public void doDeleteActivityTransaction(Long activityId) {
         ActivityEntity deletedActivity = new ActivityEntity();
         deletedActivity.setDeletedFlag(true);
         deletedActivity.setId(activityId);
 
-        ActivityScheduleEntity deletedSchedule = new ActivityScheduleEntity();
-        deletedSchedule.setActivityId(activityId);
-        deletedSchedule.setDeletedFlag(true);
-
-        ActivityEntity activityEntity = activityManager.getById(activityId);
-        if(activityEntity==null){
-            log.warn("ActivityWithScheduleService.deleteActivityWithSchedule failed: activity not found, activityId={}", activityId);
-            return ResponseDTO.error(UserErrorCode.PARAM_ERROR, "活动不存在");
-        }
-
-        return transactionTemplate.execute(status -> {
-            boolean activityUpdated = activityManager.updateById(deletedActivity);
-            boolean scheduleUpdated = activityScheduleManager.updateById(deletedSchedule);
-            
-            if (!activityUpdated || !scheduleUpdated) {
-                log.error("ActivityWithScheduleService.deleteActivityWithSchedule failed: failed to update activity or schedule, activityId={}", activityId);
-                status.setRollbackOnly();
-                return ResponseDTO.error(UnexpectedErrorCode.BUSINESS_HANDING, "删除失败");
+        transactionTemplate.executeWithoutResult(status -> {
+            try {
+                if (!activityManager.updateById(deletedActivity)) {
+                    throw new BusinessException(SystemErrorCode.SYSTEM_ERROR);
+                }
+            }catch (Exception e){
+                log.info("doDeleteActivityTransaction success: activity deleted, activityId={}", activityId,e);
+                throw new BusinessException(SystemErrorCode.SYSTEM_ERROR);
             }
-            log.info("ActivityWithScheduleService.deleteActivityWithSchedule success: activity deleted, activityId={}", activityId);
-            return ResponseDTO.ok("删除成功");
         });
     }
 
-
-    public void updateActivityWithSchedule(ActivityWithScheduleUpdateForm updateForm) {
-        log.info("ActivityWithScheduleService.updateActivityWithSchedule called, activityId={}", updateForm.getId());
-
-        ActivityEntity activityEntity = UpdateContentFactory.buildActivity(updateForm);
-        boolean isIgnoreActivity=UpdateFormUtil.isEntityPropertiesAllNull(activityEntity,"id");
-        ActivityScheduleEntity activitySchedule = UpdateContentFactory.buildActivitySchedule(updateForm);
-        boolean isIgnoreActivitySchedule = UpdateFormUtil.isEntityPropertiesAllNull(activitySchedule,"activityId");
-        List<ActivityCanEnrollCollegeEntity> collegeList = UpdateContentFactory.buildCanEnrollCollege(updateForm);
-        boolean isIgnoreCollege = collegeList == null;
-        List<ActivityCanEnrollGradeEntity> gradeList = UpdateContentFactory.buildCanEnrollGrade(updateForm);
-        boolean isIgnoreGrade = gradeList == null;
-        List<ActivityCanEnrollTribeEntity> tribeList = UpdateContentFactory.buildCanEnrollTribe(updateForm);
-        boolean isIgnoreTribe = tribeList==null;
-        ActivityReviewLogEntity reviewLog = UpdateContentFactory.buildReviewLog(updateForm);
-        boolean isIgnoreReviewLog = reviewLog==null;
-        List<ActivitySigninManagerEntity> signinManagerList = UpdateContentFactory.buildSigninManagerList(updateForm);
-        boolean isIgnoreSigninManager = signinManagerList==null;
-
-
-        //活动与年级学院部落的关系需要删掉旧的再插入新的
-        LambdaUpdateWrapper<ActivityCanEnrollCollegeEntity> deleteOldCollege=new LambdaUpdateWrapper<>();
-        deleteOldCollege.eq(ActivityCanEnrollCollegeEntity::getActivityId,updateForm.getId())
-                    .set(ActivityCanEnrollCollegeEntity::getDeletedFlag,true);
-
-        LambdaUpdateWrapper<ActivityCanEnrollGradeEntity> deleteOldGrade = new LambdaUpdateWrapper<>();
-        deleteOldGrade.eq(ActivityCanEnrollGradeEntity::getActivityId,updateForm.getId())
-                .set(ActivityCanEnrollGradeEntity::getDeletedFlag,true);
-
-        LambdaUpdateWrapper<ActivityCanEnrollTribeEntity> deleteOldTribe=new LambdaUpdateWrapper<>();
-        deleteOldTribe.eq(ActivityCanEnrollTribeEntity::getActivityId,updateForm.getId())
-                        .set(ActivityCanEnrollTribeEntity::getDeletedFlag,true);
-
-        LambdaUpdateWrapper<ActivitySigninManagerEntity> deleteSignInManager = new LambdaUpdateWrapper<>();
-        deleteSignInManager.eq(ActivitySigninManagerEntity::getActivityId,updateForm.getId())
-                        .set(ActivitySigninManagerEntity::getDeletedFlag,true);
+    public void doDeleteActivityScheduleTransaction(Long activityId) {
+        ActivityScheduleEntity deletedSchedule = new ActivityScheduleEntity();
+        deletedSchedule.setDeletedFlag(true);
+        deletedSchedule.setActivityId(activityId);
 
         transactionTemplate.executeWithoutResult(status -> {
             try {
-                if (!isIgnoreActivity) {
-                    if(!activityManager.updateById(activityEntity)){
-                        log.warn("更新活动内容的activityEntity失败回滚，activityId:{},update activity entity:{}",
-                                activityEntity.getId(),activityEntity);
-                        status.setRollbackOnly();
-                    }
+                if (!activityScheduleManager.updateById(deletedSchedule)) {
+                    throw new BusinessException(SystemErrorCode.SYSTEM_ERROR);
                 }
-                if(!isIgnoreActivitySchedule){
-                    if(!activityScheduleManager.updateById(activitySchedule)){
-                        log.warn("更新活动内容的activityScheduleEntity失败回滚，activityId:{}，update activity schedule entity:{}"
-                                ,activityEntity.getId()
-                                ,activitySchedule);
-                        status.setRollbackOnly();
-                    }
+            }catch (Exception e){
+                log.info("doDeleteActivityTransaction success: activity deleted, activityId={}", activityId,e);
+                throw new BusinessException(SystemErrorCode.SYSTEM_ERROR);
+            }
+        });
+    }
+
+    public void doUpdateActivityTransaction(ActivityUpdateForm updateForm){
+        if (Objects.isNull(updateForm)){
+            return;
+        }
+        ActivityEntity activity = ActivityUpdateForm.convert(updateForm);
+        activityValidator.validateUpdate(activity);
+        transactionTemplate.executeWithoutResult(status -> {
+            try {
+                if (!activityManager.updateById(activity)) {
+                    throw new BusinessException(SystemErrorCode.SYSTEM_ERROR);
                 }
-                if(!isIgnoreReviewLog){
-                    if(!activityReviewLogManager.updateById(reviewLog)){
-                        log.warn("更新活动内容的activityReviewLogEntity失败回滚，activityId:{},update review log :{}",
-                                activityEntity.getId(),reviewLog);
-                        status.setRollbackOnly();
-                    }
+            }catch (Exception e){
+                log.error("doUpdateActivityTransaction 事务失败回滚：activity={}", activity,e);
+                throw new BusinessException(SystemErrorCode.SYSTEM_ERROR);
+            }
+        });
+
+    }
+
+    public void doUpdateActivityScheduleTransaction(ActivityEntity activity,ActivityScheduleUpdateForm updateForm){
+        if(Objects.isNull(updateForm)){
+            return;
+        }
+        ActivityScheduleEntity schedule = ActivityScheduleUpdateForm.convert(updateForm);
+        schedule.setActivityId(activity.getId());
+        activityScheduleValidator.validateUpdate(activity,schedule);
+        transactionTemplate.executeWithoutResult(status -> {
+            try{
+                if(!activityScheduleManager.updateById(schedule)){
+                    throw new BusinessException(SystemErrorCode.SYSTEM_ERROR);
                 }
-                if(!isIgnoreGrade){
-                    if(!activityCanEnrollGradeManager.update(deleteOldGrade)){
-                        log.warn("更新活动内容中的删除旧的activityCanEnrollGrade失败回滚,activityId：{}",updateForm.getId());
-                        status.setRollbackOnly();
-                    }
-                    if(!activityCanEnrollGradeManager.saveBatch(gradeList)){
-                        log.warn("更新活动内容中的插入新的activityCanEnrollGrade失败回滚，activityId:{}",updateForm.getId());
-                        status.setRollbackOnly();
-                    }
-                }
-                if(!isIgnoreCollege){
-                    if(!activityCanEnrollCollegeManager.update(deleteOldCollege)){
-                        log.warn("更新活动内容中的删除旧的activityCanEnrollCollege失败回滚,activityId：{}",updateForm.getId());
-                        status.setRollbackOnly();
-                    }
-                    if(!activityCanEnrollCollegeManager.saveBatch(collegeList)){
-                        log.warn("更新活动内容中的插入新的activityCanEnrollCollege失败回滚，activityId:{}",updateForm.getId());
-                        status.setRollbackOnly();
-                    }
-                }
-                if(!isIgnoreTribe){
-                    if(!activityCanEnrollTribeManager.update(deleteOldTribe)){
-                        log.warn("更新活动内容中的删除旧的activityCanEnrollTribe失败回滚,activityId：{}",updateForm.getId());
-                        status.setRollbackOnly();
-                    }
-                    if(!activityCanEnrollTribeManager.saveBatch(tribeList)){
-                        log.warn("更新活动内容中的插入新的activityCanEnrollTribe失败回滚，activityId:{}",updateForm.getId());
-                        status.setRollbackOnly();
-                    }
-                }
-                if(!isIgnoreSigninManager){
-                    if(!signinManagerManager.update(deleteSignInManager)){
-                        log.warn("更新活动内容中删除旧的activitySigninManager失败回滚，activityId:{}",updateForm.getId());
-                        status.setRollbackOnly();
-                    }
-                    if(!signinManagerManager.saveBatch(signinManagerList)){
-                        log.warn("更新活动内容中的插入新的activitySigninManager失败回滚，activityId:{}",updateForm.getId());
-                        status.setRollbackOnly();
-                    }
-                }
+            }catch (Exception e){
+                log.error("doUpdateActivityScheduleTransaction事务失败回滚：activity schedule={}",schedule,e);
+                throw new BusinessException(SystemErrorCode.SYSTEM_ERROR);
+            }
+
+        });
+    }
+
+    //只有当草稿未提交或重新成为草稿或在审核员手里可以修改
+    //在草稿状态可以改审核员
+    //被驳回会变成草稿
+    //一旦提交草稿就只能由审核员进行修改
+    //todo 驳回的话数据库的提交上来的都要作废，还要返回经过审核中改动的表单
+    public void editActivityDraft(Long activityId,ActivityWithScheduleUpdateForm updateForm) {
+        ActivityEntity activity = activityValidator.validateActivityId(activityId);
+        validateEditDraftPermission(activity);
+        transactionTemplate.executeWithoutResult(status -> {
+            try {
+                doUpdateActivityTransaction(updateForm.getActivityUpdateForm());
+                doUpdateActivityScheduleTransaction(activity,updateForm.getActivityScheduleUpdateForm());
+                canEnrollCollegeService.doUpdateBatchTransaction(updateForm.getCanEnrollCollegeIdList(),activityId);
+                canEnrollGradeService.doUpdateBatchTransaction(updateForm.getCanEnrollGradeIdList(),activityId);
+                canEnrollTribeService.doUpdateBatchTransaction(updateForm.getCanEnrollTribeIdList(), activityId);
+                signinManagerService.doUpdateBatchTransaction(updateForm.getActivitySigninManagerIdList(),activity.getActivityBelongToSchoolId(),activityId);
             } catch (Exception e) {
-                log.warn("更新活动内容事务失败,activityId:{},{},{},{}",updateForm.getId(), e.getCause(), e.getMessage(), e.getStackTrace());
+                log.warn("更新活动内容事务失败,activityId:{}",activityId, e);
                 status.setRollbackOnly();
                 throw new BusinessException(SystemErrorCode.SYSTEM_ERROR, "更新活动内容失败，请重试");
             }
 
         });
     }
-    /**
-    * <p>
-    * description: 获取活动和时间表
-    * </p>
-    *
-    * @param queryForm
-    * @return:
-    * @author: akkkka114514
-    * @date: 16:10:35 2025-09-18
-    */
 
-    public ResponseDTO<PageResult<ActivityWithScheduleVO>> queryActivityWithSchedule(ActivityWithScheduleQueryForm queryForm){
-        log.info("ActivityWithScheduleService.queryActivityWithSchedule called, queryForm={}", queryForm);
-        Page<?> page = SmartPageUtil.convert2PageQuery(queryForm);
-        List<ActivityWithScheduleVO> resultList = activityDao.queryActivityWithSchedule(page, queryForm);
-        PageResult<ActivityWithScheduleVO> pageResult = SmartPageUtil.convert2PageResult(page, resultList);
-        log.info("ActivityWithScheduleService.queryActivityWithSchedule result: count={}", resultList.size());
-        return ResponseDTO.ok(pageResult);
+    public void validateEditDraftPermission(ActivityEntity activity){
+        RequestUser requestUser = SmartRequestUtil.getRequestUser();
+        ActivityReviewStage curReviewStage = reviewLogService.getCurReviewStage(activity.getId());
+        if(requestUser instanceof RequestBackendUser){
+            //审核只要不是这两个都不能改活动内容
+            if(!Objects.equals(curReviewStage,ActivityReviewStage.INITIAL_CONTENT_REVIEW)&&
+            !Objects.equals(curReviewStage,ActivityReviewStage.FINAL_CONTENT_REVIEW)){
+                throw new BusinessException(UserErrorCode.NO_PERMISSION);
+            }
+            Long curReviewerId = reviewLogService.getCurReviewer(activity.getId());
+            if(!Objects.equals(curReviewerId,requestUser.getUserId())){
+                throw new BusinessException(UserErrorCode.NO_PERMISSION);
+            }
+        }
+        if(requestUser instanceof RequestPortalUser){
+            //只有activity manager能改
+            if(!Objects.equals(activity.getActivityManagerId(),requestUser.getUserId())){
+                throw new BusinessException(UserErrorCode.NO_PERMISSION);
+            }
+            //只有draft阶段能改
+            if(!Objects.equals(curReviewStage,ActivityReviewStage.DRAFT)){
+                throw new BusinessException(UserErrorCode.NO_PERMISSION);
+            }
+        }
+
     }
 
-    public ResponseDTO<String> batchDelete(List<Long> ids){
-        log.info("ActivityWithScheduleService.batchDelete called, idsCount={}", ids != null ? ids.size() : 0);
-        int result = activityDao.batchDelete(ids);
-        if (result > 0) {
-            log.info("ActivityWithScheduleService.batchDelete success: deleted {} records", result);
-            return ResponseDTO.ok();
-        } else {
-            log.warn("ActivityWithScheduleService.batchDelete failed: no records deleted");
-            return ResponseDTO.error(UnexpectedErrorCode.BUSINESS_HANDING, "删除失败");
-        }
+    public EditActivityDraftSelectionsVO getEditActivityDraftSelections(){
+        portalUserValidator.validateIsCurrentUserPortal();
+        Long userId = SmartRequestUtil.getRequestUserId();
+        PortalUserEntity portalUser = portalUserManager.getById(userId);
+        Long schoolId = portalUser.getSchoolId();
+
+        EditActivityDraftSelectionsVO vo = new EditActivityDraftSelectionsVO();
+
+        vo.setSelectableCollegeVOList(collegeInfoService.getIdNameBySchoolId(schoolId));
+
+        vo.setSelectableOrganizationVOList(organizationInfoService.getIdNameBySchoolId(schoolId));
+
+        vo.setSelectableCollegeReviewerList(
+                backendUserService.getCollegeReviewerListMap(
+                        collegeInfoService.getIdsBySchoolId(schoolId)));
+
+        vo.setSelectableOrganizationReviewerList(
+                backendUserService.getOrganizationReviewerListMap(
+                        organizationInfoService.getIdsBySchoolId(schoolId)));
+
+        vo.setSelectableCategoryVOList(categoryService.getAll());
+
+        vo.setSelectableGradeVOList(gradeInfoService.getAll());
+
+        return vo;
     }
 
     public ResponseDTO<Page<ActivityWithScheduleVO>> notStartAndPendingEnrollActivityPageGlobal(Long pageNum, Long pageSize){
@@ -384,27 +447,27 @@ public class ActivityWithScheduleService {
 
     public ActivityDetailVO detail(Long activityId){
         log.info("开始查询活动详情，activityId: {}", activityId);
-        
+
         ActivityEntity activity = activityManager.getById(activityId);
         if(activity==null||activity.getDeletedFlag()){
             log.warn("活动不存在或已删除，activityId: {}", activityId);
             throw new BusinessException(UserErrorCode.PARAM_ERROR,"活动不存在");
         }
         log.debug("查询到活动基本信息，title: {}", activity.getTitle());
-        
+
         ActivityScheduleEntity activitySchedule = activityScheduleManager.getByActivityId(activityId);
         log.debug("查询到活动时间表信息");
-        
+
         ActivityCategoryEntity activityCategory = activityCategoryManager.getById(activity.getCategoryId());
         log.debug("查询到活动分类信息，category: {}", activityCategory.getName());
-        
+
         ActivityEnrollNum activityEnrollNum = activityEnrollNumDao.selectById(activityId);
         log.debug("查询到活动报名人数，enrollNum: {}", activityEnrollNum.getEnrollNum());
 
         List<Long> collegeIds = canEnrollCollegeService.getCollegeIdsByActivityId(activityId);
         List<Long> tribeIds = canEnrollTribeService.getTribeIdsByActivityId(activityId);
         List<Long> gradeIds = canEnrollGradeService.getGradeIdByActivityId(activityId);
-        log.debug("查询到报名限制条件 - collegeIds: {}, tribeIds: {}, gradeIds: {}", 
+        log.debug("查询到报名限制条件 - collegeIds: {}, tribeIds: {}, gradeIds: {}",
                 collegeIds, tribeIds, gradeIds);
 
         List<String> collegeNames=null;
@@ -434,13 +497,13 @@ public class ActivityWithScheduleService {
         }
 
         // 构建查询条件：获取活动报名用户 ID 及签到状态
-        LambdaQueryWrapper<ActivityEnrollmentEntity> activityEnrollmentQw = 
+        LambdaQueryWrapper<ActivityEnrollmentEntity> activityEnrollmentQw =
                 ActivityEnrollmentService.listByActivityIdQw(activityId)
                 .select(ActivityEnrollmentEntity::getUserId)
                 .select(ActivityEnrollmentEntity::getSignInStatus);
         List<ActivityEnrollmentEntity> enrollmentEntities = enrollmentManager.list(activityEnrollmentQw);
         log.debug("查询到活动报名记录数：{}", enrollmentEntities != null ? enrollmentEntities.size() : 0);
-                
+
         // 将报名用户列表转换为 Map<userId, signInStatus>，便于快速查找签到状态
         if (enrollmentEntities != null && !enrollmentEntities.isEmpty()) {
             Map<Long, Boolean> userSignInStatus = enrollmentEntities.stream().collect(Collectors.toMap(
@@ -448,14 +511,14 @@ public class ActivityWithScheduleService {
                     ActivityEnrollmentEntity::getSignInStatus
             ));
             log.debug("已构建用户签到状态 Map，大小：{}", userSignInStatus.size());
-                    
+
             // 提取所有报名用户的 ID 列表
             List<Long> enrollerIds = enrollmentEntities
                     .stream()
                     .map(ActivityEnrollmentEntity::getUserId)
                     .toList();
             log.debug("提取到报名用户 ID 列表，数量：{}", enrollerIds.size());
-                    
+
             // 批量查询 Portal 用户信息
             List<PortalUserEntity> portalUsers = portalUserManager.listByIds(enrollerIds);
             log.debug("查询到 Portal 用户信息，数量：{}", portalUsers != null ? portalUsers.size() : 0);
@@ -509,8 +572,8 @@ public class ActivityWithScheduleService {
         activityDetailVO.setScoreCanGet(activity.getScoreCanGet());
         activityDetailVO.setEnrollNumLimit(activity.getEnrollNumLimit());
         activityDetailVO.setDescription(activity.getDescription());
-        activityDetailVO.setEnrollNeedReview(activity.isEnrollNeedReview());
-        activityDetailVO.setNeedSignOut(activity.isNeedSignOut());
+        activityDetailVO.setEnrollNeedReview(activity.getEnrollNeedReview());
+        activityDetailVO.setNeedSignOut(activity.getNeedSignOut());
         activityDetailVO.setAttachment(activity.getAttachment());
         activityDetailVO.setCategory(activityCategory.getName());
         activityDetailVO.setCoverImg(activity.getCoverImg());
@@ -542,8 +605,6 @@ public class ActivityWithScheduleService {
         }
         Long activityId = reviewLog.getActivityId();
         ActivityEntity activity = activityManager.getById(activityId);
-        assert activity!=null;
-        assert !activity.getDeletedFlag();
         //防止无关人士
         if(Objects.equals(activity.getActivityManagerId(),proposerId)){
             throw new BusinessException(UserErrorCode.NO_PERMISSION,"你不是该活动的活动管理员，无权操作");

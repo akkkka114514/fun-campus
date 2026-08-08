@@ -3,20 +3,20 @@ import java.time.LocalDateTime;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.akkkka.admin.module.system.backendUser.domain.form.*;
+import com.akkkka.common.domain.IdNameVO;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.google.common.collect.Lists;
 import jakarta.annotation.Resource;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import com.akkkka.admin.module.business.funcampus.collegeInfo.domain.vo.SimpleCollegeInfoVO;
 import com.akkkka.admin.module.business.funcampus.collegeInfo.service.CollegeInfoService;
 import com.akkkka.admin.module.business.funcampus.organizationInfo.domain.vo.SimpleOrganizationInfoVO;
 import com.akkkka.admin.module.business.funcampus.organizationInfo.service.OrganizationInfoService;
 import com.akkkka.admin.module.system.backendUser.domain.entity.BackendUserEntity;
 import com.akkkka.admin.module.system.backendUser.dao.BackendUserDao;
-import net.lab1024.sa.admin.module.system.backendUser.domain.form.*;
 import com.akkkka.admin.module.system.backendUser.domain.vo.BackendUserVO;
-import com.akkkka.admin.module.system.backendUser.domain.vo.SimpleBackendUserVO;
 import com.akkkka.admin.module.system.backendUser.manager.BackendUserManager;
 import com.akkkka.admin.module.system.login.service.LoginService;
 import com.akkkka.admin.module.system.role.dao.RoleBackendUserDao;
@@ -49,31 +49,37 @@ import java.util.stream.Collectors;
  */
 @Service
 @Slf4j
+@AllArgsConstructor
 public class BackendUserService extends ServiceImpl<BackendUserDao, BackendUserEntity> {
-    @Resource
     private BackendUserDao backendUserDao;
-
-    @Resource
     private BackendUserManager backendUserManager;
-
-    @Resource
     private RoleBackendUserDao roleBackendUserDao;
-
     @Resource
     private SecurityPasswordService securityPasswordService;
-
-    @Resource
     @Lazy
     private LoginService loginService;
-
-    @Resource
     private CollegeInfoService collegeInfoService;
-
-    @Resource
     private OrganizationInfoService organizationInfoService;
 
     public BackendUserEntity getById(Long backendUserId) {
         return backendUserDao.selectById(backendUserId);
+    }
+
+    public BackendUserVO getVOById(Long id){
+        BackendUserEntity e = new BackendUserEntity();
+        BackendUserVO vo = new BackendUserVO();
+        vo.setId(id);
+        vo.setUsername(e.getUsername());
+        vo.setDisabledFlag(e.getDisabledFlag());
+        vo.setCreateTime(e.getCreateTime());
+        vo.setRoleIdList(null);
+        vo.setRoleNameList(null);
+        vo.setEmail(e.getEmail());
+        vo.setSchoolId(e.getSchoolId());
+        vo.setCollegeId(e.getCollegeId());
+        vo.setOrganizationId(e.getOrganizationId());
+
+        return vo;
     }
 
 
@@ -352,26 +358,63 @@ public class BackendUserService extends ServiceImpl<BackendUserDao, BackendUserE
     /**
      * 获取学院审核人列表
      */
-    public Map<Long, List<SimpleBackendUserVO>> getCollegeReviewerList() {
-        List<SimpleCollegeInfoVO> collegeInfoList = collegeInfoService.getCollegeInfoByUserId();
-        Map<Long , List<SimpleBackendUserVO>> collegeReviewerList = new HashMap<>();
-        collegeInfoList.forEach(e -> {
-            List<SimpleBackendUserVO> backendUserList = backendUserDao.getBackendUserByCollegeId(e.getId());
-            collegeReviewerList.put(e.getId(), backendUserList);
-        });
-        return collegeReviewerList;
+    public Map<Long, List<IdNameVO>> getCollegeReviewerListMap(List<Long> collegeIdList) {
+        Map<Long , List<IdNameVO>> result = new HashMap<>();
+        if(collegeIdList.isEmpty()){
+            return result;
+        }
+
+        for(Long id:collegeIdList){
+            result.put(id,new LinkedList<>());
+            backendUserManager.list(
+                    Wrappers.lambdaQuery(BackendUserEntity.class)
+                            .eq(BackendUserEntity::getCollegeId,id)
+                            .eq(BackendUserEntity::getCanReview,true)
+                            .eq(BackendUserEntity::getDeletedFlag,false)
+                            .select(BackendUserEntity::getId)
+                            .select(BackendUserEntity::getUsername)
+            ).stream().map(backendUser -> {
+                IdNameVO vo = new IdNameVO();
+                vo.setId(backendUser.getId());
+                vo.setName(backendUser.getUsername());
+                return vo;
+            }).forEach(idNameVO -> {
+                result.get(id).add(idNameVO);
+            });
+
+        }
+        return result;
     }
     /**
      * 获取组织审核人列表
      */
-    public Map<Long, List<SimpleBackendUserVO>> getOrganizationReviewerList() {
-        List<SimpleOrganizationInfoVO> organizationInfoList = organizationInfoService.getOrganizationInfoByUserId();
-        Map<Long , List<SimpleBackendUserVO>> organizationReviewerList = new HashMap<>();
-        organizationInfoList.forEach(e -> {
-            List<SimpleBackendUserVO> backendUserList = backendUserDao.getBackendUserByOrganizationId(e.getId());
-            organizationReviewerList.put(e.getId(), backendUserList);
-        });
-        return organizationReviewerList;
+    public Map<Long, List<IdNameVO>> getOrganizationReviewerListMap(List<Long> organizationIdList) {
+        Map<Long , List<IdNameVO>> result = new HashMap<>();
+        if(organizationIdList.isEmpty()){
+            return result;
+        }
+
+        for(Long id:organizationIdList){
+            result.put(id,new LinkedList<>());
+            backendUserManager.list(
+                    Wrappers.lambdaQuery(BackendUserEntity.class)
+                            .eq(BackendUserEntity::getOrganizationId,id)
+                            .eq(BackendUserEntity::getCanReview,true)
+                            .eq(BackendUserEntity::getDeletedFlag,false)
+                            .select(BackendUserEntity::getId)
+                            .select(BackendUserEntity::getUsername)
+            ).stream().map(backendUser -> {
+                IdNameVO vo = new IdNameVO();
+                vo.setId(backendUser.getId());
+                vo.setName(backendUser.getUsername());
+                return vo;
+            }).forEach(idNameVO -> {
+                result.get(id).add(idNameVO);
+            });
+
+        }
+        return result;
     }
+
 
 }

@@ -1,5 +1,6 @@
 package com.akkkka.admin.module.business.funcampus.activityCanEnrollCollege.domain.vo;
 
+import com.akkkka.admin.module.business.funcampus.collegeInfo.domain.vo.CollegeInfoVO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 import lombok.Data;
@@ -23,7 +24,10 @@ public class ActivityCanEnrollCollegeVO {
     private Long activityId;
 
     @Schema(description = "能报名的学院id")
-    private Long canEnrollCollege;
+    private Long canEnrollCollegeId;
+
+    @Schema(description = "学院名")
+    private String collegeName;
 
     @Schema(description = "是否删除")
     private Boolean deletedFlag;

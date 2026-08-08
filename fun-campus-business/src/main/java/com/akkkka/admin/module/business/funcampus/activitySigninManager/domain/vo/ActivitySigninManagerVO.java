@@ -1,5 +1,7 @@
 package com.akkkka.admin.module.business.funcampus.activitySigninManager.domain.vo;
 
+import com.akkkka.admin.module.business.funcampus.activitySigninManager.domain.entity.ActivitySigninManagerEntity;
+import com.akkkka.admin.module.business.funcampus.portalUser.domain.vo.PortalUserVO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 import lombok.Data;
@@ -23,7 +25,7 @@ public class ActivitySigninManagerVO {
     private Long activityId;
 
     @Schema(description = "活动签到员主键")
-    private Long portalUserId;
+    private PortalUserVO portalUserVO;
 
     @Schema(description = "是否已删除")
     private Boolean deletedFlag;
@@ -34,7 +36,16 @@ public class ActivitySigninManagerVO {
     @Schema(description = "修改时间")
     private LocalDateTime updateTime;
 
-    @Schema(description = "签到员用户名")
-    private String username;
+    public static ActivitySigninManagerVO convert(ActivitySigninManagerEntity signinManager,PortalUserVO portalUserVO){
+        ActivitySigninManagerVO vo = new ActivitySigninManagerVO();
+        vo.setId(signinManager.getId());
+        vo.setActivityId(signinManager.getActivityId());
+        vo.setPortalUserVO(portalUserVO);
+        vo.setDeletedFlag(false);
+        vo.setCreateTime(signinManager.getCreateTime());
+        vo.setUpdateTime(signinManager.getUpdateTime());
+
+        return vo;
+    }
 
 }

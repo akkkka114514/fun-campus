@@ -2,6 +2,9 @@ package com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.v
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
+
+import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 /**
@@ -14,27 +17,13 @@ import lombok.Data;
 
 @Data
 public class ActivityScheduleVO {
-
-
-    @Schema(description = "主键")
-    private Long activityId;
-
-    @Schema(description = "报名开始时间")
     private LocalDateTime enrollStartTime;
-
-    @Schema(description = "报名结束时间")
     private LocalDateTime enrollEndTime;
-
-    @Schema(description = "活动开始时间")
     private LocalDateTime activityStartTime;
-
-    @Schema(description = "活动结束时间")
     private LocalDateTime activityEndTime;
-
-    @Schema(description = "签到开始时间")
     private LocalDateTime signinStartTime;
-
-    @Schema(description = "签到结束时间")
     private LocalDateTime signinEndTime;
+    private LocalDateTime signoutStartTime;
+    private LocalDateTime signoutEndTime;
 
 }

@@ -6,7 +6,6 @@ import com.akkkka.admin.module.business.funcampus.collegeInfo.domain.form.Colleg
 import com.akkkka.admin.module.business.funcampus.collegeInfo.domain.vo.CollegeInfoVO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.akkkka.admin.module.business.funcampus.collegeInfo.domain.vo.SimpleCollegeInfoVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 

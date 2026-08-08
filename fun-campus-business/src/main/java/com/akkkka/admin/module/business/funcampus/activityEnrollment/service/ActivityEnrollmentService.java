@@ -13,6 +13,7 @@ import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.form
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.vo.ActivityEnrollmentVO;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.manager.ActivityEnrollmentManager;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.dto.EnrollersChangeDTO;
+import com.akkkka.admin.module.business.funcampus.activitySigninManager.service.ActivitySigninManagerService;
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.service.SignInManagerValidator;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.constant.ActivityStatus;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.dao.ActivityEnrollNumDao;
@@ -20,7 +21,6 @@ import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.en
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityValidator;
 import com.akkkka.admin.module.business.funcampus.portalUser.domain.entity.PortalUserEntity;
-import com.akkkka.admin.module.business.funcampus.portalUser.domain.vo.SimplePortalUserVO;
 import com.akkkka.admin.module.business.funcampus.portalUser.manager.PortalUserManager;
 import com.akkkka.admin.module.business.funcampus.portalUser.service.PortalUserValidator;
 import com.akkkka.common.code.SystemErrorCode;
@@ -33,6 +33,7 @@ import com.akkkka.common.util.SmartPageUtil;
 import com.akkkka.common.util.SmartRequestUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
@@ -81,26 +82,18 @@ public class ActivityEnrollmentService {
 
     private final RedisTemplate<String,String> redisTemplate;
 
+    private final ActivityEnrollmentManager enrollmentManager;
+
+    private final ActivitySigninManagerService signinManagerService;
+
     private static String SIGN_IN_QR_CODE_TOKEN_REDIS_KEY(Long userId){
         return "sign_in:qr_code_token:"+userId;
     }
 
 
-    /**
-     * 分页查询
-     */
-    public PageResult<ActivityEnrollmentVO> queryPage(ActivityEnrollmentQueryForm queryForm) {
-        log.info("ActivityEnrollmentService.queryPage called, queryForm={}", queryForm);
-        Page<?> page = SmartPageUtil.convert2PageQuery(queryForm);
-        List<ActivityEnrollmentVO> list = activityEnrollmentDao.queryPage(page, queryForm);
-        log.info("ActivityEnrollmentService.queryPage result: count={}", list.size());
-        return SmartPageUtil.convert2PageResult(page, list);
-    }
-
-
     public void enroll(Long activityId){
         RequestUser requestUser = SmartRequestUtil.getRequestUser();
-
+        //todo做幂等
         assert requestUser!=null;
         if(requestUser.getUserType()!= UserTypeEnum.PORTAL_USER){
             throw new BusinessException(UserErrorCode.PARAM_ERROR, "用户类型错误");
@@ -111,9 +104,9 @@ public class ActivityEnrollmentService {
 
         //检查用户所属学院年级部落是否在活动指定范围内
         PortalUserEntity portalUser = portalUserManager.getById(requestUser.getUserId());
-        portalUserValidator.validateUserInCollege(activityId,portalUser);
-        portalUserValidator.validateUserInGrade(activityId,portalUser);
-        portalUserValidator.validateUserInTribe(activityId,portalUser);
+        portalUserValidator.validateUserCanEnrollCollege(activityId,portalUser);
+        portalUserValidator.validateUserCanEnrollGrade(activityId,portalUser);
+        portalUserValidator.validateUserCanEnrollTribe(activityId,portalUser);
         enrollmentDomainService.validateEnrollmentDuplicate(activityId,requestUser.getUserId());
         
         ActivityEnrollmentEntity enrollmentEntity = new ActivityEnrollmentEntity();
@@ -185,6 +178,7 @@ public class ActivityEnrollmentService {
         }
     }
     public void signIn(Long activityId, Long needSignInUserId, String uuid){
+        //todo做幂等
         String redisKey = SIGN_IN_QR_CODE_TOKEN_REDIS_KEY(needSignInUserId);
         String realUuid = redisTemplate.opsForValue().get(redisKey);
         if (realUuid==null||!Objects.equals(realUuid,uuid)){
@@ -215,13 +209,16 @@ public class ActivityEnrollmentService {
         }
     }
 
-
-
-    public static LambdaQueryWrapper<ActivityEnrollmentEntity> listByActivityIdQw(Long activityId){
-        LambdaQueryWrapper<ActivityEnrollmentEntity> qw = new LambdaQueryWrapper<>();
-        return qw.eq(ActivityEnrollmentEntity::getActivityId,activityId)
-            .eq(ActivityEnrollmentEntity::getDeletedFlag,false);
+    public List<Long> listPortalUserIds(Long activityId){
+        return enrollmentManager.list(
+                Wrappers.lambdaQuery(ActivityEnrollmentEntity.class)
+                        .eq(ActivityEnrollmentEntity::getActivityId,activityId)
+                        .eq(ActivityEnrollmentEntity::getDeletedFlag,false)
+                        .select(ActivityEnrollmentEntity::getUserId)
+        ).stream().map(ActivityEnrollmentEntity::getUserId).toList();
     }
+
+
 
     public List<SimplePortalUserVO> listEnrollUser(Long activityId){
         if(activityManager.getById(activityId)==null){
@@ -248,20 +245,10 @@ public class ActivityEnrollmentService {
         return result;
     }
 
-    public EnrollersChangeDTO convertToEnrollmentChanges(List<Long> enrollerIds, Long activityId){
+    public EnrollersChangeDTO convertToEnrollmentChanges(Long activityId,List<Long> enrollerIds, List<Long> dbEnrollerIds){
         //假定activityId正确
         EnrollersChangeDTO  enrollersChangeDTO = new EnrollersChangeDTO();
         List<Long> copy = new LinkedList<>(enrollerIds);
-        LambdaQueryWrapper<ActivityEnrollmentEntity> qw = listByActivityIdQw(activityId)
-                                                            .select(ActivityEnrollmentEntity::getUserId);
-        List<ActivityEnrollmentEntity> dbEnrollerList = activityEnrollmentManager.list(qw);
-        assert dbEnrollerList!=null;
-        assert !dbEnrollerList.isEmpty();
-
-        List<Long> dbEnrollerIds = new ArrayList<>(dbEnrollerList.stream()
-                .map(ActivityEnrollmentEntity::getUserId)
-                .toList());
-        
         //新报名者除去共同元素就是要添加的人
         enrollerIds.removeAll(dbEnrollerIds);
         //旧报名着除去共同元素就是要删除的人
@@ -289,6 +276,27 @@ public class ActivityEnrollmentService {
             }
         }
         return enrollersChangeDTO;
-    }
 
+    }
+    public void doSaveEnrollerChangesTransaction(Long activityId,List<Long> enrollerIds){
+        EnrollersChangeDTO enrollersChangeDTO = new EnrollersChangeDTO();
+        if(enrollerIds!=null && !enrollerIds.isEmpty()){
+            portalUserValidator.validatePortalUserIds(enrollerIds);
+            //如果活动管理员与签到员变动会在convertor体现出来，会有不好的后果。要保证managers没有变动
+            Long activityManagerId = activityManager.getById(activityId).getActivityManagerId();
+            if(!enrollerIds.contains(activityManagerId)){
+                throw new BusinessException(UserErrorCode.PARAM_ERROR,"报名审核不能更改活动管理员和签到员");
+            }
+
+            List<Long> sigIinManagerIds = signinManagerService.getSignInManagerIds(activityId);
+            if(!new HashSet<>(enrollerIds).containsAll(sigIinManagerIds)){
+                throw new BusinessException(UserErrorCode.PARAM_ERROR,"报名审核不能更改活动管理员和签到员");
+            }
+
+            List<Long> dbEnrollerIds = listPortalUserIds(activityId);
+
+            enrollersChangeDTO = convertToEnrollmentChanges(activityId, enrollerIds, dbEnrollerIds);
+        }
+        EnrollersChangeDTO finalEnrollersChangeDTO = enrollersChangeDTO;
+    }
 }

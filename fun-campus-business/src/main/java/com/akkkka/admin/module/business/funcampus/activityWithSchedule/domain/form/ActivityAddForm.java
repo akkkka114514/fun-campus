@@ -1,5 +1,6 @@
 package com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form;
 
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.Data;
@@ -60,13 +61,13 @@ public class ActivityAddForm {
      * 报名需审核
      */
     @Schema(description = "报名需审核")
-    private boolean enrollNeedReview;
+    private Boolean enrollNeedReview;
 
     /**
      * 需要签退
      */
     @Schema(description = "需要签退")
-    private boolean needSignOut;
+    private Boolean needSignOut;
 
     /**
      * 附件
@@ -97,4 +98,6 @@ public class ActivityAddForm {
     @Schema(description = "活动管理员和发起者")
     @Min(value = 0L, message = "活动管理员和发起者 不能小于0")
     private Long activityManagerId;
+
+
 }

@@ -95,12 +95,12 @@ public class ActivityEntity {
     /**
      * 报名需审核
      */
-    private boolean enrollNeedReview;
+    private Boolean enrollNeedReview;
 
     /**
      * 需要签退
      */
-    private boolean needSignOut;
+    private Boolean needSignOut;
 
     /**
      * 附件

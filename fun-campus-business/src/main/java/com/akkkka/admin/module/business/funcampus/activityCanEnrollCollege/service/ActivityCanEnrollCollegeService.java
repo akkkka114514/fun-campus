@@ -1,8 +1,17 @@
 package com.akkkka.admin.module.business.funcampus.activityCanEnrollCollege.service;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import com.akkkka.admin.module.business.funcampus.activityCanEnrollGrade.domain.entity.ActivityCanEnrollGradeEntity;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleAddForm;
+import com.akkkka.admin.module.business.funcampus.collegeInfo.service.CollegeInfoService;
+import com.akkkka.admin.module.business.funcampus.collegeInfo.service.CollegeInfoValidator;
+import com.akkkka.common.code.SystemErrorCode;
+import com.akkkka.common.domain.IdNameVO;
+import com.akkkka.common.exception.BusinessException;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.akkkka.admin.module.business.funcampus.activityCanEnrollCollege.dao.ActivityCanEnrollCollegeDao;
 import com.akkkka.admin.module.business.funcampus.activityCanEnrollCollege.domain.entity.ActivityCanEnrollCollegeEntity;
@@ -16,7 +25,10 @@ import com.akkkka.common.util.SmartBeanUtil;
 import com.akkkka.common.util.SmartPageUtil;
 import com.akkkka.common.domain.ResponseDTO;
 import com.akkkka.common.domain.PageResult;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import lombok.AllArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -34,90 +46,33 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 @Slf4j
 @Service
+@AllArgsConstructor
 public class ActivityCanEnrollCollegeService {
+    private final ActivityCanEnrollCollegeManager canEnrollCollegeManager;
+    private final TransactionTemplate transactionTemplate;
+    private final CollegeInfoValidator collegeValidator;
+    private final CollegeInfoService collegeInfoService;
 
-    @Resource
-    private ActivityCanEnrollCollegeDao activityCanEnrollCollegeDao;
-    @Resource
-    private ActivityCanEnrollCollegeManager canEnrollCollegeManager;
-    @Resource
-    private TransactionTemplate transactionTemplate;
-
-    /**
-     * 分页查询
-     */
-    public PageResult<ActivityCanEnrollCollegeVO> queryPage(ActivityCanEnrollCollegeQueryForm queryForm) {
-        log.info("ActivityCanEnrollCollegeService.queryPage called, queryForm={}", queryForm);
-        Page<?> page = SmartPageUtil.convert2PageQuery(queryForm);
-        List<ActivityCanEnrollCollegeVO> list = activityCanEnrollCollegeDao.queryPage(page, queryForm);
-        log.info("ActivityCanEnrollCollegeService.queryPage result: count={}", list.size());
-        return SmartPageUtil.convert2PageResult(page, list);
+    public List<IdNameVO> listIdNameByActivityId(Long activityId){
+        List<ActivityCanEnrollCollegeEntity> list = canEnrollCollegeManager.list(
+                Wrappers.lambdaQuery(ActivityCanEnrollCollegeEntity.class)
+                        .eq(ActivityCanEnrollCollegeEntity::getActivityId,activityId)
+                        .eq(ActivityCanEnrollCollegeEntity::getDeletedFlag,false)
+                        .select(ActivityCanEnrollCollegeEntity::getCanEnrollCollege)
+        );
+        List<IdNameVO> result=new ArrayList<>();
+        if(list.isEmpty()){
+            return result;
+        }
+        for(ActivityCanEnrollCollegeEntity e:list){
+            IdNameVO vo = new IdNameVO();
+            vo.setId(e.getId());
+            vo.setName(collegeInfoService.getNameById(e.getCanEnrollCollege()));
+            result.add(vo);
+        }
+        return result;
     }
 
-    /**
-     * 添加
-     */
-    public ResponseDTO<String> add(ActivityCanEnrollCollegeAddForm addForm) {
-        log.info("ActivityCanEnrollCollegeService.add called, addForm={}", addForm);
-        ActivityCanEnrollCollegeEntity activityCanEnrollCollegeEntity = SmartBeanUtil.copy(addForm, ActivityCanEnrollCollegeEntity.class);
-        int result = activityCanEnrollCollegeDao.insert(activityCanEnrollCollegeEntity);
-        if (result > 0) {
-            log.info("ActivityCanEnrollCollegeService.add success: new record created with id={}", activityCanEnrollCollegeEntity.getId());
-        } else {
-            log.error("ActivityCanEnrollCollegeService.add failed: no record created");
-        }
-        return ResponseDTO.ok();
-    }
-
-    /**
-     * 更新
-     *
-     */
-    public ResponseDTO<String> update(ActivityCanEnrollCollegeUpdateForm updateForm) {
-        log.info("ActivityCanEnrollCollegeService.update called, updateForm={}", updateForm);
-        ActivityCanEnrollCollegeEntity activityCanEnrollCollegeEntity = SmartBeanUtil.copy(updateForm, ActivityCanEnrollCollegeEntity.class);
-        int result = activityCanEnrollCollegeDao.updateById(activityCanEnrollCollegeEntity);
-        if (result > 0) {
-            log.info("ActivityCanEnrollCollegeService.update success: record updated with id={}", updateForm.getId());
-        } else {
-            log.warn("ActivityCanEnrollCollegeService.update warning: no records updated");
-        }
-        return ResponseDTO.ok();
-    }
-
-    /**
-     * 批量删除
-     */
-    public ResponseDTO<String> batchDelete(List<Long> idList) {
-        log.info("ActivityCanEnrollCollegeService.batchDelete called, idList size={}", CollectionUtils.isNotEmpty(idList) ? idList.size() : 0);
-        if (CollectionUtils.isEmpty(idList)){
-            log.debug("ActivityCanEnrollCollegeService.batchDelete: idList is empty");
-            return ResponseDTO.ok();
-        }
-
-        int result = activityCanEnrollCollegeDao.batchUpdateDeleted(idList, true);
-        log.info("ActivityCanEnrollCollegeService.batchDelete result: {} records marked as deleted", result);
-        return ResponseDTO.ok();
-    }
-
-    /**
-     * 单个删除
-     */
-    public ResponseDTO<String> delete(Long id) {
-        log.info("ActivityCanEnrollCollegeService.delete called, id={}", id);
-        if (null == id){
-            log.warn("ActivityCanEnrollCollegeService.delete: id is null");
-            return ResponseDTO.ok();
-        }
-
-        int result = activityCanEnrollCollegeDao.updateDeleted(id, true);
-        if (result > 0) {
-            log.info("ActivityCanEnrollCollegeService.delete success: record with id={} marked as deleted", id);
-        } else {
-            log.warn("ActivityCanEnrollCollegeService.delete warning: no records deleted");
-        }
-        return ResponseDTO.ok();
-    }
     //取出所有canEnrollCollege表的collegeId，然后获取所有college的name
     public List<Long> getCollegeIdsByActivityId(Long activityId){
         LambdaQueryWrapper<ActivityCanEnrollCollegeEntity> lqw1 = new LambdaQueryWrapper<>();
@@ -134,12 +89,70 @@ public class ActivityCanEnrollCollegeService {
         }
         return collegeIds;
     }
-    public void doSaveBatchTransaction(List<ActivityCanEnrollCollegeEntity> list){
+    public void doSaveBatchTransaction(List<Long> ids,Long activityId){
+        if(ids.isEmpty()){
+            return;
+        }
+        collegeValidator.validateCollegeIds(ids);
+        List<ActivityCanEnrollCollegeEntity> list=buildCanEnrollCollege(ids,activityId);
         transactionTemplate.executeWithoutResult(status -> {
-            if(!canEnrollCollegeManager.saveBatch(list)){
-                log.warn("事务失败：插入能报名的学院失败：List<ActivityCanEnrollCollegeEntity>={}",list);
-                status.setRollbackOnly();
+            try{
+                if(!canEnrollCollegeManager.saveBatch(list)){
+                    throw new BusinessException(SystemErrorCode.SYSTEM_ERROR);
+                }
+            }catch (Exception e){
+                log.warn("事务失败：插入能报名的学院失败：List<ActivityCanEnrollCollegeEntity>={}",list,e);
+                throw new BusinessException(SystemErrorCode.SYSTEM_ERROR);
+            }
+
+        });
+    }
+
+
+    public List<ActivityCanEnrollCollegeEntity> buildCanEnrollCollege(List<Long> ids,Long activityId){
+        List<ActivityCanEnrollCollegeEntity> collegeList=new ArrayList<>();
+        ids.forEach(id-> {
+            ActivityCanEnrollCollegeEntity college = new ActivityCanEnrollCollegeEntity();
+            college.setId(null);
+            college.setActivityId(activityId);
+            college.setCanEnrollCollege(id);
+            college.setDeletedFlag(false);
+            college.setCreateTime(LocalDateTime.now());
+            college.setUpdateTime(LocalDateTime.now());
+            collegeList.add(college);
+        });
+        return collegeList;
+    }
+
+    //量不大，直接删掉原来的再添加现在的
+    public void doUpdateBatchTransaction(List<Long> collegeIds,Long activityId){
+        if(Objects.isNull(collegeIds)||collegeIds.isEmpty()){
+            return;
+        }
+        collegeValidator.validateCollegeIds(collegeIds);
+        doDeleteBatchTransaction(activityId);
+        doSaveBatchTransaction(collegeIds,activityId);
+    }
+    public void doDeleteBatchTransaction(Long activityId){
+        transactionTemplate.executeWithoutResult(status -> {
+            try {
+                LambdaQueryWrapper<ActivityCanEnrollCollegeEntity> qw=
+                        new LambdaQueryWrapper<>();
+                qw.select(ActivityCanEnrollCollegeEntity::getId)
+                        .eq(ActivityCanEnrollCollegeEntity::getActivityId, activityId)
+                        .eq(ActivityCanEnrollCollegeEntity::getDeletedFlag,false);
+                List<ActivityCanEnrollCollegeEntity> list = canEnrollCollegeManager.list(qw);
+                for(ActivityCanEnrollCollegeEntity e:list){
+                    e.setDeletedFlag(true);
+                }
+                if(!canEnrollCollegeManager.updateBatchById(list)){
+                    throw new BusinessException(SystemErrorCode.SYSTEM_ERROR);
+                }
+            }catch (Exception e){
+                log.error("doDeleteBatchTransaction 事务失败回滚：activityId={}",activityId,e);
+                throw new BusinessException(SystemErrorCode.SYSTEM_ERROR,e);
             }
         });
     }
+
 }

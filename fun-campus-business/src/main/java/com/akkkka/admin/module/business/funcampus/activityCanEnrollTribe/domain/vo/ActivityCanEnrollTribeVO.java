@@ -25,6 +25,9 @@ public class ActivityCanEnrollTribeVO {
     @Schema(description = "能报名的部落id")
     private Long canEnrollTribe;
 
+    @Schema(description = "部落名")
+    private String tribeName;
+
     @Schema(description = "创建时间")
     private LocalDateTime createTime;
 

@@ -1,29 +1,26 @@
 package com.akkkka.admin.module.business.funcampus.activityWithSchedule.controller;
 
+import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewEvent;
+import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewStage;
+import com.akkkka.admin.module.business.funcampus.activityReviewLog.service.ActivityReviewStateMachineContext;
+import com.alibaba.cola.statemachine.StateMachine;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
-import com.akkkka.admin.module.business.funcampus.activityCategory.domain.vo.SimpleActivityCategoryVO;
 import com.akkkka.admin.module.business.funcampus.activityCategory.service.ActivityCategoryService;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.constant.IndexActivityPageConst;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleAddForm;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleQueryForm;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleUpdateForm;
-import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityWithScheduleVO;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.IndexActivityVO;
-import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.InitPublishActivityPageVO;
-import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityWithScheduleAddFormValidator;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.EditActivityDraftSelectionsVO;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityWithScheduleService;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityWithScheduleUpdateFormValidator;
-import com.akkkka.admin.module.business.funcampus.collegeInfo.domain.vo.SimpleCollegeInfoVO;
 import com.akkkka.admin.module.business.funcampus.collegeInfo.service.CollegeInfoService;
-import com.akkkka.admin.module.business.funcampus.gradeInfo.domain.vo.SimpleGradeInfoVO;
 import com.akkkka.admin.module.business.funcampus.gradeInfo.service.GradeInfoService;
-import com.akkkka.admin.module.business.funcampus.organizationInfo.domain.vo.SimpleOrganizationInfoVO;
 import com.akkkka.admin.module.business.funcampus.organizationInfo.service.OrganizationInfoService;
-import com.akkkka.admin.module.system.backendUser.domain.vo.SimpleBackendUserVO;
 import com.akkkka.admin.module.system.backendUser.service.BackendUserService;
 import com.akkkka.common.code.UserErrorCode;
 import com.akkkka.common.domain.PageResult;
@@ -32,7 +29,6 @@ import com.akkkka.module.support.repeatsubmit.annoation.RepeatSubmit;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -60,17 +56,21 @@ public class ActivityWithScheduleController {
     private ActivityCategoryService activityCategoryService;
     @Resource
     private BackendUserService backendUserService;
+    @Resource
+    private StateMachine<ActivityReviewStage, ActivityReviewEvent, ActivityReviewStateMachineContext>
+            stateMachine;
 
     @Operation(summary = "添加活动和时间表 @author akkkka114514")
-    @PostMapping("/activity/add")
+    @PostMapping("/activity/draft/submit")
     @RepeatSubmit(intervalMilliSecond = 3 * 1000 )
-    public ResponseDTO<Void> addActivityWithSchedule(@RequestBody @Valid ActivityWithScheduleAddForm addForm) {
+    public ResponseDTO<Void> submitDraft(@RequestBody @Valid ActivityWithScheduleAddForm addForm) {
         if(Objects.isNull(addForm)){
             return ResponseDTO.error(UserErrorCode.PARAM_ERROR);
         }
         ActivityWithScheduleAddFormValidator addValidator = new ActivityWithScheduleAddFormValidator();
-        addValidator.validate(addForm);
-        activityWithScheduleService.addNotReviewedOne(addForm);
+        ActivityReviewStateMachineContext ctx=new ActivityReviewStateMachineContext();
+        ctx.setActivityWithScheduleAddForm(addForm);
+        stateMachine.fireEvent(ActivityReviewStage.DRAFT,ActivityReviewEvent.SUBMIT,new ActivityReviewStateMachineContext());
         return ResponseDTO.ok();
     }
 
@@ -144,21 +144,7 @@ public class ActivityWithScheduleController {
 
     @Operation(summary = "初始化发布活动页面 @author akkkka114514")
     @GetMapping("/activity/publish/init")
-    public ResponseDTO<InitPublishActivityPageVO> initPublish() {
-        List<SimpleCollegeInfoVO> collegeInfoVOList =collegeInfoService.getCollegeInfoByUserId();
-        List<SimpleGradeInfoVO> gradeInfoVOList = gradeInfoService.getAll();
-        List<SimpleOrganizationInfoVO> organizationInfoVOList = organizationInfoService.getOrganizationInfoByUserId();
-        List<SimpleActivityCategoryVO> activityCategoryVOList = activityCategoryService.getAll();
-        Map<Long,List<SimpleBackendUserVO>> collegeReviewerList = backendUserService.getCollegeReviewerList();
-        Map<Long,List<SimpleBackendUserVO>> organizationReviewerList = backendUserService.getOrganizationReviewerList();
-
-        InitPublishActivityPageVO initPublishActivityPageVO = new InitPublishActivityPageVO();
-        initPublishActivityPageVO.setCollegeInfoVOList(collegeInfoVOList);
-        initPublishActivityPageVO.setGradeInfoVOList(gradeInfoVOList);
-        initPublishActivityPageVO.setOrganizationInfoVOList(organizationInfoVOList);
-        initPublishActivityPageVO.setActivityCategoryVOList(activityCategoryVOList);
-        initPublishActivityPageVO.setCollegeReviewerList(collegeReviewerList);
-        initPublishActivityPageVO.setOrganizationReviewerList(organizationReviewerList);
+    public ResponseDTO<EditActivityDraftSelectionsVO> initPublish() {
 
         return ResponseDTO.ok(initPublishActivityPageVO);
     }

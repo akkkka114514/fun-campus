@@ -23,7 +23,10 @@ public class ActivityCanEnrollGradeVO {
     private Long activityId;
 
     @Schema(description = "能报名的年级")
-    private Integer canEnrollGrade;
+    private Long canEnrollGrade;
+
+    @Schema(description = "年级名称")
+    private String gradeName;
 
     @Schema(description = "是否删除")
     private Boolean deletedFlag;

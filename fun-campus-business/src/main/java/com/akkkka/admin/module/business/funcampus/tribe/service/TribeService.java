@@ -2,7 +2,11 @@ package com.akkkka.admin.module.business.funcampus.tribe.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
+import com.akkkka.admin.module.business.funcampus.tribe.manager.TribeManager;
+import com.akkkka.admin.module.business.funcampus.util.AssertUtil;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.akkkka.admin.module.business.funcampus.portalUser.domain.entity.PortalUserEntity;
 import com.akkkka.admin.module.business.funcampus.portalUser.manager.PortalUserManager;
@@ -34,83 +38,14 @@ import jakarta.annotation.Resource;
 
 @Service
 @Slf4j
+@AllArgsConstructor
 public class TribeService {
+    private final TribeManager tribeManager;
 
-    @Resource
-    private TribeDao tribeDao;
-    @Resource
-    private PortalUserManager portalUserManager;
-
-    /**
-     * 分页查询
-     */
-    public PageResult<TribeVO> queryPage(TribeQueryForm queryForm) {
-        Page<?> page = SmartPageUtil.convert2PageQuery(queryForm);
-        List<TribeVO> list = tribeDao.queryPage(page, queryForm);
-        return SmartPageUtil.convert2PageResult(page, list);
+    public String getNameById(Long id){
+        TribeEntity entity = tribeManager.getById(id);
+        AssertUtil.ifTrueThrowParamError(Objects.isNull(entity));
+        return entity.getName();
     }
 
-    /**
-     * 添加
-     */
-    public ResponseDTO<String> add(TribeAddForm addForm) {
-        TribeEntity tribeEntity = SmartBeanUtil.copy(addForm, TribeEntity.class);
-        tribeDao.insert(tribeEntity);
-        return ResponseDTO.ok();
-    }
-
-    /**
-     * 更新
-     *
-     */
-    public ResponseDTO<String> update(TribeUpdateForm updateForm) {
-        TribeEntity tribeEntity = SmartBeanUtil.copy(updateForm, TribeEntity.class);
-        tribeDao.updateById(tribeEntity);
-        return ResponseDTO.ok();
-    }
-
-    /**
-     * 批量删除
-     */
-    public ResponseDTO<String> batchDelete(List<Long> idList) {
-        if (CollectionUtils.isEmpty(idList)){
-            return ResponseDTO.ok();
-        }
-
-        tribeDao.batchUpdateDeleted(idList, true);
-        return ResponseDTO.ok();
-    }
-
-    /**
-     * 单个删除
-     */
-    public ResponseDTO<String> delete(Long id) {
-        if (null == id){
-            return ResponseDTO.ok();
-        }
-
-        tribeDao.updateDeleted(id, true);
-        return ResponseDTO.ok();
-    }
-
-    /**
-    * <p>
-    * description: 供选择奇选择的部落列表，只提供部落的id和名称
-    * </p>
-    *
-    * @param keyword
-    * @return:
-    * @author: akkkka114514
-    * @date: 13:04:26 2026-01-25
-    */
-    public List<SimpleTribeVO> querySimpleList(String keyword){
-        Long userId=SmartRequestUtil.getRequestUserId();
-        PortalUserEntity portalUserEntity=portalUserManager.getById(userId);
-        if(portalUserEntity==null||portalUserEntity.getDeletedFlag()||portalUserEntity.getDisableFlag()){
-            log.error("由smartRequestUtil获得的用户不存在或者被禁用");
-            return new ArrayList<>();
-        }
-        Long schoolId=portalUserEntity.getSchoolId();
-        return tribeDao.querySimpleList(schoolId, keyword);
-    }
 }

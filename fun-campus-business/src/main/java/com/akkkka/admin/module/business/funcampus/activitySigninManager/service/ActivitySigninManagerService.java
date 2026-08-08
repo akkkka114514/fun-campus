@@ -1,25 +1,24 @@
 package com.akkkka.admin.module.business.funcampus.activitySigninManager.service;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
-import com.akkkka.admin.module.business.funcampus.activityCanEnrollGrade.domain.entity.ActivityCanEnrollGradeEntity;
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.domain.vo.ActivitySigninManagerVO;
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.manager.ActivitySigninManagerManager;
+import com.akkkka.admin.module.business.funcampus.portalUser.domain.vo.PortalUserVO;
+import com.akkkka.admin.module.business.funcampus.portalUser.manager.PortalUserManager;
+import com.akkkka.admin.module.business.funcampus.portalUser.service.PortalUserService;
+import com.akkkka.common.code.SystemErrorCode;
+import com.akkkka.common.exception.BusinessException;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.dao.ActivitySigninManagerDao;
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.domain.entity.ActivitySigninManagerEntity;
-import com.akkkka.admin.module.business.funcampus.activitySigninManager.domain.form.ActivitySigninManagerAddForm;
-import com.akkkka.admin.module.business.funcampus.activitySigninManager.domain.form.ActivitySigninManagerQueryForm;
-import com.akkkka.admin.module.business.funcampus.activitySigninManager.domain.form.ActivitySigninManagerUpdateForm;
-import com.akkkka.common.util.SmartBeanUtil;
-import com.akkkka.common.util.SmartPageUtil;
-import com.akkkka.common.domain.ResponseDTO;
-import com.akkkka.common.domain.PageResult;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import org.apache.commons.collections4.CollectionUtils;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.Resource;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import static cn.dev33.satoken.SaManager.log;
@@ -33,80 +32,110 @@ import static cn.dev33.satoken.SaManager.log;
  */
 
 @Service
+@AllArgsConstructor
 public class ActivitySigninManagerService {
-
-    @Resource
-    private ActivitySigninManagerDao activitySigninManagerDao;
-
-    @Resource
+    private final PortalUserService portalUserService;
+    private PortalUserManager portalUserManager;
     private TransactionTemplate transactionTemplate;
-
-    @Resource
     private ActivitySigninManagerManager signinManagerManager;
-    /**
-     * 分页查询
-     */
-    public PageResult<ActivitySigninManagerVO> queryPage(ActivitySigninManagerQueryForm queryForm) {
-        Page<?> page = SmartPageUtil.convert2PageQuery(queryForm);
-        List<ActivitySigninManagerVO> list = activitySigninManagerDao.queryPage(page, queryForm);
-        return SmartPageUtil.convert2PageResult(page, list);
-    }
+    private SignInManagerValidator signInManagerValidator;
 
-    /**
-     * 添加
-     */
-    public ResponseDTO<String> add(ActivitySigninManagerAddForm addForm) {
-        ActivitySigninManagerEntity activitySigninManagerEntity = SmartBeanUtil.copy(addForm, ActivitySigninManagerEntity.class);
-        activitySigninManagerDao.insert(activitySigninManagerEntity);
-        return ResponseDTO.ok();
-    }
+    public List<ActivitySigninManagerVO> listVOByActivityId(Long activityId){
+        List<ActivitySigninManagerEntity> list = signinManagerManager.list(listByActivityIdQw(activityId));
 
-    /**
-     * 更新
-     *
-     */
-    public ResponseDTO<String> update(ActivitySigninManagerUpdateForm updateForm) {
-        ActivitySigninManagerEntity activitySigninManagerEntity = SmartBeanUtil.copy(updateForm, ActivitySigninManagerEntity.class);
-        activitySigninManagerDao.updateById(activitySigninManagerEntity);
-        return ResponseDTO.ok();
-    }
-
-    /**
-     * 批量删除
-     */
-    public ResponseDTO<String> batchDelete(List<Long> idList) {
-        if (CollectionUtils.isEmpty(idList)){
-            return ResponseDTO.ok();
+        List<ActivitySigninManagerVO> result = new ArrayList<>();
+        if(list.isEmpty()){
+            return result;
         }
-
-        activitySigninManagerDao.batchUpdateDeleted(idList, true);
-        return ResponseDTO.ok();
+        for(ActivitySigninManagerEntity e:list){
+            PortalUserVO portalUserVO = portalUserService.getById(e.getPortalUserId());
+            result.add(ActivitySigninManagerVO.convert(e,portalUserVO));
+        }
+        return result;
     }
 
     /**
-     * 单个删除
+     * 获取活动的签到员ID列表
      */
-    public ResponseDTO<String> delete(Long id) {
-        if (null == id){
-            return ResponseDTO.ok();
-        }
-
-        activitySigninManagerDao.updateDeleted(id, true);
-        return ResponseDTO.ok();
+    public List<Long> getSignInManagerIds(Long activityId) {
+        return signinManagerManager.list(
+                        Wrappers.lambdaQuery(ActivitySigninManagerEntity.class)
+                                .eq(ActivitySigninManagerEntity::getActivityId, activityId)
+                                .eq(ActivitySigninManagerEntity::getDeletedFlag, false)
+                                .select(ActivitySigninManagerEntity::getPortalUserId)
+                ).stream()
+                .map(ActivitySigninManagerEntity::getPortalUserId)
+                .toList();
     }
 
-    public static LambdaQueryWrapper<ActivitySigninManagerEntity> listByActivityIdQw(Long activityId){
-        LambdaQueryWrapper<ActivitySigninManagerEntity> qw = new LambdaQueryWrapper<>();
-        return qw.eq(ActivitySigninManagerEntity::getActivityId,activityId)
-                .eq(ActivitySigninManagerEntity::getDeletedFlag,false);
-    }
-
-    public void doSaveBatchTransaction(List<ActivitySigninManagerEntity> list){
+    public void doSaveBatchTransaction(List<Long> ids,Long belongToSchoolId,Long activityId){
+        signInManagerValidator.validateSignInManagerIds(ids,belongToSchoolId);
+        List<ActivitySigninManagerEntity> list = buildSigninManagerList(ids,activityId);
         transactionTemplate.executeWithoutResult(status -> {
-            if(!signinManagerManager.saveBatch(list)){
-                log.warn("事务失败：插入活动签到管理员失败：List<ActivitySigninManagerEntity>={}",list);
+            try {
+                if(!signinManagerManager.saveBatch(list)){
+                    throw new BusinessException(SystemErrorCode.SYSTEM_ERROR);
+                }
+            }catch (Exception e){
+                log.error("批量插入signinManager，字段校验通过，数据库事务回滚" +
+                                ",exception message={}" +
+                                ",activity id={}" +
+                                ",signin manager ids={}",
+                        e.getMessage(),activityId, ids,e);
                 status.setRollbackOnly();
+                throw new BusinessException(SystemErrorCode.SYSTEM_ERROR);
             }
         });
+
+    }
+
+    public List<ActivitySigninManagerEntity> buildSigninManagerList(List<Long> ids,Long activityId){
+        List<ActivitySigninManagerEntity> result = new ArrayList<>();
+
+        ids.forEach(id -> {
+            ActivitySigninManagerEntity signinManager=new ActivitySigninManagerEntity();
+            signinManager.setId(null);
+            signinManager.setActivityId(activityId);
+            signinManager.setPortalUserId(id);
+            signinManager.setDeletedFlag(false);
+            signinManager.setCreateTime(LocalDateTime.now());
+            signinManager.setUpdateTime(LocalDateTime.now());
+            signinManager.setUsername(portalUserManager.getById(id).getUsername());
+
+            result.add(signinManager);
+        });
+        return result;
+    }
+
+    //量不大，直接删掉原来的再添加现在的
+    public void doUpdateBatchTransaction(List<Long> signInManagerIds,Long schoolId,Long activityId){
+        if(Objects.isNull(signInManagerIds)||signInManagerIds.isEmpty()){
+            return;
+        }
+        signInManagerValidator.validateSignInManagerIds(signInManagerIds,activityId);
+        doDeleteBatchTransaction(activityId);
+        doSaveBatchTransaction(signInManagerIds,schoolId,activityId);
+    }
+    public void doDeleteBatchTransaction(Long activityId){
+        transactionTemplate.executeWithoutResult(status -> {
+            try {
+                LambdaQueryWrapper<ActivitySigninManagerEntity> qw=
+                        new LambdaQueryWrapper<>();
+                qw.select(ActivitySigninManagerEntity::getId)
+                        .eq(ActivitySigninManagerEntity::getActivityId, activityId)
+                        .eq(ActivitySigninManagerEntity::getDeletedFlag,false);
+                List<ActivitySigninManagerEntity> list = signinManagerManager.list(qw);
+                for(ActivitySigninManagerEntity e:list){
+                    e.setDeletedFlag(true);
+                }
+                if(!signinManagerManager.updateBatchById(list)){
+                    throw new BusinessException(SystemErrorCode.SYSTEM_ERROR);
+                }
+            }catch (Exception e){
+                log.error("doDeleteBatchTransaction signInManager 事务失败回滚：activityId={}",activityId,e);
+                throw new BusinessException(SystemErrorCode.SYSTEM_ERROR,e);
+            }
+        });
+
     }
 }

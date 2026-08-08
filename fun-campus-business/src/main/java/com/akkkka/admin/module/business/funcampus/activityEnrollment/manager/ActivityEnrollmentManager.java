@@ -1,5 +1,6 @@
 package com.akkkka.admin.module.business.funcampus.activityEnrollment.manager;
 
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.jeffreyning.mybatisplus.service.MppServiceImpl;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.dao.ActivityEnrollmentDao;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.entity.ActivityEnrollmentEntity;
@@ -14,7 +15,7 @@ import org.springframework.stereotype.Service;
  * @Copyright akkkka114514
  */
 @Service
-public class ActivityEnrollmentManager extends MppServiceImpl<ActivityEnrollmentDao, ActivityEnrollmentEntity> {
+public class ActivityEnrollmentManager extends ServiceImpl<ActivityEnrollmentDao, ActivityEnrollmentEntity> {
 
 
 }

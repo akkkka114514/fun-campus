@@ -20,9 +20,6 @@ public class BackendUserVO {
     @Schema(description = "登录账号")
     private String username;
 
-    @SchemaEnum(GenderEnum.class)
-    private Integer gender;
-
     @Schema(description = "是否被禁用")
     private Boolean disabledFlag;
 

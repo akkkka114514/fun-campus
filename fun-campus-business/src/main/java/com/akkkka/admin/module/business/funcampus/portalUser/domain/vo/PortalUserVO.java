@@ -2,6 +2,9 @@ package com.akkkka.admin.module.business.funcampus.portalUser.domain.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 /**
@@ -15,32 +18,30 @@ import lombok.Data;
 @Data
 public class PortalUserVO {
 
-
-    @Schema(description = "主键")
     private Long id;
 
-    @Schema(description = "用户名")
     private String username;
 
-    @Schema(description = "是否禁用")
-    private Boolean disabledFlag;
-
-    @Schema(description = "性别")
     private Boolean gender;
 
-    @Schema(description = "手机号")
-    private String phone;
-
-    @Schema(description = "头像")
-    private String avatar;
-
-    @Schema(description = "学校id")
     private Long schoolId;
 
-    @Schema(description = "学院id")
+    private String schoolName;
+
     private Long collegeId;
 
-    @Schema(description = "年级id")
+    private String collegeName;
+
+    private Boolean disableFlag;
+
+    private String phone;
+
+    private String avatar;
+
+    private boolean canPublishActivity;
+
     private Long gradeId;
+
+    private String gradeName;
 
 }

@@ -1,8 +1,19 @@
 package com.akkkka.admin.module.business.funcampus.activityCanEnrollTribe.service;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
+import com.akkkka.admin.module.business.funcampus.activityCanEnrollTribe.domain.entity.ActivityCanEnrollTribeEntity;
 import com.akkkka.admin.module.business.funcampus.activityCanEnrollGrade.domain.entity.ActivityCanEnrollGradeEntity;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleAddForm;
+import com.akkkka.admin.module.business.funcampus.tribe.service.TribeService;
+import com.akkkka.admin.module.business.funcampus.tribe.service.TribeValidator;
+import com.akkkka.common.code.SystemErrorCode;
+import com.akkkka.common.domain.IdNameVO;
+import com.akkkka.common.exception.BusinessException;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.akkkka.admin.module.business.funcampus.activityCanEnrollTribe.dao.ActivityCanEnrollTribeDao;
 import com.akkkka.admin.module.business.funcampus.activityCanEnrollTribe.domain.entity.ActivityCanEnrollTribeEntity;
@@ -15,7 +26,9 @@ import com.akkkka.common.util.SmartBeanUtil;
 import com.akkkka.common.util.SmartPageUtil;
 import com.akkkka.common.domain.ResponseDTO;
 import com.akkkka.common.domain.PageResult;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import lombok.AllArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,89 +46,32 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 @Slf4j
 @Service
+@AllArgsConstructor
 public class ActivityCanEnrollTribeService {
+    private final ActivityCanEnrollTribeManager canEnrollTribeManager;
+    private final TransactionTemplate transactionTemplate;
+    private final TribeValidator tribeValidator;
+    private final TribeService tribeService;
 
-    @Resource
-    private ActivityCanEnrollTribeDao activityCanEnrollTribeDao;
-    @Resource
-    private ActivityCanEnrollTribeManager canEnrollTribeManager;
-    @Resource
-    private TransactionTemplate transactionTemplate;
-
-    /**
-     * 分页查询
-     */
-    public PageResult<ActivityCanEnrollTribeVO> queryPage(ActivityCanEnrollTribeQueryForm queryForm) {
-        log.info("ActivityCanEnrollTribeService.queryPage called, queryForm={}", queryForm);
-        Page<?> page = SmartPageUtil.convert2PageQuery(queryForm);
-        List<ActivityCanEnrollTribeVO> list = activityCanEnrollTribeDao.queryPage(page, queryForm);
-        log.info("ActivityCanEnrollTribeService.queryPage result: count={}", list.size());
-        return SmartPageUtil.convert2PageResult(page, list);
-    }
-
-    /**
-     * 添加
-     */
-    public ResponseDTO<String> add(ActivityCanEnrollTribeAddForm addForm) {
-        log.info("ActivityCanEnrollTribeService.add called, addForm={}", addForm);
-        ActivityCanEnrollTribeEntity activityCanEnrollTribeEntity = SmartBeanUtil.copy(addForm, ActivityCanEnrollTribeEntity.class);
-        int result = activityCanEnrollTribeDao.insert(activityCanEnrollTribeEntity);
-        if (result > 0) {
-            log.info("ActivityCanEnrollTribeService.add success: new record created with id={}", activityCanEnrollTribeEntity.getId());
-        } else {
-            log.error("ActivityCanEnrollTribeService.add failed: no record created");
+    public List<IdNameVO> getIdNameByActivityId(Long activityId){
+        List<ActivityCanEnrollTribeEntity> list = canEnrollTribeManager.list(
+                Wrappers.lambdaQuery(ActivityCanEnrollTribeEntity.class)
+                        .eq(ActivityCanEnrollTribeEntity::getActivityId,activityId)
+                        .eq(ActivityCanEnrollTribeEntity::getDeletedFlag,false)
+                        .select(ActivityCanEnrollTribeEntity::getId)
+                        .select(ActivityCanEnrollTribeEntity::getCanEnrollTribe)
+        );
+        if(list.isEmpty()){
+            return new ArrayList<>();
         }
-        return ResponseDTO.ok();
-    }
-
-    /**
-     * 更新
-     *
-     */
-    public ResponseDTO<String> update(ActivityCanEnrollTribeUpdateForm updateForm) {
-        log.info("ActivityCanEnrollTribeService.update called, updateForm={}", updateForm);
-        ActivityCanEnrollTribeEntity activityCanEnrollTribeEntity = SmartBeanUtil.copy(updateForm, ActivityCanEnrollTribeEntity.class);
-        int result = activityCanEnrollTribeDao.updateById(activityCanEnrollTribeEntity);
-        if (result > 0) {
-            log.info("ActivityCanEnrollTribeService.update success: record updated with id={}", updateForm.getId());
-        } else {
-            log.warn("ActivityCanEnrollTribeService.update warning: no records updated");
+        List<IdNameVO> result = new LinkedList<>();
+        for(ActivityCanEnrollTribeEntity e:list){
+            IdNameVO vo = new IdNameVO();
+            vo.setId(e.getId());
+            vo.setName(tribeService.getNameById(e.getId()));
+            result.add(vo);
         }
-        return ResponseDTO.ok();
-    }
-
-    /**
-     * 批量删除
-     */
-    public ResponseDTO<String> batchDelete(List<Long> idList) {
-        log.info("ActivityCanEnrollTribeService.batchDelete called, idList size={}", CollectionUtils.isNotEmpty(idList) ? idList.size() : 0);
-        if (CollectionUtils.isEmpty(idList)){
-            log.debug("ActivityCanEnrollTribeService.batchDelete: idList is empty");
-            return ResponseDTO.ok();
-        }
-
-        int result = activityCanEnrollTribeDao.batchUpdateDeleted(idList, true);
-        log.info("ActivityCanEnrollTribeService.batchDelete result: {} records marked as deleted", result);
-        return ResponseDTO.ok();
-    }
-
-    /**
-     * 单个删除
-     */
-    public ResponseDTO<String> delete(Long id) {
-        log.info("ActivityCanEnrollTribeService.delete called, id={}", id);
-        if (null == id){
-            log.warn("ActivityCanEnrollTribeService.delete: id is null");
-            return ResponseDTO.ok();
-        }
-
-        int result = activityCanEnrollTribeDao.updateDeleted(id, true);
-        if (result > 0) {
-            log.info("ActivityCanEnrollTribeService.delete success: record with id={} marked as deleted", id);
-        } else {
-            log.warn("ActivityCanEnrollTribeService.delete warning: no records deleted");
-        }
-        return ResponseDTO.ok();
+        return result;
     }
 
     public List<Long> getTribeIdsByActivityId(Long activityId){
@@ -132,12 +88,64 @@ public class ActivityCanEnrollTribeService {
                 .map(ActivityCanEnrollTribeEntity::getCanEnrollTribe)
                 .toList();
     }
-    public void doSaveBatchTransaction(List<ActivityCanEnrollTribeEntity> list){
+    public void doSaveBatchTransaction(List<Long> ids,Long activityId){
+        if(ids.isEmpty()){
+            return;
+        }
+        tribeValidator.validateTribeIds(ids);
+        List<ActivityCanEnrollTribeEntity> list= buildCanEnrollTribe(ids,activityId);
         transactionTemplate.executeWithoutResult(status -> {
             if(!canEnrollTribeManager.saveBatch(list)){
                 log.warn("事务失败：插入能报名的部落失败：List<ActivityCanEnrollTribeEntity>={}",list);
                 status.setRollbackOnly();
             }
         });
+    }
+    public List<ActivityCanEnrollTribeEntity> buildCanEnrollTribe(List<Long> ids,Long activityId){
+        List<ActivityCanEnrollTribeEntity> tribeList=new ArrayList<>();
+        ids.forEach((id)->{
+            ActivityCanEnrollTribeEntity tribe = new ActivityCanEnrollTribeEntity();
+            tribe.setId(null);
+            tribe.setActivityId(activityId);
+            tribe.setCanEnrollTribe(id);
+            tribe.setCreateTime(LocalDateTime.now());
+            tribe.setUpdateTime(LocalDateTime.now());
+            tribe.setDeletedFlag(false);
+
+            tribeList.add(tribe);
+        });
+        return tribeList;
+    }
+
+    //量不大，直接删掉原来的再添加现在的
+    public void doUpdateBatchTransaction(List<Long> tribeIds,Long activityId){
+        if(Objects.isNull(tribeIds)||tribeIds.isEmpty()){
+            return;
+        }
+        tribeValidator.validateTribeIds(tribeIds);
+        doDeleteBatchTransaction(activityId);
+        doSaveBatchTransaction(tribeIds,activityId);
+    }
+    public void doDeleteBatchTransaction(Long activityId){
+        transactionTemplate.executeWithoutResult(status -> {
+            try {
+                LambdaQueryWrapper<ActivityCanEnrollTribeEntity> qw=
+                        new LambdaQueryWrapper<>();
+                qw.select(ActivityCanEnrollTribeEntity::getId)
+                        .eq(ActivityCanEnrollTribeEntity::getActivityId, activityId)
+                        .eq(ActivityCanEnrollTribeEntity::getDeletedFlag,false);
+                List<ActivityCanEnrollTribeEntity> list = canEnrollTribeManager.list(qw);
+                for(ActivityCanEnrollTribeEntity e:list){
+                    e.setDeletedFlag(true);
+                }
+                if(!canEnrollTribeManager.updateBatchById(list)){
+                    throw new BusinessException(SystemErrorCode.SYSTEM_ERROR);
+                }
+            }catch (Exception e){
+                log.error("doDeleteBatchTransaction 事务失败回滚：activityId={}",activityId,e);
+                throw new BusinessException(SystemErrorCode.SYSTEM_ERROR,e);
+            }
+        });
+
     }
 }

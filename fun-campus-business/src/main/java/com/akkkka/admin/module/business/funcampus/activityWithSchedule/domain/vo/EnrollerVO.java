@@ -1,7 +1,6 @@
 package com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo;
 
 import lombok.Data;
-import com.akkkka.admin.module.business.funcampus.portalUser.domain.vo.SimplePortalUserVO;
 
 /**
  * author:akkkka114514

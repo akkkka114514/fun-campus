@@ -86,7 +86,7 @@ public class PortalUserEntity {
     private Long collegeId;
 
     //能否发布活动
-    private boolean canPublishActivity;
+    private Boolean canPublishActivity;
 
     private Long gradeId;
 
@@ -95,5 +95,7 @@ public class PortalUserEntity {
 
     //信誉分
     private Integer creditScore;
+
+    private Long organizationId;
 
 }

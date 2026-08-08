@@ -1,5 +1,7 @@
 package com.akkkka.admin.module.business.funcampus.portalUser.service;
 
+import com.akkkka.admin.module.business.funcampus.portalLogin.domain.RequestPortalUser;
+import com.akkkka.common.util.SmartRequestUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.AllArgsConstructor;
 import com.akkkka.admin.module.business.funcampus.activityCanEnrollCollege.domain.entity.ActivityCanEnrollCollegeEntity;
@@ -31,18 +33,30 @@ public class PortalUserValidator {
     private final ActivityCanEnrollTribeManager canEnrollTribeManager;
     private final TribeUserManager tribeUserManager;
 
-    public void validatePortalUserId(Long userId){
+    //判断当前用户是不是前端用户
+    public void validateIsCurrentUserPortal(){
+        if(!(SmartRequestUtil.getRequestUser() instanceof RequestPortalUser)){
+            throw new BusinessException(UserErrorCode.NO_PERMISSION);
+        }
+    }
+
+    public PortalUserEntity validatePortalUserId(Long userId){
         PortalUserEntity portalUser = portalUserManager.getById(userId);
         if(portalUser==null || portalUser.getDeletedFlag()){
             throw new BusinessException(UserErrorCode.PARAM_ERROR,"用户不存在或已删除");
         }
+        if(portalUser.getDisableFlag()){
+            throw new BusinessException(UserErrorCode.USER_STATUS_ERROR);
+        }
+        return portalUser;
     }
+
     /**
      * 验证用户是否在活动允许的学院范围内
      * @param activityId 活动ID
      * @param portalUser 用户实体信息
      */
-    public void validateUserInCollege(Long activityId, PortalUserEntity portalUser){
+    public void validateUserCanEnrollCollege(Long activityId, PortalUserEntity portalUser){
         LambdaQueryWrapper<ActivityCanEnrollCollegeEntity> lqw = new LambdaQueryWrapper<>();
         lqw.eq(ActivityCanEnrollCollegeEntity::getActivityId,activityId)
                 .eq(ActivityCanEnrollCollegeEntity::getDeletedFlag,false);
@@ -62,7 +76,7 @@ public class PortalUserValidator {
         }
     }
 
-    public void validateUserInGrade(Long activityId, PortalUserEntity portalUser){
+    public void validateUserCanEnrollGrade(Long activityId, PortalUserEntity portalUser){
         LambdaQueryWrapper<ActivityCanEnrollGradeEntity> lqw = new LambdaQueryWrapper<>();
         lqw.eq(ActivityCanEnrollGradeEntity::getActivityId,activityId)
                 .eq(ActivityCanEnrollGradeEntity::getDeletedFlag,false);
@@ -79,7 +93,7 @@ public class PortalUserValidator {
         }
     }
 
-    public void validateUserInTribe(Long activityId, PortalUserEntity portalUser){
+    public void validateUserCanEnrollTribe(Long activityId, PortalUserEntity portalUser){
         LambdaQueryWrapper<ActivityCanEnrollTribeEntity> canEnrollTribesQuery=new LambdaQueryWrapper<>();
         canEnrollTribesQuery.eq(ActivityCanEnrollTribeEntity::getActivityId,activityId)
                 .eq(ActivityCanEnrollTribeEntity::getDeletedFlag,false);
@@ -117,6 +131,35 @@ public class PortalUserValidator {
             if(signOutUser.getDisableFlag()||signOutUser.getDeletedFlag()){
                 throw new BusinessException(UserErrorCode.PARAM_ERROR,"用户列表中由用户已删除或已封禁");
             }
+        }
+    }
+
+    public void validatePortalUserCanPublishActivity(){
+        Long userId = SmartRequestUtil.getRequestUserId();
+        PortalUserEntity portalUser = portalUserManager.getById(userId);
+        if (!portalUser.isCanPublishActivity()) {
+            throw new BusinessException(UserErrorCode.NO_PERMISSION);
+        }
+    }
+
+    public void validateUserInSchool(PortalUserEntity portalUser,Long schoolId){
+        if(!portalUser.getSchoolId().equals(schoolId)){
+            throw new BusinessException(UserErrorCode.PARAM_ERROR);
+        }
+    }
+
+    public void validateUserInCollege(PortalUserEntity portalUser,Long collegeId){
+        if(!portalUser.getCollegeId().equals(collegeId)){
+            throw new BusinessException(UserErrorCode.PARAM_ERROR);
+        }
+    }
+
+    public void validateUserInOrganization(PortalUserEntity portalUser,Long organizationId){
+        if(portalUser.getOrganizationId()==null){
+            throw new BusinessException(UserErrorCode.PARAM_ERROR);
+        }
+        if(!portalUser.getOrganizationId().equals(organizationId)){
+            throw new BusinessException(UserErrorCode.PARAM_ERROR);
         }
     }
 }

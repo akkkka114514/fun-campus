@@ -1,5 +1,7 @@
 package com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.entity;
 
+import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewEvent;
+import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewStage;
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -41,19 +43,15 @@ public class ActivityReviewLogEntity {
      */
     private String reviewerName;
 
-    private Long nextReviewerId;
-
-    private String nextReviewerName;
-
     /**
      * 审核阶段，1-》初审，2-》审阅，3-》终审，4-》完结审核
      */
-    private Byte reviewStage;
+    private ActivityReviewStage reviewStage;
 
     /**
      * 审核行为，1-》通过，2-》驳回，3-》建议
      */
-    private Byte action;
+    private ActivityReviewEvent action;
 
     /**
      * 驳回原因
@@ -70,6 +68,8 @@ public class ActivityReviewLogEntity {
      */
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
+
+    private LocalDateTime updateTime;
 
     //是否已删除
     private Boolean deletedFlag;

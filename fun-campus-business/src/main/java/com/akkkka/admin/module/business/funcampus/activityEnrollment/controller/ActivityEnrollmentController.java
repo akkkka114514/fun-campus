@@ -1,14 +1,10 @@
 package com.akkkka.admin.module.business.funcampus.activityEnrollment.controller;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.form.ActivityEnrollmentQueryForm;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.vo.ActivityEnrollmentVO;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.service.ActivityEnrollmentService;
-import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityWithScheduleVO;
-import com.akkkka.admin.module.business.funcampus.portalUser.domain.vo.PortalUserVO;
 import com.akkkka.module.support.repeatsubmit.annoation.RepeatSubmit;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import com.akkkka.common.domain.ResponseDTO;
 import com.akkkka.common.domain.PageResult;
 import org.springframework.web.bind.annotation.PostMapping;

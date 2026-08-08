@@ -1,5 +1,6 @@
 package com.akkkka.admin.module.business.funcampus.collegeInfo.domain.vo;
 
+import com.akkkka.admin.module.business.funcampus.schoolInfo.domain.vo.SchoolInfoVO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 import lombok.Data;
@@ -23,7 +24,7 @@ public class CollegeInfoVO {
     private String name;
 
     @Schema(description = "所属学校id")
-    private Long schoolId;
+    private SchoolInfoVO school;
 
     @Schema(description = "是否删除")
     private Boolean deletedFlag;

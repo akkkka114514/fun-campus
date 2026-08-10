@@ -1,6 +1,16 @@
 package com.akkkka.admin.module.business.funcampus.activityReviewLog.service;
 
-import cn.hutool.core.lang.Assert;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
+
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.entity.ActivityEnrollmentEntity;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.manager.ActivityEnrollmentManager;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.service.ActivityEnrollmentService;
@@ -14,7 +24,6 @@ import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.form.
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.form.ActivityReviewLogUpdateForm;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.vo.ActivityReviewLogVO;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.manager.ActivityReviewLogManager;
-import com.akkkka.admin.module.business.funcampus.activitySigninManager.domain.entity.ActivitySigninManagerEntity;
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.manager.ActivitySigninManagerManager;
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.service.ActivitySigninManagerService;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
@@ -38,18 +47,16 @@ import com.akkkka.common.domain.IdNameVO;
 import com.akkkka.common.domain.PageResult;
 import com.akkkka.common.domain.ResponseDTO;
 import com.akkkka.common.exception.BusinessException;
+import com.akkkka.common.util.SmartPageUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+
+import cn.hutool.core.lang.Assert;
 import jakarta.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.support.TransactionTemplate;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.*;
 
 /**
  * 活动审核日志 Service
@@ -81,19 +88,32 @@ public class ActivityReviewLogService {
     private final PortalUserValidator portalUserValidator;
 
     public PageResult<ActivityReviewLogVO> queryPage(ActivityReviewLogQueryForm queryForm) {
-        return null; // TODO: implement
+        Page<?> page = SmartPageUtil.convert2PageQuery(queryForm);
+        List<ActivityReviewLogVO> list = activityReviewLogManager.getBaseMapper().queryPage(page, queryForm);
+        return SmartPageUtil.convert2PageResult(page, list);
     }
 
     public ResponseDTO<String> add(ActivityReviewLogAddForm addForm) {
-        return ResponseDTO.ok(); // TODO: implement
+        reviewLogValidator.validate(addForm);
+        ActivityReviewLogEntity entity = ActivityReviewLogAddForm.convert(addForm);
+        activityReviewLogManager.save(entity);
+        return ResponseDTO.ok();
     }
 
     public ResponseDTO<String> update(ActivityReviewLogUpdateForm updateForm) {
-        return ResponseDTO.ok(); // TODO: implement
+        ActivityReviewLogEntity entity = ActivityReviewLogUpdateForm.convert(updateForm);
+        activityReviewLogManager.updateById(entity);
+        return ResponseDTO.ok();
     }
 
     public void initialReview(@Nullable ActivityWithScheduleUpdateForm updateForm, ActivityReviewLogAddForm addForm) {
-        // TODO: implement
+        if (updateForm != null) {
+            activityWithScheduleService.editActivityDraft(addForm.getActivityId(), updateForm);
+        }
+        ActivityReviewLogEntity entity = ActivityReviewLogAddForm.convert(addForm);
+        entity.setReviewStage(ActivityReviewStage.INITIAL_CONTENT_REVIEW);
+        entity.setDeletedFlag(false);
+        activityReviewLogManager.save(entity);
     }
 
     public IdNameVO getInitialReviewerIdNameByActivityId(Long activityId){

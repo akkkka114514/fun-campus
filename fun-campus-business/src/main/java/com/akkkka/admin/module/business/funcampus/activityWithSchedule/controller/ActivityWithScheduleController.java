@@ -1,22 +1,27 @@
 package com.akkkka.admin.module.business.funcampus.activityWithSchedule.controller;
 
+import java.util.List;
+import java.util.Objects;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.akkkka.admin.module.business.funcampus.activityCategory.service.ActivityCategoryService;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewEvent;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewStage;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.service.ActivityReviewStateMachineContext;
-import com.alibaba.cola.statemachine.StateMachine;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.annotation.Resource;
-import jakarta.validation.Valid;
-import com.akkkka.admin.module.business.funcampus.activityCategory.service.ActivityCategoryService;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.constant.IndexActivityPageConst;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleAddForm;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleQueryForm;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleUpdateForm;
-import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.IndexActivityVO;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityWithScheduleVO;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.EditActivityDraftSelectionsVO;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.IndexActivityVO;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityWithScheduleAddFormValidator;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityWithScheduleService;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityWithScheduleUpdateFormValidator;
 import com.akkkka.admin.module.business.funcampus.collegeInfo.service.CollegeInfoService;
@@ -27,10 +32,13 @@ import com.akkkka.common.code.UserErrorCode;
 import com.akkkka.common.domain.PageResult;
 import com.akkkka.common.domain.ResponseDTO;
 import com.akkkka.module.support.repeatsubmit.annoation.RepeatSubmit;
-import org.springframework.web.bind.annotation.*;
+import com.alibaba.cola.statemachine.StateMachine;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
-import java.util.List;
-import java.util.Objects;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
 
 /**
  * 活动和时间表 组合控制器
@@ -57,6 +65,8 @@ public class ActivityWithScheduleController {
     private ActivityCategoryService activityCategoryService;
     @Resource
     private BackendUserService backendUserService;
+    @Resource
+    private ActivityWithScheduleAddFormValidator activityWithScheduleAddFormValidator;
     @Resource
     private StateMachine<ActivityReviewStage, ActivityReviewEvent, ActivityReviewStateMachineContext>
             stateMachine;
@@ -151,7 +161,8 @@ public class ActivityWithScheduleController {
     @Operation(summary = "添加待审核活动 @author akkkka114514")
     @PostMapping("/activity/submit")
     public ResponseDTO<Void> submitActivity(@RequestBody @Valid ActivityWithScheduleAddForm addForm) {
-        System.out.println(addForm.toString());
-        return null;
+        activityWithScheduleAddFormValidator.validate(addForm);
+        activityWithScheduleService.submitDraft(addForm);
+        return ResponseDTO.ok();
     }
 }

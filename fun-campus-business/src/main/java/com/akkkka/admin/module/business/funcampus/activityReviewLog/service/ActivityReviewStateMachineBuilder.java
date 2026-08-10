@@ -1,5 +1,8 @@
 package com.akkkka.admin.module.business.funcampus.activityReviewLog.service;
 
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Component;
+
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewEvent;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewStage;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityWithScheduleService;
@@ -8,10 +11,8 @@ import com.alibaba.cola.statemachine.Condition;
 import com.alibaba.cola.statemachine.StateMachine;
 import com.alibaba.cola.statemachine.builder.StateMachineBuilder;
 import com.alibaba.cola.statemachine.builder.StateMachineBuilderFactory;
+
 import lombok.AllArgsConstructor;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.stereotype.Component;
 
 /**
  * author:akkkka114514
@@ -67,6 +68,19 @@ public class ActivityReviewStateMachineBuilder {
                 .on(ActivityReviewEvent.FINAL_REVIEW_PASS)
                 .perform(logAction("进入报名审核"));
 
+        // 7. 报名审核 -> 完结审核
+        builder.externalTransition()
+                .from(ActivityReviewStage.ENROLLMENT_REVIEW)
+                .to(ActivityReviewStage.COMPLETION_REVIEW)
+                .on(ActivityReviewEvent.ENROLL_REVIEW_PASS)
+                .perform(logAction("进入完结审核"));
+
+        // 8. 终审 -> 草稿（终审退回）
+        builder.externalTransition()
+                .from(ActivityReviewStage.FINAL_CONTENT_REVIEW)
+                .to(ActivityReviewStage.DRAFT)
+                .on(ActivityReviewEvent.FINAL_REVIEW_REJECT)
+                .perform(logAction("终审退回"));
 
         return builder.build("activityReviewStateMachine");
     }

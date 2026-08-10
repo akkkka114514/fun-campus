@@ -3,6 +3,8 @@ package com.akkkka.admin.module.business.funcampus.activitySigninManager.manager
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.domain.entity.ActivitySigninManagerEntity;
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.dao.ActivitySigninManagerDao;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 
@@ -16,5 +18,10 @@ import org.springframework.stereotype.Service;
 @Service
 public class ActivitySigninManagerManager extends ServiceImpl<ActivitySigninManagerDao, ActivitySigninManagerEntity> {
 
+    public LambdaQueryWrapper<ActivitySigninManagerEntity> qwByActivityId(Long activityId) {
+        return Wrappers.lambdaQuery(ActivitySigninManagerEntity.class)
+                .eq(ActivitySigninManagerEntity::getActivityId, activityId)
+                .eq(ActivitySigninManagerEntity::getDeletedFlag, false);
+    }
 
 }

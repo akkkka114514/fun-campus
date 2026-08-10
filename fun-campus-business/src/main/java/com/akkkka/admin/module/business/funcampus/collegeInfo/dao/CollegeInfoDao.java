@@ -4,6 +4,7 @@ import java.util.List;
 import com.akkkka.admin.module.business.funcampus.collegeInfo.domain.entity.CollegeInfoEntity;
 import com.akkkka.admin.module.business.funcampus.collegeInfo.domain.form.CollegeInfoQueryForm;
 import com.akkkka.admin.module.business.funcampus.collegeInfo.domain.vo.CollegeInfoVO;
+import com.akkkka.admin.module.business.funcampus.collegeInfo.domain.vo.SimpleCollegeInfoVO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Mapper;

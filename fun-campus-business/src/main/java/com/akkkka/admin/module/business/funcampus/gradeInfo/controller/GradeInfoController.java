@@ -33,39 +33,4 @@ public class GradeInfoController {
 
     @Resource
     private GradeInfoService gradeInfoService;
-
-    @Operation(summary = "分页查询 @author akkkka114514")
-    @PostMapping("/gradeInfo/queryPage")
-    @SaCheckPermission("gradeInfo:query")
-    public ResponseDTO<PageResult<GradeInfoVO>> queryPage(@RequestBody @Valid GradeInfoQueryForm queryForm) {
-        return ResponseDTO.ok(gradeInfoService.queryPage(queryForm));
-    }
-
-    @Operation(summary = "添加 @author akkkka114514")
-    @PostMapping("/gradeInfo/add")
-    @SaCheckPermission("gradeInfo:add")
-    public ResponseDTO<String> add(@RequestBody @Valid GradeInfoAddForm addForm) {
-        return gradeInfoService.add(addForm);
-    }
-
-    @Operation(summary = "更新 @author akkkka114514")
-    @PostMapping("/gradeInfo/update")
-    @SaCheckPermission("gradeInfo:update")
-    public ResponseDTO<String> update(@RequestBody @Valid GradeInfoUpdateForm updateForm) {
-        return gradeInfoService.update(updateForm);
-    }
-
-    @Operation(summary = "批量删除 @author akkkka114514")
-    @PostMapping("/gradeInfo/batchDelete")
-    @SaCheckPermission("gradeInfo:delete")
-    public ResponseDTO<String> batchDelete(@RequestBody ValidateList<Long> idList) {
-        return gradeInfoService.batchDelete(idList);
-    }
-
-    @Operation(summary = "单个删除 @author akkkka114514")
-    @GetMapping("/gradeInfo/delete/{id}")
-    @SaCheckPermission("gradeInfo:delete")
-    public ResponseDTO<String> batchDelete(@PathVariable Long id) {
-        return gradeInfoService.delete(id);
-    }
 }

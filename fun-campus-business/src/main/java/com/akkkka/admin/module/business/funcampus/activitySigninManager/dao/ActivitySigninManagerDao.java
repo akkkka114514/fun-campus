@@ -3,7 +3,7 @@ package com.akkkka.admin.module.business.funcampus.activitySigninManager.dao;
 import java.util.List;
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.domain.entity.ActivitySigninManagerEntity;
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.domain.form.ActivitySigninManagerQueryForm;
-import net.lab1024.sa.admin.module.business.funcampus.ActivitySigninManager.domain.vo.ActivitySigninManagerVO;
+import com.akkkka.admin.module.business.funcampus.activitySigninManager.domain.vo.ActivitySigninManagerVO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Mapper;

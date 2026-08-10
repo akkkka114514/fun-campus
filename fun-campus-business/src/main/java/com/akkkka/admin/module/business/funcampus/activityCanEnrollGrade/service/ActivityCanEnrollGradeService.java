@@ -21,6 +21,7 @@ import com.akkkka.admin.module.business.funcampus.activityCanEnrollGrade.domain.
 import com.akkkka.admin.module.business.funcampus.activityCanEnrollGrade.domain.form.ActivityCanEnrollGradeUpdateForm;
 import com.akkkka.admin.module.business.funcampus.activityCanEnrollGrade.domain.vo.ActivityCanEnrollGradeVO;
 import com.akkkka.admin.module.business.funcampus.activityCanEnrollGrade.manager.ActivityCanEnrollGradeManager;
+import com.akkkka.common.domain.ValidateList;
 import com.akkkka.common.util.SmartBeanUtil;
 import com.akkkka.common.util.SmartPageUtil;
 import com.akkkka.common.domain.ResponseDTO;
@@ -145,5 +146,40 @@ public class ActivityCanEnrollGradeService {
             }
         });
 
+    }
+
+    public PageResult<ActivityCanEnrollGradeVO> queryPage(ActivityCanEnrollGradeQueryForm queryForm) {
+        Page<ActivityCanEnrollGradeVO> page = new Page<>(queryForm.getPageNum(), queryForm.getPageSize());
+        List<ActivityCanEnrollGradeVO> list = canEnrollGradeManager.getBaseMapper().queryPage(page, queryForm);
+        return SmartPageUtil.convert2PageResult(page, list);
+    }
+
+    public ResponseDTO<String> add(ActivityCanEnrollGradeAddForm addForm) {
+        ActivityCanEnrollGradeEntity entity = SmartBeanUtil.copy(addForm, ActivityCanEnrollGradeEntity.class);
+        entity.setDeletedFlag(false);
+        canEnrollGradeManager.save(entity);
+        return ResponseDTO.ok();
+    }
+
+    public ResponseDTO<String> update(ActivityCanEnrollGradeUpdateForm updateForm) {
+        ActivityCanEnrollGradeEntity entity = SmartBeanUtil.copy(updateForm, ActivityCanEnrollGradeEntity.class);
+        canEnrollGradeManager.updateById(entity);
+        return ResponseDTO.ok();
+    }
+
+    public ResponseDTO<String> batchDelete(ValidateList<Long> idList) {
+        if (CollectionUtils.isEmpty(idList)) {
+            return ResponseDTO.ok();
+        }
+        canEnrollGradeManager.getBaseMapper().batchUpdateDeleted(idList, true);
+        return ResponseDTO.ok();
+    }
+
+    public ResponseDTO<String> delete(Long id) {
+        if (id == null) {
+            return ResponseDTO.ok();
+        }
+        canEnrollGradeManager.getBaseMapper().updateDeleted(id, true);
+        return ResponseDTO.ok();
     }
 }

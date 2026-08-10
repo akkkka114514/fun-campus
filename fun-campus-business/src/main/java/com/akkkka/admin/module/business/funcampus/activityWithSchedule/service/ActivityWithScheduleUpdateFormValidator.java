@@ -81,18 +81,18 @@ public class ActivityWithScheduleUpdateFormValidator {
     }
 
     private void validateActivityId(ActivityWithScheduleUpdateForm updateForm){
-        activityEntity = activityManager.getById(updateForm.getId());
+        activityEntity = activityManager.getById(updateForm.getActivityUpdateForm().getId());
         if(activityEntity ==null || activityEntity.getDeletedFlag()){
             throw new BusinessException(UserErrorCode.PARAM_ERROR,"修改不存在的活动");
         }
     }
 
     private void validateActivityUpdateUserAndTime(ActivityWithScheduleUpdateForm updateForm){
-        Long activityId = updateForm.getId();
+        Long activityId = updateForm.getActivityUpdateForm().getId();
         LambdaQueryWrapper<ActivityReviewLogEntity> lqw=new LambdaQueryWrapper<>();
         //选取最新的活动审核日志
         lqw.eq(ActivityReviewLogEntity::getActivityId,activityId)
-                .eq(ActivityReviewLogEntity::isDeletedFlag,false)
+                .eq(ActivityReviewLogEntity::getDeletedFlag,false)
                 .select(ActivityReviewLogEntity::getReviewerId
                         ,ActivityReviewLogEntity::getReviewStage
                         ,ActivityReviewLogEntity::getAction)
@@ -105,7 +105,7 @@ public class ActivityWithScheduleUpdateFormValidator {
                 throw new BusinessException(UserErrorCode.NO_PERMISSION,
                         "活动正在审核中，前台用户没有权限修改活动，请先取消审核");
             }
-            if(reviewLogEntity.getReviewStage().equals(ActivityReviewStage.CHECK)){
+            if(reviewLogEntity.getReviewStage().equals(ActivityReviewStage.CONTENT_CHECK)){
                 throw new BusinessException(UserErrorCode.PARAM_ERROR,"审阅阶段不能修改活动内容");
             }
             if(requestUser instanceof RequestBackendUser){
@@ -126,68 +126,68 @@ public class ActivityWithScheduleUpdateFormValidator {
     }
     private void validateActivityCanUpdateTime(ActivityReviewLogEntity reviewLogEntity){
         assert reviewLogEntity != null;
-        if(Objects.equals(reviewLogEntity.getReviewStage(),ActivityReviewStage.FINAL_REVIEW)
+        if(Objects.equals(reviewLogEntity.getReviewStage(),ActivityReviewStage.FINAL_CONTENT_REVIEW)
                 &&reviewLogEntity.getAction()!=null){
             throw new BusinessException(UserErrorCode.PARAM_ERROR,"终审完成的活动不能修改");
         }
-        if(reviewLogEntity.getReviewStage()>ActivityReviewStage.FINAL_REVIEW){
+        if(reviewLogEntity.getReviewStage().compareTo(ActivityReviewStage.FINAL_CONTENT_REVIEW)>0){
             throw new BusinessException(UserErrorCode.PARAM_ERROR,"终审完成的活动不能修改");
         }
     }
 
     private void validateActivitySchedule(ActivityWithScheduleUpdateForm updateForm){
-        if(updateForm.getEnrollStartTime()==null&&
-        updateForm.getEnrollEndTime()==null&&
-        updateForm.getActivityStartTime()==null&&
-        updateForm.getActivityEndTime()==null&&
-        updateForm.getSigninStartTime()==null&&
-        updateForm.getSigninEndTime()==null&&
-        updateForm.getSignoutStartTime()==null&&
-        updateForm.getSignoutEndTime()==null){
+        if(updateForm.getActivityScheduleUpdateForm().getEnrollStartTime()==null&&
+        updateForm.getActivityScheduleUpdateForm().getEnrollEndTime()==null&&
+        updateForm.getActivityScheduleUpdateForm().getActivityStartTime()==null&&
+        updateForm.getActivityScheduleUpdateForm().getActivityEndTime()==null&&
+        updateForm.getActivityScheduleUpdateForm().getSigninStartTime()==null&&
+        updateForm.getActivityScheduleUpdateForm().getSigninEndTime()==null&&
+        updateForm.getActivityScheduleUpdateForm().getSignoutStartTime()==null&&
+        updateForm.getActivityScheduleUpdateForm().getSignoutEndTime()==null){
             return;
         }
-        ActivityScheduleEntity oldOne = activityScheduleManager.getById(updateForm.getId());
-        ActivityEntity checkNeedSignOut = activityManager.getById(updateForm.getId());
+        ActivityScheduleEntity oldOne = activityScheduleManager.getById(updateForm.getActivityUpdateForm().getId());
+        ActivityEntity checkNeedSignOut = activityManager.getById(updateForm.getActivityUpdateForm().getId());
         StrictlyIncreasingLocalDateTimeList list =new StrictlyIncreasingLocalDateTimeList();
         try {
-            if (updateForm.getEnrollStartTime() != null) {
-                list.add(updateForm.getEnrollStartTime());
+            if (updateForm.getActivityScheduleUpdateForm().getEnrollStartTime() != null) {
+                list.add(updateForm.getActivityScheduleUpdateForm().getEnrollStartTime());
             } else {
                 list.add(oldOne.getEnrollStartTime());
             }
-            if (updateForm.getEnrollEndTime() != null) {
-                list.add(updateForm.getEnrollEndTime());
+            if (updateForm.getActivityScheduleUpdateForm().getEnrollEndTime() != null) {
+                list.add(updateForm.getActivityScheduleUpdateForm().getEnrollEndTime());
             } else {
                 list.add(oldOne.getEnrollEndTime());
             }
-            if (updateForm.getActivityStartTime() != null) {
-                list.add(updateForm.getActivityStartTime());
+            if (updateForm.getActivityScheduleUpdateForm().getActivityStartTime() != null) {
+                list.add(updateForm.getActivityScheduleUpdateForm().getActivityStartTime());
             } else {
                 list.add(oldOne.getActivityStartTime());
             }
-            if (updateForm.getActivityEndTime() != null) {
-                list.add(updateForm.getActivityEndTime());
+            if (updateForm.getActivityScheduleUpdateForm().getActivityEndTime() != null) {
+                list.add(updateForm.getActivityScheduleUpdateForm().getActivityEndTime());
             } else {
                 list.add(oldOne.getActivityStartTime());
             }
-            if (updateForm.getSigninStartTime() != null) {
-                list.add(updateForm.getSigninStartTime());
+            if (updateForm.getActivityScheduleUpdateForm().getSigninStartTime() != null) {
+                list.add(updateForm.getActivityScheduleUpdateForm().getSigninStartTime());
             } else {
                 list.add(oldOne.getSigninStartTime());
             }
-            if (updateForm.getSigninStartTime() != null) {
-                list.add(updateForm.getSigninEndTime());
+            if (updateForm.getActivityScheduleUpdateForm().getSigninStartTime() != null) {
+                list.add(updateForm.getActivityScheduleUpdateForm().getSigninEndTime());
             } else {
                 list.add(oldOne.getSigninEndTime());
             }
-            if (updateForm.getNeedSignOut() || checkNeedSignOut.isNeedSignOut()) {
-                if (updateForm.getSignoutStartTime() != null) {
-                    list.add(updateForm.getSignoutStartTime());
+            if (updateForm.getActivityUpdateForm().getNeedSignOut() || checkNeedSignOut.getNeedSignOut()) {
+                if (updateForm.getActivityScheduleUpdateForm().getSignoutStartTime() != null) {
+                    list.add(updateForm.getActivityScheduleUpdateForm().getSignoutStartTime());
                 } else {
                     list.add(oldOne.getSignoutStartTime());
                 }
-                if (updateForm.getSignoutStartTime() != null) {
-                    list.add(updateForm.getSignoutEndTime());
+                if (updateForm.getActivityScheduleUpdateForm().getSignoutStartTime() != null) {
+                    list.add(updateForm.getActivityScheduleUpdateForm().getSignoutEndTime());
                 } else {
                     list.add(oldOne.getSignoutEndTime());
                 }
@@ -197,37 +197,37 @@ public class ActivityWithScheduleUpdateFormValidator {
         }
     }
     private void validateActivityBelongTo(ActivityWithScheduleUpdateForm updateForm){
-        if(updateForm.getActivityBelongToSchoolId()==null
-            &&updateForm.getActivityBelongToOrganizationId()==null
-            &&updateForm.getActivityBelongToCollegeId()==null){
+        if(updateForm.getActivityUpdateForm().getActivityBelongToSchoolId()==null
+            &&updateForm.getActivityUpdateForm().getActivityBelongToOrganizationId()==null
+            &&updateForm.getActivityUpdateForm().getActivityBelongToCollegeId()==null){
             return;
         }
         //activityBelongToCollegeId和activityBelongToOrganizationId不能同时为空或同时不为空
-        if((updateForm.getActivityBelongToCollegeId() != null|| updateForm.getActivityBelongToSchoolId()!=null) && updateForm.getActivityBelongToOrganizationId() != null){
+        if((updateForm.getActivityUpdateForm().getActivityBelongToCollegeId() != null|| updateForm.getActivityUpdateForm().getActivityBelongToSchoolId()!=null) && updateForm.getActivityUpdateForm().getActivityBelongToOrganizationId() != null){
             throw new BusinessException(UserErrorCode.PARAM_ERROR,"activityBelongToCollegeId和activityBelongToOrganizationId不能同时为空或同时不为空");
         }
         //如果只改学校id又不改college id，肯定有问题
-        if(updateForm.getActivityBelongToSchoolId()!=null&&updateForm.getActivityBelongToCollegeId()==null){
+        if(updateForm.getActivityUpdateForm().getActivityBelongToSchoolId()!=null&&updateForm.getActivityUpdateForm().getActivityBelongToCollegeId()==null){
             throw new BusinessException(UserErrorCode.PARAM_ERROR,"如果只改学校id又不改college id");
         }
         //检查活动所属学校是否存在
-        schoolInfoManager.getOptById(updateForm.getActivityBelongToSchoolId())
+        schoolInfoManager.getOptById(updateForm.getActivityUpdateForm().getActivityBelongToSchoolId())
                 .filter((school)->!school.getDeletedFlag())
                 .filter(school->school.getId().equals(schoolId))
                 .orElseThrow(()->new BusinessException(UserErrorCode.PARAM_ERROR,"活动所属学校不存在"));
 
         //如果活动所属学院字段不为null,则说明是学院活动
         //检查学院是否存在,以及与表单中的活动所属学院id一致
-        if(updateForm.getActivityBelongToCollegeId() != null){
-            collegeInfoManager.getOptById(updateForm.getActivityBelongToCollegeId())
+        if(updateForm.getActivityUpdateForm().getActivityBelongToCollegeId() != null){
+            collegeInfoManager.getOptById(updateForm.getActivityUpdateForm().getActivityBelongToCollegeId())
                     .filter((college)->!college.getDeletedFlag())
                     .filter((college)->college.getSchoolId().equals(schoolId))
                     .orElseThrow(()->new BusinessException(UserErrorCode.PARAM_ERROR,"添加活动传入的collegeId为错误信息"));;
         }
         //如果活动所属组织字段不为null,则说明是组织活动
         //检查组织是否存在,以及与表单中的活动所属组织id一致
-        if(updateForm.getActivityBelongToOrganizationId() != null){
-            organizationInfoManager.getOptById(updateForm.getActivityBelongToOrganizationId())
+        if(updateForm.getActivityUpdateForm().getActivityBelongToOrganizationId() != null){
+            organizationInfoManager.getOptById(updateForm.getActivityUpdateForm().getActivityBelongToOrganizationId())
                     .filter((org)->!org.getDeletedFlag())
                     .filter((org)->org.getSchoolId().equals(schoolId))
                     .orElseThrow(()->new BusinessException(UserErrorCode.PARAM_ERROR,"organization不存在或organization的school与其他数据不一致"));
@@ -236,14 +236,14 @@ public class ActivityWithScheduleUpdateFormValidator {
     }
 
     private void validateActivityTitleUnique(ActivityWithScheduleUpdateForm updateForm){
-        if(updateForm.getTitle()==null){
+        if(updateForm.getActivityUpdateForm().getTitle()==null){
             return;
         }
         //活动中不能有和添加活动标题一致的
         Optional.ofNullable(
                         activityManager.getOne(
                                 new LambdaQueryWrapper<ActivityEntity>()
-                                        .eq(ActivityEntity::getTitle,updateForm.getTitle())
+                                        .eq(ActivityEntity::getTitle,updateForm.getActivityUpdateForm().getTitle())
                         )
                 ).filter(e->!e.getDeletedFlag())
                 .ifPresent((e)->{
@@ -252,17 +252,17 @@ public class ActivityWithScheduleUpdateFormValidator {
                 );
     }
     private void validateActivityCategory(ActivityWithScheduleUpdateForm updateForm){
-        if(updateForm.getCategoryId()==null){
+        if(updateForm.getActivityUpdateForm().getCategoryId()==null){
             return;
         }
-        activityCategoryManager.getOptById(updateForm.getCategoryId())
+        activityCategoryManager.getOptById(updateForm.getActivityUpdateForm().getCategoryId())
                 .filter((cate)->!cate.getDeletedFlag())
                 .orElseThrow(()->new BusinessException(UserErrorCode.PARAM_ERROR,"活动分类不存在"));
 
     }
 
     private void validateActivityManager(ActivityWithScheduleUpdateForm updateForm){
-        if(updateForm.getActivityManagerId()!=null){
+        if(updateForm.getActivityUpdateForm().getActivityManagerId()!=null){
             throw new BusinessException(UserErrorCode.PARAM_ERROR,"活动管理员为发起活动者，不能更改");
         }
     }

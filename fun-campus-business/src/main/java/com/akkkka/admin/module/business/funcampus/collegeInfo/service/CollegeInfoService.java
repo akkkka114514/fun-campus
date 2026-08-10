@@ -5,11 +5,20 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
+import com.akkkka.admin.module.business.funcampus.collegeInfo.domain.form.CollegeInfoAddForm;
+import com.akkkka.admin.module.business.funcampus.collegeInfo.domain.form.CollegeInfoQueryForm;
+import com.akkkka.admin.module.business.funcampus.collegeInfo.domain.form.CollegeInfoUpdateForm;
 import com.akkkka.admin.module.business.funcampus.collegeInfo.domain.vo.CollegeInfoVO;
 import com.akkkka.admin.module.business.funcampus.collegeInfo.manager.CollegeInfoManager;
 import com.akkkka.admin.module.business.funcampus.util.AssertUtil;
 import com.akkkka.common.domain.IdNameVO;
+import com.akkkka.common.domain.ResponseDTO;
+import com.akkkka.common.domain.PageResult;
+import com.akkkka.common.domain.ValidateList;
+import com.akkkka.common.util.SmartBeanUtil;
+import com.akkkka.common.util.SmartPageUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.akkkka.admin.module.business.funcampus.collegeInfo.dao.CollegeInfoDao;
@@ -69,5 +78,40 @@ public class CollegeInfoService {
                         .eq(CollegeInfoEntity::getDeletedFlag,false)
                         .select(CollegeInfoEntity::getId)
         ).stream().map(CollegeInfoEntity::getId).toList();
+    }
+
+    public PageResult<CollegeInfoVO> queryPage(CollegeInfoQueryForm queryForm) {
+        Page<CollegeInfoVO> page = new Page<>(queryForm.getPageNum(), queryForm.getPageSize());
+        List<CollegeInfoVO> list = collegeInfoManager.getBaseMapper().queryPage(page, queryForm);
+        return SmartPageUtil.convert2PageResult(page, list);
+    }
+
+    public ResponseDTO<String> add(CollegeInfoAddForm addForm) {
+        CollegeInfoEntity entity = SmartBeanUtil.copy(addForm, CollegeInfoEntity.class);
+        entity.setDeletedFlag(false);
+        collegeInfoManager.save(entity);
+        return ResponseDTO.ok();
+    }
+
+    public ResponseDTO<String> update(CollegeInfoUpdateForm updateForm) {
+        CollegeInfoEntity entity = SmartBeanUtil.copy(updateForm, CollegeInfoEntity.class);
+        collegeInfoManager.updateById(entity);
+        return ResponseDTO.ok();
+    }
+
+    public ResponseDTO<String> batchDelete(ValidateList<Long> idList) {
+        if (CollectionUtils.isEmpty(idList)) {
+            return ResponseDTO.ok();
+        }
+        collegeInfoManager.getBaseMapper().batchUpdateDeleted(idList, true);
+        return ResponseDTO.ok();
+    }
+
+    public ResponseDTO<String> delete(Long id) {
+        if (id == null) {
+            return ResponseDTO.ok();
+        }
+        collegeInfoManager.getBaseMapper().updateDeleted(id, true);
+        return ResponseDTO.ok();
     }
 }

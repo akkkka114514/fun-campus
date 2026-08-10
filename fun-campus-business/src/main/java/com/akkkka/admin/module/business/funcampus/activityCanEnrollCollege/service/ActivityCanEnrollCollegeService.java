@@ -24,6 +24,7 @@ import com.akkkka.admin.module.business.funcampus.collegeInfo.manager.CollegeInf
 import com.akkkka.common.util.SmartBeanUtil;
 import com.akkkka.common.util.SmartPageUtil;
 import com.akkkka.common.domain.ResponseDTO;
+import com.akkkka.common.domain.ValidateList;
 import com.akkkka.common.domain.PageResult;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -155,4 +156,38 @@ public class ActivityCanEnrollCollegeService {
         });
     }
 
+    public PageResult<ActivityCanEnrollCollegeVO> queryPage(ActivityCanEnrollCollegeQueryForm queryForm) {
+        Page<ActivityCanEnrollCollegeVO> page = new Page<>(queryForm.getPageNum(), queryForm.getPageSize());
+        List<ActivityCanEnrollCollegeVO> list = canEnrollCollegeManager.getBaseMapper().queryPage(page, queryForm);
+        return SmartPageUtil.convert2PageResult(page, list);
+    }
+
+    public ResponseDTO<String> add(ActivityCanEnrollCollegeAddForm addForm) {
+        ActivityCanEnrollCollegeEntity entity = SmartBeanUtil.copy(addForm, ActivityCanEnrollCollegeEntity.class);
+        entity.setDeletedFlag(false);
+        canEnrollCollegeManager.save(entity);
+        return ResponseDTO.ok();
+    }
+
+    public ResponseDTO<String> update(ActivityCanEnrollCollegeUpdateForm updateForm) {
+        ActivityCanEnrollCollegeEntity entity = SmartBeanUtil.copy(updateForm, ActivityCanEnrollCollegeEntity.class);
+        canEnrollCollegeManager.updateById(entity);
+        return ResponseDTO.ok();
+    }
+
+    public ResponseDTO<String> batchDelete(ValidateList<Long> idList) {
+        if (CollectionUtils.isEmpty(idList)) {
+            return ResponseDTO.ok();
+        }
+        canEnrollCollegeManager.getBaseMapper().batchUpdateDeleted(idList, true);
+        return ResponseDTO.ok();
+    }
+
+    public ResponseDTO<String> delete(Long id) {
+        if (id == null) {
+            return ResponseDTO.ok();
+        }
+        canEnrollCollegeManager.getBaseMapper().updateDeleted(id, true);
+        return ResponseDTO.ok();
+    }
 }

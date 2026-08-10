@@ -34,38 +34,5 @@ public class ActivitySigninManagerController {
     @Resource
     private ActivitySigninManagerService activitySigninManagerService;
 
-    @Operation(summary = "分页查询 @author akkkka114514")
-    @PostMapping("/activitySigninManager/queryPage")
-    @SaCheckPermission("activitySigninManager:query")
-    public ResponseDTO<PageResult<ActivitySigninManagerVO>> queryPage(@RequestBody @Valid ActivitySigninManagerQueryForm queryForm) {
-        return ResponseDTO.ok(activitySigninManagerService.queryPage(queryForm));
-    }
 
-    @Operation(summary = "添加 @author akkkka114514")
-    @PostMapping("/activitySigninManager/add")
-    @SaCheckPermission("activitySigninManager:add")
-    public ResponseDTO<String> add(@RequestBody @Valid ActivitySigninManagerAddForm addForm) {
-        return activitySigninManagerService.add(addForm);
-    }
-
-    @Operation(summary = "更新 @author akkkka114514")
-    @PostMapping("/activitySigninManager/update")
-    @SaCheckPermission("activitySigninManager:update")
-    public ResponseDTO<String> update(@RequestBody @Valid ActivitySigninManagerUpdateForm updateForm) {
-        return activitySigninManagerService.update(updateForm);
-    }
-
-    @Operation(summary = "批量删除 @author akkkka114514")
-    @PostMapping("/activitySigninManager/batchDelete")
-    @SaCheckPermission("activitySigninManager:delete")
-    public ResponseDTO<String> batchDelete(@RequestBody ValidateList<Long> idList) {
-        return activitySigninManagerService.batchDelete(idList);
-    }
-
-    @Operation(summary = "单个删除 @author akkkka114514")
-    @GetMapping("/activitySigninManager/delete/{id}")
-    @SaCheckPermission("activitySigninManager:delete")
-    public ResponseDTO<String> batchDelete(@PathVariable Long id) {
-        return activitySigninManagerService.delete(id);
-    }
 }

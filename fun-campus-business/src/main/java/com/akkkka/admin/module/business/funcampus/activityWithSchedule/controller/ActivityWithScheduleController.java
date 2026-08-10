@@ -15,6 +15,7 @@ import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.fo
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleQueryForm;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleUpdateForm;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.IndexActivityVO;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityWithScheduleVO;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.EditActivityDraftSelectionsVO;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityWithScheduleService;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityWithScheduleUpdateFormValidator;
@@ -67,9 +68,7 @@ public class ActivityWithScheduleController {
         if(Objects.isNull(addForm)){
             return ResponseDTO.error(UserErrorCode.PARAM_ERROR);
         }
-        ActivityWithScheduleAddFormValidator addValidator = new ActivityWithScheduleAddFormValidator();
-        ActivityReviewStateMachineContext ctx=new ActivityReviewStateMachineContext();
-        ctx.setActivityWithScheduleAddForm(addForm);
+        // TODO: create ActivityWithScheduleAddFormValidator
         stateMachine.fireEvent(ActivityReviewStage.DRAFT,ActivityReviewEvent.SUBMIT,new ActivityReviewStateMachineContext());
         return ResponseDTO.ok();
     }
@@ -146,7 +145,7 @@ public class ActivityWithScheduleController {
     @GetMapping("/activity/publish/init")
     public ResponseDTO<EditActivityDraftSelectionsVO> initPublish() {
 
-        return ResponseDTO.ok(initPublishActivityPageVO);
+        return ResponseDTO.ok(activityWithScheduleService.getEditActivityDraftSelections());
     }
 
     @Operation(summary = "添加待审核活动 @author akkkka114514")

@@ -41,7 +41,7 @@ public class ActivitySigninManagerService {
     private SignInManagerValidator signInManagerValidator;
 
     public List<ActivitySigninManagerVO> listVOByActivityId(Long activityId){
-        List<ActivitySigninManagerEntity> list = signinManagerManager.list(listByActivityIdQw(activityId));
+        List<ActivitySigninManagerEntity> list = signinManagerManager.list(signinManagerManager.qwByActivityId(activityId));
 
         List<ActivitySigninManagerVO> result = new ArrayList<>();
         if(list.isEmpty()){

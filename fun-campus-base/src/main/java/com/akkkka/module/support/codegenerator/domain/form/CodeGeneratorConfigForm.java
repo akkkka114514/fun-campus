@@ -9,7 +9,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import net.lab1024.sa.base.module.support.codegenerator.domain.model.*;
 
 import java.util.List;
 

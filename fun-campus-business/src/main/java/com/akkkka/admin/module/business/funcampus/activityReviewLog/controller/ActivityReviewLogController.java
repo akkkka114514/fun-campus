@@ -34,13 +34,11 @@ public class ActivityReviewLogController {
 
     @Resource
     private ActivityReviewLogService activityReviewLogService;
+    @Resource
+    private ActivityReviewLogValidator activityReviewLogValidator;
+    @Resource
+    private ActivityWithScheduleUpdateFormValidator activityWithScheduleUpdateFormValidator;
 
-    @Operation(summary = "分页查询 @author akkkka114514")
-    @PostMapping("/activityReviewLog/queryPage")
-    @SaCheckPermission("activityReviewLog:query")
-    public ResponseDTO<PageResult<ActivityReviewLogVO>> queryPage(@RequestBody @Valid ActivityReviewLogQueryForm queryForm) {
-        return ResponseDTO.ok(activityReviewLogService.queryPage(queryForm));
-    }
 
     @Operation(summary = "添加 @author akkkka114514")
     @PostMapping("/activityReviewLog/add")
@@ -60,11 +58,9 @@ public class ActivityReviewLogController {
     public ResponseDTO<String> initialReview(@RequestBody @Nullable ActivityWithScheduleUpdateForm updateForm,
                                  @RequestBody ActivityReviewLogAddForm addForm){
         if(updateForm!=null){
-            ActivityWithScheduleUpdateFormValidator updateValidator = new ActivityWithScheduleUpdateFormValidator();
-            updateValidator.validate(updateForm);
+            activityWithScheduleUpdateFormValidator.validate(updateForm);
         }
-        ActivityReviewLogValidator addValidator = new ActivityReviewLogValidator();
-        addValidator.validate(addForm);
+        activityReviewLogValidator.validate(addForm);
         activityReviewLogService.initialReview(updateForm,addForm);
         return ResponseDTO.ok();
     }

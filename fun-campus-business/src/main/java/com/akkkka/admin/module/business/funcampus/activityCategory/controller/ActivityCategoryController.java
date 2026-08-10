@@ -34,38 +34,4 @@ public class ActivityCategoryController {
     @Resource
     private ActivityCategoryService activityCategoryService;
 
-    @Operation(summary = "分页查询 @author akkkka114514")
-    @PostMapping("/activityCategory/queryPage")
-    @SaCheckPermission("activityCategory:query")
-    public ResponseDTO<PageResult<ActivityCategoryVO>> queryPage(@RequestBody @Valid ActivityCategoryQueryForm queryForm) {
-        return ResponseDTO.ok(activityCategoryService.queryPage(queryForm));
-    }
-
-    @Operation(summary = "添加 @author akkkka114514")
-    @PostMapping("/activityCategory/add")
-    @SaCheckPermission("activityCategory:add")
-    public ResponseDTO<String> add(@RequestBody @Valid ActivityCategoryAddForm addForm) {
-        return activityCategoryService.add(addForm);
-    }
-
-    @Operation(summary = "更新 @author akkkka114514")
-    @PostMapping("/activityCategory/update")
-    @SaCheckPermission("activityCategory:update")
-    public ResponseDTO<String> update(@RequestBody @Valid ActivityCategoryUpdateForm updateForm) {
-        return activityCategoryService.update(updateForm);
-    }
-
-    @Operation(summary = "批量删除 @author akkkka114514")
-    @PostMapping("/activityCategory/batchDelete")
-    @SaCheckPermission("activityCategory:delete")
-    public ResponseDTO<String> batchDelete(@RequestBody ValidateList<Long> idList) {
-        return activityCategoryService.batchDelete(idList);
-    }
-
-    @Operation(summary = "单个删除 @author akkkka114514")
-    @GetMapping("/activityCategory/delete/{id}")
-    @SaCheckPermission("activityCategory:delete")
-    public ResponseDTO<String> batchDelete(@PathVariable Long id) {
-        return activityCategoryService.delete(id);
-    }
 }

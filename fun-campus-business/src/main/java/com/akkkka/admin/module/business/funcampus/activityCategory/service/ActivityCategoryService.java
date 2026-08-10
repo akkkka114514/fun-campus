@@ -12,7 +12,9 @@ import com.akkkka.admin.module.business.funcampus.activityCategory.domain.vo.Act
 import com.akkkka.admin.module.business.funcampus.activityCategory.domain.vo.SimpleActivityCategoryVO;
 import com.akkkka.admin.module.business.funcampus.activityCategory.manager.ActivityCategoryManager;
 import com.akkkka.admin.module.business.funcampus.util.AssertUtil;
+import com.akkkka.common.code.UserErrorCode;
 import com.akkkka.common.domain.IdNameVO;
+import com.akkkka.common.exception.BusinessException;
 import com.akkkka.common.util.SmartBeanUtil;
 import com.akkkka.common.util.SmartPageUtil;
 import com.akkkka.common.domain.ResponseDTO;
@@ -53,4 +55,5 @@ public class ActivityCategoryService {
             return vo;
         }).toList();
     }
+
 }

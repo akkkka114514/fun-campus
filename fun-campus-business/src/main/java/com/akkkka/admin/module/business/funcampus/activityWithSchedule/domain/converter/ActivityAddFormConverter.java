@@ -25,8 +25,8 @@ public class ActivityAddFormConverter {
         activity.setCreateTime(LocalDateTime.now());
         activity.setUpdateTime(LocalDateTime.now());
         activity.setDescription(addForm.getDescription());
-        activity.setEnrollNeedReview(addForm.isEnrollNeedReview());
-        activity.setNeedSignOut(addForm.isNeedSignOut());
+        activity.setEnrollNeedReview(addForm.getEnrollNeedReview());
+        activity.setNeedSignOut(addForm.getNeedSignOut());
         activity.setAttachment(addForm.getAttachment());
         activity.setCategoryId(addForm.getCategoryId());
         activity.setCoverImg(addForm.getCoverImg());

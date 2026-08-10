@@ -31,12 +31,6 @@ public class ActivityEnrollmentController {
     @Resource
     private ActivityEnrollmentService activityEnrollmentService;
 
-    @Operation(summary = "分页查询 @author akkkka114514")
-    @PostMapping("/activityEnrollment/queryPage")
-    @SaCheckPermission("activityEnrollment:query")
-    public ResponseDTO<PageResult<ActivityEnrollmentVO>> queryPage(@RequestBody @Valid ActivityEnrollmentQueryForm queryForm) {
-        return ResponseDTO.ok(activityEnrollmentService.queryPage(queryForm));
-    }
 
     @Operation(summary = "报名活动 @author akkkka114514")
     @PostMapping("/activityEnrollment/enroll")

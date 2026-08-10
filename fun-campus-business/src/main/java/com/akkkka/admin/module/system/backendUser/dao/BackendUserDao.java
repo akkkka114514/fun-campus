@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.akkkka.admin.module.system.backendUser.domain.entity.BackendUserEntity;
 import com.akkkka.admin.module.system.backendUser.domain.form.BackendUserQueryForm;
 import com.akkkka.admin.module.system.backendUser.domain.vo.BackendUserVO;
+import com.akkkka.admin.module.system.backendUser.domain.vo.SimpleBackendUserVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Component;

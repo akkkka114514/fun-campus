@@ -3,7 +3,6 @@ package com.akkkka.admin.module.business.funcampus.activityEnrollment.dao;
 import java.util.List;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.github.jeffreyning.mybatisplus.base.MppBaseMapper;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.entity.ActivityEnrollmentEntity;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.form.ActivityEnrollmentQueryForm;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.vo.ActivityEnrollmentVO;
@@ -20,7 +19,7 @@ import org.apache.ibatis.annotations.Param;
  */
 
 @Mapper
-public interface ActivityEnrollmentDao extends BaseMapper<ActivityEnrollmentEntity>, BaseMapper<ActivityEnrollmentEntity> {
+public interface ActivityEnrollmentDao extends BaseMapper<ActivityEnrollmentEntity> {
 
     /**
      * 分页 查询

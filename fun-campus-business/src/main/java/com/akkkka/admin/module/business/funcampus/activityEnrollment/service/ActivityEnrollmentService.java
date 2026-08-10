@@ -21,6 +21,7 @@ import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.en
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityValidator;
 import com.akkkka.admin.module.business.funcampus.portalUser.domain.entity.PortalUserEntity;
+import com.akkkka.admin.module.business.funcampus.portalUser.domain.vo.SimplePortalUserVO;
 import com.akkkka.admin.module.business.funcampus.portalUser.manager.PortalUserManager;
 import com.akkkka.admin.module.business.funcampus.portalUser.service.PortalUserValidator;
 import com.akkkka.common.code.SystemErrorCode;
@@ -226,7 +227,7 @@ public class ActivityEnrollmentService {
             return null;
         }
         List<ActivityEnrollmentEntity> list = activityEnrollmentManager.list(
-                listByActivityIdQw(activityId)
+                activityEnrollmentManager.qwByActivityId(activityId)
                 .select(ActivityEnrollmentEntity::getUserId)
         );
         if(list==null||list.isEmpty()){

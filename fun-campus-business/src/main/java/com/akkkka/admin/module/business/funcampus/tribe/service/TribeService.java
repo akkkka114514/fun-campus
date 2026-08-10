@@ -21,8 +21,9 @@ import com.akkkka.common.util.SmartBeanUtil;
 import com.akkkka.common.util.SmartPageUtil;
 import com.akkkka.common.domain.ResponseDTO;
 import com.akkkka.common.domain.PageResult;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.akkkka.common.domain.ValidateList;
 import com.akkkka.common.util.SmartRequestUtil;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
 
@@ -41,11 +42,21 @@ import jakarta.annotation.Resource;
 @AllArgsConstructor
 public class TribeService {
     private final TribeManager tribeManager;
+    private final PortalUserManager portalUserManager;
 
     public String getNameById(Long id){
         TribeEntity entity = tribeManager.getById(id);
         AssertUtil.ifTrueThrowParamError(Objects.isNull(entity));
         return entity.getName();
+    }
+
+
+
+    public List<SimpleTribeVO> querySimpleList(String keyword) {
+        Long userId = SmartRequestUtil.getRequestUserId();
+        PortalUserEntity portalUser = portalUserManager.getById(userId);
+        Long schoolId = portalUser.getSchoolId();
+        return tribeManager.getBaseMapper().querySimpleList(schoolId, keyword);
     }
 
 }

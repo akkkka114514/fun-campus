@@ -137,7 +137,7 @@ public class PortalUserValidator {
     public void validatePortalUserCanPublishActivity(){
         Long userId = SmartRequestUtil.getRequestUserId();
         PortalUserEntity portalUser = portalUserManager.getById(userId);
-        if (!portalUser.isCanPublishActivity()) {
+        if (!portalUser.getCanPublishActivity()) {
             throw new BusinessException(UserErrorCode.NO_PERMISSION);
         }
     }

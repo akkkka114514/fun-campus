@@ -11,7 +11,6 @@ import com.akkkka.common.util.SmartBeanUtil;
 import com.akkkka.common.util.SmartPageUtil;
 import com.akkkka.module.support.message.constant.MessageTemplateEnum;
 import com.akkkka.module.support.message.dao.MessageDao;
-import net.lab1024.sa.base.module.support.message.domain.*;
 import org.apache.commons.text.StringSubstitutor;
 import org.springframework.stereotype.Service;
 

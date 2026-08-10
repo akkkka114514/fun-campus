@@ -21,6 +21,15 @@ public class BusinessException extends RuntimeException {
 
     private String detailMsg;
 
+    /** 触发异常的用户ID（危险用户检测用） */
+    private Long userId;
+
+    /** 触发异常的IP地址（危险用户检测用） */
+    private String ip;
+
+    /** 系统标识（危险用户检测用） */
+    private String system;
+
     public BusinessException(ErrorCode errorCode) {
         super(errorCode.getMsg());
         this.code=errorCode.getCode();

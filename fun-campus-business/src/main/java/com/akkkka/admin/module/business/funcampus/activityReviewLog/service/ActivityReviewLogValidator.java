@@ -1,5 +1,6 @@
 package com.akkkka.admin.module.business.funcampus.activityReviewLog.service;
 import cn.hutool.core.util.EnumUtil;
+import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.form.ActivityReviewLogAddForm;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewEvent;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewStage;
@@ -23,6 +24,10 @@ import java.util.Objects;
 @AllArgsConstructor
 public class ActivityReviewLogValidator {
     private ActivityReviewLogManager reviewLogManager;
+
+    public void validate(ActivityReviewLogAddForm addForm) {
+        // TODO: implement validation logic
+    }
 
     public ActivityReviewLogEntity validateReviewLogId(Long reviewLogId){
         ActivityReviewLogEntity reviewLog = reviewLogManager.getById(reviewLogId);

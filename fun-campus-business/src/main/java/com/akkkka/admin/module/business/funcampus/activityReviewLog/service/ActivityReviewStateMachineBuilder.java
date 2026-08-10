@@ -3,6 +3,8 @@ package com.akkkka.admin.module.business.funcampus.activityReviewLog.service;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewEvent;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewStage;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityWithScheduleService;
+import com.alibaba.cola.statemachine.Action;
+import com.alibaba.cola.statemachine.Condition;
 import com.alibaba.cola.statemachine.StateMachine;
 import com.alibaba.cola.statemachine.builder.StateMachineBuilder;
 import com.alibaba.cola.statemachine.builder.StateMachineBuilderFactory;
@@ -20,7 +22,7 @@ import org.springframework.stereotype.Component;
 public class ActivityReviewStateMachineBuilder {
     private ActivityWithScheduleService activityWithScheduleService;
 
-    private static ApplicationEventPublisher eventPublisher = ;
+    private ApplicationEventPublisher eventPublisher;
 
     public static StateMachine<ActivityReviewStage, ActivityReviewEvent, ActivityReviewStateMachineContext> build() {
         StateMachineBuilder<ActivityReviewStage, ActivityReviewEvent, ActivityReviewStateMachineContext> builder =
@@ -58,65 +60,34 @@ public class ActivityReviewStateMachineBuilder {
                 .perform(logAction("审阅通过"));
 
 
-        // 6. 终审 -> 报名审核 或 完结（根据是否有报名字段）
+        // 6. 终审 -> 报名审核
         builder.externalTransition()
                 .from(ActivityReviewStage.FINAL_CONTENT_REVIEW)
                 .to(ActivityReviewStage.ENROLLMENT_REVIEW)
                 .on(ActivityReviewEvent.FINAL_REVIEW_PASS)
-                .when(ctx -> ctx != null && ctx.hasRegistrationField())
                 .perform(logAction("进入报名审核"));
 
-        builder.externalTransition()
-                .from(ActivityReviewStage.FINAL_CONTENT_REVIEW)
-                .to(ActivityReviewStage.COMPLETED)
-                .on(ActivityReviewEvent.FINAL_REVIEW_PASS)
-                .when(ctx -> ctx != null && !ctx.hasRegistrationField())
-                .perform(logAction("无报名字段，直接完结"));
 
-
-        return builder.build();
+        return builder.build("activityReviewStateMachine");
     }
 
     // 条件：提交时必须有内容等
-    private static Condition<ActivityContext> checkSubmitCondition() {
+    private static Condition<ActivityReviewStateMachineContext> checkSubmitCondition() {
         return ctx -> ctx != null; // 可扩展校验
     }
 
     // 动作：执行提交逻辑（如保存、记录日志等）
-    private static Action<ActivityReviewStage, ActivityReviewEvent, ActivityContext> doSubmit() {
+    private static Action<ActivityReviewStage, ActivityReviewEvent, ActivityReviewStateMachineContext> doSubmit() {
         return (from, to, event, ctx) -> {
-            System.out.println("执行提交动作，活动ID: " + ctx.getActivityId());
+            System.out.println("执行提交动作");
             // 可调用 service 更新状态、记录操作人等
         };
     }
 
     // 通用日志动作
-    private static Action<ActivityReviewStage, ActivityReviewEvent, ActivityContext> logAction(String msg) {
+    private static Action<ActivityReviewStage, ActivityReviewEvent, ActivityReviewStateMachineContext> logAction(String msg) {
         return (from, to, event, ctx) -> {
-            System.out.println(msg + " | 活动ID: " + ctx.getActivityId());
+            System.out.println(msg);
         };
-    }
-}
-
-public class ActivityService {
-
-    private StateMachine<ActivityReviewStage, ActivityReviewEvent, ActivityContext> stateMachine;
-
-    public ActivityService() {
-        this.stateMachine = ActivityReviewStageMachineBuilder.build();
-    }
-
-    public void handleEvent(Long activityId, ActivityReviewStage currentState, ActivityReviewEvent event, boolean hasRegField) {
-        ActivityContext ctx = new ActivityContext();
-        ctx.setActivityId(activityId);
-        ctx.setHasRegistrationField(hasRegField);
-
-        ActivityReviewStage nextState = stateMachine.fireEvent(currentState, event, ctx);
-        if (nextState == null) {
-            throw new IllegalStateException("非法状态转移: " + currentState + " --" + event + "--> ?");
-        }
-
-        // 保存 nextState 到数据库
-        System.out.println("状态变更: " + currentState + " -> " + nextState);
     }
 }

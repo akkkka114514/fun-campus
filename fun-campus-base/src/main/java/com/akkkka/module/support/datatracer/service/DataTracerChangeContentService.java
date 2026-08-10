@@ -14,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import com.akkkka.common.util.SmartBigDecimalUtil;
 import com.akkkka.common.util.SmartEnumUtil;
 import com.akkkka.common.util.SmartStringUtil;
-import net.lab1024.sa.base.module.support.datatracer.annoation.*;
 import com.akkkka.module.support.datatracer.constant.DataTracerConst;
 import com.akkkka.module.support.datatracer.domain.bo.DataTracerContentBO;
 import com.akkkka.module.support.dict.domain.vo.DictDataVO;

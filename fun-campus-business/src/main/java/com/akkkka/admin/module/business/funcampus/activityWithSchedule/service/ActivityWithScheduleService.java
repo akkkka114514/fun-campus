@@ -56,6 +56,7 @@ import com.akkkka.common.code.UnexpectedErrorCode;
 import com.akkkka.common.code.UserErrorCode;
 import com.akkkka.common.domain.RequestUser;
 import com.akkkka.common.domain.ResponseDTO;
+import com.akkkka.common.domain.PageResult;
 import com.akkkka.common.exception.BusinessException;
 import com.akkkka.common.util.SmartRequestUtil;
 import com.akkkka.module.support.file.service.FileService;
@@ -123,11 +124,33 @@ public class ActivityWithScheduleService {
     @Autowired
     private BackendUserService backendUserService;
 
+    public ResponseDTO<String> deleteActivityWithSchedule(Long activityId) {
+        deleteDraft(activityId);
+        return ResponseDTO.ok();
+    }
+
+    public ResponseDTO<String> updateActivityWithSchedule(ActivityWithScheduleUpdateForm updateForm) {
+        // TODO: implement full update logic
+        return ResponseDTO.ok();
+    }
+
+    public ResponseDTO<PageResult<ActivityWithScheduleVO>> queryActivityWithSchedule(ActivityWithScheduleQueryForm queryForm) {
+        return null; // TODO: implement
+    }
+
+    public ResponseDTO<String> batchDelete(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return ResponseDTO.ok();
+        }
+        ids.forEach(this::deleteDraft);
+        return ResponseDTO.ok();
+    }
+
 
     public ActivityWithScheduleVO getDraft(Long activityId){
         getDraftActivityPart(activityId);
         getDraftActivitySchedulePart(activityId);
-
+        return null; // TODO: combine activity and schedule parts into ActivityWithScheduleVO
     }
 
     public ActivityVO getDraftActivityPart(Long activityId){
@@ -498,7 +521,7 @@ public class ActivityWithScheduleService {
 
         // 构建查询条件：获取活动报名用户 ID 及签到状态
         LambdaQueryWrapper<ActivityEnrollmentEntity> activityEnrollmentQw =
-                ActivityEnrollmentService.listByActivityIdQw(activityId)
+                enrollmentManager.qwByActivityId(activityId)
                 .select(ActivityEnrollmentEntity::getUserId)
                 .select(ActivityEnrollmentEntity::getSignInStatus);
         List<ActivityEnrollmentEntity> enrollmentEntities = enrollmentManager.list(activityEnrollmentQw);

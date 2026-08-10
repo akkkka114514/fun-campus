@@ -10,7 +10,9 @@ import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.Act
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.dto.EnrollersChangeDTO;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.entity.ActivityReviewLogEntity;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.form.ActivityReviewLogAddForm;
+import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.form.ActivityReviewLogQueryForm;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.form.ActivityReviewLogUpdateForm;
+import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.vo.ActivityReviewLogVO;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.manager.ActivityReviewLogManager;
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.domain.entity.ActivitySigninManagerEntity;
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.manager.ActivitySigninManagerManager;
@@ -33,6 +35,8 @@ import com.akkkka.admin.module.system.backendUser.service.BackendUserValidator;
 import com.akkkka.common.code.SystemErrorCode;
 import com.akkkka.common.code.UserErrorCode;
 import com.akkkka.common.domain.IdNameVO;
+import com.akkkka.common.domain.PageResult;
+import com.akkkka.common.domain.ResponseDTO;
 import com.akkkka.common.exception.BusinessException;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -75,6 +79,22 @@ public class ActivityReviewLogService {
     private final ActivityReviewLogValidator reviewLogValidator;
     private final ActivitySigninManagerService signinManagerService;
     private final PortalUserValidator portalUserValidator;
+
+    public PageResult<ActivityReviewLogVO> queryPage(ActivityReviewLogQueryForm queryForm) {
+        return null; // TODO: implement
+    }
+
+    public ResponseDTO<String> add(ActivityReviewLogAddForm addForm) {
+        return ResponseDTO.ok(); // TODO: implement
+    }
+
+    public ResponseDTO<String> update(ActivityReviewLogUpdateForm updateForm) {
+        return ResponseDTO.ok(); // TODO: implement
+    }
+
+    public void initialReview(@Nullable ActivityWithScheduleUpdateForm updateForm, ActivityReviewLogAddForm addForm) {
+        // TODO: implement
+    }
 
     public IdNameVO getInitialReviewerIdNameByActivityId(Long activityId){
         ActivityReviewLogEntity entity=activityReviewLogManager.getOne(
@@ -329,20 +349,26 @@ public class ActivityReviewLogService {
         currentReview.setCheckRemark(null);
         currentReview.setRejectReason(null);
 
+        EnrollersChangeDTO finalEnrollersChangeDTO = new EnrollersChangeDTO();
+        if (enrollerIds != null && !enrollerIds.isEmpty()) {
+            List<Long> dbEnrollerIds = enrollmentService.listPortalUserIds(nextReview.getActivityId());
+            finalEnrollersChangeDTO = enrollmentService.convertToEnrollmentChanges(nextReview.getActivityId(), enrollerIds, dbEnrollerIds);
+        }
+        EnrollersChangeDTO changeDTO = finalEnrollersChangeDTO;
+
         transactionTemplate.executeWithoutResult(status->{
             try {
-                assert finalEnrollersChangeDTO != null;
-                if (!finalEnrollersChangeDTO.getDelList().isEmpty()) {
-                    if (!enrollmentManager.updateBatchById(finalEnrollersChangeDTO.getDelList())) {
-                        log.warn("活动报名审核，批量删除报名人员失败回滚，activityId:{},userId:{}"
-                                , addForm.getActivityId(), finalEnrollersChangeDTO.getDelList());
+                if (!changeDTO.getDelList().isEmpty()) {
+                    if (!enrollmentManager.updateBatchById(changeDTO.getDelList())) {
+                        log.warn("活动报名审核，批量删除报名人员失败回滚，activityId:{}"
+                                , nextReview.getActivityId());
                         status.setRollbackOnly();
                     }
                 }
-                if (!finalEnrollersChangeDTO.getAddList().isEmpty()) {
-                    if (!enrollmentManager.saveBatch(finalEnrollersChangeDTO.getAddList())) {
-                        log.warn("活动报名审核，批量添加报名人员失败回滚，activityId:{},userId:{}"
-                                , addForm.getActivityId(), finalEnrollersChangeDTO.getAddList());
+                if (!changeDTO.getAddList().isEmpty()) {
+                    if (!enrollmentManager.saveBatch(changeDTO.getAddList())) {
+                        log.warn("活动报名审核，批量添加报名人员失败回滚，activityId:{}"
+                                , nextReview.getActivityId());
                         status.setRollbackOnly();
                     }
                 }

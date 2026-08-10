@@ -4,7 +4,6 @@ package com.akkkka.module.support.codegenerator.domain.vo;
 import com.akkkka.module.support.codegenerator.domain.model.*;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import net.lab1024.sa.base.module.support.codegenerator.domain.model.*;
 
 import java.util.List;
 

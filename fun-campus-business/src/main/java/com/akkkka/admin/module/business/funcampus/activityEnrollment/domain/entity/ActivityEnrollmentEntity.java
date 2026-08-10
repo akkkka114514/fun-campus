@@ -5,7 +5,6 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.time.LocalDateTime;
 
-import com.github.jeffreyning.mybatisplus.anno.MppMultiId;
 import lombok.Data;
 import com.akkkka.common.code.UserErrorCode;
 import com.akkkka.common.exception.BusinessException;
@@ -25,14 +24,12 @@ public class ActivityEnrollmentEntity {
     /**
      * 活动id
      */
-    @MppMultiId
     @TableField(value = "activity_id")
     private Long activityId;
 
     /**
      * 用户id
      */
-    @MppMultiId
     @TableField(value = "user_id")
     private Long userId;
 

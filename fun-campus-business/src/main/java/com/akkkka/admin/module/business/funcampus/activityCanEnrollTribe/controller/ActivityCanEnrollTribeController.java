@@ -34,38 +34,4 @@ public class ActivityCanEnrollTribeController {
     @Resource
     private ActivityCanEnrollTribeService activityCanEnrollTribeService;
 
-    @Operation(summary = "分页查询 @author akkkka114514")
-    @PostMapping("/activityCanEnrollTribe/queryPage")
-    @SaCheckPermission("activityCanEnrollTribe:query")
-    public ResponseDTO<PageResult<ActivityCanEnrollTribeVO>> queryPage(@RequestBody @Valid ActivityCanEnrollTribeQueryForm queryForm) {
-        return ResponseDTO.ok(activityCanEnrollTribeService.queryPage(queryForm));
-    }
-
-    @Operation(summary = "添加 @author akkkka114514")
-    @PostMapping("/activityCanEnrollTribe/add")
-    @SaCheckPermission("activityCanEnrollTribe:add")
-    public ResponseDTO<String> add(@RequestBody @Valid ActivityCanEnrollTribeAddForm addForm) {
-        return activityCanEnrollTribeService.add(addForm);
-    }
-
-    @Operation(summary = "更新 @author akkkka114514")
-    @PostMapping("/activityCanEnrollTribe/update")
-    @SaCheckPermission("activityCanEnrollTribe:update")
-    public ResponseDTO<String> update(@RequestBody @Valid ActivityCanEnrollTribeUpdateForm updateForm) {
-        return activityCanEnrollTribeService.update(updateForm);
-    }
-
-    @Operation(summary = "批量删除 @author akkkka114514")
-    @PostMapping("/activityCanEnrollTribe/batchDelete")
-    @SaCheckPermission("activityCanEnrollTribe:delete")
-    public ResponseDTO<String> batchDelete(@RequestBody ValidateList<Long> idList) {
-        return activityCanEnrollTribeService.batchDelete(idList);
-    }
-
-    @Operation(summary = "单个删除 @author akkkka114514")
-    @GetMapping("/activityCanEnrollTribe/delete/{id}")
-    @SaCheckPermission("activityCanEnrollTribe:delete")
-    public ResponseDTO<String> batchDelete(@PathVariable Long id) {
-        return activityCanEnrollTribeService.delete(id);
-    }
 }

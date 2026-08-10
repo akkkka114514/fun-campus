@@ -41,4 +41,12 @@ public class ActivityWithScheduleUpdateForm{
     @Schema(description = "活动签到管理员")
     @Nullable
     private List<@Min(value = 0L,message = "活动签到管理员id不能为负数")Long> activitySigninManagerIdList;
+
+    @Schema(description = "初审人ID")
+    @Nullable
+    private Long initialReviewer;
+
+    @Schema(description = "初审人用户名")
+    @Nullable
+    private String initialReviewerName;
 }

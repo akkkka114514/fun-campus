@@ -17,7 +17,6 @@ import com.akkkka.module.support.codegenerator.domain.entity.CodeGeneratorConfig
 import com.akkkka.module.support.codegenerator.domain.form.CodeGeneratorConfigForm;
 import com.akkkka.module.support.codegenerator.domain.form.CodeGeneratorPreviewForm;
 import com.akkkka.module.support.codegenerator.domain.form.TableQueryForm;
-import net.lab1024.sa.base.module.support.codegenerator.domain.model.*;
 import com.akkkka.module.support.codegenerator.domain.vo.TableColumnVO;
 import com.akkkka.module.support.codegenerator.domain.vo.TableConfigVO;
 import com.akkkka.module.support.codegenerator.domain.vo.TableVO;

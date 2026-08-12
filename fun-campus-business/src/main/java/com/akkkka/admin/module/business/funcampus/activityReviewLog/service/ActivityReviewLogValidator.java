@@ -7,6 +7,7 @@ import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.Act
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.entity.ActivityReviewLogEntity;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.manager.ActivityReviewLogManager;
 import com.akkkka.admin.module.system.backendUser.domain.entity.BackendUserEntity;
+import com.akkkka.admin.module.system.backendUser.manager.BackendUserManager;
 import com.akkkka.common.code.UserErrorCode;
 import com.akkkka.common.exception.BusinessException;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -24,6 +25,7 @@ import java.util.Objects;
 @AllArgsConstructor
 public class ActivityReviewLogValidator {
     private ActivityReviewLogManager reviewLogManager;
+    private BackendUserManager backendUserManager;
 
     public void validate(ActivityReviewLogAddForm addForm) {
         // TODO: implement validation logic
@@ -80,6 +82,41 @@ public class ActivityReviewLogValidator {
         if(!reviewerName.equals(backendUser.getUsername())){
             throw new BusinessException(UserErrorCode.PARAM_ERROR,"后台用户用户名与输入用户名不一致");
         }
+    }
+    public boolean isCurrentReviewFinished(Long activityId){
+        ActivityReviewLogEntity latest = reviewLogManager.getOne(
+                Wrappers.lambdaQuery(ActivityReviewLogEntity.class)
+                        .eq(ActivityReviewLogEntity::getActivityId, activityId)
+                        .eq(ActivityReviewLogEntity::getDeletedFlag, false)
+                        .orderByDesc(ActivityReviewLogEntity::getCreateTime)
+                        .last("limit 1")
+        );
+        return latest != null && latest.getAction() != null;
+    }
+
+
+    /**
+     * 校验审核人身份：是有效的后台用户、未被删除/禁用、姓名与用户名一致
+     */
+    public BackendUserEntity validateReviewerIdentity(Long activityId, Long reviewerId, String reviewerName) {
+        ActivityReviewLogEntity latest = reviewLogManager.getOne(
+                Wrappers.lambdaQuery(ActivityReviewLogEntity.class)
+                        .eq(ActivityReviewLogEntity::getActivityId, activityId)
+                        .eq(ActivityReviewLogEntity::getDeletedFlag, false)
+                        .orderByDesc(ActivityReviewLogEntity::getCreateTime)
+                        .last("limit 1")
+        );
+        if (latest == null || !reviewerId.equals(latest.getReviewerId()) || isCurrentReviewFinished(activityId)) {
+            throw new BusinessException(UserErrorCode.NO_PERMISSION, "您不是当前审核人");
+        }
+
+        BackendUserEntity backendUser = backendUserManager.getById(reviewerId);
+        if (backendUser == null || backendUser.getDeletedFlag() || backendUser.getDisabledFlag()) {
+            throw new BusinessException(UserErrorCode.NO_PERMISSION, "审核人不是有效的后台用户");
+        }
+
+        validateReviewerName(reviewerName, backendUser);
+        return backendUser;
     }
 
     public void validateReviewAction(ActivityReviewStage stage,ActivityReviewEvent event) {

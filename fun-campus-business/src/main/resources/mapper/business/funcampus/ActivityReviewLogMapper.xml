@@ -22,5 +22,4 @@
         FROM activity_review_log
     </select>
 
-
 </mapper>

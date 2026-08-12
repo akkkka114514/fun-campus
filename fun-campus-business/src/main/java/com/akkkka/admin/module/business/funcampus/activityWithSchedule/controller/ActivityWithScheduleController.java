@@ -1,5 +1,6 @@
 package com.akkkka.admin.module.business.funcampus.activityWithSchedule.controller;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -10,7 +11,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.akkkka.admin.module.business.funcampus.activityCanEnrollCollege.service.ActivityCanEnrollCollegeService;
+import com.akkkka.admin.module.business.funcampus.activityCanEnrollGrade.service.ActivityCanEnrollGradeService;
+import com.akkkka.admin.module.business.funcampus.activityCanEnrollTribe.service.ActivityCanEnrollTribeService;
 import com.akkkka.admin.module.business.funcampus.activityCategory.service.ActivityCategoryService;
+import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.entity.ActivityReviewLogEntity;
+import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.vo.ActivityReviewLogVO;
+import com.akkkka.admin.module.business.funcampus.activityReviewLog.service.ActivityReviewLogService;
+import com.akkkka.admin.module.business.funcampus.activityReviewLog.service.ActivityReviewLogValidator;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewEvent;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewStage;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.service.ActivityReviewStateMachineContext;
@@ -18,6 +26,7 @@ import com.akkkka.admin.module.business.funcampus.activityWithSchedule.constant.
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleAddForm;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleQueryForm;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleUpdateForm;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityReviewProposalVO;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityWithScheduleVO;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.EditActivityDraftSelectionsVO;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.IndexActivityVO;
@@ -28,9 +37,12 @@ import com.akkkka.admin.module.business.funcampus.collegeInfo.service.CollegeInf
 import com.akkkka.admin.module.business.funcampus.gradeInfo.service.GradeInfoService;
 import com.akkkka.admin.module.business.funcampus.organizationInfo.service.OrganizationInfoService;
 import com.akkkka.admin.module.system.backendUser.service.BackendUserService;
+import com.akkkka.admin.module.system.backendUser.service.BackendUserValidator;
 import com.akkkka.common.code.UserErrorCode;
 import com.akkkka.common.domain.PageResult;
 import com.akkkka.common.domain.ResponseDTO;
+import com.akkkka.common.exception.BusinessException;
+import com.akkkka.common.util.SmartRequestUtil;
 import com.akkkka.module.support.repeatsubmit.annoation.RepeatSubmit;
 import com.alibaba.cola.statemachine.StateMachine;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -39,6 +51,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
+import jakarta.websocket.server.PathParam;
 
 /**
  * 活动和时间表 组合控制器
@@ -66,11 +79,23 @@ public class ActivityWithScheduleController {
     @Resource
     private BackendUserService backendUserService;
     @Resource
+    private ActivityReviewLogValidator activityReviewLogValidator;
+    @Resource
     private ActivityWithScheduleAddFormValidator activityWithScheduleAddFormValidator;
     @Resource
     private StateMachine<ActivityReviewStage, ActivityReviewEvent, ActivityReviewStateMachineContext>
             stateMachine;
-
+    @Resource
+    private ActivityReviewLogService reviewLogService;
+    @Resource
+    private BackendUserValidator backendUserValidator;
+    @Resource
+    private ActivityCanEnrollCollegeService collegeService;
+    @Resource
+    private ActivityCanEnrollTribeService tribeService;
+    @Resource
+    private ActivityCanEnrollGradeService gradeService;
+    
     @Operation(summary = "添加活动和时间表 @author akkkka114514")
     @PostMapping("/activity/draft/submit")
     @RepeatSubmit(intervalMilliSecond = 3 * 1000 )
@@ -164,5 +189,21 @@ public class ActivityWithScheduleController {
         activityWithScheduleAddFormValidator.validate(addForm);
         activityWithScheduleService.submitDraft(addForm);
         return ResponseDTO.ok();
+    }
+
+    public ResponseDTO<ActivityReviewProposalVO> getReviewProposal(@PathParam("activityId") Long activityId){
+        ActivityReviewProposalVO result=new ActivityReviewProposalVO();
+        result.setActivityVO(activityWithScheduleService.getDraftActivityPart(activityId));
+        result.setScheduleVO(activityWithScheduleService.getDraftActivitySchedulePart(activityId));
+
+        // 查询当前审核阶段的审核日志
+        ActivityReviewLogEntity reviewLog = reviewLogService.getLatestReviewLog(activityId);
+        
+        result.setCanEnrollCollege(collegeService.listIdNameByActivityId(activityId));
+        result.setCanEnrollTribe(tribeService.getIdNameByActivityId(activityId));
+        result.setCanEnrollGrade(gradeService.getIdNameByActivityId(activityId));
+        result.setEditActivityDraftSelectionsVO(activityWithScheduleService.getEditActivityDraftSelections());
+
+        return ResponseDTO.ok(result);
     }
 }

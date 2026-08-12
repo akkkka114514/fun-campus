@@ -106,6 +106,21 @@ public class ActivityReviewLogService {
         return ResponseDTO.ok();
     }
 
+    
+    /**
+     * 获取活动最新的未删除审核日志
+     */
+    public ActivityReviewLogEntity getLatestReviewLog(Long activityId) {
+        return activityReviewLogManager.getOne(
+                Wrappers.lambdaQuery(ActivityReviewLogEntity.class)
+                        .eq(ActivityReviewLogEntity::getActivityId, activityId)
+                        .eq(ActivityReviewLogEntity::getDeletedFlag, false)
+                        .orderByDesc(ActivityReviewLogEntity::getCreateTime)
+                        .last("limit 1")
+        );
+    }
+
+
     public void initialReview(@Nullable ActivityWithScheduleUpdateForm updateForm, ActivityReviewLogAddForm addForm) {
         if (updateForm != null) {
             activityWithScheduleService.editActivityDraft(addForm.getActivityId(), updateForm);

@@ -1,8 +1,8 @@
 package com.akkkka.admin.module.business.funcampus.activityReviewLog.controller;
 
 import jakarta.annotation.Nullable;
+import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.entity.ActivityReviewLogEntity;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.form.ActivityReviewLogAddForm;
-import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.form.ActivityReviewLogQueryForm;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.form.ActivityReviewLogUpdateForm;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.vo.ActivityReviewLogVO;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.service.ActivityReviewLogValidator;
@@ -10,7 +10,8 @@ import com.akkkka.admin.module.business.funcampus.activityReviewLog.service.Acti
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleUpdateForm;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityWithScheduleUpdateFormValidator;
 import com.akkkka.common.domain.ResponseDTO;
-import com.akkkka.common.domain.PageResult;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -65,5 +66,25 @@ public class ActivityReviewLogController {
         return ResponseDTO.ok();
     }
 
+    @Operation(summary = "根据活动ID获取最新审核日志 @author akkkka114514")
+    @GetMapping("/activityReviewLog/latest/{activityId}")
+    public ResponseDTO<ActivityReviewLogVO> getLatestReviewLog(@PathVariable Long activityId) {
+        ActivityReviewLogEntity entity = activityReviewLogService.getLatestReviewLog(activityId);
+        if (entity == null) {
+            return ResponseDTO.ok(null);
+        }
+        ActivityReviewLogVO vo = new ActivityReviewLogVO();
+        vo.setId(entity.getId());
+        vo.setActivityId(entity.getActivityId());
+        vo.setReviewerId(entity.getReviewerId());
+        vo.setReviewerName(entity.getReviewerName());
+        vo.setReviewStage(entity.getReviewStage() != null ? entity.getReviewStage().getOrder() : null);
+        vo.setAction(entity.getAction() != null ? entity.getAction().ordinal() : null);
+        vo.setRejectReason(entity.getRejectReason());
+        vo.setCheckRemark(entity.getCheckRemark());
+        vo.setCreateTime(entity.getCreateTime());
+        vo.setDeletedFlag(entity.getDeletedFlag());
+        return ResponseDTO.ok(vo);
+    }
 
 }

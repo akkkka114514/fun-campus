@@ -64,4 +64,11 @@ public class ActivityEnrollmentEntity {
         }
     }
 
+    //检查是否已经签退过该活动
+    public void validateSignOutStatus(){
+        if(Boolean.TRUE.equals(signOutStatus)){
+            throw new BusinessException(UserErrorCode.PARAM_ERROR,"请勿重复签退");
+        }
+    }
+
 }

@@ -36,6 +36,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.form.QRCodeSignInForm;
+import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.vo.SignInQRCodeVO;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
@@ -87,6 +89,8 @@ public class ActivityEnrollmentService {
 
     private final ActivitySigninManagerService signinManagerService;
 
+    private static final int QR_CODE_EXPIRE_SECONDS = 30;
+
     private static String SIGN_IN_QR_CODE_TOKEN_REDIS_KEY(Long userId){
         return "sign_in:qr_code_token:"+userId;
     }
@@ -136,19 +140,20 @@ public class ActivityEnrollmentService {
     }
     /*
         产生二维码不指定属于哪个活动，仅提供userId和uuid，activityId需扫描者指定
+        二维码内容包含 userId 和 token，扫描后可解析出目标用户
      */
-    public String signInQRCode(){
+    public SignInQRCodeVO signInQRCode(){
         Long userId = SmartRequestUtil.getRequestUserId();
         assert userId!=null;
         String redisKey = SIGN_IN_QR_CODE_TOKEN_REDIS_KEY(userId);
         String uuid=UUID.randomUUID().toString().replace("-","");
-        if(redisTemplate.opsForValue().get(redisKey)!=null){
-            throw new BusinessException(UserErrorCode.PARAM_ERROR,"不支持手动刷新二维码");
-        }
-        redisTemplate.opsForValue().set(redisKey,uuid,30,TimeUnit.SECONDS);
-        //TODO:填入域名
+        // 允许刷新：删除旧token，设置新token
+        redisTemplate.delete(redisKey);
+        redisTemplate.opsForValue().set(redisKey,uuid,QR_CODE_EXPIRE_SECONDS,TimeUnit.SECONDS);
+        // 二维码内容包含 userId 和 token
         String qrContent = String.format(
-                "token=%s",
+                "userId=%d&token=%s",
+                userId,
                 uuid
         );
         // 使用ZXing生成二维码
@@ -170,16 +175,21 @@ public class ActivityEnrollmentService {
 
             // 生成可以直接在HTML中使用的data URL
             String base64Image = "data:image/png;base64," + Base64.getEncoder().encodeToString(imageBytes);
-            
+
+            SignInQRCodeVO vo = new SignInQRCodeVO();
+            vo.setQrCodeImage(base64Image);
+            vo.setToken(uuid);
+            vo.setUserId(userId);
+            vo.setExpireSeconds(QR_CODE_EXPIRE_SECONDS);
+
             log.info("ActivityEnrollmentService.signInQRCode success: QR code generated, userId={}",  userId);
-            return base64Image;
+            return vo;
         } catch (Exception e) {
             log.error("ActivityEnrollmentService.signInQRCode failed: failed to generate QR code, userId={}", userId);
             throw new BusinessException(SystemErrorCode.SYSTEM_ERROR, "生成二维码失败");
         }
     }
     public void signIn(Long activityId, Long needSignInUserId, String uuid){
-        //todo做幂等
         String redisKey = SIGN_IN_QR_CODE_TOKEN_REDIS_KEY(needSignInUserId);
         String realUuid = redisTemplate.opsForValue().get(redisKey);
         if (realUuid==null||!Objects.equals(realUuid,uuid)){
@@ -204,7 +214,49 @@ public class ActivityEnrollmentService {
                 .set(ActivityEnrollmentEntity::getSignInStatus, true);
         boolean result = activityEnrollmentManager.update(updateWrapper);
         if (result) {
+            // 签到成功后删除token，防止重复使用
+            redisTemplate.delete(redisKey);
             log.info("ActivityEnrollmentService.signIn success: user signed in, activityId={}, userId={}", activityId, needSignInUserId);
+        } else {
+            throw new BusinessException(UserErrorCode.SERVICE_BUSY);
+        }
+    }
+
+    /**
+     * 扫码签退
+     */
+    public void signOut(Long activityId, Long needSignOutUserId, String uuid){
+        String redisKey = SIGN_IN_QR_CODE_TOKEN_REDIS_KEY(needSignOutUserId);
+        String realUuid = redisTemplate.opsForValue().get(redisKey);
+        if (realUuid==null||!Objects.equals(realUuid,uuid)){
+            throw new BusinessException(UserErrorCode.PARAM_ERROR,"二维码已过期");
+        }
+        //检查活动是否存在，是否已删除
+        ActivityEntity activity = activityValidator.validateActivityId(activityId);
+        //检查是否处于活动进行中状态
+        activity.validateStatus(ActivityStatus.START_ACTIVITY);
+        //检查用户是否已报名该活动
+        ActivityEnrollmentEntity enrollmentEntity = enrollmentDomainService.validateEnrollmentExist(activityId,needSignOutUserId);
+        //检查用户是否已签到（未签到不能签退）
+        if(!Boolean.TRUE.equals(enrollmentEntity.getSignInStatus())){
+            throw new BusinessException(UserErrorCode.PARAM_ERROR,"用户尚未签到，无法签退");
+        }
+        //检查用户是否已签退
+        enrollmentEntity.validateSignOutStatus();
+        //检查操作user是否为该活动的signin manager
+        Long signOutManagerId = SmartRequestUtil.getRequestUserId();
+        signInManagerValidator.validateUserPermission(signOutManagerId,activityId);
+
+        portalUserValidator.validatePortalUserId(needSignOutUserId);
+        LambdaUpdateWrapper<ActivityEnrollmentEntity> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(ActivityEnrollmentEntity::getActivityId, activityId)
+                .eq(ActivityEnrollmentEntity::getUserId, needSignOutUserId)
+                .set(ActivityEnrollmentEntity::getSignOutStatus, true);
+        boolean result = activityEnrollmentManager.update(updateWrapper);
+        if (result) {
+            // 签退成功后删除token，防止重复使用
+            redisTemplate.delete(redisKey);
+            log.info("ActivityEnrollmentService.signOut success: user signed out, activityId={}, userId={}", activityId, needSignOutUserId);
         } else {
             throw new BusinessException(UserErrorCode.SERVICE_BUSY);
         }

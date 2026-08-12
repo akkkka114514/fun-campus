@@ -1,18 +1,16 @@
 package com.akkkka.admin.module.business.funcampus.activityEnrollment.controller;
 
-import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.form.ActivityEnrollmentQueryForm;
-import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.vo.ActivityEnrollmentVO;
+import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.form.QRCodeSignInForm;
+import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.vo.SignInQRCodeVO;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.service.ActivityEnrollmentService;
 import com.akkkka.module.support.repeatsubmit.annoation.RepeatSubmit;
 import org.springframework.web.bind.annotation.GetMapping;
 import com.akkkka.common.domain.ResponseDTO;
-import com.akkkka.common.domain.PageResult;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
-import cn.dev33.satoken.annotation.SaCheckPermission;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
@@ -41,8 +39,24 @@ public class ActivityEnrollmentController {
     }
 
     @Operation(summary = "生成签到二维码 @author akkkka114514")
-    @GetMapping("/activityEnrollment/signIn/QRCode/{userId}")
-    public ResponseDTO<String> signInQRCode() {
+    @GetMapping("/activityEnrollment/signIn/QRCode")
+    public ResponseDTO<SignInQRCodeVO> signInQRCode() {
         return ResponseDTO.ok(activityEnrollmentService.signInQRCode());
+    }
+
+    @Operation(summary = "扫码签到 @author akkkka114514")
+    @PostMapping("/activityEnrollment/signIn/byQRCode")
+    @RepeatSubmit(intervalMilliSecond = 3 * 1000)
+    public ResponseDTO<String> signInByQRCode(@RequestBody @Valid QRCodeSignInForm form) {
+        activityEnrollmentService.signIn(form.getActivityId(), form.getTargetUserId(), form.getToken());
+        return ResponseDTO.ok();
+    }
+
+    @Operation(summary = "扫码签退 @author akkkka114514")
+    @PostMapping("/activityEnrollment/signOut/byQRCode")
+    @RepeatSubmit(intervalMilliSecond = 3 * 1000)
+    public ResponseDTO<String> signOutByQRCode(@RequestBody @Valid QRCodeSignInForm form) {
+        activityEnrollmentService.signOut(form.getActivityId(), form.getTargetUserId(), form.getToken());
+        return ResponseDTO.ok();
     }
 }

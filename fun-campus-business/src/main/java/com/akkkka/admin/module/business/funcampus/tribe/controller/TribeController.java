@@ -34,41 +34,6 @@ public class TribeController {
     @Resource
     private TribeService tribeService;
 
-    @Operation(summary = "分页查询 @author akkkka114514")
-    @PostMapping("/tribe/queryPage")
-    @SaCheckPermission("tribe:query")
-    public ResponseDTO<PageResult<TribeVO>> queryPage(@RequestBody @Valid TribeQueryForm queryForm) {
-        return ResponseDTO.ok(tribeService.queryPage(queryForm));
-    }
-
-    @Operation(summary = "添加 @author akkkka114514")
-    @PostMapping("/tribe/add")
-    @SaCheckPermission("tribe:add")
-    public ResponseDTO<String> add(@RequestBody @Valid TribeAddForm addForm) {
-        return tribeService.add(addForm);
-    }
-
-    @Operation(summary = "更新 @author akkkka114514")
-    @PostMapping("/tribe/update")
-    @SaCheckPermission("tribe:update")
-    public ResponseDTO<String> update(@RequestBody @Valid TribeUpdateForm updateForm) {
-        return tribeService.update(updateForm);
-    }
-
-    @Operation(summary = "批量删除 @author akkkka114514")
-    @PostMapping("/tribe/batchDelete")
-    @SaCheckPermission("tribe:delete")
-    public ResponseDTO<String> batchDelete(@RequestBody ValidateList<Long> idList) {
-        return tribeService.batchDelete(idList);
-    }
-
-    @Operation(summary = "单个删除 @author akkkka114514")
-    @GetMapping("/tribe/delete/{id}")
-    @SaCheckPermission("tribe:delete")
-    public ResponseDTO<String> batchDelete(@PathVariable Long id) {
-        return tribeService.delete(id);
-    }
-
     @Operation(summary = "查询 @author akkkka114514")
     @GetMapping("/tribe/query/simple")
     public ResponseDTO<List<SimpleTribeVO>> querySimpleList(@RequestParam String keyword) {

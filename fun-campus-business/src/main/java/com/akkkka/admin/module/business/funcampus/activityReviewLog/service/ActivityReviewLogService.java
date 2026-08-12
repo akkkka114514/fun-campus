@@ -30,7 +30,6 @@ import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.en
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityScheduleEntity;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityScheduleUpdateForm;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleUpdateForm;
-import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.RejectedActivityDraftVO;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityScheduleManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityValidator;
@@ -248,8 +247,8 @@ public class ActivityReviewLogService {
     }
 
 
-    //终审被拒会返回表单在审核中被修改后的样子
-    public RejectedActivityDraftVO rejectFinal(ActivityReviewLogUpdateForm curReview){
+    //终审被拒会返回activityId，由controller组装VO
+    public Long rejectFinal(ActivityReviewLogUpdateForm curReview){
         ActivityReviewLogEntity reviewLog = reviewLogValidator.validateReviewLogId(curReview.getId());
         reviewLogValidator.validateReviewAction(reviewLog.getReviewStage(),curReview.getAction());
         ActivityReviewLogEntity toUpdate = ActivityReviewLogUpdateForm.convert(curReview);
@@ -267,7 +266,7 @@ public class ActivityReviewLogService {
             }
         });
 
-        return activityWithScheduleService.getRejectedActivityDraft(reviewLog.getActivityId());
+        return reviewLog.getActivityId();
     }
 
     private void validateAllTimeFuture(Long activityId, ActivityWithScheduleUpdateForm updateForm){

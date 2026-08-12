@@ -2,8 +2,6 @@ package com.akkkka.admin.module.business.funcampus.portalUser.service;
 
 import java.util.List;
 
-import com.akkkka.admin.module.business.funcampus.collegeInfo.service.CollegeInfoService;
-import com.akkkka.admin.module.business.funcampus.gradeInfo.service.GradeInfoService;
 import com.akkkka.admin.module.business.funcampus.portalUser.dao.PortalUserDao;
 import com.akkkka.admin.module.business.funcampus.portalUser.domain.entity.PortalUserEntity;
 import com.akkkka.admin.module.business.funcampus.portalUser.domain.form.PortalUserAddForm;
@@ -11,7 +9,6 @@ import com.akkkka.admin.module.business.funcampus.portalUser.domain.form.PortalU
 import com.akkkka.admin.module.business.funcampus.portalUser.domain.form.PortalUserUpdateForm;
 import com.akkkka.admin.module.business.funcampus.portalUser.domain.vo.PortalUserVO;
 import com.akkkka.admin.module.business.funcampus.portalUser.manager.PortalUserManager;
-import com.akkkka.admin.module.business.funcampus.schoolInfo.service.SchoolInfoService;
 import com.akkkka.common.util.SmartBeanUtil;
 import com.akkkka.common.util.SmartPageUtil;
 import com.akkkka.common.domain.ResponseDTO;
@@ -37,28 +34,6 @@ import jakarta.annotation.Resource;
 @AllArgsConstructor
 public class PortalUserService {
     private final PortalUserManager portalUserManager;
-    private final SchoolInfoService schoolInfoService;
-    private final CollegeInfoService collegeInfoService;
-    private final GradeInfoService gradeInfoService;
-
-    public PortalUserVO getById(Long id){
-        PortalUserEntity entity = portalUserManager.getById(id);
-        PortalUserVO vo = new PortalUserVO();
-        vo.setId(id);
-        vo.setUsername(entity.getUsername());
-        vo.setGender(entity.getGender());
-        vo.setSchoolId(entity.getSchoolId());
-        vo.setSchoolName(schoolInfoService.getNameById(entity.getSchoolId()));
-        vo.setCollegeId(entity.getCollegeId());
-        vo.setCollegeName(collegeInfoService.getNameById(entity.getCollegeId()));
-        vo.setDisableFlag(entity.getDisableFlag());
-        vo.setPhone(entity.getPhone());
-        vo.setAvatar(entity.getAvatar());
-        vo.setCanPublishActivity(entity.getCanPublishActivity());
-        vo.setGradeId(entity.getGradeId());
-        vo.setGradeName(gradeInfoService.getNameById(entity.getGradeId()));
-        return vo;
-    }
 
     public PageResult<PortalUserVO> queryPage(PortalUserQueryForm queryForm) {
         Page<PortalUserVO> page = new Page<>(queryForm.getPageNum(), queryForm.getPageSize());

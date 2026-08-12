@@ -1,55 +1,30 @@
 package com.akkkka.admin.module.business.funcampus.activityWithSchedule.service;
 
-import com.akkkka.admin.module.business.funcampus.activityCanEnrollCollege.manager.ActivityCanEnrollCollegeManager;
 import com.akkkka.admin.module.business.funcampus.activityCanEnrollCollege.service.ActivityCanEnrollCollegeService;
-import com.akkkka.admin.module.business.funcampus.activityCanEnrollGrade.manager.ActivityCanEnrollGradeManager;
 import com.akkkka.admin.module.business.funcampus.activityCanEnrollGrade.service.ActivityCanEnrollGradeService;
-import com.akkkka.admin.module.business.funcampus.activityCanEnrollTribe.manager.ActivityCanEnrollTribeManager;
 import com.akkkka.admin.module.business.funcampus.activityCanEnrollTribe.service.ActivityCanEnrollTribeService;
-import com.akkkka.admin.module.business.funcampus.activityCategory.domain.entity.ActivityCategoryEntity;
-import com.akkkka.admin.module.business.funcampus.activityCategory.manager.ActivityCategoryManager;
-import com.akkkka.admin.module.business.funcampus.activityCategory.service.ActivityCategoryService;
-import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.entity.ActivityEnrollmentEntity;
-import com.akkkka.admin.module.business.funcampus.activityEnrollment.manager.ActivityEnrollmentManager;
-import com.akkkka.admin.module.business.funcampus.activityEnrollment.service.ActivityEnrollmentService;
+
 import com.akkkka.admin.module.business.funcampus.activityReviewAttachment.domain.entity.ActivityReviewAttachmentEntity;
 import com.akkkka.admin.module.business.funcampus.activityReviewAttachment.manager.ActivityReviewAttachmentManager;
-import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewEvent;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewStage;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.entity.ActivityReviewLogEntity;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.manager.ActivityReviewLogManager;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.service.ActivityReviewLogService;
-import com.akkkka.admin.module.business.funcampus.activityReviewLog.service.ActivityReviewStateMachineContext;
-import com.akkkka.admin.module.business.funcampus.activitySigninManager.domain.entity.ActivitySigninManagerEntity;
-import com.akkkka.admin.module.business.funcampus.activitySigninManager.manager.ActivitySigninManagerManager;
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.service.ActivitySigninManagerService;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.dao.ActivityDao;
-import com.akkkka.admin.module.business.funcampus.activityWithSchedule.dao.ActivityEnrollNumDao;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.converter.ActivityAddFormConverter;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.converter.ActivityScheduleAddFormConverter;
-import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEnrollNum;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityScheduleEntity;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.*;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.*;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityScheduleManager;
-import com.akkkka.admin.module.business.funcampus.collegeInfo.domain.entity.CollegeInfoEntity;
-import com.akkkka.admin.module.business.funcampus.collegeInfo.manager.CollegeInfoManager;
-import com.akkkka.admin.module.business.funcampus.collegeInfo.service.CollegeInfoService;
-import com.akkkka.admin.module.business.funcampus.gradeInfo.domain.entity.GradeInfoEntity;
-import com.akkkka.admin.module.business.funcampus.gradeInfo.manager.GradeInfoManager;
-import com.akkkka.admin.module.business.funcampus.gradeInfo.service.GradeInfoService;
-import com.akkkka.admin.module.business.funcampus.organizationInfo.service.OrganizationInfoService;
+
 import com.akkkka.admin.module.business.funcampus.portalLogin.domain.RequestPortalUser;
 import com.akkkka.admin.module.business.funcampus.portalUser.domain.entity.PortalUserEntity;
 import com.akkkka.admin.module.business.funcampus.portalUser.manager.PortalUserManager;
-import com.akkkka.admin.module.business.funcampus.portalUser.service.PortalUserService;
 import com.akkkka.admin.module.business.funcampus.portalUser.service.PortalUserValidator;
-import com.akkkka.admin.module.business.funcampus.schoolInfo.service.SchoolInfoService;
-import com.akkkka.admin.module.business.funcampus.tribe.domain.entity.TribeEntity;
-import com.akkkka.admin.module.business.funcampus.tribe.manager.TribeManager;
-import com.akkkka.admin.module.system.backendUser.service.BackendUserService;
 import com.akkkka.admin.module.system.login.domain.RequestBackendUser;
 import com.akkkka.common.code.SystemErrorCode;
 import com.akkkka.common.code.UnexpectedErrorCode;
@@ -60,19 +35,15 @@ import com.akkkka.common.domain.PageResult;
 import com.akkkka.common.exception.BusinessException;
 import com.akkkka.common.util.SmartRequestUtil;
 import com.akkkka.module.support.file.service.FileService;
-import com.alibaba.cola.statemachine.StateMachine;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.annotation.Resource;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * 活动和时间表 组合服务
@@ -89,45 +60,19 @@ public class ActivityWithScheduleService {
     private ActivityScheduleManager activityScheduleManager;
     private TransactionTemplate transactionTemplate;
     private ActivityDao activityDao;
-    private ActivityEnrollNumDao activityEnrollNumDao;
     private PortalUserManager portalUserManager;
-    private ActivityCanEnrollTribeManager activityCanEnrollTribeManager;
-    private ActivityCanEnrollGradeManager activityCanEnrollGradeManager;
-    private ActivityCanEnrollCollegeManager activityCanEnrollCollegeManager;
     private ActivityReviewLogManager activityReviewLogManager;
-    private ActivitySigninManagerManager signinManagerManager;
-    private ActivityCategoryManager activityCategoryManager;
-    private CollegeInfoManager collegeInfoManager;
-    private GradeInfoManager gradeInfoManager;
-    private TribeManager tribeManager;
     private ActivityCanEnrollCollegeService canEnrollCollegeService;
     private ActivityCanEnrollTribeService canEnrollTribeService;
     private ActivityCanEnrollGradeService canEnrollGradeService;
-    private ActivityEnrollmentService enrollmentService;
-    private ActivityEnrollmentManager enrollmentManager;
     private PortalUserValidator portalUserValidator;
     @Resource
     private FileService fileService;
     private ActivityReviewAttachmentManager reviewAttachmentManager;
-    @Resource
-    private StateMachine<ActivityReviewStage, ActivityReviewEvent, ActivityReviewStateMachineContext> stateMachine;
     private ActivitySigninManagerService signinManagerService;
     private ActivityValidator activityValidator;
     private ActivityScheduleValidator activityScheduleValidator;
     private ActivityReviewLogService reviewLogService;
-    private final SchoolInfoService schoolInfoService;
-    private final CollegeInfoService collegeInfoService;
-    private final GradeInfoService gradeInfoService;
-    private final OrganizationInfoService organizationInfoService;
-    private final ActivityCategoryService categoryService;
-    private final PortalUserService portalUserService;
-    @Autowired
-    private BackendUserService backendUserService;
-
-    public ResponseDTO<String> deleteActivityWithSchedule(Long activityId) {
-        deleteDraft(activityId);
-        return ResponseDTO.ok();
-    }
 
     public ResponseDTO<String> updateActivityWithSchedule(ActivityWithScheduleUpdateForm updateForm) {
         // TODO: implement full update logic
@@ -144,76 +89,6 @@ public class ActivityWithScheduleService {
         }
         ids.forEach(this::deleteDraft);
         return ResponseDTO.ok();
-    }
-
-
-    public ActivityWithScheduleVO getDraft(Long activityId){
-        getDraftActivityPart(activityId);
-        getDraftActivitySchedulePart(activityId);
-        return null; // TODO: combine activity and schedule parts into ActivityWithScheduleVO
-    }
-
-    public ActivityVO getDraftActivityPart(Long activityId){
-        ActivityEntity activity = activityManager.getById(activityId);
-
-        ActivityVO vo = new ActivityVO();
-        vo.setId(activityId);
-        vo.setTitle(activity.getTitle());
-        vo.setStatus(activity.getStatus());
-        vo.setPosition(activity.getPosition());
-        vo.setScoreCanGet(activity.getScoreCanGet());
-        vo.setEnrollNumLimit(activity.getEnrollNumLimit());
-        vo.setActivityBelongToSchoolId(activity.getActivityBelongToSchoolId());
-        vo.setActivityBelongToSchoolName(schoolInfoService.getNameById(activity.getActivityBelongToSchoolId()));
-        vo.setActivityBelongToOrganizationId(activity.getActivityBelongToOrganizationId());
-        vo.setActivityBelongToOrganizationName(organizationInfoService.getNameById(activity.getActivityBelongToOrganizationId()));
-        vo.setActivityBelongToCollegeId(activity.getActivityBelongToCollegeId());
-        vo.setActivityBelongToCollegeName(collegeInfoService.getNameById(activity.getActivityBelongToCollegeId()));
-        vo.setCreateTime(activity.getCreateTime());
-        vo.setUpdateTime(activity.getUpdateTime());
-        vo.setDescription(activity.getDescription());
-        vo.setEnrollNeedReview(activity.getEnrollNeedReview());
-        vo.setNeedSignOut(activity.getNeedSignOut());
-        vo.setAttachment(activity.getAttachment());
-        vo.setCategoryId(activity.getCategoryId());
-        vo.setCategoryName(categoryService.getNameById(activity.getCategoryId()));
-        vo.setCoverImg(activity.getCoverImg());
-        vo.setActivityManager(portalUserService.getById(activity.getActivityManagerId()));
-
-        return vo;
-    }
-
-    public ActivityScheduleVO getDraftActivitySchedulePart(Long activityId){
-        ActivityScheduleEntity schedule = activityScheduleManager.getById(activityId);
-        ActivityScheduleVO vo = new ActivityScheduleVO();
-        vo.setEnrollStartTime(schedule.getEnrollStartTime());
-        vo.setEnrollEndTime(schedule.getEnrollEndTime());
-        vo.setActivityStartTime(schedule.getActivityStartTime());
-        vo.setActivityEndTime(schedule.getActivityEndTime());
-        vo.setSigninStartTime(schedule.getSigninStartTime());
-        vo.setSigninEndTime(schedule.getSigninEndTime());
-        vo.setSignoutStartTime(schedule.getSignoutStartTime());
-        vo.setSignoutEndTime(schedule.getSignoutEndTime());
-        return vo;
-    }
-
-
-    public RejectedActivityDraftVO getRejectedActivityDraft(Long activityId){
-        RejectedActivityDraftVO rejectedActivityDraftVO = new RejectedActivityDraftVO();
-        rejectedActivityDraftVO.setActivityVO(getDraftActivityPart(activityId));
-        rejectedActivityDraftVO.setScheduleVO(getDraftActivitySchedulePart(activityId));
-        rejectedActivityDraftVO.setInitialReviewer(
-                reviewLogService.getInitialReviewerIdNameByActivityId(activityId));
-        rejectedActivityDraftVO.setCanEnrollCollege(
-                canEnrollCollegeService.listIdNameByActivityId(activityId));
-        rejectedActivityDraftVO.setCanEnrollTribe(
-                canEnrollTribeService.getIdNameByActivityId(activityId));
-        rejectedActivityDraftVO.setCanEnrollGrade(
-                canEnrollGradeService.getIdNameByActivityId(activityId));
-        rejectedActivityDraftVO.setEditActivityDraftSelectionsVO(
-                getEditActivityDraftSelections());
-        return rejectedActivityDraftVO;
-
     }
 
 
@@ -423,197 +298,17 @@ public class ActivityWithScheduleService {
 
     }
 
-    public EditActivityDraftSelectionsVO getEditActivityDraftSelections(){
-        portalUserValidator.validateIsCurrentUserPortal();
-        Long userId = SmartRequestUtil.getRequestUserId();
-        PortalUserEntity portalUser = portalUserManager.getById(userId);
-        Long schoolId = portalUser.getSchoolId();
-
-        EditActivityDraftSelectionsVO vo = new EditActivityDraftSelectionsVO();
-
-        vo.setSelectableCollegeVOList(collegeInfoService.getIdNameBySchoolId(schoolId));
-
-        vo.setSelectableOrganizationVOList(organizationInfoService.getIdNameBySchoolId(schoolId));
-
-        vo.setSelectableCollegeReviewerList(
-                backendUserService.getCollegeReviewerListMap(
-                        collegeInfoService.getIdsBySchoolId(schoolId)));
-
-        vo.setSelectableOrganizationReviewerList(
-                backendUserService.getOrganizationReviewerListMap(
-                        organizationInfoService.getIdsBySchoolId(schoolId)));
-
-        vo.setSelectableCategoryVOList(categoryService.getAll());
-
-        vo.setSelectableGradeVOList(gradeInfoService.getAll());
-
-        return vo;
-    }
-
-    public ResponseDTO<Page<ActivityWithScheduleVO>> notStartAndPendingEnrollActivityPageGlobal(Long pageNum, Long pageSize){
-        Page<ActivityWithScheduleVO> page = new Page<>(pageNum, pageSize);
-        Page<ActivityWithScheduleVO> result =activityDao.notStartAndPendingEnrollActivityGlobal(page);
-        return ResponseDTO.ok(result);
-    }
-
-    public ResponseDTO<Page<ActivityWithScheduleVO>> notStartAndPendingEnrollActivityPage(Long pageNum, Long pageSize){
+    public Page<ActivityWithScheduleVO> notStartAndPendingEnrollActivityPage(Long pageNum, Long pageSize){
         Page<ActivityWithScheduleVO> page = new Page<>(pageNum, pageSize);
         Long userId = SmartRequestUtil.getRequestUserId();
         PortalUserEntity portalUserEntity =portalUserManager.getById(userId);
         if(portalUserEntity==null||portalUserEntity.getDeletedFlag()) {
-            return ResponseDTO.error(UnexpectedErrorCode.BUSINESS_HANDING, "用户不存在");
+            throw new BusinessException(UnexpectedErrorCode.BUSINESS_HANDING, "用户不存在");
         }
         Long schoolId = portalUserEntity.getSchoolId();
-        Page<ActivityWithScheduleVO> result =activityDao.notStartAndPendingEnrollActivity(page,schoolId);
-        return ResponseDTO.ok(result);
+        return activityDao.notStartAndPendingEnrollActivity(page,schoolId);
     }
 
-    public ActivityDetailVO detail(Long activityId){
-        log.info("开始查询活动详情，activityId: {}", activityId);
-
-        ActivityEntity activity = activityManager.getById(activityId);
-        if(activity==null||activity.getDeletedFlag()){
-            log.warn("活动不存在或已删除，activityId: {}", activityId);
-            throw new BusinessException(UserErrorCode.PARAM_ERROR,"活动不存在");
-        }
-        log.debug("查询到活动基本信息，title: {}", activity.getTitle());
-
-        ActivityScheduleEntity activitySchedule = activityScheduleManager.getByActivityId(activityId);
-        log.debug("查询到活动时间表信息");
-
-        ActivityCategoryEntity activityCategory = activityCategoryManager.getById(activity.getCategoryId());
-        log.debug("查询到活动分类信息，category: {}", activityCategory.getName());
-
-        ActivityEnrollNum activityEnrollNum = activityEnrollNumDao.selectById(activityId);
-        log.debug("查询到活动报名人数，enrollNum: {}", activityEnrollNum.getEnrollNum());
-
-        List<Long> collegeIds = canEnrollCollegeService.getCollegeIdsByActivityId(activityId);
-        List<Long> tribeIds = canEnrollTribeService.getTribeIdsByActivityId(activityId);
-        List<Long> gradeIds = canEnrollGradeService.getGradeIdByActivityId(activityId);
-        log.debug("查询到报名限制条件 - collegeIds: {}, tribeIds: {}, gradeIds: {}",
-                collegeIds, tribeIds, gradeIds);
-
-        List<String> collegeNames=null;
-        List<String> tribeNames=null;
-        List<String> gradeNames=null;
-        List<EnrollerVO> enrollers = new ArrayList<>();
-        if(gradeIds!=null&&collegeIds!=null){
-            collegeNames=collegeInfoManager
-                    .listByIds(collegeIds)
-                    .stream()
-                    .map(CollegeInfoEntity::getName)
-                    .toList();
-            gradeNames = gradeInfoManager
-                    .listByIds(gradeIds)
-                    .stream()
-                    .map(GradeInfoEntity::getName)
-                    .toList();
-            log.debug("转换学院和年级名称 - colleges: {}, grades: {}", collegeNames, gradeNames);
-        }
-        if(tribeIds!=null){
-            tribeNames = tribeManager
-                    .listByIds(tribeIds)
-                    .stream()
-                    .map(TribeEntity::getName)
-                    .toList();
-            log.debug("转换部落名称 - tribes: {}", tribeNames);
-        }
-
-        // 构建查询条件：获取活动报名用户 ID 及签到状态
-        LambdaQueryWrapper<ActivityEnrollmentEntity> activityEnrollmentQw =
-                enrollmentManager.qwByActivityId(activityId)
-                .select(ActivityEnrollmentEntity::getUserId)
-                .select(ActivityEnrollmentEntity::getSignInStatus);
-        List<ActivityEnrollmentEntity> enrollmentEntities = enrollmentManager.list(activityEnrollmentQw);
-        log.debug("查询到活动报名记录数：{}", enrollmentEntities != null ? enrollmentEntities.size() : 0);
-
-        // 将报名用户列表转换为 Map<userId, signInStatus>，便于快速查找签到状态
-        if (enrollmentEntities != null && !enrollmentEntities.isEmpty()) {
-            Map<Long, Boolean> userSignInStatus = enrollmentEntities.stream().collect(Collectors.toMap(
-                    ActivityEnrollmentEntity::getUserId,
-                    ActivityEnrollmentEntity::getSignInStatus
-            ));
-            log.debug("已构建用户签到状态 Map，大小：{}", userSignInStatus.size());
-
-            // 提取所有报名用户的 ID 列表
-            List<Long> enrollerIds = enrollmentEntities
-                    .stream()
-                    .map(ActivityEnrollmentEntity::getUserId)
-                    .toList();
-            log.debug("提取到报名用户 ID 列表，数量：{}", enrollerIds.size());
-
-            // 批量查询 Portal 用户信息
-            List<PortalUserEntity> portalUsers = portalUserManager.listByIds(enrollerIds);
-            log.debug("查询到 Portal 用户信息，数量：{}", portalUsers != null ? portalUsers.size() : 0);
-
-            LambdaQueryWrapper<ActivitySigninManagerEntity> signInManagerQw = new LambdaQueryWrapper<>();
-            signInManagerQw.eq(ActivitySigninManagerEntity::getActivityId,activityId)
-                            .eq(ActivitySigninManagerEntity::getDeletedFlag,false)
-                            .select(ActivitySigninManagerEntity::getPortalUserId);
-            List<ActivitySigninManagerEntity> signinManagerList = signinManagerManager.list(signInManagerQw);
-            List<Long> signinManagerIdList;
-            if(signinManagerList!=null&&!signinManagerList.isEmpty()){
-                signinManagerIdList = signinManagerList.stream().map(ActivitySigninManagerEntity::getPortalUserId).toList();
-                log.debug("查询到活动签到管理员列表，数量：{}", signinManagerIdList.size());
-            } else {
-                signinManagerIdList = null;
-                log.debug("该活动没有签到管理员，activityId: {}", activityId);
-            }
-            // 组装 EnrollerVO 对象并设置对应的签到状态
-            portalUsers.forEach(e -> {
-                EnrollerVO enroller = new EnrollerVO();
-                enroller.setId(e.getId());
-                enroller.setName(e.getUsername());
-                enroller.setAvatarKey(e.getAvatar());
-                // 从 Map 中获取该用户的签到状态
-                enroller.setSignInStatus(userSignInStatus.get(e.getId()));
-                if(activity.getActivityManagerId().equals(e.getId())){
-                    enroller.setActivityManagerFlag(true);
-                }
-                if(signinManagerIdList!=null&&signinManagerIdList.contains(e.getId())){
-                    enroller.setSigninManagerFlag(true);
-                }
-                enrollers.add(enroller);
-            });
-            log.debug("已构建报名用户 VO 列表，数量：{}", enrollers.size());
-        } else {
-            log.debug("该活动暂无报名用户，activityId: {}", activityId);
-        }
-        //统计签到人数
-        LambdaQueryWrapper<ActivityEnrollmentEntity> countSignIn = new LambdaQueryWrapper<>();
-        countSignIn.eq(ActivityEnrollmentEntity::getActivityId,activityId)
-                    .eq(ActivityEnrollmentEntity::getSignInStatus,true)
-                    .eq(ActivityEnrollmentEntity::getDeletedFlag,false);
-        long count = enrollmentManager.count(countSignIn);
-        log.debug("统计签到人数：{}", count);
-
-        ActivityDetailVO activityDetailVO = new ActivityDetailVO();
-        activityDetailVO.setId(activityId);
-        activityDetailVO.setTitle(activity.getTitle());
-        activityDetailVO.setStatus(activity.getStatus());
-        activityDetailVO.setPosition(activityDetailVO.getPosition());
-        activityDetailVO.setScoreCanGet(activity.getScoreCanGet());
-        activityDetailVO.setEnrollNumLimit(activity.getEnrollNumLimit());
-        activityDetailVO.setDescription(activity.getDescription());
-        activityDetailVO.setEnrollNeedReview(activity.getEnrollNeedReview());
-        activityDetailVO.setNeedSignOut(activity.getNeedSignOut());
-        activityDetailVO.setAttachment(activity.getAttachment());
-        activityDetailVO.setCategory(activityCategory.getName());
-        activityDetailVO.setCoverImg(activity.getCoverImg());
-        activityDetailVO.setEnrollUsers(enrollers);
-        activityDetailVO.setEnrollNum(activityEnrollNum.getEnrollNum());
-        activityDetailVO.setSignInNum(count);
-        activityDetailVO.setCanEnrollGrade(gradeNames);
-        activityDetailVO.setCanEnrollCollege(collegeNames);
-        activityDetailVO.setCanEnrollTribe(tribeNames);
-        activityDetailVO.setEnrollStartTime(activitySchedule.getEnrollStartTime());
-        activityDetailVO.setEnrollEndTime(activitySchedule.getEnrollEndTime());
-        activityDetailVO.setActivityStartTime(activitySchedule.getActivityStartTime());
-        activityDetailVO.setActivityEndTime(activitySchedule.getActivityEndTime());
-
-        log.info("活动详情查询完成，activityId: {}, title: {}", activityId, activity.getTitle());
-        return activityDetailVO;
-    }
     //活动完结申请
     //attachment:完结证明材料
     //TODO 添加未审核活动时可能要上传复数附件

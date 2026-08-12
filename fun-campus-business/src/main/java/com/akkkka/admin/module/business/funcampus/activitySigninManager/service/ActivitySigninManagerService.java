@@ -5,11 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import com.akkkka.admin.module.business.funcampus.activitySigninManager.domain.vo.ActivitySigninManagerVO;
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.manager.ActivitySigninManagerManager;
-import com.akkkka.admin.module.business.funcampus.portalUser.domain.vo.PortalUserVO;
 import com.akkkka.admin.module.business.funcampus.portalUser.manager.PortalUserManager;
-import com.akkkka.admin.module.business.funcampus.portalUser.service.PortalUserService;
 import com.akkkka.common.code.SystemErrorCode;
 import com.akkkka.common.exception.BusinessException;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -34,25 +31,10 @@ import static cn.dev33.satoken.SaManager.log;
 @Service
 @AllArgsConstructor
 public class ActivitySigninManagerService {
-    private final PortalUserService portalUserService;
     private PortalUserManager portalUserManager;
     private TransactionTemplate transactionTemplate;
     private ActivitySigninManagerManager signinManagerManager;
     private SignInManagerValidator signInManagerValidator;
-
-    public List<ActivitySigninManagerVO> listVOByActivityId(Long activityId){
-        List<ActivitySigninManagerEntity> list = signinManagerManager.list(signinManagerManager.qwByActivityId(activityId));
-
-        List<ActivitySigninManagerVO> result = new ArrayList<>();
-        if(list.isEmpty()){
-            return result;
-        }
-        for(ActivitySigninManagerEntity e:list){
-            PortalUserVO portalUserVO = portalUserService.getById(e.getPortalUserId());
-            result.add(ActivitySigninManagerVO.convert(e,portalUserVO));
-        }
-        return result;
-    }
 
     /**
      * 获取活动的签到员ID列表

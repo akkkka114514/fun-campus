@@ -1,6 +1,5 @@
 package com.akkkka.admin.module.business.funcampus.activityWithSchedule.controller;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -16,32 +15,40 @@ import com.akkkka.admin.module.business.funcampus.activityCanEnrollGrade.service
 import com.akkkka.admin.module.business.funcampus.activityCanEnrollTribe.service.ActivityCanEnrollTribeService;
 import com.akkkka.admin.module.business.funcampus.activityCategory.service.ActivityCategoryService;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.entity.ActivityReviewLogEntity;
-import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.vo.ActivityReviewLogVO;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.service.ActivityReviewLogService;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.service.ActivityReviewLogValidator;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewEvent;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewStage;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.service.ActivityReviewStateMachineContext;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.constant.IndexActivityPageConst;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.dao.ActivityDao;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityScheduleEntity;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleAddForm;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleQueryForm;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleUpdateForm;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityReviewProposalVO;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityVO;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityScheduleVO;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityWithScheduleVO;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.EditActivityDraftSelectionsVO;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.IndexActivityVO;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityScheduleManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityWithScheduleAddFormValidator;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityWithScheduleService;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityWithScheduleUpdateFormValidator;
 import com.akkkka.admin.module.business.funcampus.collegeInfo.service.CollegeInfoService;
 import com.akkkka.admin.module.business.funcampus.gradeInfo.service.GradeInfoService;
 import com.akkkka.admin.module.business.funcampus.organizationInfo.service.OrganizationInfoService;
+import com.akkkka.admin.module.business.funcampus.portalUser.domain.entity.PortalUserEntity;
+import com.akkkka.admin.module.business.funcampus.portalUser.manager.PortalUserManager;
+import com.akkkka.admin.module.business.funcampus.portalUser.domain.vo.PortalUserVO;
 import com.akkkka.admin.module.system.backendUser.service.BackendUserService;
 import com.akkkka.admin.module.system.backendUser.service.BackendUserValidator;
 import com.akkkka.common.code.UserErrorCode;
 import com.akkkka.common.domain.PageResult;
 import com.akkkka.common.domain.ResponseDTO;
-import com.akkkka.common.exception.BusinessException;
 import com.akkkka.common.util.SmartRequestUtil;
 import com.akkkka.module.support.repeatsubmit.annoation.RepeatSubmit;
 import com.alibaba.cola.statemachine.StateMachine;
@@ -95,6 +102,14 @@ public class ActivityWithScheduleController {
     private ActivityCanEnrollTribeService tribeService;
     @Resource
     private ActivityCanEnrollGradeService gradeService;
+    @Resource
+    private ActivityManager activityManager;
+    @Resource
+    private ActivityScheduleManager activityScheduleManager;
+    @Resource
+    private PortalUserManager portalUserManager;
+    @Resource
+    private ActivityDao activityDao;
     
     @Operation(summary = "添加活动和时间表 @author akkkka114514")
     @PostMapping("/activity/draft/submit")
@@ -112,7 +127,8 @@ public class ActivityWithScheduleController {
     @PostMapping("/activity/delete")
     @RepeatSubmit(intervalMilliSecond = 3 * 1000 )
     public ResponseDTO<String> deleteActivityWithSchedule(@RequestBody Long activityId) {
-        return activityWithScheduleService.deleteActivityWithSchedule(activityId);
+        activityWithScheduleService.deleteDraft(activityId);
+        return ResponseDTO.ok();
     }
 
     @Operation(summary = "更新活动和时间表 @author akkkka114514")
@@ -158,11 +174,11 @@ public class ActivityWithScheduleController {
         Page<ActivityWithScheduleVO> mySchoolActivities;
         Page<ActivityWithScheduleVO> globalActivities;
         if(activeActivityPage.equals(IndexActivityPageConst.MY_SCHOOL_ACTIVITY)){
-            mySchoolActivities = activityWithScheduleService.notStartAndPendingEnrollActivityPage(pageNum, pageSize).getData();
-            globalActivities =activityWithScheduleService.notStartAndPendingEnrollActivityPageGlobal(1L, pageSize).getData();
+            mySchoolActivities = activityWithScheduleService.notStartAndPendingEnrollActivityPage(pageNum, pageSize);
+            globalActivities = activityDao.notStartAndPendingEnrollActivityGlobal(new Page<>(1L, pageSize));
         }else {
-            mySchoolActivities= activityWithScheduleService.notStartAndPendingEnrollActivityPage(1L, pageSize).getData();
-            globalActivities =activityWithScheduleService.notStartAndPendingEnrollActivityPageGlobal(pageNum, pageSize).getData();
+            mySchoolActivities = activityWithScheduleService.notStartAndPendingEnrollActivityPage(1L, pageSize);
+            globalActivities = activityDao.notStartAndPendingEnrollActivityGlobal(new Page<>(pageNum, pageSize));
         }
         IndexActivityVO indexActivityVO = new IndexActivityVO();
         indexActivityVO.setMySchoolActivities(mySchoolActivities);
@@ -179,8 +195,20 @@ public class ActivityWithScheduleController {
     @Operation(summary = "初始化发布活动页面 @author akkkka114514")
     @GetMapping("/activity/publish/init")
     public ResponseDTO<EditActivityDraftSelectionsVO> initPublish() {
+        Long userId = SmartRequestUtil.getRequestUserId();
+        PortalUserEntity portalUser = portalUserManager.getById(userId);
+        Long schoolId = portalUser.getSchoolId();
 
-        return ResponseDTO.ok(activityWithScheduleService.getEditActivityDraftSelections());
+        EditActivityDraftSelectionsVO vo = new EditActivityDraftSelectionsVO();
+        vo.setSelectableCollegeVOList(collegeInfoService.getIdNameBySchoolId(schoolId));
+        vo.setSelectableOrganizationVOList(organizationInfoService.getIdNameBySchoolId(schoolId));
+        vo.setSelectableCollegeReviewerList(
+                backendUserService.getCollegeReviewerListMap(collegeInfoService.getIdsBySchoolId(schoolId)));
+        vo.setSelectableOrganizationReviewerList(
+                backendUserService.getOrganizationReviewerListMap(organizationInfoService.getIdsBySchoolId(schoolId)));
+        vo.setSelectableCategoryVOList(activityCategoryService.getAll());
+        vo.setSelectableGradeVOList(gradeInfoService.getAll());
+        return ResponseDTO.ok(vo);
     }
 
     @Operation(summary = "添加待审核活动 @author akkkka114514")
@@ -191,18 +219,77 @@ public class ActivityWithScheduleController {
         return ResponseDTO.ok();
     }
 
-    public ResponseDTO<ActivityReviewProposalVO> getReviewProposal(@PathParam("activityId") Long activityId){
-        ActivityReviewProposalVO result=new ActivityReviewProposalVO();
-        result.setActivityVO(activityWithScheduleService.getDraftActivityPart(activityId));
-        result.setScheduleVO(activityWithScheduleService.getDraftActivitySchedulePart(activityId));
+    public ResponseDTO<ActivityReviewProposalVO> getReviewProposal(@PathParam("activityId") Long activityId) {
+        ActivityReviewProposalVO result = new ActivityReviewProposalVO();
+
+        // 获取活动实体
+        ActivityEntity activity = activityManager.getById(activityId);
+        ActivityVO activityVO = new ActivityVO();
+        activityVO.setId(activity.getId());
+        activityVO.setTitle(activity.getTitle());
+        activityVO.setStatus(activity.getStatus());
+        activityVO.setPosition(activity.getPosition());
+        activityVO.setScoreCanGet(activity.getScoreCanGet());
+        activityVO.setEnrollNumLimit(activity.getEnrollNumLimit());
+        activityVO.setActivityBelongToSchoolId(activity.getActivityBelongToSchoolId());
+        activityVO.setActivityBelongToSchoolName(collegeInfoService.getNameById(activity.getActivityBelongToSchoolId()));
+        activityVO.setActivityBelongToOrganizationId(activity.getActivityBelongToOrganizationId());
+        activityVO.setActivityBelongToOrganizationName(organizationInfoService.getNameById(activity.getActivityBelongToOrganizationId()));
+        activityVO.setActivityBelongToCollegeId(activity.getActivityBelongToCollegeId());
+        activityVO.setActivityBelongToCollegeName(collegeInfoService.getNameById(activity.getActivityBelongToCollegeId()));
+        activityVO.setCreateTime(activity.getCreateTime());
+        activityVO.setUpdateTime(activity.getUpdateTime());
+        activityVO.setDescription(activity.getDescription());
+        activityVO.setEnrollNeedReview(activity.getEnrollNeedReview());
+        activityVO.setNeedSignOut(activity.getNeedSignOut());
+        activityVO.setAttachment(activity.getAttachment());
+        activityVO.setCategoryId(activity.getCategoryId());
+        activityVO.setCategoryName(activityCategoryService.getNameById(activity.getCategoryId()));
+        activityVO.setCoverImg(activity.getCoverImg());
+        PortalUserEntity managerEntity = portalUserManager.getById(activity.getActivityManagerId());
+        if (managerEntity != null) {
+            PortalUserVO managerVO = new PortalUserVO();
+            managerVO.setId(managerEntity.getId());
+            managerVO.setUsername(managerEntity.getUsername());
+            managerVO.setSchoolId(managerEntity.getSchoolId());
+            managerVO.setCollegeId(managerEntity.getCollegeId());
+            activityVO.setActivityManager(managerVO);
+        }
+        result.setActivityVO(activityVO);
+
+        // 获取时间表实体
+        ActivityScheduleEntity schedule = activityScheduleManager.getById(activityId);
+        ActivityScheduleVO scheduleVO = new ActivityScheduleVO();
+        scheduleVO.setEnrollStartTime(schedule.getEnrollStartTime());
+        scheduleVO.setEnrollEndTime(schedule.getEnrollEndTime());
+        scheduleVO.setActivityStartTime(schedule.getActivityStartTime());
+        scheduleVO.setActivityEndTime(schedule.getActivityEndTime());
+        scheduleVO.setSigninStartTime(schedule.getSigninStartTime());
+        scheduleVO.setSigninEndTime(schedule.getSigninEndTime());
+        scheduleVO.setSignoutStartTime(schedule.getSignoutStartTime());
+        scheduleVO.setSignoutEndTime(schedule.getSignoutEndTime());
+        result.setScheduleVO(scheduleVO);
 
         // 查询当前审核阶段的审核日志
         ActivityReviewLogEntity reviewLog = reviewLogService.getLatestReviewLog(activityId);
-        
+
         result.setCanEnrollCollege(collegeService.listIdNameByActivityId(activityId));
         result.setCanEnrollTribe(tribeService.getIdNameByActivityId(activityId));
         result.setCanEnrollGrade(gradeService.getIdNameByActivityId(activityId));
-        result.setEditActivityDraftSelectionsVO(activityWithScheduleService.getEditActivityDraftSelections());
+        // 组装 EditActivityDraftSelectionsVO
+        Long managerUserId = SmartRequestUtil.getRequestUserId();
+        PortalUserEntity managerPortalUser = portalUserManager.getById(managerUserId);
+        Long managerSchoolId = managerPortalUser.getSchoolId();
+        EditActivityDraftSelectionsVO selectionsVO = new EditActivityDraftSelectionsVO();
+        selectionsVO.setSelectableCollegeVOList(collegeInfoService.getIdNameBySchoolId(managerSchoolId));
+        selectionsVO.setSelectableOrganizationVOList(organizationInfoService.getIdNameBySchoolId(managerSchoolId));
+        selectionsVO.setSelectableCollegeReviewerList(
+                backendUserService.getCollegeReviewerListMap(collegeInfoService.getIdsBySchoolId(managerSchoolId)));
+        selectionsVO.setSelectableOrganizationReviewerList(
+                backendUserService.getOrganizationReviewerListMap(organizationInfoService.getIdsBySchoolId(managerSchoolId)));
+        selectionsVO.setSelectableCategoryVOList(activityCategoryService.getAll());
+        selectionsVO.setSelectableGradeVOList(gradeInfoService.getAll());
+        result.setEditActivityDraftSelectionsVO(selectionsVO);
 
         return ResponseDTO.ok(result);
     }

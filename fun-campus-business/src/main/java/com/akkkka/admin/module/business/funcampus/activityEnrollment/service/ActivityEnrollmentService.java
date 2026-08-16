@@ -18,6 +18,7 @@ import com.akkkka.admin.module.business.funcampus.activitySigninManager.service.
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.constant.ActivityStatus;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.dao.ActivityEnrollNumDao;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.EnrollerVO;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityValidator;
 import com.akkkka.admin.module.business.funcampus.portalUser.domain.entity.PortalUserEntity;
@@ -295,6 +296,39 @@ public class ActivityEnrollmentService {
             simple.setAvatarKey(portalUser.getAvatar());
             result.add(simple);
         });
+        return result;
+    }
+
+    /**
+     * 获取活动报名用户列表（含签到状态、管理员/签到员标记）
+     */
+    public List<EnrollerVO> listEnrollUserAsEnrollerVO(Long activityId) {
+        List<ActivityEnrollmentEntity> enrollments = activityEnrollmentManager.list(
+                activityEnrollmentManager.qwByActivityId(activityId)
+        );
+        if (enrollments == null || enrollments.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        ActivityEntity activity = activityManager.getById(activityId);
+        Long managerId = activity != null ? activity.getActivityManagerId() : null;
+        List<Long> signinManagerIds = signinManagerService.getSignInManagerIds(activityId);
+
+        List<EnrollerVO> result = new ArrayList<>();
+        for (ActivityEnrollmentEntity e : enrollments) {
+            PortalUserEntity portalUser = portalUserManager.getById(e.getUserId());
+            if (portalUser == null) {
+                continue;
+            }
+            EnrollerVO vo = new EnrollerVO();
+            vo.setId(portalUser.getId());
+            vo.setName(portalUser.getUsername());
+            vo.setAvatarKey(portalUser.getAvatar());
+            vo.setSignInStatus(Boolean.TRUE.equals(e.getSignInStatus()));
+            vo.setActivityManagerFlag(Objects.equals(portalUser.getId(), managerId));
+            vo.setSigninManagerFlag(signinManagerIds.contains(portalUser.getId()));
+            result.add(vo);
+        }
         return result;
     }
 

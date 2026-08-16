@@ -2,6 +2,7 @@ package com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.v
 
 import java.util.List;
 
+import com.akkkka.common.domain.IdNameVO;
 import lombok.Data;
 
 /**
@@ -30,13 +31,13 @@ public class ActivityDetailVO {
     private Long signInNum;
 
     /** 允许报名的年级 */
-    private List<String> canEnrollGrade;
+    private List<IdNameVO> canEnrollGrade;
 
     /** 允许报名的学院 */
-    private List<String> canEnrollCollege;
+    private List<IdNameVO> canEnrollCollege;
 
     /** 允许报名的部落 */
-    private List<String> canEnrollTribe;
+    private List<IdNameVO> canEnrollTribe;
 
     //todo 评论
 }

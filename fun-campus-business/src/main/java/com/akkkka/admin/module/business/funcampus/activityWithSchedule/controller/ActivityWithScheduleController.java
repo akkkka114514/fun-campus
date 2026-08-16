@@ -27,6 +27,8 @@ import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.en
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleAddForm;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleQueryForm;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleUpdateForm;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityDetailVO;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityPhaseCountdownVO;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityReviewProposalVO;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityVO;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityScheduleVO;
@@ -186,11 +188,35 @@ public class ActivityWithScheduleController {
         return ResponseDTO.ok(indexActivityVO);
     }
 
-//    @Operation(description = "活动详情页 @author akkkka114514")
-//    @GetMapping("portal/activity/detail")
-//    public ResponseDTO<ActivityWithScheduleVO> detail(@RequestParam Long activityId) {
-//        return activityWithScheduleService.detail(activityId);
-//    }
+
+    @Operation(summary = "活动详情页 @author akkkka114514")
+    @GetMapping("/activity/detail")
+    public ResponseDTO<ActivityDetailVO> detail(@RequestParam Long activityId) {
+        return ResponseDTO.ok(activityWithScheduleService.detail(activityId));
+    }
+
+    /**
+     * 活动阶段倒计时接口
+     * 
+     * 返回活动当前阶段、下一阶段名称及剩余秒数，前端用于展示倒计时
+     * 
+     * 前端使用方式：
+     * 1. 进入活动详情页时调用此接口获取倒计时数据
+     * 2. 用 currentPhase 显示活动当前阶段（如"报名中"、"活动进行中"等）
+     * 3. 用 remainingSeconds 做前端倒计时：每秒减1，格式化为"X天X时X分X秒"
+     * 4. 倒计时归零时重新调接口刷新下一阶段信息
+     * 5. 特殊状态：currentPhase="未开始"表示活动未开始，"已结束"表示活动已结束，remainingSeconds=-1
+     * 
+     * 阶段顺序：报名开始 → 报名结束 → 活动开始 → 活动结束 → 签到开始 → 签到结束 → 签退开始 → 签退结束
+     * 
+     * @param activityId 活动ID
+     * @return 倒计时信息
+     */
+    @Operation(summary = "活动阶段倒计时 @author akkkka114514")
+    @GetMapping("/activity/countdown")
+    public ResponseDTO<ActivityPhaseCountdownVO> phaseCountdown(@RequestParam Long activityId) {
+        return ResponseDTO.ok(activityWithScheduleService.phaseCountdown(activityId));
+    }
 
     @Operation(summary = "初始化发布活动页面 @author akkkka114514")
     @GetMapping("/activity/publish/init")

@@ -364,7 +364,7 @@ public class ActivityReviewLogService {
         ActivityEnrollmentEntity enrollment = new ActivityEnrollmentEntity();
         enrollment.setActivityId(activityId);
         enrollment.setUserId(userId);
-        enrollment.setSignInStatus(null);
+        enrollment.setSignInStatus(true);
         enrollment.setCreateTime(LocalDateTime.now());
         enrollment.setUpdateTime(LocalDateTime.now());
         enrollment.setDeletedFlag(false);

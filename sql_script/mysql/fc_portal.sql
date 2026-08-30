@@ -50,10 +50,10 @@ CREATE TABLE `activity_comment`  (
   `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
   `user_id` bigint NOT NULL COMMENT '评论用户id',
   `activity_id` bigint NOT NULL COMMENT '被评论的活动id',
-  `to_comment_id` char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '被回复的帖子id，null即为最顶层评论',
+  `to_comment_id` bigint NULL DEFAULT NULL COMMENT '被回复的评论id，null即为最顶层评论',
   `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `create_time` timestamp NOT NULL,
-  `root_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '为null即为顶层',
+  `root_id` bigint NULL DEFAULT NULL COMMENT '根评论id，为null即为顶层评论',
   `deleted` bit(1) NOT NULL,
   `update_time` timestamp NOT NULL,
   PRIMARY KEY (`id`) USING BTREE

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.akkkka.admin.module.business.funcampus.activityComment.dao.ActivityCommentHotDao">
+
+    <!-- 点赞评论：如果记录不存在则插入（热度为1），已存在则热度+1 -->
+    <insert id="likeComment">
+        INSERT INTO activity_comment_hot (comment_id, comment_hot)
+        VALUES (#{commentId}, 1)
+        ON DUPLICATE KEY UPDATE comment_hot = comment_hot + 1
+    </insert>
+
+    <!-- 撤销点赞评论：热度-1，热度归零时删除记录 -->
+    <update id="unlikeComment">
+        UPDATE activity_comment_hot
+        SET comment_hot = comment_hot - 1
+        WHERE comment_id = #{commentId} AND comment_hot > 0;
+
+        DELETE FROM activity_comment_hot
+        WHERE comment_id = #{commentId} AND comment_hot &lt;= 0;
+    </update>
+
+    <!-- 分页查询热门评论（关联评论表获取评论详情） -->
+    <select id="queryHotCommentsByActivityId" resultType="com.akkkka.admin.module.business.funcampus.activityComment.domain.vo.ActivityCommentHotVO">
+        SELECT
+            ach.comment_id,
+            ach.comment_hot,
+            ac.user_id,
+            ac.activity_id,
+            ac.content,
+            ac.create_time
+        FROM activity_comment_hot ach
+        INNER JOIN activity_comment ac ON ach.comment_id = ac.id
+        WHERE ac.activity_id = #{activityId}
+          AND ac.deleted = 0
+        ORDER BY ach.comment_hot DESC
+    </select>
+
+</mapper>

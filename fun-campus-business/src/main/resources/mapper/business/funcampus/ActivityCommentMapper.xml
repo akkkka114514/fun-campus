@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.akkkka.admin.module.business.funcampus.activityComment.dao.ActivityCommentDao">
+
+    <!-- 分页查询活动的根评论（含热度） -->
+    <select id="queryPageByActivityId" resultType="com.akkkka.admin.module.business.funcampus.activityComment.domain.vo.ActivityCommentVO">
+        SELECT
+            ac.id,
+            ac.user_id,
+            ac.activity_id,
+            ac.to_comment_id,
+            ac.content,
+            ac.create_time,
+            ac.root_id,
+            IFNULL(ach.comment_hot, 0) AS comment_hot
+        FROM activity_comment ac
+        LEFT JOIN activity_comment_hot ach ON ac.id = ach.comment_id
+        WHERE ac.activity_id = #{activityId}
+          AND ac.root_id IS NULL
+        ORDER BY ac.create_time DESC
+    </select>
+
+    <!-- 根据根评论id查询子评论（含热度） -->
+    <select id="queryByRootId" resultType="com.akkkka.admin.module.business.funcampus.activityComment.domain.vo.ActivityCommentVO">
+        SELECT
+            ac.id,
+            ac.user_id,
+            ac.activity_id,
+            ac.to_comment_id,
+            ac.content,
+            ac.create_time,
+            ac.root_id,
+            IFNULL(ach.comment_hot, 0) AS comment_hot
+        FROM activity_comment ac
+        LEFT JOIN activity_comment_hot ach ON ac.id = ach.comment_id
+        WHERE ac.root_id = #{rootId}
+          AND ac.deleted = 0
+        ORDER BY ac.create_time ASC
+    </select>
+
+</mapper>

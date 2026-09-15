@@ -135,7 +135,9 @@ pu签到二维码按钮
 | 后端 | 活动报名范围控制（学院/年级/部落） | ✅ 已完成 |
 | 管理后台前端 | 活动管理 / 基础数据管理页面 | ✅ 已完成 |
 | 移动端前端 | 首页 / 我的 / 活动详情等 | ❌ 未开始 |
-| 后端 | 评论 / 消息 / 学分认定 / 二维码 | ❌ 未开始 |
+| 后端 | 评论 / 签到签退二维码 | ✅ 已完成 |
+| 后端 | 消息通知 / 学分认定 | ❌ 未开始 |
+| 后端+管理后台 | 活动付费参加（订单 / 支付 / 退款） | ❌ 未开始 |
 
 ---
 
@@ -156,13 +158,16 @@ pu签到二维码按钮
 - [✅] 评论分页查询接口
 
 #### 1.3 签到二维码
-- [ ] 签到员生成签到二维码接口（含 UUID Token，30s 刷新）
-- [ ] 扫码签到接口（解析二维码 → 校验 Token → 执行签到）
-- [ ] 签退二维码生成与扫码签退接口
-- [ ] 二维码 Token Redis 缓存管理（过期、刷新）
+- [✅] 签到/签退通用二维码生成接口（含 UUID Token，30s 过期，重新生成即刷新）
+- [✅] 扫码签到接口（校验 Token → 签到时间窗口 → 执行签到）
+- [✅] 扫码签退接口（复用同一二维码：校验 Token → 活动需签退 → 签退时间窗口 → 执行签退）
+- [✅] 二维码 Token Redis 缓存管理（用户维度 Key、30s 过期、成功后即作废）
+
+> 设计约定：二维码**不绑定活动、一人一码**，内容为 `userId + token`（30s 过期，重新生成覆盖刷新，签到/签退成功后作废）。扫码者（该活动签到员）选择活动后提交，后端按**活动时间表的签到/签退时间窗口**校验当前是否可操作（状态机仅推进 0~4，5~8 由时间窗口实时判定）。
+> 接口：生成 `GET /activityEnrollment/signIn/QRCode`；扫码签到 `POST /activityEnrollment/signIn/byQRCode`；扫码签退 `POST /activityEnrollment/signOut/byQRCode`。管理后台调试页见 `signin-qrcode.vue`。
 
 #### 1.4 消息通知系统
-- [ ] 利用已有 `notice_message` / `message_group` / `chat_message` 表设计消息接口
+- [ ] 利用已有 `notice_message` / `message_group` / `chat_message` 表设计消息接口，可以改造表设计或提出新表
 - [ ] 活动状态变更通知（报名开始、即将开始、已结束）
 - [ ] 审核结果通知（报名审核通过/驳回）
 - [ ] 校内公告通知列表接口
@@ -316,15 +321,156 @@ pu签到二维码按钮
 
 ---
 
-### Phase 9：质量保障 & 优化（优先级：低）
+### Phase 9：活动付费参加功能（优先级：高）
 
-#### 9.1 后端
+> 目标：支持部分二课活动收取报名费，建立「创建订单 → 支付 → 报名生效 → 退款」完整链路；免费活动保持现有流程不变。
+> 注意：9.1 与 9.4 会改动报名核心链路，建议在移动端报名页面（Phase 3）开发前完成设计定稿，避免返工。
+
+#### 9.0 关键设计决策
+
+| 决策项 | 方案 | 理由 |
+|--------|------|------|
+| 支付时机 | 下单即锁座，支付成功报名生效 | 避免超卖和「付了钱没名额」 |
+| 需审核活动 | 支付成功 ≠ 报名成功，进入待审核；审核剔除时自动退款 | 与现有报名审核流程兼容 |
+| 金额单位 | int 存「分」（`price_fen` / `amount_fen`） | 避免浮点精度问题 |
+| 支付渠道 | 抽象 `PaymentChannel` 接口，Mock 渠道先行 | 本地联调方便；真实渠道（支付宝沙箱 / 微信支付 v3）后续按需接入，仅新增实现类 |
+| Mock 支付 | 模拟「异步回调」链路：模拟收银台 + 模拟回调，不使用 `Thread.sleep` | sleep 阻塞请求线程与连接、与 15 分钟关单任务产生竞态，且模拟的是不存在的同步等待；回调链路才能验证 CAS 幂等 |
+| 订单超时 | 15 分钟未支付自动关单并释放名额 | 防止名额被锁死 |
+| 退款 | 仅全额退款；系统退款（审核未通过等）不受活动退款规则限制 | 校园场景足够 |
+| 报名记录 | 支付成功后才写 `activity_enrollment` | 现有签到/审核代码零侵入 |
+
+#### 9.1 数据库变更
+
+**`activity` 表新增付费配置字段**
+
+```sql
+ALTER TABLE `activity`
+  ADD COLUMN `paid_flag` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否付费活动',
+  ADD COLUMN `price_fen` int NULL COMMENT '报名费（分，免费活动为 NULL）',
+  ADD COLUMN `refund_policy` tinyint NULL COMMENT '退款规则：1-报名截止前可退 2-活动开始前可退 3-不可退款';
+```
+
+**新表 `activity_order`（报名订单）**
+
+```sql
+CREATE TABLE `activity_order` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `order_no` varchar(32) NOT NULL COMMENT '订单号',
+  `activity_id` bigint NOT NULL COMMENT '活动id',
+  `user_id` bigint NOT NULL COMMENT '报名用户id',
+  `amount_fen` int NOT NULL COMMENT '订单金额（分）',
+  `status` tinyint NOT NULL DEFAULT 0 COMMENT '状态：0-待支付 1-已支付 2-已关闭 3-退款中 4-已退款 5-退款失败',
+  `pay_channel` tinyint NULL COMMENT '支付渠道：1-微信 2-支付宝 3-Mock',
+  `channel_order_no` varchar(64) NULL COMMENT '渠道订单号',
+  `pay_time` datetime NULL COMMENT '支付时间',
+  `expire_time` datetime NOT NULL COMMENT '支付截止时间',
+  `close_time` datetime NULL COMMENT '关闭时间',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted_flag` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否已删除',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_order_no`(`order_no`),
+  KEY `idx_activity_user`(`activity_id`, `user_id`),
+  KEY `idx_status_expire`(`status`, `expire_time`)
+) COMMENT = '活动报名订单';
+```
+
+**新表 `activity_refund`（退款记录）**
+
+```sql
+CREATE TABLE `activity_refund` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `refund_no` varchar(32) NOT NULL COMMENT '退款单号',
+  `order_id` bigint NOT NULL COMMENT '订单id',
+  `activity_id` bigint NOT NULL COMMENT '活动id',
+  `user_id` bigint NOT NULL COMMENT '用户id',
+  `amount_fen` int NOT NULL COMMENT '退款金额（分）',
+  `reason_type` tinyint NOT NULL COMMENT '原因：1-用户申请 2-活动取消 3-报名审核未通过 4-其它',
+  `reason` varchar(255) NULL COMMENT '备注',
+  `status` tinyint NOT NULL DEFAULT 0 COMMENT '状态：0-退款中 1-成功 2-失败',
+  `channel_refund_no` varchar(64) NULL COMMENT '渠道退款单号',
+  `refund_time` datetime NULL COMMENT '退款完成时间',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted_flag` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否已删除',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_refund_no`(`refund_no`),
+  KEY `idx_order_id`(`order_id`)
+) COMMENT = '活动报名退款记录';
+```
+
+- [ ] SQL 脚本放入 `sql_script/mysql/`，并同步维护到 `fun-campus-merged.sql`
+
+#### 9.2 后端 — 订单与支付
+
+- [ ] 新建 `activityOrder` 模块（controller / service / manager / dao / domain，结构参考 `activityEnrollment`）
+- [ ] 创建订单 `POST /activityOrder/create`：校验付费活动 + 报名时间内 + 报名范围 + 无未关闭订单 → 事务内 `increaseEnrollNum` 锁座 + 写入待支付订单（`expire_time = now + 15min`）
+- [ ] 订单查重：同一用户同一活动存在「待支付 / 已支付」订单时拒绝重复下单
+- [ ] 订单号生成（时间戳 + 随机数）与订单详情、我的订单分页接口
+- [ ] 取消订单 `POST /activityOrder/cancel`：仅待支付可取消，关单并 `decreaseEnrollNum` 释放名额
+- [ ] 支付渠道抽象 `PaymentChannel`：`prepay()` 预下单、`refund()` 退款、`parsePayCallback()` / `parseRefundCallback()` 验签解析
+- [ ] 支付回调 `POST /payment/callback/{channel}`：验签 → 校验金额 → CAS 更新订单（`WHERE status = 0` 幂等）→ 写入 `activity_enrollment` 报名记录 → 发送通知
+- [ ] `MockPaymentChannel`：`prepay()` 返回「模拟收银台」链接；`parsePayCallback()` 直接解析模拟回调参数（不做验签）
+- [ ] 模拟收银台页面（dev/test 专用）：`GET /payment/mock/cashier?orderNo=xxx`，后端简易 HTML 页，含「支付成功 / 支付失败」按钮，移动端页面未开发也能全链路联调
+- [ ] 模拟支付回调：复用 `POST /payment/callback/{channel}` 入口（`channel=mock`），构造 `PayNotifyResult` 后收敛到 `handlePayNotify`；业务代码禁止 `Thread.sleep`
+- [ ] 可选延时到账：`mock.pay.callback-delay-seconds` 配置 + `TaskScheduler` 延时投递回调，模拟异步通知的不确定性
+- [ ] 获取支付参数接口（重新调起支付 / 展示收款二维码）
+- [ ] `ActivityOrderTimeoutJob`：SmartJob 扫描超时未支付订单 → 批量关单 + 释放名额（参考 `ActivityStatusUpdateJob` 写法）
+
+> 订单状态机：`待支付(0) → 超时/取消 → 已关闭(2)`；`待支付(0) → 支付成功 → 已支付(1) → 申请退款 → 退款中(3) → 已退款(4)`；`退款中(3) → 渠道失败 → 退款失败(5)`（支持重试）
+>
+> Mock 支付约定：模拟的是「渠道异步回调」链路（下单 → 模拟收银台付款 → 回调入账），而不是服务端同步等待支付结果；模拟回调与真实回调汇聚到同一个 `handlePayNotify` 入口（CAS 幂等 → 写报名记录），后续接入真实渠道仅新增 `PaymentChannel` 实现类，业务代码零改动；mock 渠道与模拟收银台通过 `pay.channel=mock`（`@ConditionalOnProperty`）或 `@Profile("dev")` 注册，生产环境不存在；真实渠道暂不接入（后续需要时可用支付宝沙箱免费联调，无需商户资质）。
+
+#### 9.3 后端 — 退款
+
+- [ ] 用户退款申请 `POST /activityOrder/refundApply`：按活动 `refund_policy` 校验（报名截止前 / 活动开始前），创建退款单并发起渠道退款
+- [ ] 退款回调 `POST /payment/callback/{channel}/refund`：更新退款单与订单状态 → 逻辑删除报名记录 + `decreaseEnrollNum` + 通知
+- [ ] 系统自动退款场景：
+  - 报名审核剔除已支付用户（`reviewEnroll` 名单筛选移除时联动）
+  - 活动取消（管理端操作对全部已支付订单批量退款）
+- [ ] 退款失败重试（SmartJob 定时重试或管理端手动重试）
+
+#### 9.4 与现有模块的整合点
+
+- [ ] `enroll` 接口拦截付费活动（`paid_flag = 1` 时提示走支付流程）
+- [ ] 抽取「写入报名记录」公共逻辑供支付回调复用（免费活动 enroll 保持原逻辑）
+- [ ] `reviewEnroll` 名单变更联动退款（见 9.3）
+- [ ] 活动详情接口补充付费信息：价格、退款规则、当前用户订单状态
+- [ ] 消息通知：支付成功、退款到账、订单超时关闭（依赖 Phase 1.4，可先直接写 `notice_message`）
+
+#### 9.5 管理后台前端
+
+- [ ] `activity-form.vue` 增加「付费参加」开关、价格、退款规则配置
+- [ ] 订单管理页：分页查询（活动 / 状态 / 用户 / 时间筛选）、订单详情、导出 Excel
+- [ ] 退款管理页：退款单列表、失败重试
+- [ ] 活动收入统计（按活动汇总报名费）
+
+#### 9.6 移动端前端（依赖 Phase 2 脚手架）
+
+- [ ] 报名按钮分流：免费「立即报名」/ 付费「立即支付」
+- [ ] 支付确认页：活动信息、金额、支付方式选择、待支付倒计时
+- [ ] 订单列表（待支付 / 已支付 / 退款 Tab）与订单详情
+- [ ] 待支付订单取消入口、退款申请入口与规则说明
+
+#### 9.7 安全与幂等要点
+
+- [ ] 金额一律以服务端 `activity.price_fen` 为准，忽略前端传入金额
+- [ ] 回调验签 + CAS 幂等更新，重复回调直接返回成功
+- [ ] 订单归属校验：仅本人可查询 / 取消 / 申请退款
+- [ ] 支付、退款关键操作留痕（日志 + 订单操作记录），便于对账排查
+
+---
+
+### Phase 10：质量保障 & 优化（优先级：低）
+
+#### 10.1 后端
 - [ ] 补全报名接口幂等性（代码中已有 todo 标记）
 - [ ] 接口参数校验完善
 - [ ] 关键业务单元测试
 - [ ] 性能优化（活动列表查询、首页数据加载）
+- [ ] 支付链路单元测试（订单状态机、回调幂等、超时关单）
 
-#### 9.2 前端
+#### 10.2 前端
 - [ ] 移动端适配与兼容性测试
 - [ ] 图片懒加载与缓存策略
 - [ ] 接口请求错误处理与用户提示优化
@@ -340,6 +486,10 @@ pu签到二维码按钮
 | 消息推送 | WebSocket / 轮询 | 根据实时性需求决定 |
 | 二维码方案 | 前端 Canvas 生成 + Redis Token | 30s 过期自动刷新 |
 | 文件存储 | 待定（OSS / 本地） | 头像、活动封面、证明材料 |
+| 付费占座 | 下单锁座，15 分钟未支付自动关单释放 | 复用 `increaseEnrollNum` / `decreaseEnrollNum` |
+| 支付渠道 | 抽象 `PaymentChannel` 接口，Mock 先行，真实渠道暂不接入 | 后续切换仅新增实现类（支付宝沙箱可免费联调，无需商户资质） |
+| Mock 支付 | 模拟收银台 + 模拟回调，与真实回调同一入口 | 不使用 `Thread.sleep`；可确定性复现成功 / 失败 / 关单竞态 |
+| 金额存储 | int 存「分」（`price_fen` / `amount_fen`） | 避免浮点精度误差 |
 
 ---
 

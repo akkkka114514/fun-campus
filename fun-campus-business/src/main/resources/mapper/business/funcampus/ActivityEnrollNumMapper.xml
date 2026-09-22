@@ -17,4 +17,10 @@
         where activity_id = #{activityId}
         AND activity_enroll_num.enroll_num &gt; 0;
     </update>
+
+    <update id="resetEnrollNum">
+        update activity_enroll_num
+        set enroll_num = 0
+        where activity_id = #{activityId}
+    </update>
 </mapper>

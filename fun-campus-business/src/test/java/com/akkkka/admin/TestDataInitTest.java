@@ -12,6 +12,7 @@ import com.akkkka.admin.module.business.funcampus.tribe.domain.entity.TribeEntit
 import com.akkkka.admin.module.business.funcampus.tribe.manager.TribeManager;
 import com.akkkka.admin.module.system.backendUser.domain.form.BackendUserAddForm;
 import com.akkkka.admin.module.system.backendUser.service.BackendUserService;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -24,7 +25,12 @@ import java.util.Random;
 /**
  * author:akkkka114514
  * create at 2026-01-17 19:49
+ * <p>
+ * 注意：这是依赖本地完整环境（MySQL 127.0.0.1:3308 / Redis 127.0.0.1:6389）的<b>手动数据初始化脚本</b>，
+ * 不是可重复执行的单元测试：每次运行都会向开发库灌入海量数据（5000 后端用户、百万级部落等）。
+ * 因此默认禁用（@Disabled），仅当需要向开发环境初始化测试数据时，在 IDE 中手动启用后执行。
  */
+@Disabled("手动数据初始化脚本：需本地 MySQL(3308)/Redis(6389) 环境，仅按需手动执行")
 @SpringBootTest
 public class TestDataInitTest {
     @Resource

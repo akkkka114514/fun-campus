@@ -19,6 +19,7 @@ import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.entit
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.manager.ActivityReviewLogManager;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.service.ActivityReviewLogService;
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.service.ActivitySigninManagerService;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.constant.ActivityStatus;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.dao.ActivityDao;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.converter.ActivityAddFormConverter;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.converter.ActivityScheduleAddFormConverter;
@@ -28,6 +29,7 @@ import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.fo
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.*;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityScheduleManager;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityStatusCacheManager;
 
 import com.akkkka.admin.module.business.funcampus.portalLogin.domain.RequestPortalUser;
 import com.akkkka.admin.module.business.funcampus.portalUser.domain.entity.PortalUserEntity;
@@ -88,6 +90,7 @@ public class ActivityWithScheduleService {
     private ActivityEnrollmentManager activityEnrollmentManager;
     private ActivityEnrollNumDao activityEnrollNumDao;
     private ActivityEnrollmentService activityEnrollmentService;
+    private ActivityStatusCacheManager activityStatusCacheManager;
 
     /**
      * 活动详情页
@@ -136,7 +139,7 @@ public class ActivityWithScheduleService {
         ActivityVO vo = new ActivityVO();
         vo.setId(activity.getId());
         vo.setTitle(activity.getTitle());
-        vo.setStatus(activity.getStatus());
+        vo.setStatus(activity.getStatus() == null ? null : activity.getStatus().getCode());
         vo.setPosition(activity.getPosition());
         vo.setScoreCanGet(activity.getScoreCanGet());
         vo.setEnrollNumLimit(activity.getEnrollNumLimit());
@@ -187,6 +190,36 @@ public class ActivityWithScheduleService {
     public ResponseDTO<String> updateActivityWithSchedule(ActivityWithScheduleUpdateForm updateForm) {
         // TODO: implement full update logic
         return ResponseDTO.ok();
+    }
+
+    /**
+     * 状态倒退：回退活动状态并清空该活动的报名数据（逻辑删 + 报名数清 0）
+     * 用于时间表后调导致期望状态小于当前状态的场景，倒退后报名窗口重新开放即可重新报名。
+     * 同一事务内完成，且先用原状态做乐观条件更新：状态被并发修改时不做任何变更并返回 false，
+     * 下一轮定时任务会重新检测；中途失败整体回滚，可安全重试
+     *
+     * @param activityId 活动ID
+     * @param currentStatus 当前状态（乐观条件）
+     * @param expectedStatus 期望回退到的状态
+     * @return 是否完成倒退
+     */
+    public boolean retreatActivityStatusTransaction(Long activityId, ActivityStatus currentStatus, ActivityStatus expectedStatus) {
+        return Boolean.TRUE.equals(transactionTemplate.execute(status -> {
+            if (!activityManager.updateStatusIfMatch(activityId, expectedStatus, currentStatus)) {
+                return false;
+            }
+            // 清空报名数据（逻辑删除）
+            activityEnrollmentManager.lambdaUpdate()
+                    .set(ActivityEnrollmentEntity::getDeletedFlag, true)
+                    .eq(ActivityEnrollmentEntity::getActivityId, activityId)
+                    .eq(ActivityEnrollmentEntity::getDeletedFlag, false)
+                    .update();
+            // 报名计数清零
+            activityEnrollNumDao.resetEnrollNum(activityId);
+            log.info("活动状态倒退完成：activityId={}, {} -> {}，报名数据已清空",
+                    activityId, currentStatus, expectedStatus);
+            return true;
+        }));
     }
 
     public ResponseDTO<PageResult<ActivityWithScheduleVO>> queryActivityWithSchedule(ActivityWithScheduleQueryForm queryForm) {
@@ -280,6 +313,8 @@ public class ActivityWithScheduleService {
                 log.error("doSaveActivityScheduleTransaction事务失败回滚：schedule={}",schedule);
             }
         });
+        // 尽力投递：新活动当天有关键时间点时立即加入缓存名单（失败不影响业务，漏投由重建/回源兜底）
+        activityStatusCacheManager.tryAddToTodayCache(schedule);
     }
 
 
@@ -354,6 +389,8 @@ public class ActivityWithScheduleService {
             }
 
         });
+        // 尽力投递：时间表更新后当天有关键时间点时立即加入缓存名单
+        activityStatusCacheManager.tryAddToTodayCache(schedule);
     }
 
     //只有当草稿未提交或重新成为草稿或在审核员手里可以修改

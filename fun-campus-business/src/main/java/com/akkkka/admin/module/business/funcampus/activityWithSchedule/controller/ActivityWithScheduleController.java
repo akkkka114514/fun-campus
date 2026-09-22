@@ -17,9 +17,6 @@ import com.akkkka.admin.module.business.funcampus.activityCategory.service.Activ
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.entity.ActivityReviewLogEntity;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.service.ActivityReviewLogService;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.service.ActivityReviewLogValidator;
-import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewEvent;
-import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewStage;
-import com.akkkka.admin.module.business.funcampus.activityReviewLog.service.ActivityReviewStateMachineContext;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.constant.IndexActivityPageConst;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.dao.ActivityDao;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
@@ -53,7 +50,6 @@ import com.akkkka.common.domain.PageResult;
 import com.akkkka.common.domain.ResponseDTO;
 import com.akkkka.common.util.SmartRequestUtil;
 import com.akkkka.module.support.repeatsubmit.annoation.RepeatSubmit;
-import com.alibaba.cola.statemachine.StateMachine;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -92,9 +88,6 @@ public class ActivityWithScheduleController {
     @Resource
     private ActivityWithScheduleAddFormValidator activityWithScheduleAddFormValidator;
     @Resource
-    private StateMachine<ActivityReviewStage, ActivityReviewEvent, ActivityReviewStateMachineContext>
-            stateMachine;
-    @Resource
     private ActivityReviewLogService reviewLogService;
     @Resource
     private BackendUserValidator backendUserValidator;
@@ -121,7 +114,7 @@ public class ActivityWithScheduleController {
             return ResponseDTO.error(UserErrorCode.PARAM_ERROR);
         }
         // TODO: create ActivityWithScheduleAddFormValidator
-        stateMachine.fireEvent(ActivityReviewStage.DRAFT,ActivityReviewEvent.SUBMIT,new ActivityReviewStateMachineContext());
+        // 审核状态机已从主流程摘出（见 ActivityReviewStateMachineBuilder，材料待评估），此处提交草稿暂不执行流转
         return ResponseDTO.ok();
     }
 
@@ -253,7 +246,7 @@ public class ActivityWithScheduleController {
         ActivityVO activityVO = new ActivityVO();
         activityVO.setId(activity.getId());
         activityVO.setTitle(activity.getTitle());
-        activityVO.setStatus(activity.getStatus());
+        activityVO.setStatus(activity.getStatus() == null ? null : activity.getStatus().getCode());
         activityVO.setPosition(activity.getPosition());
         activityVO.setScoreCanGet(activity.getScoreCanGet());
         activityVO.setEnrollNumLimit(activity.getEnrollNumLimit());

@@ -53,21 +53,21 @@ export const activityEnrollmentApi = {
   },
 
   /**
-   * 生成签到二维码  @author  akkkka114514
+   * 生成签到/签退二维码（含UUID Token，30秒过期可刷新）  @author  akkkka114514
    */
   signInQRCode: () => {
       return getRequest('/activityEnrollment/signIn/QRCode');
   },
 
   /**
-   * 扫码签到  @author  akkkka114514
+   * 扫码签到（须处于活动签到时间窗口内）  @author  akkkka114514
    */
   signInByQRCode: (param) => {
       return postRequest('/activityEnrollment/signIn/byQRCode', param);
   },
 
   /**
-   * 扫码签退  @author  akkkka114514
+   * 扫码签退（须活动需要签退且在签退时间窗口内）  @author  akkkka114514
    */
   signOutByQRCode: (param) => {
       return postRequest('/activityEnrollment/signOut/byQRCode', param);

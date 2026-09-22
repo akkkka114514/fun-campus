@@ -130,14 +130,60 @@ pu签到二维码按钮
 
 | 层级 | 模块 | 状态 |
 |------|------|------|
-| 后端 | 活动管理（CRUD/审核/报名/签到签退） | ✅ 已完成 |
-| 后端 | 基础数据（学校/学院/年级/组织/部落/用户） | ✅ 已完成 |
-| 后端 | 活动报名范围控制（学院/年级/部落） | ✅ 已完成 |
-| 管理后台前端 | 活动管理 / 基础数据管理页面 | ✅ 已完成 |
+| 后端 | 活动管理（提交/审核/报名/签到签退/详情/倒计时/首页数据） | ✅ 已完成（接口均带 portal 前缀） |
+| 后端 | 基础数据（学校/学院/组织/前台用户/部落用户） | 🟡 接口已实现，但未适配 portal/backend 前缀，请求会被拦截 |
+| 后端 | 活动报名范围控制（学院/年级/部落） | 🟡 学院/年级接口已暴露；部落 Controller 为空壳 |
+| 后端 | 部落管理 CRUD | 🟡 Service 已实现，Controller 仅暴露 `/portal/tribe/query/simple` |
+| 管理后台前端 | 37 个业务页面（活动/基础数据/报名/审核/部落等） | ⚠️ 页面已生成，但 34 个页面 API import 失效、接口约定与后端不一致，暂无页面可完整联调（详见 Phase 0） |
 | 移动端前端 | 首页 / 我的 / 活动详情等 | ❌ 未开始 |
-| 后端 | 评论 / 签到签退二维码 | ✅ 已完成 |
+| 后端 | 评论 / 收藏 / 分享 / 签到签退二维码 | ✅ 已完成（前端页面暂无） |
 | 后端 | 消息通知 / 学分认定 | ❌ 未开始 |
 | 后端+管理后台 | 活动付费参加（订单 / 支付 / 退款） | ❌ 未开始 |
+
+---
+
+### Phase 0：管理后台「前端已有、后端缺失」接口对齐（优先级：高）
+
+> 背景：管理后台前端已生成 37 个业务页面（含 API 封装与菜单 SQL），但排查代码后发现：部分模块后端完全缺失，部分 Controller 为空壳（仅有 `@Resource` 注入、无任何接口方法），部分接口路径与前端约定不一致。本阶段目标是把「前端已画好、后端接不上」的缺口逐个补齐。
+
+#### 0.1 后端模块完全缺失（前端页面 + API + 菜单均已存在）
+
+- [ ] 组织干事用户（organizer-cadre）：前端有 `organizer-cadre-list/form.vue`、`organizer-cadre-api.js`（调用 `/organizationCadre/*`）、菜单 SQL（`OrganizerCadreMenu.sql`）；后端无任何模块、数据库无 `organizer_cadre` 表 —— 需建表 + 补 entity/service/controller，或确认该功能废弃并清理前端
+- [ ] 组织账号运营者（portal-organizer-user）：前端有 `portal-organization-user-list/form.vue`、`portal-organization-user-api.js`（调用 `/portalOrganizationUser/*`）；`portal_organization_user` 表已存在；后端无对应 service/controller，需补齐
+
+#### 0.2 后端 Controller 为空壳（需补 CRUD 接口）
+
+> 以下模块已有 domain / dao / manager / service 骨架，但 Controller 里没有暴露任何接口。
+
+- [ ] 活动分类管理：`ActivityCategoryController` 空壳，Service 仅有 `getNameById/getAll`；前端调用 `/activityCategory/{queryPage,add,update,delete/{id},batchDelete}`
+- [ ] 年级信息管理：`GradeInfoController` 空壳，Service 仅有 `getAll/getNameById`；前端调用 `/gradeInfo/*`
+- [ ] 活动签到管理员管理：`ActivitySigninManagerController` 空壳，Service 仅有活动创建流程用的内部批处理方法；前端调用 `/activitySigninManager/*`
+- [ ] 活动可报名部落管理：`ActivityCanEnrollTribeController` 空壳，情况同上；前端调用 `/activityCanEnrollTribe/*`
+
+#### 0.3 Service 已实现、仅需暴露 Controller
+
+- [ ] 部落管理：`TribeService` 已含完整 CRUD（queryPage/add/update/batchDelete/delete），但 `TribeController` 只暴露了 `/portal/tribe/query/simple`；需按前端约定补齐 `/tribe/*`，或统一调整为 `/backend/tribe/*` 并同步前端
+
+#### 0.4 接口路径 / 方法不一致（需前后端对齐）
+
+- [ ] 活动管理：前端 `activity-api.js` 调用 `/activity/{queryPage,add,delete/{id}}`，后端实际为 `/portal/activity/{query,submit,delete(POST)}` —— 建议前端对齐后端
+- [ ] 活动时间表：前端 `activity-schedule-api.js` 调用独立 `/activitySchedule/*`，后端无此模块（时间表随 `/portal/activity/*` 组合接口一起维护）—— 需确认独立页面去留
+- [ ] 活动报名管理：前端需 `/activityEnrollment/{queryPage,add,update,delete,batchDelete}` 管理接口，后端仅有报名 + 扫码（enroll / signIn / signOut）4 个接口，管理端分页查询与 CRUD 待补
+- [ ] 活动审核日志：前端需 `/activityReviewLog/queryPage`，后端仅有 `add/update/review/initial/latest/{activityId}`
+- [ ] `activityWithSchedule` 的 `/activity/draft/submit` 仅有 TODO（触发状态机后未落库），`getReviewProposal` 方法未加 mapping 注解（疑似未完成）
+
+#### 0.5 URL 前缀适配（portal / backend 双端体系）
+
+- [ ] `AdminInterceptor` 按 URL 路径段分派用户体系，不含 `portal` 或 `backend` 段的请求会被直接拒绝；以下已实现接口的模块未适配，目前请求都会被拦截：`activityEnrollment`、`activityCanEnrollCollege`、`activityCanEnrollGrade`、`activityReviewLog`、`collegeInfo`、`organizationInfo`、`portalUser`、`schoolInfo`、`tribeUser`
+- [ ] 以下空壳模块（见 0.2）补 CRUD 接口时需一并适配前缀：`activityCategory`、`gradeInfo`、`activitySigninManager`、`activityCanEnrollTribe`
+- [ ] 已适配的参考：`activityWithSchedule` / `activityComment` / `activityFavorite` / `activityShare`（`@RequestMapping("portal")`）、`portalLogin`（`/portal/login`）
+- [ ] 前端对应 API 封装同步加前缀（管理后台统一 `/backend/*`，门户统一 `/portal/*`），`signin-qrcode.vue` 调试页依赖的 `/activityEnrollment/*` 一并归入前缀规范
+
+#### 0.6 前端页面修复（技术债）
+
+- [ ] 34 个页面的 API import 路径失效：API 文件已迁移到 `src/api/business/funcampus/`，但页面仍引用旧路径（如 `/@/api/business/college-info/college-info-api`），页面加载即报错；目前仅 `activity-list` / `activity-form` / `signin-qrcode` 3 个页面用了新路径
+- [ ] 菜单 SQL 组件路径失效：`sql_script/mysql/*Menu.sql` 中 component 写的是 `/business/{module}/...`，实际文件在 `/business/funcampus/{module}/...`，需修订 SQL 或调整目录
+- [ ] `activity-enrollment-list.vue` / `activity-enrollment-form.vue` 内容重复拼接（各含 4 份 template + script），无法编译，需清理重写
 
 ---
 
@@ -309,14 +355,15 @@ pu签到二维码按钮
 
 ---
 
-### Phase 8：管理后台前端补全（优先级：低）
+### Phase 8：管理后台前端完善（优先级：低）
 
-> 目标：完善管理后台已有后端接口的对应前端页面
+> 目标：Phase 0 补齐后端接口与修复页面 import 后，联调并完善管理后台页面
 
 #### 8.1 待完善页面
-- [ ] 活动签到管理员管理页面（后端已有，前端页面待完善）
-- [ ] 活动分类管理页面优化
-- [ ] 活动报名范围管理（学院/年级/部落）页面优化
+- [ ] 活动签到管理员管理页面：前端页面已生成，等 Phase 0.2 后端接口补齐后联调
+- [ ] 活动分类管理页面：同上
+- [ ] 活动报名范围管理（学院/年级/部落）页面：前端页面已生成，等 Phase 0.2 / 0.3 接口补齐后联调
+- [ ] 活动报名 / 审核日志 / 活动时间表页面：按 Phase 0.4 结论调整（前端对齐后端组合接口，或补后端独立接口）
 - [ ] 学分认定审核管理页面（配合 Phase 1.5）
 
 ---
@@ -485,6 +532,7 @@ CREATE TABLE `activity_refund` (
 | 移动端框架 | 待定（Vue3 + Vant 4 / uni-app） | 需考虑是否需要跨平台 |
 | 消息推送 | WebSocket / 轮询 | 根据实时性需求决定 |
 | 二维码方案 | 前端 Canvas 生成 + Redis Token | 30s 过期自动刷新 |
+| 双端 URL 前缀 | 门户 `/portal/*`、管理后台 `/backend/*`，由 `AdminInterceptor` 按 URL 段分派用户体系 | 9 个已实现接口的历史模块未适配前缀（见 Phase 0.5），前端 API 封装需同步调整 |
 | 文件存储 | 待定（OSS / 本地） | 头像、活动封面、证明材料 |
 | 付费占座 | 下单锁座，15 分钟未支付自动关单释放 | 复用 `increaseEnrollNum` / `decreaseEnrollNum` |
 | 支付渠道 | 抽象 `PaymentChannel` 接口，Mock 先行，真实渠道暂不接入 | 后续切换仅新增实现类（支付宝沙箱可免费联调，无需商户资质） |

@@ -464,6 +464,46 @@ INSERT INTO `activity_enroll_num` (`activity_id`, `enroll_num`) VALUES
 (3, 1),
 (4, 2);
 
+-- ----------------------------
+-- 19. t_smart_job 活动状态定时推进任务（双任务：大循环扫描 + 小循环消费）
+-- ----------------------------
+-- 旧记录说明：job_id=4(ActivityStatusScanTask) 与 job_id=5(ActivityStatusUpdateJob)
+-- 的 job_class 为迁移前包名(net.lab1024.*)，框架无法加载；且 UpdateJob 被配置为
+-- 每天 0 点 cron，与高频更新的设计矛盾，实际从未按预期生效。
+-- 现使用新包名恢复双任务结构（缓存只做提示，数据库才是事实）：
+--   job_id=4 ActivityStatusUpdateJob：fixed_delay 60 秒，消费当天关键活动名单推进状态；
+--           名单缺失/过期（非当天生成）时自动回源查库重建，可自愈；
+--           处理妥当且当天无未来关键时间点的活动会从名单移除（消费确认）；
+--   job_id=5 ActivityStatusScanJob：fixed_delay 3600 秒，扫描数据库重建当天名单（大循环）
+DELETE FROM `t_smart_job` WHERE `job_id` IN (4, 5);
+INSERT INTO `t_smart_job` (`job_id`, `job_name`, `job_class`, `trigger_type`, `trigger_value`, `enabled_flag`, `param`, `last_execute_time`, `last_execute_log_id`, `sort`, `remark`, `deleted_flag`, `update_name`, `create_time`, `update_time`) VALUES
+(4, '活动状态定时推进', 'com.akkkka.admin.module.business.funcampus.activityWithSchedule.job.ActivityStatusUpdateJob', 'fixed_delay', '60', 1, NULL, NULL, NULL, 1, '消费当天关键活动名单推进活动状态：0等待报名->1报名中->2报名结束->3进行中->4结束；名单缺失/过期自动回源重建', 0, '管理员', NOW(), NOW()),
+(5, '活动状态扫描', 'com.akkkka.admin.module.business.funcampus.activityWithSchedule.job.ActivityStatusScanJob', 'fixed_delay', '3600', 1, NULL, NULL, NULL, 2, '每小时重建当天关键活动名单缓存（大循环）；写入端新建/改时间表时也会尽力投递，缓存失效由更新任务回源兜底', 0, '管理员', NOW(), NOW());
+
+-- 顺带修正示例任务 job_class（原为迁移时产生的乱序字符串，框架无法加载）
+UPDATE `t_smart_job` SET `job_class` = 'com.akkkka.module.support.job.sample.SmartJobSample1' WHERE `job_id` = 1;
+UPDATE `t_smart_job` SET `job_class` = 'com.akkkka.module.support.job.sample.SmartJobSample2' WHERE `job_id` = 2;
+
+-- ----------------------------
+-- 20. 活动状态字典整理（时间阶段 0-4 + 业务状态 9；签到/签退旧值 5、6 退役）
+-- ----------------------------
+-- 背景：状态值历史上混用了“时间阶段”（0-4）与“签到/签退窗口标记”（5-8），
+-- 且 t_dict_data(dict_id=4 ACTIVITY_STATUS) 与代码枚举不一致。
+-- 现统一为（与 ActivityStatus 枚举、activity.status 列注释同源）：
+--   0-等待报名 → 1-报名中 → 2-报名结束 → 3-进行中 → 4-已结束（时间阶段，由定时任务推进）
+--   9-待审核（业务状态，预留：报名需审核时使用，不参与时间阶段流转）
+-- 签到/签退不再使用状态值，由时间窗口校验承担。
+-- 排序：sort_order 越大越靠前，故按生命周期逆序赋 5..1，待审核置 0 排在末尾。
+ALTER TABLE `activity` MODIFY COLUMN `status` tinyint NOT NULL COMMENT '活动状态：0-等待报名 1-报名中 2-报名结束 3-进行中 4-已结束 9-待审核（业务状态，预留）；签到/签退由时间窗口校验，不设状态值';
+DELETE FROM `t_dict_data` WHERE `dict_id` = 4;
+INSERT INTO `t_dict_data` (`dict_data_id`, `dict_id`, `data_value`, `data_label`, `remark`, `sort_order`, `disabled_flag`, `create_time`, `update_time`) VALUES
+(9, 4, '0', '等待报名', '', 5, 0, NOW(), NOW()),
+(10, 4, '1', '报名中', '', 4, 0, NOW(), NOW()),
+(11, 4, '2', '报名结束', '', 3, 0, NOW(), NOW()),
+(12, 4, '3', '进行中', '', 2, 0, NOW(), NOW()),
+(13, 4, '4', '已结束', '', 1, 0, NOW(), NOW()),
+(14, 4, '9', '待审核', '业务状态（预留）：报名需审核时等待审核', 0, 0, NOW(), NOW());
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- =====================================================================

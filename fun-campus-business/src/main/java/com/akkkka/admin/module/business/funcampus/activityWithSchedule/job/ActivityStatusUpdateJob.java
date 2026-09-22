@@ -1,54 +1,57 @@
 package com.akkkka.admin.module.business.funcampus.activityWithSchedule.job;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.constant.ActivityStatus;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityScheduleEntity;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityScheduleManager;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityStatusCacheManager;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityWithScheduleService;
 import com.akkkka.module.support.job.core.SmartJob;
-import org.springframework.data.redis.core.RedisTemplate;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
  * 活动状态更新任务（小任务）
- * 高频执行，用于实时更新活动状态
+ * 高频执行：消费当天关键活动名单，按时间表推进状态。
+ * - 名单只做提示：缺失或过期时回源查库重建（自愈）；数据缺失、单条异常均隔离跳过；
+ * - 状态允许倒退：时间表后调导致期望状态小于当前状态时，回退状态并清空报名数据
+ *   （同一事务 + 原状态条件更新，失败可重试），倒退后报名窗口重开即可重新报名；
+ * - 状态更新带原状态条件（乐观并发），与业务并发改状态时互不覆盖；
+ * - 消费确认：处理妥当且当天已无未来关键时间点的活动移出名单，后续轮次不再重复检查；
+ *   处理失败的保留在名单里，下一轮重试
  *
- * @Author your-name
+ * @Author akkkka
  * @Date 2025-09-07
  * @Copyright your-copyright
  */
+@Slf4j
 @Service
 public class ActivityStatusUpdateJob implements SmartJob {
 
-    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ActivityStatusUpdateJob.class);
+    @Resource
+    private ActivityStatusCacheManager activityStatusCacheManager;
 
-    // Redis中存储当天关键活动ID的键
-    private static final String TODAY_CRITICAL_ACTIVITIES_KEY = "funcampus:today_critical_activities";
     @Resource
     private ActivityManager activityManager;
 
     @Resource
     private ActivityScheduleManager activityScheduleManager;
-    
+
     @Resource
-    private RedisTemplate<String, Object> redisTemplate;
+    private ActivityWithScheduleService activityWithScheduleService;
 
     /**
-     * 分页大小，用于分批处理大量活动
-     */
-    private static final int PAGE_SIZE = 100;
-
-    /**
-     * 执行活动状态更新任务
-     * 采用分批处理方式，避免一次性加载大量数据导致内存问题
+     * 执行活动状态更新
+     * 名单缺失/过期时由缓存层自动回源重建，返回的名单保证新鲜
      *
      * @param param 可选参数
      * @return 执行结果描述
@@ -56,155 +59,120 @@ public class ActivityStatusUpdateJob implements SmartJob {
     @Override
     public String run(String param) {
         LocalDateTime now = LocalDateTime.now();
-        int totalUpdated = 0;
-        int currentPage = 1;
-        boolean hasMore = true;
 
-        // 获取Redis中存储的当天关键活动ID列表
-        List<Long> todayCriticalActivityIds = getTodayCriticalActivityIds();
-        
-        // 如果没有关键活动，直接返回
+        List<Long> todayCriticalActivityIds = activityStatusCacheManager.getTodayCriticalActivityIds();
         if (todayCriticalActivityIds.isEmpty()) {
-            return "今天没有关键活动，无需更新";
+            return "今天没有关键时间点的活动，无需更新";
         }
 
-        // 分批处理所有需要检查状态的活动
-        while (hasMore) {
-            // 分页查询需要检查状态的活动
-            IPage<ActivityEntity> page = queryActivitiesForStatusCheck(currentPage, PAGE_SIZE);
-            
-            List<ActivityEntity> activities = page.getRecords();
-            if (activities.isEmpty()) {
-                break;
-            }
-
-            // 过滤出当天的关键活动
-            List<ActivityEntity> criticalActivities = activities.stream()
-                    .filter(activity -> todayCriticalActivityIds.contains(activity.getId()))
-                    .toList();
-
-            // 批量处理当前页的关键活动
-            if (!criticalActivities.isEmpty()) {
-                int updatedInThisPage = processActivitiesBatch(criticalActivities, now);
-                totalUpdated += updatedInThisPage;
-            }
-
-            // 检查是否还有更多数据
-            hasMore = currentPage < page.getPages();
-            currentPage++;
+        List<ActivityEntity> activities = queryStatusUpdatableActivities(todayCriticalActivityIds);
+        if (activities.isEmpty()) {
+            return "当天关键活动中没有需要推进状态的活动";
         }
 
-        return String.format("活动状态更新完成，总共更新%d个活动", totalUpdated);
-    }
+        Map<Long, ActivityScheduleEntity> scheduleMap = activityScheduleManager
+                .getByActivityIds(activities.stream().map(ActivityEntity::getId).toList())
+                .stream()
+                .collect(Collectors.toMap(ActivityScheduleEntity::getActivityId, Function.identity()));
 
-    /**
-     * 从Redis获取当天关键活动ID列表
-     *
-     * @return 当天关键活动ID列表
-     */
-    @SuppressWarnings("unchecked")
-    private List<Long> getTodayCriticalActivityIds() {
-        Object obj = redisTemplate.opsForValue().get(TODAY_CRITICAL_ACTIVITIES_KEY);
-        if (obj instanceof List) {
-            return (List<Long>) obj;
-        }
-        return List.of();
-    }
+        int advanced = 0;
+        int retreated = 0;
+        int removed = 0;
+        int skipped = 0;
 
-    /**
-     * 分页查询需要检查状态的活动
-     * 只查询未删除且未结束的活动，减少不必要的数据加载
-     *
-     * @param pageNum 页码
-     * @param pageSize 每页大小
-     * @return 分页结果
-     */
-    private IPage<ActivityEntity> queryActivitiesForStatusCheck(int pageNum, int pageSize) {
-        Page<ActivityEntity> page = new Page<>(pageNum, pageSize);
-        
-        LambdaQueryWrapper<ActivityEntity> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(ActivityEntity::getDeletedFlag, false);  // 只查询未删除的活动
-        queryWrapper.ne(ActivityEntity::getStatus, 4);  // 排除已结束的活动（状态4）
-        
-        return activityManager.page(page, queryWrapper);
-    }
-
-    /**
-     * 批量处理活动状态更新
-     *
-     * @param activities 活动列表
-     * @param now 当前时间
-     * @return 更新的活动数量
-     */
-    private int processActivitiesBatch(List<ActivityEntity> activities, LocalDateTime now) {
-        int updatedCount = 0;
-        
-        // 批量获取这些活动的时间表信息
-        List<Long> activityIds = activities.stream()
-                .map(ActivityEntity::getId)
-                .toList();
-        
-        List<ActivityScheduleEntity> schedules = activityScheduleManager.getByActivityIds(activityIds);
-        
-        // 将时间表信息转换为Map方便查找
-        Map<Long, ActivityScheduleEntity> scheduleMap = schedules.stream()
-                .collect(Collectors.toMap(
-                        ActivityScheduleEntity::getActivityId, 
-                        schedule -> schedule
-                ));
-
-        // 逐个检查并更新活动状态
         for (ActivityEntity activity : activities) {
-            ActivityScheduleEntity schedule = scheduleMap.get(activity.getId());
-            if (schedule == null) {
-                continue; // 没有时间表信息，跳过
-            }
-
-            // 根据时间表计算活动应该处于的状态
-            Integer newStatus = calculateActivityStatus(now, schedule);
-            
-            // 如果状态有变化，则更新
-            if (!newStatus.equals(activity.getStatus())) {
-                boolean updated = activityManager.updateStatus(activity.getId(), newStatus);
-                if (updated) {
-                    updatedCount++;
+            try {
+                ActivityScheduleEntity schedule = scheduleMap.get(activity.getId());
+                if (schedule == null) {
+                    skipped++;
+                    continue;
                 }
+                ActivityStatus expectedStatus = calculateActivityStatus(now, schedule);
+                if (expectedStatus == null) {
+                    skipped++;
+                    continue;
+                }
+                ActivityStatus currentStatus = activity.getStatus();
+                boolean handled = true;
+                if (expectedStatus.isAfter(currentStatus)) {
+                    // 前进：仅当状态未被并发修改时更新
+                    handled = activityManager.updateStatusIfMatch(activity.getId(), expectedStatus, currentStatus);
+                    if (handled) {
+                        advanced++;
+                    } else {
+                        skipped++;
+                    }
+                } else if (expectedStatus.isBefore(currentStatus)) {
+                    // 倒退：状态回退 + 清空报名数据（同一事务，条件不满足时放弃，下轮重试）
+                    handled = activityWithScheduleService.retreatActivityStatusTransaction(
+                            activity.getId(), currentStatus, expectedStatus);
+                    if (handled) {
+                        retreated++;
+                    } else {
+                        skipped++;
+                    }
+                }
+                // 消费确认：处理妥当且当天已无未来关键时间点时移出名单，后续轮次不再重复检查；
+                // 处理失败的保留在名单里，下一轮重试
+                if (handled && !activityStatusCacheManager.hasFutureKeyTimeToday(schedule)) {
+                    activityStatusCacheManager.removeFromTodayCache(activity.getId());
+                    removed++;
+                }
+            } catch (Exception e) {
+                // 单条隔离：一条失败不影响其他活动
+                log.error("活动状态更新失败，activityId={}", activity.getId(), e);
+                skipped++;
             }
         }
-        
-        return updatedCount;
+
+        return String.format("活动状态更新完成：前进%d个，倒退%d个，跳过%d个，移出名单%d个",
+                advanced, retreated, skipped, removed);
+    }
+
+    /**
+     * 查询名单中需要推进状态的活动
+     * 只保留未删除且状态在 0~3 的活动；待审核(9)、已结束(4)等不由本任务驱动
+     *
+     * @param activityIds 名单中的活动ID
+     * @return 待推进状态的活动列表
+     */
+    private List<ActivityEntity> queryStatusUpdatableActivities(List<Long> activityIds) {
+        LambdaQueryWrapper<ActivityEntity> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.in(ActivityEntity::getId, activityIds);
+        queryWrapper.eq(ActivityEntity::getDeletedFlag, false);
+        queryWrapper.in(ActivityEntity::getStatus, ActivityStatus.pendingTimeLineCodes());
+        return activityManager.list(queryWrapper);
     }
 
     /**
      * 根据当前时间和活动时间表计算活动应该处于的状态
+     * 时间字段缺失时返回 null，由调用方跳过
      *
      * @param now 当前时间
      * @param schedule 活动时间表
-     * @return 活动状态
+     * @return 活动状态，无法计算时返回 null
      */
-    private Integer calculateActivityStatus(LocalDateTime now, ActivityScheduleEntity schedule) {
-        // 活动状态定义：
-        // 0 - 等待报名
-        // 1 - 报名中
-        // 2 - 报名结束
-        // 3 - 活动进行中
-        // 4 - 活动结束
-
-        if (now.isBefore(schedule.getEnrollStartTime())) {
-            // 当前时间在报名开始时间之前
-            return 0; // 等待报名
-        } else if (now.isBefore(schedule.getEnrollEndTime())) {
-            // 当前时间在报名时间内
-            return 1; // 报名中
-        } else if (now.isBefore(schedule.getActivityStartTime())) {
-            // 当前时间在报名结束和活动开始之间
-            return 2; // 报名结束
-        } else if (now.isBefore(schedule.getActivityEndTime())) {
-            // 当前时间在活动时间内
-            return 3; // 活动进行中
-        } else {
-            // 当前时间在活动结束时间之后
-            return 4; // 活动结束
+    private ActivityStatus calculateActivityStatus(LocalDateTime now, ActivityScheduleEntity schedule) {
+        LocalDateTime enrollStartTime = schedule.getEnrollStartTime();
+        LocalDateTime enrollEndTime = schedule.getEnrollEndTime();
+        LocalDateTime activityStartTime = schedule.getActivityStartTime();
+        LocalDateTime activityEndTime = schedule.getActivityEndTime();
+        if (enrollStartTime == null || enrollEndTime == null
+                || activityStartTime == null || activityEndTime == null) {
+            return null;
         }
+        if (now.isBefore(enrollStartTime)) {
+            return ActivityStatus.WAIT_ENROLL;
+        }
+        if (now.isBefore(enrollEndTime)) {
+            return ActivityStatus.ENROLLING;
+        }
+        if (now.isBefore(activityStartTime)) {
+            return ActivityStatus.ENROLL_ENDED;
+        }
+        if (now.isBefore(activityEndTime)) {
+            return ActivityStatus.ONGOING;
+        }
+        return ActivityStatus.FINISHED;
     }
 }

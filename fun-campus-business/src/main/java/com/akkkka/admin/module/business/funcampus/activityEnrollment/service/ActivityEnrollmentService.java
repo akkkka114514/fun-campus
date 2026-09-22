@@ -7,6 +7,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 
+import com.akkkka.admin.module.business.funcampus.activityEnrollment.constant.RedisKey;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.dao.ActivityEnrollmentDao;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.entity.ActivityEnrollmentEntity;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.form.ActivityEnrollmentQueryForm;
@@ -18,8 +19,10 @@ import com.akkkka.admin.module.business.funcampus.activitySigninManager.service.
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.constant.ActivityStatus;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.dao.ActivityEnrollNumDao;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityScheduleEntity;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.EnrollerVO;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityScheduleManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityValidator;
 import com.akkkka.admin.module.business.funcampus.portalUser.domain.entity.PortalUserEntity;
 import com.akkkka.admin.module.business.funcampus.portalUser.domain.vo.SimplePortalUserVO;
@@ -90,11 +93,9 @@ public class ActivityEnrollmentService {
 
     private final ActivitySigninManagerService signinManagerService;
 
-    private static final int QR_CODE_EXPIRE_SECONDS = 30;
+    private final ActivityScheduleManager activityScheduleManager;
 
-    private static String SIGN_IN_QR_CODE_TOKEN_REDIS_KEY(Long userId){
-        return "sign_in:qr_code_token:"+userId;
-    }
+    private static final int QR_CODE_EXPIRE_SECONDS = 30;
 
 
     public void enroll(Long activityId){
@@ -106,7 +107,7 @@ public class ActivityEnrollmentService {
         }
 
         ActivityEntity activity = activityValidator.validateActivityId(activityId);
-        activity.validateStatus(ActivityStatus.START_ENROLL);
+        activity.validateStatus(ActivityStatus.ENROLLING);
 
         //检查用户所属学院年级部落是否在活动指定范围内
         PortalUserEntity portalUser = portalUserManager.getById(requestUser.getUserId());
@@ -146,10 +147,9 @@ public class ActivityEnrollmentService {
     public SignInQRCodeVO signInQRCode(){
         Long userId = SmartRequestUtil.getRequestUserId();
         assert userId!=null;
-        String redisKey = SIGN_IN_QR_CODE_TOKEN_REDIS_KEY(userId);
+        String redisKey = RedisKey.qrCodeTokenKey(userId);
         String uuid=UUID.randomUUID().toString().replace("-","");
-        // 允许刷新：删除旧token，设置新token
-        redisTemplate.delete(redisKey);
+        // 允许刷新：重新生成时直接覆盖旧 token，旧值立即失效（无需先删除，避免并发读取空窗口）
         redisTemplate.opsForValue().set(redisKey,uuid,QR_CODE_EXPIRE_SECONDS,TimeUnit.SECONDS);
         // 二维码内容包含 userId 和 token
         String qrContent = String.format(
@@ -191,15 +191,15 @@ public class ActivityEnrollmentService {
         }
     }
     public void signIn(Long activityId, Long needSignInUserId, String uuid){
-        String redisKey = SIGN_IN_QR_CODE_TOKEN_REDIS_KEY(needSignInUserId);
+        String redisKey = RedisKey.qrCodeTokenKey(needSignInUserId);
         String realUuid = redisTemplate.opsForValue().get(redisKey);
         if (realUuid==null||!Objects.equals(realUuid,uuid)){
             throw new BusinessException(UserErrorCode.PARAM_ERROR,"二维码已过期");
         }
         //检查活动是否存在，是否已删除
-        ActivityEntity activity = activityValidator.validateActivityId(activityId);
-        //检查是否处于等待签到状态
-        activity.validateStatus(ActivityStatus.START_ENROLL);
+        activityValidator.validateActivityId(activityId);
+        //检查活动时间表是否存在，当前时间是否处于签到时间窗口内
+        validateSignInTimeWindow(activityId);
         //检查用户是否已报名该活动
         ActivityEnrollmentEntity enrollmentEntity = enrollmentDomainService.validateEnrollmentExist(activityId,needSignInUserId);
         //检查用户是否已签到
@@ -212,6 +212,7 @@ public class ActivityEnrollmentService {
         LambdaUpdateWrapper<ActivityEnrollmentEntity> updateWrapper = new LambdaUpdateWrapper<>();
         updateWrapper.eq(ActivityEnrollmentEntity::getActivityId, activityId)
                 .eq(ActivityEnrollmentEntity::getUserId, needSignInUserId)
+                .eq(ActivityEnrollmentEntity::getDeletedFlag, false)
                 .set(ActivityEnrollmentEntity::getSignInStatus, true);
         boolean result = activityEnrollmentManager.update(updateWrapper);
         if (result) {
@@ -224,18 +225,22 @@ public class ActivityEnrollmentService {
     }
 
     /**
-     * 扫码签退
+     * 扫码签退（需活动开启了签退，且当前处于签退时间窗口内）
      */
     public void signOut(Long activityId, Long needSignOutUserId, String uuid){
-        String redisKey = SIGN_IN_QR_CODE_TOKEN_REDIS_KEY(needSignOutUserId);
+        String redisKey = RedisKey.qrCodeTokenKey(needSignOutUserId);
         String realUuid = redisTemplate.opsForValue().get(redisKey);
         if (realUuid==null||!Objects.equals(realUuid,uuid)){
             throw new BusinessException(UserErrorCode.PARAM_ERROR,"二维码已过期");
         }
         //检查活动是否存在，是否已删除
         ActivityEntity activity = activityValidator.validateActivityId(activityId);
-        //检查是否处于活动进行中状态
-        activity.validateStatus(ActivityStatus.START_ACTIVITY);
+        //检查活动是否开启了签退
+        if(!Boolean.TRUE.equals(activity.getNeedSignOut())){
+            throw new BusinessException(UserErrorCode.PARAM_ERROR,"该活动无需签退");
+        }
+        //检查活动时间表是否存在，当前时间是否处于签退时间窗口内
+        validateSignOutTimeWindow(activityId);
         //检查用户是否已报名该活动
         ActivityEnrollmentEntity enrollmentEntity = enrollmentDomainService.validateEnrollmentExist(activityId,needSignOutUserId);
         //检查用户是否已签到（未签到不能签退）
@@ -252,6 +257,7 @@ public class ActivityEnrollmentService {
         LambdaUpdateWrapper<ActivityEnrollmentEntity> updateWrapper = new LambdaUpdateWrapper<>();
         updateWrapper.eq(ActivityEnrollmentEntity::getActivityId, activityId)
                 .eq(ActivityEnrollmentEntity::getUserId, needSignOutUserId)
+                .eq(ActivityEnrollmentEntity::getDeletedFlag, false)
                 .set(ActivityEnrollmentEntity::getSignOutStatus, true);
         boolean result = activityEnrollmentManager.update(updateWrapper);
         if (result) {
@@ -385,5 +391,54 @@ public class ActivityEnrollmentService {
             enrollersChangeDTO = convertToEnrollmentChanges(activityId, enrollerIds, dbEnrollerIds);
         }
         EnrollersChangeDTO finalEnrollersChangeDTO = enrollersChangeDTO;
+    }
+
+    /**
+     * 校验活动时间表存在，且当前时间处于该活动的签到时间窗口内
+     */
+    private void validateSignInTimeWindow(Long activityId){
+        ActivityScheduleEntity schedule = getActivitySchedule(activityId);
+        LocalDateTime startTime = schedule.getSigninStartTime();
+        LocalDateTime endTime = schedule.getSigninEndTime();
+        if(startTime==null||endTime==null){
+            throw new BusinessException(UserErrorCode.PARAM_ERROR,"活动未配置签到时间窗口");
+        }
+        LocalDateTime now = LocalDateTime.now();
+        if(now.isBefore(startTime)){
+            throw new BusinessException(UserErrorCode.PARAM_ERROR,"活动签到尚未开始");
+        }
+        if(!now.isBefore(endTime)){
+            throw new BusinessException(UserErrorCode.PARAM_ERROR,"活动签到已结束");
+        }
+    }
+
+    /**
+     * 校验活动时间表存在，且当前时间处于该活动的签退时间窗口内
+     */
+    private void validateSignOutTimeWindow(Long activityId){
+        ActivityScheduleEntity schedule = getActivitySchedule(activityId);
+        LocalDateTime startTime = schedule.getSignoutStartTime();
+        LocalDateTime endTime = schedule.getSignoutEndTime();
+        if(startTime==null||endTime==null){
+            throw new BusinessException(UserErrorCode.PARAM_ERROR,"活动未配置签退时间窗口");
+        }
+        LocalDateTime now = LocalDateTime.now();
+        if(now.isBefore(startTime)){
+            throw new BusinessException(UserErrorCode.PARAM_ERROR,"活动签退尚未开始");
+        }
+        if(!now.isBefore(endTime)){
+            throw new BusinessException(UserErrorCode.PARAM_ERROR,"活动签退已结束");
+        }
+    }
+
+    /**
+     * 获取活动时间表，不存在则报错
+     */
+    private ActivityScheduleEntity getActivitySchedule(Long activityId){
+        ActivityScheduleEntity schedule = activityScheduleManager.getById(activityId);
+        if(schedule==null){
+            throw new BusinessException(UserErrorCode.PARAM_ERROR,"活动时间表不存在");
+        }
+        return schedule;
     }
 }

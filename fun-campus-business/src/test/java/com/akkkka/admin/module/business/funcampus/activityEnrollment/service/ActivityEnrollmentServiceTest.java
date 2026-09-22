@@ -12,8 +12,10 @@ import com.akkkka.admin.module.business.funcampus.activitySigninManager.service.
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.constant.ActivityStatus;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.dao.ActivityEnrollNumDao;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityScheduleEntity;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.EnrollerVO;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityScheduleManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityValidator;
 import com.akkkka.admin.module.business.funcampus.portalLogin.domain.RequestPortalUser;
 import com.akkkka.admin.module.business.funcampus.portalUser.domain.entity.PortalUserEntity;
@@ -36,6 +38,7 @@ import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -49,8 +52,9 @@ import static org.mockito.Mockito.*;
 /**
  * 活动报名 Service 单元测试
  * <p>
- * 覆盖：报名事务流程（人数上限、插入失败）、签到二维码生成、扫码签到/签退
- * （token 过期、重复签到/签退、未签到签退）、报名人员差集转换、报名列表标记
+ * 覆盖：报名事务流程（人数上限、插入失败）、签到二维码生成（30s 过期、刷新覆盖）、
+ * 扫码签到/签退（token 过期、签到/签退时间窗口、needSignOut、重复签到/签退、未签到签退）、
+ * 报名人员差集转换、报名列表标记
  *
  * @Author akkkka114514
  * @Date 2026-09-03
@@ -91,6 +95,8 @@ public class ActivityEnrollmentServiceTest {
     private ValueOperations<String, String> valueOperations;
     @Mock
     private ActivitySigninManagerService signinManagerService;
+    @Mock
+    private ActivityScheduleManager activityScheduleManager;
 
     private ActivityEnrollmentService service;
 
@@ -104,7 +110,7 @@ public class ActivityEnrollmentServiceTest {
                 activityEnrollmentDao, activityEnrollmentManager, activityManager,
                 activityEnrollNumDao, transactionTemplate, portalUserManager, portalUserValidator,
                 activityValidator, enrollmentDomainService, signInManagerValidator, redisTemplate,
-                enrollmentManager, signinManagerService);
+                enrollmentManager, signinManagerService, activityScheduleManager);
     }
 
     @AfterEach
@@ -129,11 +135,43 @@ public class ActivityEnrollmentServiceTest {
         SmartRequestUtil.setRequestUser(portalUser);
     }
 
-    private ActivityEntity activityWithStatus(int status) {
+    private ActivityEntity activityWithStatus(ActivityStatus status) {
         ActivityEntity activity = new ActivityEntity();
         activity.setId(7L);
         activity.setStatus(status);
         return activity;
+    }
+
+    private ActivityEntity signOutActivity(boolean needSignOut) {
+        ActivityEntity activity = activityWithStatus(ActivityStatus.ONGOING);
+        activity.setNeedSignOut(needSignOut);
+        return activity;
+    }
+
+    private ActivityScheduleEntity scheduleWithSignInWindow(LocalDateTime start, LocalDateTime end) {
+        ActivityScheduleEntity schedule = new ActivityScheduleEntity();
+        schedule.setSigninStartTime(start);
+        schedule.setSigninEndTime(end);
+        return schedule;
+    }
+
+    /** 当前时间处于签到窗口内的活动时间表（真实时间动态生成） */
+    private ActivityScheduleEntity openSignInSchedule() {
+        LocalDateTime now = LocalDateTime.now();
+        return scheduleWithSignInWindow(now.minusMinutes(30), now.plusMinutes(30));
+    }
+
+    private ActivityScheduleEntity scheduleWithSignOutWindow(LocalDateTime start, LocalDateTime end) {
+        ActivityScheduleEntity schedule = new ActivityScheduleEntity();
+        schedule.setSignoutStartTime(start);
+        schedule.setSignoutEndTime(end);
+        return schedule;
+    }
+
+    /** 当前时间处于签退窗口内的活动时间表（真实时间动态生成） */
+    private ActivityScheduleEntity openSignOutSchedule() {
+        LocalDateTime now = LocalDateTime.now();
+        return scheduleWithSignOutWindow(now.minusMinutes(30), now.plusMinutes(30));
     }
 
     private ActivityEnrollmentEntity enrollment(Long userId, Boolean signIn, Boolean signOut) {
@@ -166,7 +204,7 @@ public class ActivityEnrollmentServiceTest {
     @Test
     void enroll_whenActivityNotInEnrollStatus_throw() {
         setPortalUser(12L);
-        when(activityValidator.validateActivityId(7L)).thenReturn(activityWithStatus(ActivityStatus.NOT_START_ENROLL));
+        when(activityValidator.validateActivityId(7L)).thenReturn(activityWithStatus(ActivityStatus.WAIT_ENROLL));
         BusinessException ex = assertThrows(BusinessException.class, () -> service.enroll(7L));
         assertTrue(ex.getMessage().contains("活动未开始报名或报名已结束"));
     }
@@ -174,7 +212,7 @@ public class ActivityEnrollmentServiceTest {
     @Test
     void enroll_whenEnrollNumFull_throwAndNotInsert() {
         setPortalUser(12L);
-        when(activityValidator.validateActivityId(7L)).thenReturn(activityWithStatus(ActivityStatus.START_ENROLL));
+        when(activityValidator.validateActivityId(7L)).thenReturn(activityWithStatus(ActivityStatus.ENROLLING));
         runTransactionNow();
         when(activityEnrollNumDao.increaseEnrollNum(7L)).thenReturn(false);
 
@@ -186,7 +224,7 @@ public class ActivityEnrollmentServiceTest {
     @Test
     void enroll_whenInsertFails_throw() {
         setPortalUser(12L);
-        when(activityValidator.validateActivityId(7L)).thenReturn(activityWithStatus(ActivityStatus.START_ENROLL));
+        when(activityValidator.validateActivityId(7L)).thenReturn(activityWithStatus(ActivityStatus.ENROLLING));
         runTransactionNow();
         when(activityEnrollNumDao.increaseEnrollNum(7L)).thenReturn(true);
         when(activityEnrollmentDao.insert(any(ActivityEnrollmentEntity.class))).thenReturn(0);
@@ -198,7 +236,7 @@ public class ActivityEnrollmentServiceTest {
     @Test
     void enroll_whenAllValid_insertEnrollment() {
         setPortalUser(12L);
-        when(activityValidator.validateActivityId(7L)).thenReturn(activityWithStatus(ActivityStatus.START_ENROLL));
+        when(activityValidator.validateActivityId(7L)).thenReturn(activityWithStatus(ActivityStatus.ENROLLING));
         when(portalUserManager.getById(12L)).thenReturn(portalUserEntity(12L));
         runTransactionNow();
         when(activityEnrollNumDao.increaseEnrollNum(7L)).thenReturn(true);
@@ -231,10 +269,11 @@ public class ActivityEnrollmentServiceTest {
         // 二维码内容包含 userId 与 token
         assertTrue(vo.getQrCodeImage().length() > "data:image/png;base64,".length());
 
-        verify(redisTemplate).delete("sign_in:qr_code_token:12");
+        // 直接覆盖写入新 token 即完成刷新（无需先删除旧 token）
         ArgumentCaptor<String> tokenCaptor = ArgumentCaptor.forClass(String.class);
         verify(valueOperations).set(eq("sign_in:qr_code_token:12"), tokenCaptor.capture(), eq(30L), eq(TimeUnit.SECONDS));
         assertEquals(vo.getToken(), tokenCaptor.getValue());
+        verify(redisTemplate, never()).delete(anyString());
     }
 
     // ---------------------------------- 扫码签到 signIn ----------------------------------
@@ -250,10 +289,63 @@ public class ActivityEnrollmentServiceTest {
     }
 
     @Test
+    void signIn_whenScheduleMissing_throw() {
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get("sign_in:qr_code_token:12")).thenReturn("uuid-1");
+        when(activityValidator.validateActivityId(7L)).thenReturn(activityWithStatus(ActivityStatus.ENROLLING));
+        when(activityScheduleManager.getById(7L)).thenReturn(null);
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> service.signIn(7L, 12L, "uuid-1"));
+        assertTrue(ex.getMessage().contains("活动时间表不存在"));
+    }
+
+    @Test
+    void signIn_whenSigninWindowNotOpen_throw() {
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get("sign_in:qr_code_token:12")).thenReturn("uuid-1");
+        when(activityValidator.validateActivityId(7L)).thenReturn(activityWithStatus(ActivityStatus.ENROLLING));
+        LocalDateTime now = LocalDateTime.now();
+        when(activityScheduleManager.getById(7L))
+                .thenReturn(scheduleWithSignInWindow(now.plusMinutes(30), now.plusHours(1)));
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> service.signIn(7L, 12L, "uuid-1"));
+        assertTrue(ex.getMessage().contains("活动签到尚未开始"));
+    }
+
+    @Test
+    void signIn_whenSigninWindowClosed_throw() {
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get("sign_in:qr_code_token:12")).thenReturn("uuid-1");
+        when(activityValidator.validateActivityId(7L)).thenReturn(activityWithStatus(ActivityStatus.ENROLLING));
+        LocalDateTime now = LocalDateTime.now();
+        when(activityScheduleManager.getById(7L))
+                .thenReturn(scheduleWithSignInWindow(now.minusHours(1), now.minusMinutes(30)));
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> service.signIn(7L, 12L, "uuid-1"));
+        assertTrue(ex.getMessage().contains("活动签到已结束"));
+    }
+
+    @Test
+    void signIn_whenSigninWindowNotConfigured_throw() {
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get("sign_in:qr_code_token:12")).thenReturn("uuid-1");
+        when(activityValidator.validateActivityId(7L)).thenReturn(activityWithStatus(ActivityStatus.ENROLLING));
+        when(activityScheduleManager.getById(7L)).thenReturn(new ActivityScheduleEntity());
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> service.signIn(7L, 12L, "uuid-1"));
+        assertTrue(ex.getMessage().contains("活动未配置签到时间窗口"));
+    }
+
+    @Test
     void signIn_whenAlreadySignedIn_throw() {
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(valueOperations.get("sign_in:qr_code_token:12")).thenReturn("uuid-1");
-        when(activityValidator.validateActivityId(7L)).thenReturn(activityWithStatus(ActivityStatus.START_ENROLL));
+        when(activityValidator.validateActivityId(7L)).thenReturn(activityWithStatus(ActivityStatus.ENROLLING));
+        when(activityScheduleManager.getById(7L)).thenReturn(openSignInSchedule());
         when(enrollmentDomainService.validateEnrollmentExist(7L, 12L))
                 .thenReturn(enrollment(12L, true, false));
 
@@ -267,7 +359,8 @@ public class ActivityEnrollmentServiceTest {
         setPortalUser(99L); // 签到员
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(valueOperations.get("sign_in:qr_code_token:12")).thenReturn("uuid-1");
-        when(activityValidator.validateActivityId(7L)).thenReturn(activityWithStatus(ActivityStatus.START_ENROLL));
+        when(activityValidator.validateActivityId(7L)).thenReturn(activityWithStatus(ActivityStatus.ENROLLING));
+        when(activityScheduleManager.getById(7L)).thenReturn(openSignInSchedule());
         when(enrollmentDomainService.validateEnrollmentExist(7L, 12L))
                 .thenReturn(enrollment(12L, false, false));
         when(portalUserValidator.validatePortalUserId(12L)).thenReturn(portalUserEntity(12L));
@@ -284,7 +377,8 @@ public class ActivityEnrollmentServiceTest {
         setPortalUser(99L);
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(valueOperations.get("sign_in:qr_code_token:12")).thenReturn("uuid-1");
-        when(activityValidator.validateActivityId(7L)).thenReturn(activityWithStatus(ActivityStatus.START_ENROLL));
+        when(activityValidator.validateActivityId(7L)).thenReturn(activityWithStatus(ActivityStatus.ENROLLING));
+        when(activityScheduleManager.getById(7L)).thenReturn(openSignInSchedule());
         when(enrollmentDomainService.validateEnrollmentExist(7L, 12L))
                 .thenReturn(enrollment(12L, false, false));
         when(portalUserValidator.validatePortalUserId(12L)).thenReturn(portalUserEntity(12L));
@@ -298,10 +392,51 @@ public class ActivityEnrollmentServiceTest {
     // ---------------------------------- 扫码签退 signOut ----------------------------------
 
     @Test
+    void signOut_whenActivityNotNeedSignOut_throw() {
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get("sign_in:qr_code_token:12")).thenReturn("uuid-1");
+        when(activityValidator.validateActivityId(7L)).thenReturn(signOutActivity(false));
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> service.signOut(7L, 12L, "uuid-1"));
+        assertTrue(ex.getMessage().contains("该活动无需签退"));
+        verify(activityScheduleManager, never()).getById(any());
+    }
+
+    @Test
+    void signOut_whenSignoutWindowNotOpen_throw() {
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get("sign_in:qr_code_token:12")).thenReturn("uuid-1");
+        when(activityValidator.validateActivityId(7L)).thenReturn(signOutActivity(true));
+        LocalDateTime now = LocalDateTime.now();
+        when(activityScheduleManager.getById(7L))
+                .thenReturn(scheduleWithSignOutWindow(now.plusMinutes(30), now.plusHours(1)));
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> service.signOut(7L, 12L, "uuid-1"));
+        assertTrue(ex.getMessage().contains("活动签退尚未开始"));
+    }
+
+    @Test
+    void signOut_whenSignoutWindowClosed_throw() {
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get("sign_in:qr_code_token:12")).thenReturn("uuid-1");
+        when(activityValidator.validateActivityId(7L)).thenReturn(signOutActivity(true));
+        LocalDateTime now = LocalDateTime.now();
+        when(activityScheduleManager.getById(7L))
+                .thenReturn(scheduleWithSignOutWindow(now.minusHours(1), now.minusMinutes(30)));
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> service.signOut(7L, 12L, "uuid-1"));
+        assertTrue(ex.getMessage().contains("活动签退已结束"));
+    }
+
+    @Test
     void signOut_whenUserNotSignedIn_throw() {
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(valueOperations.get("sign_in:qr_code_token:12")).thenReturn("uuid-1");
-        when(activityValidator.validateActivityId(7L)).thenReturn(activityWithStatus(ActivityStatus.START_ACTIVITY));
+        when(activityValidator.validateActivityId(7L)).thenReturn(signOutActivity(true));
+        when(activityScheduleManager.getById(7L)).thenReturn(openSignOutSchedule());
         when(enrollmentDomainService.validateEnrollmentExist(7L, 12L))
                 .thenReturn(enrollment(12L, false, false));
 
@@ -314,7 +449,8 @@ public class ActivityEnrollmentServiceTest {
     void signOut_whenAlreadySignedOut_throw() {
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(valueOperations.get("sign_in:qr_code_token:12")).thenReturn("uuid-1");
-        when(activityValidator.validateActivityId(7L)).thenReturn(activityWithStatus(ActivityStatus.START_ACTIVITY));
+        when(activityValidator.validateActivityId(7L)).thenReturn(signOutActivity(true));
+        when(activityScheduleManager.getById(7L)).thenReturn(openSignOutSchedule());
         when(enrollmentDomainService.validateEnrollmentExist(7L, 12L))
                 .thenReturn(enrollment(12L, true, true));
 
@@ -328,7 +464,8 @@ public class ActivityEnrollmentServiceTest {
         setPortalUser(99L);
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(valueOperations.get("sign_in:qr_code_token:12")).thenReturn("uuid-1");
-        when(activityValidator.validateActivityId(7L)).thenReturn(activityWithStatus(ActivityStatus.START_ACTIVITY));
+        when(activityValidator.validateActivityId(7L)).thenReturn(signOutActivity(true));
+        when(activityScheduleManager.getById(7L)).thenReturn(openSignOutSchedule());
         when(enrollmentDomainService.validateEnrollmentExist(7L, 12L))
                 .thenReturn(enrollment(12L, true, false));
         when(portalUserValidator.validatePortalUserId(12L)).thenReturn(portalUserEntity(12L));

@@ -33,6 +33,7 @@ public class ActivityScheduleManager extends ServiceImpl<ActivityScheduleDao, Ac
         
         LambdaQueryWrapper<ActivityScheduleEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.in(ActivityScheduleEntity::getActivityId, activityIds);
+        queryWrapper.eq(ActivityScheduleEntity::getDeletedFlag, false);
         return this.list(queryWrapper);
     }
 
@@ -51,28 +52,31 @@ public class ActivityScheduleManager extends ServiceImpl<ActivityScheduleDao, Ac
         queryWrapper.eq(ActivityScheduleEntity::getActivityId, activityId);
         return this.getOne(queryWrapper);
     }
-    
+
     /**
-     * 查询指定时间范围内有关键时间点的活动
-     * 
-     * @param startTime 开始时间
-     * @param endTime 结束时间
-     * @return 活动时间表列表
+     * 查询指定时间段内有任意关键时间点到达的活动（报名开始/结束、活动开始/结束）
+     * 使用半开区间 [startTime, endTime)，避免 23:59:59 这类边界写法的遗漏
+     * 签到/签退时间点不参与状态机计算，故不参与筛选
+     *
+     * @param startTime 开始时间（含）
+     * @param endTime 结束时间（不含）
+     * @return 时间表列表
      */
     public List<ActivityScheduleEntity> getActivitiesWithKeyTime(LocalDateTime startTime, LocalDateTime endTime) {
         LambdaQueryWrapper<ActivityScheduleEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(ActivityScheduleEntity::getDeletedFlag, false);
-        
-        // 查询在指定时间范围内有关键时间点的活动
-        queryWrapper
-            .and(wrapper -> wrapper.between(ActivityScheduleEntity::getEnrollStartTime, startTime, endTime)
-                    .or()
-                    .between(ActivityScheduleEntity::getEnrollEndTime, startTime, endTime)
-                    .or()
-                    .between(ActivityScheduleEntity::getActivityStartTime, startTime, endTime)
-                    .or()
-                    .between(ActivityScheduleEntity::getActivityEndTime, startTime, endTime));
-        
+        queryWrapper.and(w -> w
+                .ge(ActivityScheduleEntity::getEnrollStartTime, startTime)
+                .lt(ActivityScheduleEntity::getEnrollStartTime, endTime)
+                .or()
+                .ge(ActivityScheduleEntity::getEnrollEndTime, startTime)
+                .lt(ActivityScheduleEntity::getEnrollEndTime, endTime)
+                .or()
+                .ge(ActivityScheduleEntity::getActivityStartTime, startTime)
+                .lt(ActivityScheduleEntity::getActivityStartTime, endTime)
+                .or()
+                .ge(ActivityScheduleEntity::getActivityEndTime, startTime)
+                .lt(ActivityScheduleEntity::getActivityEndTime, endTime));
         return this.list(queryWrapper);
     }
 }

@@ -17,7 +17,7 @@
                             <p>正在生成二维码...</p>
                         </div>
                         <div v-else-if="qrCodeData" class="qr-code-wrapper">
-                            <img :src="qrCodeData.qrCodeImage" alt="签到二维码" class="qr-code-img" />
+                            <img :src="qrCodeData.qrCodeImage" alt="签到/签退二维码" class="qr-code-img" />
                             <div class="qr-info">
                                 <p><strong>UID：</strong>{{ qrCodeData.userId }}</p>
                                 <p><strong>Token：</strong>{{ qrCodeData.token }}</p>
@@ -84,11 +84,11 @@
                 <a-card title="使用说明" :bordered="true" style="margin-top: 16px">
                     <a-typography-paragraph>
                         <ol>
-                            <li>签到员点击「生成二维码」获取自己的签到二维码</li>
-                            <li>二维码包含签到员的UID和Token，有效期30秒</li>
-                            <li>学员展示自己的二维码，签到员扫描后获取学员的UID</li>
-                            <li>签到员在右侧表单填入活动ID、学员UID和自己的Token</li>
-                            <li>点击「签到」或「签退」完成操作</li>
+                            <li>左侧二维码为当前账号自己的签到/签退二维码（含 UID 与 Token），有效期 30 秒，可手动刷新</li>
+                            <li>学员端展示各自的二维码，扫码后解析出学员的 UID 与 Token</li>
+                            <li>在右侧表单填入活动 ID、学员 UID 与学员二维码中的 Token</li>
+                            <li>点击「签到」或「签退」完成操作（需处于该活动对应时间窗口，且当前账号为该活动签到员）</li>
+                            <li>签到/签退成功后该 Token 即作废，需学员刷新二维码后再次操作</li>
                             <li>二维码过期后需重新生成</li>
                         </ol>
                     </a-typography-paragraph>

@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.constant.ActivityStatus;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -36,9 +37,9 @@ public class ActivityEntity {
     private String title;
 
     /**
-     * 活动状态
+     * 活动状态（枚举化，与字典 ACTIVITY_STATUS 对应，见 ActivityStatus）
      */
-    private Integer status;
+    private ActivityStatus status;
 
     /**
      * 活动地点
@@ -122,8 +123,8 @@ public class ActivityEntity {
      */
     private Long activityManagerId;
 
-    public void validateStatus(Integer status){
-        if(!this.getStatus().equals(status)){
+    public void validateStatus(ActivityStatus status){
+        if(this.getStatus() != status){
             throw new BusinessException(UserErrorCode.PARAM_ERROR, "活动未开始报名或报名已结束");
         }
     }

@@ -38,13 +38,13 @@ public class ActivityEnrollmentController {
         return ResponseDTO.ok();
     }
 
-    @Operation(summary = "生成签到二维码 @author akkkka114514")
+    @Operation(summary = "生成签到/签退二维码（含UUID Token，30秒过期，重新生成即刷新） @author akkkka114514")
     @GetMapping("/activityEnrollment/signIn/QRCode")
     public ResponseDTO<SignInQRCodeVO> signInQRCode() {
         return ResponseDTO.ok(activityEnrollmentService.signInQRCode());
     }
 
-    @Operation(summary = "扫码签到 @author akkkka114514")
+    @Operation(summary = "扫码签到（须处于活动签到时间窗口内） @author akkkka114514")
     @PostMapping("/activityEnrollment/signIn/byQRCode")
     @RepeatSubmit(intervalMilliSecond = 3 * 1000)
     public ResponseDTO<String> signInByQRCode(@RequestBody @Valid QRCodeSignInForm form) {
@@ -52,7 +52,7 @@ public class ActivityEnrollmentController {
         return ResponseDTO.ok();
     }
 
-    @Operation(summary = "扫码签退 @author akkkka114514")
+    @Operation(summary = "扫码签退（须活动需要签退且处于签退时间窗口内） @author akkkka114514")
     @PostMapping("/activityEnrollment/signOut/byQRCode")
     @RepeatSubmit(intervalMilliSecond = 3 * 1000)
     public ResponseDTO<String> signOutByQRCode(@RequestBody @Valid QRCodeSignInForm form) {

@@ -386,9 +386,10 @@
             <resource>
                 <directory>src/main/resources/${profiles.active}</directory>
                 <filtering>false</filtering>
-                <includes>
-                    <include>*.*</include>
-                </includes>
+                <excludes>
+                    <!-- yaml 已在上方经过过滤复制，这里必须排除，否则会覆盖过滤后的占位符结果 -->
+                    <exclude>*.yaml</exclude>
+                </excludes>
             </resource>
         </resources>
 

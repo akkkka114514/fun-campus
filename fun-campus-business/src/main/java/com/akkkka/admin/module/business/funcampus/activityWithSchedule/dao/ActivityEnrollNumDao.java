@@ -13,4 +13,12 @@ public interface ActivityEnrollNumDao extends BaseMapper<ActivityEnrollNum> {
     boolean increaseEnrollNum(Long activityId);
 
     boolean decreaseEnrollNum(Long activityId);
+
+    /**
+     * 报名计数清零（用于状态倒退清空报名数据）
+     *
+     * @param activityId 活动ID
+     * @return 是否更新成功
+     */
+    boolean resetEnrollNum(Long activityId);
 }

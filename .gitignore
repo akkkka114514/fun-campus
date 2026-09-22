@@ -23,4 +23,7 @@ target/
 **/node_modules
 **/.vscode
 
+### 面试准备文档（不入库） ###
+面试冲刺计划.md
+
 

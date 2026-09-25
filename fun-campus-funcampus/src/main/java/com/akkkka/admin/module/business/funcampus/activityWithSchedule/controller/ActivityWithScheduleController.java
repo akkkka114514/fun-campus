@@ -93,7 +93,7 @@ public class ActivityWithScheduleController {
     private BackendUserValidator backendUserValidator;
     @Resource
     private ActivityCanEnrollCollegeService collegeService;
-    @Resource
+    @Resource(name = "activityCanEnrollTribeService")
     private ActivityCanEnrollTribeService tribeService;
     @Resource
     private ActivityCanEnrollGradeService gradeService;

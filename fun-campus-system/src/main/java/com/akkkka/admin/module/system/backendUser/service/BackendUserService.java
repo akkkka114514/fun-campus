@@ -11,9 +11,6 @@ import com.google.common.collect.Lists;
 import jakarta.annotation.Resource;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import com.akkkka.admin.module.business.funcampus.collegeInfo.service.CollegeInfoService;
-import com.akkkka.admin.module.business.funcampus.organizationInfo.domain.vo.SimpleOrganizationInfoVO;
-import com.akkkka.admin.module.business.funcampus.organizationInfo.service.OrganizationInfoService;
 import com.akkkka.admin.module.system.backendUser.domain.entity.BackendUserEntity;
 import com.akkkka.admin.module.system.backendUser.dao.BackendUserDao;
 import com.akkkka.admin.module.system.backendUser.domain.vo.BackendUserVO;
@@ -58,8 +55,6 @@ public class BackendUserService extends ServiceImpl<BackendUserDao, BackendUserE
     private SecurityPasswordService securityPasswordService;
     @Lazy
     private LoginService loginService;
-    private CollegeInfoService collegeInfoService;
-    private OrganizationInfoService organizationInfoService;
 
     public BackendUserEntity getById(Long backendUserId) {
         return backendUserDao.selectById(backendUserId);

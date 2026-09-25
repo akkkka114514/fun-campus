@@ -10,8 +10,13 @@
     <name>fun-campus-parent</name>
 
 	<modules>
-        <module>fun-campus-base</module>
-		<module>fun-campus-business</module>
+        <module>fun-campus-core</module>
+        <module>fun-campus-support-base</module>
+        <module>fun-campus-support-log</module>
+        <module>fun-campus-support-feature</module>
+        <module>fun-campus-system</module>
+        <module>fun-campus-funcampus</module>
+        <module>fun-campus-admin</module>
     </modules>
 
     <properties>

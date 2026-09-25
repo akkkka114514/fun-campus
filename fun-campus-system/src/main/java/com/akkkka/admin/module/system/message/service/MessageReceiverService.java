@@ -1,7 +1,5 @@
 package com.akkkka.admin.module.system.message.service;
 
-import com.akkkka.admin.module.business.funcampus.portalUser.domain.entity.PortalUserEntity;
-import com.akkkka.admin.module.business.funcampus.portalUser.manager.PortalUserManager;
 import com.akkkka.admin.module.system.backendUser.domain.entity.BackendUserEntity;
 import com.akkkka.admin.module.system.backendUser.manager.BackendUserManager;
 import com.akkkka.admin.module.system.message.domain.MessageReceiverQueryForm;
@@ -22,7 +20,8 @@ import java.util.List;
 /**
  * 消息接收人查询服务：发送消息时按类型检索可选的接收人
  * <p>
- * 支持 后台用户(1) 与 前台用户(2，学生/组织者)；数据来自 backend_user / portal_user
+ * 支持 后台用户(1) 与 前台用户(2，学生/组织者)；后台数据直查 backend_user，
+ * 前台数据通过 {@link PortalMessageReceiverService} 由业务模块提供实现
  *
  * @Author akkkka114514
  * @Date 2026-09-22
@@ -33,7 +32,7 @@ import java.util.List;
 public class MessageReceiverService {
 
     private final BackendUserManager backendUserManager;
-    private final PortalUserManager portalUserManager;
+    private final PortalMessageReceiverService portalMessageReceiverService;
 
     /**
      * 分页查询接收人
@@ -43,7 +42,7 @@ public class MessageReceiverService {
             return queryBackendUser(queryForm);
         }
         if (UserTypeEnum.PORTAL_USER.getValue().equals(queryForm.getReceiverUserType())) {
-            return queryPortalUser(queryForm);
+            return portalMessageReceiverService.queryPortalReceiverPage(queryForm);
         }
         throw new BusinessException(UserErrorCode.PARAM_ERROR, "不支持的接收人类型");
     }
@@ -61,25 +60,6 @@ public class MessageReceiverService {
             vo.setId(entity.getId());
             vo.setUserType(UserTypeEnum.ADMIN_BACKEND_USER.getValue());
             vo.setUsername(entity.getUsername());
-            return vo;
-        }).toList();
-        return SmartPageUtil.convert2PageResult(resultPage, list);
-    }
-
-    private PageResult<MessageReceiverVO> queryPortalUser(MessageReceiverQueryForm queryForm) {
-        Page<PortalUserEntity> page = new Page<>(queryForm.getPageNum(), queryForm.getPageSize());
-        LambdaQueryWrapper<PortalUserEntity> wrapper = new LambdaQueryWrapper<PortalUserEntity>()
-                .select(PortalUserEntity::getId, PortalUserEntity::getUsername, PortalUserEntity::getPhone)
-                .eq(PortalUserEntity::getDeletedFlag, false)
-                .like(StringUtils.isNotBlank(queryForm.getKeyword()), PortalUserEntity::getUsername, queryForm.getKeyword())
-                .orderByAsc(PortalUserEntity::getId);
-        Page<PortalUserEntity> resultPage = portalUserManager.page(page, wrapper);
-        List<MessageReceiverVO> list = resultPage.getRecords().stream().map(entity -> {
-            MessageReceiverVO vo = new MessageReceiverVO();
-            vo.setId(entity.getId());
-            vo.setUserType(UserTypeEnum.PORTAL_USER.getValue());
-            vo.setUsername(entity.getUsername());
-            vo.setPhone(entity.getPhone());
             return vo;
         }).toList();
         return SmartPageUtil.convert2PageResult(resultPage, list);

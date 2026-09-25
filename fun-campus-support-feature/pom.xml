@@ -1,0 +1,43 @@
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.akkkka</groupId>
+        <artifactId>fun-campus-parent</artifactId>
+        <version>3.0.0</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>fun-campus-support-feature</artifactId>
+    <version>3.0.0</version>
+
+    <name>fun-campus-support-feature</name>
+
+    <description>功能支撑模块：文件管理/站内信/意见反馈/帮助文档/表结构/代码生成</description>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>com.akkkka</groupId>
+            <artifactId>fun-campus-support-base</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.velocity</groupId>
+            <artifactId>velocity-engine-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.velocity.tools</groupId>
+            <artifactId>velocity-tools-generic</artifactId>
+        </dependency>
+
+    </dependencies>
+
+</project>

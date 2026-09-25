@@ -3,7 +3,6 @@ package com.akkkka.admin.module.system.datascope.service;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import com.akkkka.admin.AdminApplication;
 import com.akkkka.admin.module.system.datascope.DataScope;
 import com.akkkka.admin.module.system.datascope.constant.DataScopeTypeEnum;
 import com.akkkka.admin.module.system.datascope.constant.DataScopeViewTypeEnum;
@@ -11,6 +10,7 @@ import com.akkkka.admin.module.system.datascope.constant.DataScopeWhereInTypeEnu
 import com.akkkka.admin.module.system.datascope.domain.DataScopeSqlConfig;
 import com.akkkka.admin.module.system.datascope.strategy.AbstractDataScopeStrategy;
 import com.akkkka.common.util.SmartRequestUtil;
+import com.akkkka.constant.BasePackageConst;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.reflections.Reflections;
@@ -67,7 +67,7 @@ public class DataScopeSqlConfigService {
      * 刷新 所有添加数据范围注解的接口方法配置<class.method,DataScopeSqlConfigDTO></>
      */
     private Map<String, DataScopeSqlConfig> refreshDataScopeMethodMap() {
-        Reflections reflections = new Reflections(new ConfigurationBuilder().setUrls(ClasspathHelper.forPackage(AdminApplication.COMPONENT_SCAN)).setScanners(new MethodAnnotationsScanner()));
+        Reflections reflections = new Reflections(new ConfigurationBuilder().setUrls(ClasspathHelper.forPackage(BasePackageConst.BASE_PACKAGE)).setScanners(new MethodAnnotationsScanner()));
         Set<Method> methods = reflections.getMethodsAnnotatedWith(DataScope.class);
         for (Method method : methods) {
             DataScope dataScopeAnnotation = method.getAnnotation(DataScope.class);

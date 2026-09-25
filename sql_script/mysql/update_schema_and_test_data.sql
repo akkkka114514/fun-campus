@@ -260,7 +260,9 @@ ALTER TABLE `portal_user`
   ADD COLUMN `grade_id` bigint NULL DEFAULT NULL COMMENT '年级id' AFTER `can_publish_activity`,
   ADD COLUMN `grade_score` decimal(10,2) NULL DEFAULT 0.00 COMMENT '学分' AFTER `grade_id`,
   ADD COLUMN `credit_score` int NULL DEFAULT 100 COMMENT '信誉分' AFTER `grade_score`,
-  ADD COLUMN `organization_id` bigint NULL DEFAULT NULL COMMENT '组织id' AFTER `credit_score`;
+  ADD COLUMN `organization_id` bigint NULL DEFAULT NULL COMMENT '组织id' AFTER `credit_score`,
+  DROP COLUMN `school_name`,
+  DROP COLUMN `college_name`;
 
 -- ----------------------------
 -- 5. backend_user 表：新增学校/学院/组织/审核权限字段

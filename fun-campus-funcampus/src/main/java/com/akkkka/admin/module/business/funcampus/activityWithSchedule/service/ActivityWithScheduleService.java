@@ -53,6 +53,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.annotation.Resource;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -87,6 +88,7 @@ public class ActivityWithScheduleService {
     private ActivitySigninManagerService signinManagerService;
     private ActivityValidator activityValidator;
     private ActivityScheduleValidator activityScheduleValidator;
+    @Lazy
     private ActivityReviewLogService reviewLogService;
     private ActivityCategoryService activityCategoryService;
     private CollegeInfoService collegeInfoService;

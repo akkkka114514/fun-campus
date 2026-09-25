@@ -6,6 +6,7 @@ import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.enti
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.manager.ActivityEnrollmentManager;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.service.ActivityEnrollmentService;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.service.ActivityEnrollmentValidator;
+import com.akkkka.admin.module.business.funcampus.activityOrder.service.ActivityRefundService;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewEvent;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewStage;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.dto.EnrollersChangeDTO;
@@ -105,6 +106,8 @@ public class ActivityReviewLogServiceTest {
     private PortalUserValidator portalUserValidator;
     @Mock
     private MessageService messageService;
+    @Mock
+    private ActivityRefundService activityRefundService;
 
     private ActivityReviewLogService service;
 
@@ -121,7 +124,7 @@ public class ActivityReviewLogServiceTest {
                 activityManager, activityScheduleManager, enrollmentManager, signinManagerManager,
                 addFormValidator, portalUserManager, enrollmentService, enrollmentValidator,
                 activityValidator, backendUserValidator, reviewLogValidator, signinManagerService,
-                portalUserValidator, messageService);
+                portalUserValidator, messageService, activityRefundService);
     }
 
     /** 让事务模板真正执行传入的消费逻辑，并记录事务状态 mock 供回滚断言 */

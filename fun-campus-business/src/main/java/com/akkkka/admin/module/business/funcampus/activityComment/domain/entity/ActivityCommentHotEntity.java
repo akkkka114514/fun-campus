@@ -18,9 +18,9 @@ import lombok.Data;
 public class ActivityCommentHotEntity {
 
     /**
-     * 评论id
+     * 评论id（外键，取自 activity_comment.id，非自增生成）
      */
-    @TableId(type = IdType.AUTO)
+    @TableId(type = IdType.INPUT)
     private Long commentId;
 
     /**

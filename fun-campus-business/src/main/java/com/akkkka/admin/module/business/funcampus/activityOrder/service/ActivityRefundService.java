@@ -1,0 +1,219 @@
+package com.akkkka.admin.module.business.funcampus.activityOrder.service;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Objects;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
+
+import com.akkkka.admin.module.business.funcampus.activityOrder.constant.OrderStatus;
+import com.akkkka.admin.module.business.funcampus.activityOrder.constant.RefundPolicy;
+import com.akkkka.admin.module.business.funcampus.activityOrder.constant.RefundReasonType;
+import com.akkkka.admin.module.business.funcampus.activityOrder.constant.RefundStatus;
+import com.akkkka.admin.module.business.funcampus.activityOrder.domain.entity.ActivityOrderEntity;
+import com.akkkka.admin.module.business.funcampus.activityOrder.domain.entity.ActivityRefundEntity;
+import com.akkkka.admin.module.business.funcampus.activityOrder.domain.form.ActivityRefundApplyForm;
+import com.akkkka.admin.module.business.funcampus.activityOrder.manager.ActivityOrderManager;
+import com.akkkka.admin.module.business.funcampus.activityOrder.manager.ActivityRefundManager;
+import com.akkkka.admin.module.business.funcampus.activityOrder.util.OrderNoUtil;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityScheduleEntity;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityScheduleManager;
+import com.akkkka.admin.module.business.funcampus.payment.domain.dto.RefundChannelResult;
+import com.akkkka.admin.module.business.funcampus.payment.service.PaymentService;
+import com.akkkka.common.code.SystemErrorCode;
+import com.akkkka.common.code.UserErrorCode;
+import com.akkkka.common.domain.RequestUser;
+import com.akkkka.common.enumeration.UserTypeEnum;
+import com.akkkka.common.exception.BusinessException;
+import com.akkkka.common.util.SmartRequestUtil;
+
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * 活动报名退款 Service
+ * <p>
+ * - 退款申请：订单 CAS（已支付→退款中）防重复申请，退款单落库后向渠道发起；
+ *   渠道受理失败回退为「退款失败」，支持重新申请（退款失败→退款中）；
+ * - 到账以渠道异步回调为准，由 PaymentService.handleRefundNotify 统一处理（释放名额 + 通知）；
+ * - 审核剔除联动：报名审核剔除的已支付订单走系统退款（reasonType=报名审核未通过），
+ *   不受活动退款政策限制，由审核流程在事务提交后调用
+ *
+ * @Author akkkka114514
+ * @Date 2026-09-24
+ * @Copyright akkkka114514
+ */
+@Slf4j
+@Service
+@AllArgsConstructor
+public class ActivityRefundService {
+
+    private final ActivityOrderManager orderManager;
+
+    private final ActivityRefundManager refundManager;
+
+    private final ActivityManager activityManager;
+
+    private final ActivityScheduleManager activityScheduleManager;
+
+    private final TransactionTemplate transactionTemplate;
+
+    private final PaymentService paymentService;
+
+    /**
+     * 用户申请退款
+     * <p>
+     * 流程：归属与状态校验（已支付/退款失败）→ 退款政策校验 → 事务[订单 CAS 置退款中 + 退款单落库]
+     * → 渠道受理（失败则回退为退款失败）
+     *
+     * @return 退款单号
+     */
+    public String refundApply(ActivityRefundApplyForm form) {
+        Long userId = getCurrentPortalUserId();
+        ActivityOrderEntity order = orderManager.getByOrderNo(form.getOrderNo());
+        if (order == null) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "订单不存在");
+        }
+        if (!Objects.equals(order.getUserId(), userId)) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "无权操作该订单");
+        }
+        // 已支付可申请；退款失败支持重新申请（渠道失败后用户重试）
+        if (order.getStatus() != OrderStatus.PAID && order.getStatus() != OrderStatus.REFUND_FAILED) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "当前订单状态不可申请退款");
+        }
+        validateRefundPolicy(order);
+
+        String reason = form.getReason() == null || form.getReason().isBlank() ? "用户申请退款" : form.getReason();
+        ActivityRefundEntity refund = buildRefund(order, RefundReasonType.USER_APPLY, reason);
+        startRefunding(order, refund);
+
+        // 事务提交后向渠道发起退款：受理成功不代表到账，最终以异步回调为准
+        RefundChannelResult result = paymentService.refund(order, refund);
+        if (result == null || !result.isAccepted()) {
+            rollbackRefunding(order, refund);
+            throw new BusinessException(SystemErrorCode.SYSTEM_ERROR, "渠道退款受理失败，请稍后重试");
+        }
+        log.info("退款申请成功：orderNo:{}，refundNo:{}，amountFen:{}", order.getOrderNo(), refund.getRefundNo(), refund.getAmountFen());
+        return refund.getRefundNo();
+    }
+
+    /**
+     * 报名审核剔除后联动系统退款（reasonType=报名审核未通过）
+     * <p>
+     * - 系统退款不受活动退款政策限制（剔除非用户意愿，费用必须退回）；
+     * - 由审核流程在事务提交后调用，单笔独立 try/catch，失败仅记录日志不影响审核结果
+     */
+    public void refundForRejectedPaidUsers(Long activityId, List<Long> rejectUserIds) {
+        if (rejectUserIds == null || rejectUserIds.isEmpty()) {
+            return;
+        }
+        List<ActivityOrderEntity> paidOrders = orderManager.listPaidOrdersByActivityAndUsers(activityId, rejectUserIds);
+        if (paidOrders.isEmpty()) {
+            return;
+        }
+        for (ActivityOrderEntity order : paidOrders) {
+            try {
+                refundRejectedOrder(order);
+            } catch (Exception e) {
+                log.error("审核剔除联动退款失败：activityId:{}，orderNo:{}", activityId, order.getOrderNo(), e);
+            }
+        }
+    }
+
+    /**
+     * 单笔被剔除订单的系统退款：与用户申请走同一套 CAS 与退款单流程，政策校验除外
+     */
+    private void refundRejectedOrder(ActivityOrderEntity order) {
+        ActivityRefundEntity refund = buildRefund(order, RefundReasonType.ENROLL_REVIEW_REJECT, "报名审核未通过，系统自动退款");
+        startRefunding(order, refund);
+
+        RefundChannelResult result = paymentService.refund(order, refund);
+        if (result == null || !result.isAccepted()) {
+            rollbackRefunding(order, refund);
+            return;
+        }
+        log.info("审核剔除联动退款已发起：orderNo:{}，refundNo:{}", order.getOrderNo(), refund.getRefundNo());
+    }
+
+    /**
+     * 事务：订单 CAS 置为退款中 + 退款单落库（同一事务，CAS 失败说明订单已被并发处理）
+     */
+    private void startRefunding(ActivityOrderEntity order, ActivityRefundEntity refund) {
+        transactionTemplate.executeWithoutResult(status -> {
+            boolean cas = order.getStatus() == OrderStatus.PAID
+                    ? orderManager.markRefundingCas(order.getId())
+                    : orderManager.markRefundingFromFailedCas(order.getId());
+            if (!cas) {
+                status.setRollbackOnly();
+                throw new BusinessException(UserErrorCode.PARAM_ERROR, "订单状态已变更，退款申请失败");
+            }
+            if (!refundManager.save(refund)) {
+                status.setRollbackOnly();
+                throw new BusinessException(UserErrorCode.SERVICE_BUSY, "退款单创建失败，请稍后重试");
+            }
+        });
+    }
+
+    /**
+     * 渠道受理失败：退款单标失败 + 订单回退为退款失败（用户可重新申请）
+     */
+    private void rollbackRefunding(ActivityOrderEntity order, ActivityRefundEntity refund) {
+        transactionTemplate.executeWithoutResult(status -> {
+            refundManager.markFailedCas(refund.getId());
+            orderManager.markRefundFailedCas(order.getId());
+        });
+        log.warn("渠道受理退款失败，已回退为退款失败：orderNo:{}，refundNo:{}", order.getOrderNo(), refund.getRefundNo());
+    }
+
+    /**
+     * 校验活动退款政策（用户主动退款受时间窗口限制）
+     */
+    private void validateRefundPolicy(ActivityOrderEntity order) {
+        ActivityEntity activity = activityManager.getById(order.getActivityId());
+        RefundPolicy policy = activity == null ? null : activity.getRefundPolicy();
+        if (policy == null || policy == RefundPolicy.NOT_REFUNDABLE) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "该活动不支持退款");
+        }
+        ActivityScheduleEntity schedule = activityScheduleManager.getById(order.getActivityId());
+        if (schedule == null) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "活动时间表不存在，暂不可申请退款");
+        }
+        LocalDateTime now = LocalDateTime.now();
+        if (policy == RefundPolicy.BEFORE_ENROLL_END
+                && (schedule.getEnrollEndTime() == null || !now.isBefore(schedule.getEnrollEndTime()))) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "报名已截止，按活动退款政策不可退款");
+        }
+        if (policy == RefundPolicy.BEFORE_ACTIVITY_START
+                && (schedule.getActivityStartTime() == null || !now.isBefore(schedule.getActivityStartTime()))) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "活动已开始，按活动退款政策不可退款");
+        }
+    }
+
+    private ActivityRefundEntity buildRefund(ActivityOrderEntity order, RefundReasonType reasonType, String reason) {
+        ActivityRefundEntity refund = new ActivityRefundEntity();
+        refund.setRefundNo(OrderNoUtil.generate(OrderNoUtil.REFUND_PREFIX));
+        refund.setOrderId(order.getId());
+        refund.setActivityId(order.getActivityId());
+        refund.setUserId(order.getUserId());
+        refund.setAmountFen(order.getAmountFen());
+        refund.setReasonType(reasonType);
+        refund.setReason(reason);
+        refund.setStatus(RefundStatus.REFUNDING);
+        refund.setDeletedFlag(false);
+        return refund;
+    }
+
+    /**
+     * 获取当前登录的门户用户id（退款接口仅允许门户用户访问）
+     */
+    private Long getCurrentPortalUserId() {
+        RequestUser requestUser = SmartRequestUtil.getRequestUser();
+        if (requestUser == null || requestUser.getUserType() != UserTypeEnum.PORTAL_USER) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "用户类型错误");
+        }
+        return requestUser.getUserId();
+    }
+}

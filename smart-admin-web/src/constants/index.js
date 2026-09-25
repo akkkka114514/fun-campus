@@ -13,6 +13,7 @@ import { FLAG_NUMBER_ENUM, GENDER_ENUM, USER_TYPE_ENUM } from './common-const';
 import { LAYOUT_ENUM } from './layout-const';
 import file from './support/file-const';
 import loginLog from './support/login-log-const';
+import messageConst from './support/message-const';
 import codeGeneratorConst from './support/code-generator-const';
 import changeLogConst from './support/change-log-const';
 import jobConst from './support/job-const';
@@ -25,6 +26,7 @@ export default {
   USER_TYPE_ENUM,
   LAYOUT_ENUM,
   ...loginLog,
+  ...messageConst,
   ...menu,
   ...file,
   ...codeGeneratorConst,

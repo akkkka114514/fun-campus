@@ -28,7 +28,11 @@ import com.akkkka.admin.module.business.funcampus.portalUser.manager.PortalUserM
 import com.akkkka.admin.module.business.funcampus.portalUser.service.PortalUserValidator;
 import com.akkkka.admin.module.system.backendUser.domain.entity.BackendUserEntity;
 import com.akkkka.admin.module.system.backendUser.service.BackendUserValidator;
+import com.akkkka.common.enumeration.UserTypeEnum;
 import com.akkkka.common.exception.BusinessException;
+import com.akkkka.module.support.message.constant.MessageTemplateEnum;
+import com.akkkka.module.support.message.domain.MessageTemplateSendForm;
+import com.akkkka.module.support.message.service.MessageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -99,6 +103,8 @@ public class ActivityReviewLogServiceTest {
     private ActivitySigninManagerService signinManagerService;
     @Mock
     private PortalUserValidator portalUserValidator;
+    @Mock
+    private MessageService messageService;
 
     private ActivityReviewLogService service;
 
@@ -115,7 +121,7 @@ public class ActivityReviewLogServiceTest {
                 activityManager, activityScheduleManager, enrollmentManager, signinManagerManager,
                 addFormValidator, portalUserManager, enrollmentService, enrollmentValidator,
                 activityValidator, backendUserValidator, reviewLogValidator, signinManagerService,
-                portalUserValidator);
+                portalUserValidator, messageService);
     }
 
     /** 让事务模板真正执行传入的消费逻辑，并记录事务状态 mock 供回滚断言 */
@@ -465,31 +471,9 @@ public class ActivityReviewLogServiceTest {
     @Test
     void reviewEnroll_addNewEnrollersAndRemoveMissingEnrollers() {
         ActivityReviewLogUpdateForm curForm = updateForm(1L, null, 2L);
-        ActivityReviewLogAddForm nextForm = nextReviewAddForm(7L, ActivityReviewStage.COMPLETION_REVIEW);
-
         // 表单报名者 [1,2,4]，数据库报名者 [1,2,3] → 新增 4、删除 3
         List<Long> formIds = new ArrayList<>(List.of(1L, 2L, 4L));
-        List<Long> dbIds = new ArrayList<>(List.of(1L, 2L, 3L));
-        when(enrollmentService.listPortalUserIds(7L)).thenReturn(dbIds);
-        // enrollmentService 是 mock：直接给出差集转换结果
-        EnrollersChangeDTO changeDTO = new EnrollersChangeDTO();
-        ActivityEnrollmentEntity toDel = new ActivityEnrollmentEntity();
-        toDel.setActivityId(7L);
-        toDel.setUserId(3L);
-        toDel.setDeletedFlag(true);
-        changeDTO.getDelList().add(toDel);
-        ActivityEnrollmentEntity toAdd = new ActivityEnrollmentEntity();
-        toAdd.setActivityId(7L);
-        toAdd.setUserId(4L);
-        toAdd.setDeletedFlag(false);
-        changeDTO.getAddList().add(toAdd);
-        when(enrollmentService.convertToEnrollmentChanges(7L, formIds, dbIds)).thenReturn(changeDTO);
-        when(enrollmentManager.updateBatchById(any())).thenReturn(true);
-        when(enrollmentManager.saveBatch(any())).thenReturn(true);
-        stubDoReviewChain(reviewLog(1L, 7L, ActivityReviewStage.ENROLLMENT_REVIEW, null, 2L), nextForm);
-        runTransactionNow();
-        when(activityReviewLogManager.update(any())).thenReturn(true);
-        when(activityReviewLogManager.save(any())).thenReturn(true);
+        ActivityReviewLogAddForm nextForm = stubSuccessfulEnrollReview(formIds);
 
         service.reviewEnroll(curForm, nextForm, formIds);
 
@@ -509,6 +493,20 @@ public class ActivityReviewLogServiceTest {
         assertEquals(1, addCaptor.getValue().size());
         assertEquals(4L, addCaptor.getValue().get(0).getUserId());
         assertEquals(false, addCaptor.getValue().get(0).getDeletedFlag());
+
+        // 事务提交成功后发送报名审核结果站内信：通过 3 人（1,2,4）、未通过 1 人（3）
+        ArgumentCaptor<MessageTemplateSendForm> formCaptor = ArgumentCaptor.forClass(MessageTemplateSendForm.class);
+        verify(messageService, times(2)).sendTemplateMessage(formCaptor.capture());
+        List<MessageTemplateSendForm> sendForms = formCaptor.getAllValues();
+
+        assertEquals(MessageTemplateEnum.ACTIVITY_ENROLL_PASS, sendForms.get(0).getMessageTemplateEnum());
+        assertEquals(UserTypeEnum.PORTAL_USER, sendForms.get(0).getReceiverUserType());
+        assertEquals(formIds, sendForms.get(0).getReceiverUserIdList());
+        assertEquals(7L, sendForms.get(0).getDataId());
+        assertEquals("校园志愿活动", sendForms.get(0).getContentParam().get("activityTitle"));
+
+        assertEquals(MessageTemplateEnum.ACTIVITY_ENROLL_REJECT, sendForms.get(1).getMessageTemplateEnum());
+        assertEquals(List.of(3L), sendForms.get(1).getReceiverUserIdList());
     }
 
     @Test
@@ -524,5 +522,55 @@ public class ActivityReviewLogServiceTest {
 
         verify(enrollmentManager, never()).saveBatch(any());
         verify(enrollmentManager, never()).updateBatchById(any());
+        verify(messageService, never()).sendTemplateMessage(any(MessageTemplateSendForm.class));
+    }
+
+    @Test
+    void reviewEnroll_whenNotifyFails_reviewStillSucceeds() {
+        ActivityReviewLogUpdateForm curForm = updateForm(1L, null, 2L);
+        List<Long> formIds = new ArrayList<>(List.of(1L, 2L, 4L));
+        ActivityReviewLogAddForm nextForm = stubSuccessfulEnrollReview(formIds);
+        doThrow(new RuntimeException("消息服务不可用"))
+                .when(messageService).sendTemplateMessage(any(MessageTemplateSendForm.class));
+
+        assertDoesNotThrow(() -> service.reviewEnroll(curForm, nextForm, formIds));
+
+        // 站内信发送失败不影响审核结果落库
+        assertEquals(ActivityReviewEvent.ENROLL_REVIEW_PASS, curForm.getAction());
+        verify(enrollmentManager).updateBatchById(any());
+        verify(enrollmentManager).saveBatch(any());
+    }
+
+    /** 打桩 reviewEnroll 成功路径：差集转换结果 + 审核链 + 站内信所需的活动标题 */
+    private ActivityReviewLogAddForm stubSuccessfulEnrollReview(List<Long> formIds) {
+        ActivityReviewLogAddForm nextForm = nextReviewAddForm(7L, ActivityReviewStage.COMPLETION_REVIEW);
+        List<Long> dbIds = new ArrayList<>(List.of(1L, 2L, 3L));
+        when(enrollmentService.listPortalUserIds(7L)).thenReturn(dbIds);
+
+        // enrollmentService 是 mock：直接给出差集转换结果（新增 4、删除 3）
+        EnrollersChangeDTO changeDTO = new EnrollersChangeDTO();
+        ActivityEnrollmentEntity toDel = new ActivityEnrollmentEntity();
+        toDel.setActivityId(7L);
+        toDel.setUserId(3L);
+        toDel.setDeletedFlag(true);
+        changeDTO.getDelList().add(toDel);
+        ActivityEnrollmentEntity toAdd = new ActivityEnrollmentEntity();
+        toAdd.setActivityId(7L);
+        toAdd.setUserId(4L);
+        toAdd.setDeletedFlag(false);
+        changeDTO.getAddList().add(toAdd);
+        when(enrollmentService.convertToEnrollmentChanges(7L, formIds, dbIds)).thenReturn(changeDTO);
+
+        when(enrollmentManager.updateBatchById(any())).thenReturn(true);
+        when(enrollmentManager.saveBatch(any())).thenReturn(true);
+        stubDoReviewChain(reviewLog(1L, 7L, ActivityReviewStage.ENROLLMENT_REVIEW, null, 2L), nextForm);
+        runTransactionNow();
+        when(activityReviewLogManager.update(any())).thenReturn(true);
+        when(activityReviewLogManager.save(any())).thenReturn(true);
+
+        ActivityEntity activity7 = activity(7L, 2L, false);
+        activity7.setTitle("校园志愿活动");
+        when(activityManager.getById(7L)).thenReturn(activity7);
+        return nextForm;
     }
 }

@@ -18,7 +18,7 @@ spring:
       login:
         enabled: false
       method:
-        pointcut: net.lab1024.sa..*Service.*
+        pointcut: com.akkkka..*Service.*
 
   # redis 连接池配置信息
   data:

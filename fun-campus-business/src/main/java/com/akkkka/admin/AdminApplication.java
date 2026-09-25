@@ -29,7 +29,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication(exclude = {UserDetailsServiceAutoConfiguration.class})
 public class  AdminApplication {
 
-    public static final String COMPONENT_SCAN = "net.lab1024.sa";
+    public static final String COMPONENT_SCAN = "com.akkkka";
 
     public static void main(String[] args) {
         SpringApplication application = new SpringApplication(AdminApplication.class);

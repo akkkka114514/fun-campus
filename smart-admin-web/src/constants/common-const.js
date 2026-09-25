@@ -55,7 +55,10 @@ export const USER_TYPE_ENUM = {
     value: 1,
     desc: '后台用户',
   },
-
+  PORTAL_USER: {
+    value: 2,
+    desc: '前台用户',
+  },
 };
 
 export const DATA_TYPE_ENUM = {

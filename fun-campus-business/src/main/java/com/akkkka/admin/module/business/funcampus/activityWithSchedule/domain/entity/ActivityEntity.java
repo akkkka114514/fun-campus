@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.akkkka.admin.module.business.funcampus.activityOrder.constant.RefundPolicy;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.constant.ActivityStatus;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -122,6 +123,21 @@ public class ActivityEntity {
      * 活动管理员和发起者
      */
     private Long activityManagerId;
+
+    /**
+     * 是否付费活动（true 时报名需走「下单-支付」链路，支付成功后自动写入报名记录）
+     */
+    private Boolean paidFlag;
+
+    /**
+     * 报名费（单位：分，paid_flag=true 时有效）
+     */
+    private Integer priceFen;
+
+    /**
+     * 退款政策（见 RefundPolicy，仅付费活动有效）
+     */
+    private RefundPolicy refundPolicy;
 
     public void validateStatus(ActivityStatus status){
         if(this.getStatus() != status){

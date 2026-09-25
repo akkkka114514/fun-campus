@@ -26,7 +26,7 @@ import static org.mockito.Mockito.*;
  * 活动评论 Service 单元测试
  * <p>
  * 覆盖：发表评论的 rootId 推导（根评论/回复根评论/回复子评论）、删除评论
- * 的内容替换与逻辑删除、点赞/撤销点赞的评论存在性校验
+ * 的内容替换与逻辑删除（并清理热度记录）、点赞/撤销点赞的评论存在性校验与归零清理
  *
  * @Author akkkka114514
  * @Date 2026-09-03
@@ -171,6 +171,8 @@ public class ActivityCommentServiceTest {
         verify(activityCommentManager).updateById(captor.capture());
         assertEquals("内容已删除", captor.getValue().getContent());
         assertTrue(captor.getValue().getDeleted());
+        // 评论逻辑删除后同步清理热度记录
+        verify(activityCommentHotManager).remove(any());
     }
 
     @Test
@@ -208,6 +210,8 @@ public class ActivityCommentServiceTest {
         when(activityCommentManager.getById(1L)).thenReturn(comment(1L, null, null, 12L));
         service.unlikeComment(1L);
         verify(activityCommentHotDao).unlikeComment(1L);
+        // 归零清理跟随执行
+        verify(activityCommentHotDao).deleteHotIfZero(1L);
     }
 
     @Test

@@ -36,6 +36,9 @@ import com.akkkka.common.enumeration.UserTypeEnum;
 import com.akkkka.common.exception.BusinessException;
 import com.akkkka.common.util.SmartPageUtil;
 import com.akkkka.common.util.SmartRequestUtil;
+import com.akkkka.module.support.message.constant.MessageTemplateEnum;
+import com.akkkka.module.support.message.domain.MessageTemplateSendForm;
+import com.akkkka.module.support.message.service.MessageService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -95,30 +98,50 @@ public class ActivityEnrollmentService {
 
     private final ActivityScheduleManager activityScheduleManager;
 
+    private final MessageService messageService;
+
     private static final int QR_CODE_EXPIRE_SECONDS = 30;
 
 
     public void enroll(Long activityId){
         RequestUser requestUser = SmartRequestUtil.getRequestUser();
         //todo做幂等
-        assert requestUser!=null;
-        if(requestUser.getUserType()!= UserTypeEnum.PORTAL_USER){
+        if(requestUser == null || requestUser.getUserType()!= UserTypeEnum.PORTAL_USER){
             throw new BusinessException(UserErrorCode.PARAM_ERROR, "用户类型错误");
         }
 
+        try {
+            doEnroll(activityId, requestUser.getUserId());
+        } catch (BusinessException e) {
+            // 报名失败：发送失败原因站内信（发送失败不影响报名结果与原始异常）
+            sendEnrollResultMessage(activityId, requestUser.getUserId(), false, extractFailReason(e));
+            throw e;
+        }
+        // 报名成功（事务已提交）：发送站内信
+        sendEnrollResultMessage(activityId, requestUser.getUserId(), true, null);
+    }
+
+    /**
+     * 报名主流程：校验活动状态与用户资格，事务内落库（失败时抛出 BusinessException）
+     */
+    private void doEnroll(Long activityId, Long userId){
         ActivityEntity activity = activityValidator.validateActivityId(activityId);
         activity.validateStatus(ActivityStatus.ENROLLING);
+        // 付费活动：报名必须走「下单-支付」链路（支付成功后由 saveEnrollmentRecord 写报名记录）
+        if (Boolean.TRUE.equals(activity.getPaidFlag())) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "该活动为付费活动，请先下单并完成支付");
+        }
 
         //检查用户所属学院年级部落是否在活动指定范围内
-        PortalUserEntity portalUser = portalUserManager.getById(requestUser.getUserId());
+        PortalUserEntity portalUser = portalUserManager.getById(userId);
         portalUserValidator.validateUserCanEnrollCollege(activityId,portalUser);
         portalUserValidator.validateUserCanEnrollGrade(activityId,portalUser);
         portalUserValidator.validateUserCanEnrollTribe(activityId,portalUser);
-        enrollmentDomainService.validateEnrollmentDuplicate(activityId,requestUser.getUserId());
-        
+        enrollmentDomainService.validateEnrollmentDuplicate(activityId,userId);
+
         ActivityEnrollmentEntity enrollmentEntity = new ActivityEnrollmentEntity();
         enrollmentEntity.setActivityId(activityId);
-        enrollmentEntity.setUserId(requestUser.getUserId());
+        enrollmentEntity.setUserId(userId);
         enrollmentEntity.setSignInStatus(false);
         enrollmentEntity.setDeletedFlag(false);
 
@@ -129,16 +152,91 @@ public class ActivityEnrollmentService {
                 status.setRollbackOnly();
                 throw new BusinessException(UserErrorCode.PARAM_ERROR, "活动报名人数已满");
             }
-            
+
             // 如果增加报名人数成功，则插入报名记录
             if (activityEnrollmentDao.insert(enrollmentEntity) == 0) {
                 log.error("ActivityEnrollmentService.enroll failed: failed to insert enrollment record, activityId={}", activityId);
                 status.setRollbackOnly();
                 throw new BusinessException(UserErrorCode.PARAM_ERROR, "报名失败");
             }
-            
-            log.info("ActivityEnrollmentService.enroll success: new enrollment completed, activityId={}, userId={}", activityId, requestUser.getUserId());
+
+            log.info("ActivityEnrollmentService.enroll success: new enrollment completed, activityId={}, userId={}", activityId, userId);
         });
+    }
+
+    /**
+     * 支付成功后写入报名记录（供支付回调链路调用，免费报名不经过此方法）
+     * <p>
+     * - 幂等：已存在有效报名记录时直接返回（重复回调不会重复插入）；
+     * - 名额在下单时已通过 increaseEnrollNum 锁定，此处不再占座；
+     * - 报名成功站内信由支付成功通知（ACTIVITY_ORDER_PAID）承担，不在本方法发送。
+     */
+    public void saveEnrollmentRecord(Long activityId, Long userId){
+        boolean exists = activityEnrollmentManager.exists(
+                Wrappers.lambdaQuery(ActivityEnrollmentEntity.class)
+                        .eq(ActivityEnrollmentEntity::getActivityId, activityId)
+                        .eq(ActivityEnrollmentEntity::getUserId, userId)
+                        .eq(ActivityEnrollmentEntity::getDeletedFlag, false));
+        if (exists) {
+            log.info("saveEnrollmentRecord skip: enrollment already exists, activityId={}, userId={}", activityId, userId);
+            return;
+        }
+
+        ActivityEnrollmentEntity enrollmentEntity = new ActivityEnrollmentEntity();
+        enrollmentEntity.setActivityId(activityId);
+        enrollmentEntity.setUserId(userId);
+        enrollmentEntity.setSignInStatus(false);
+        enrollmentEntity.setSignOutStatus(false);
+        enrollmentEntity.setDeletedFlag(false);
+        if (activityEnrollmentDao.insert(enrollmentEntity) == 0) {
+            log.error("saveEnrollmentRecord failed: insert error, activityId={}, userId={}", activityId, userId);
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "写报名记录失败");
+        }
+        log.info("saveEnrollmentRecord success: activityId={}, userId={}", activityId, userId);
+    }
+
+    /**
+     * 发送报名结果站内信（发送失败仅记录日志，不影响报名主流程）
+     *
+     * @param success    true 报名成功 | false 报名失败
+     * @param failReason 报名失败原因（success=false 时使用）
+     */
+    private void sendEnrollResultMessage(Long activityId, Long userId, boolean success, String failReason){
+        try {
+            ActivityEntity activity = activityManager.getById(activityId);
+            if (activity == null) {
+                log.warn("报名结果站内信发送跳过：活动不存在，activityId:{}", activityId);
+                return;
+            }
+            Map<String, Object> contentParam = new HashMap<>();
+            contentParam.put("activityTitle", Objects.toString(activity.getTitle(), ""));
+            contentParam.put("reason", failReason == null ? "" : failReason);
+
+            MessageTemplateSendForm sendForm = new MessageTemplateSendForm();
+            sendForm.setMessageTemplateEnum(success ? MessageTemplateEnum.ACTIVITY_ENROLL_SUCCESS : MessageTemplateEnum.ACTIVITY_ENROLL_FAIL);
+            sendForm.setReceiverUserType(UserTypeEnum.PORTAL_USER);
+            sendForm.setReceiverUserId(userId);
+            sendForm.setDataId(activityId);
+            sendForm.setContentParam(contentParam);
+            messageService.sendTemplateMessage(sendForm);
+            log.info("报名结果站内信已发送，activityId:{}，userId:{}，success:{}", activityId, userId, success);
+        } catch (Exception e) {
+            log.warn("报名结果站内信发送失败，activityId:{}，userId:{}，success:{}", activityId, userId, success, e);
+        }
+    }
+
+    /**
+     * 从业务异常中提取用户可读的失败原因
+     * <p>
+     * BusinessException.getMessage() 格式为「错误码描述:详细原因」，此处取冒号后的详细原因
+     */
+    private String extractFailReason(BusinessException e){
+        String message = e.getMessage();
+        if (message == null || message.isEmpty()) {
+            return "报名未成功";
+        }
+        int idx = message.indexOf(':');
+        return idx >= 0 && idx + 1 < message.length() ? message.substring(idx + 1) : message;
     }
     /*
         产生二维码不指定属于哪个活动，仅提供userId和uuid，activityId需扫描者指定
@@ -341,13 +439,14 @@ public class ActivityEnrollmentService {
     public EnrollersChangeDTO convertToEnrollmentChanges(Long activityId,List<Long> enrollerIds, List<Long> dbEnrollerIds){
         //假定activityId正确
         EnrollersChangeDTO  enrollersChangeDTO = new EnrollersChangeDTO();
-        List<Long> copy = new LinkedList<>(enrollerIds);
-        //新报名者除去共同元素就是要添加的人
-        enrollerIds.removeAll(dbEnrollerIds);
-        //旧报名着除去共同元素就是要删除的人
-        dbEnrollerIds.removeAll(copy);
-        if(!enrollerIds.isEmpty()){
-            for(Long id:enrollerIds){
+        //不修改入参（dbEnrollerIds 可能是不可变列表）：新报名者除去共同元素就是要添加的人
+        List<Long> toAddIds = new LinkedList<>(enrollerIds);
+        toAddIds.removeAll(dbEnrollerIds);
+        //旧报名者除去共同元素就是要删除的人
+        List<Long> toDelIds = new LinkedList<>(dbEnrollerIds);
+        toDelIds.removeAll(enrollerIds);
+        if(!toAddIds.isEmpty()){
+            for(Long id:toAddIds){
                 ActivityEnrollmentEntity enrollment = new ActivityEnrollmentEntity();
                 enrollment.setActivityId(activityId);
                 enrollment.setUserId(id);
@@ -359,8 +458,8 @@ public class ActivityEnrollmentService {
                 enrollersChangeDTO.getAddList().add(enrollment);
             }
         }
-        if(!dbEnrollerIds.isEmpty()){
-            for (Long id:dbEnrollerIds){
+        if(!toDelIds.isEmpty()){
+            for (Long id:toDelIds){
                 ActivityEnrollmentEntity enrollment = new ActivityEnrollmentEntity();
                 enrollment.setDeletedFlag(true);
                 enrollment.setActivityId(activityId);

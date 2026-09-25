@@ -2,6 +2,7 @@ package com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.v
 
 import java.util.List;
 
+import com.akkkka.admin.module.business.funcampus.activityOrder.domain.vo.ActivityOrderVO;
 import com.akkkka.common.domain.IdNameVO;
 import lombok.Data;
 
@@ -38,6 +39,9 @@ public class ActivityDetailVO {
 
     /** 允许报名的部落 */
     private List<IdNameVO> canEnrollTribe;
+
+    /** 当前用户在本活动的最新订单（未登录/无订单时为 null，用于付费报名状态展示） */
+    private ActivityOrderVO currentUserOrder;
 
     //todo 评论
 }

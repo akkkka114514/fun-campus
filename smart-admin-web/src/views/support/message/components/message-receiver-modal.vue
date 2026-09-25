@@ -1,9 +1,9 @@
 <template>
-  <a-modal v-model:open="visible" title="推送人" width="1100px" ok-text="确定" cancel-text="取消" @ok="onSubmit" @cancel="onClose" :zIndex="9999">
+  <a-modal v-model:open="visible" title="选择接收人" width="800px" ok-text="确定" cancel-text="取消" @ok="onSubmit" @cancel="onClose" :zIndex="9999">
     <a-form class="smart-query-form">
       <a-row class="smart-query-form-row">
         <a-form-item label="关键词搜索" class="smart-query-form-item">
-          <a-input v-model:value="queryParam.searchWord" :style="{ width: '250px' }" placeholder="请输入姓名" @change="selectSearchWord" />
+          <a-input v-model:value="queryParam.keyword" :style="{ width: '250px' }" placeholder="请输入用户名" @pressEnter="searchQuery" />
         </a-form-item>
         <a-form-item class="smart-query-form-item">
           <a-button type="primary" @click="searchQuery">
@@ -24,7 +24,7 @@
       </a-row>
     </a-form>
     <a-table
-      rowKey="employeeId"
+      rowKey="id"
       :loading="tableLoading"
       :columns="columns"
       :data-source="tableData"
@@ -57,24 +57,26 @@
   import { reactive, ref } from 'vue';
   import { PAGE_SIZE, PAGE_SIZE_OPTIONS } from '/@/constants/common-const';
   import { smartSentry } from '/@/lib/smart-sentry';
-  import { SmartLoading } from '/@/components/framework/smart-loading';
-  import { backendUserApi } from '/src/api/system/backend-user-api';
+  import { messageApi } from '/@/api/support/message-api';
   // ---------------查询条件----------------
   const queryParamState = {
-    searchWord: null,
     keyword: null,
+    receiverUserType: null,
     pageNum: 1,
     pageSize: PAGE_SIZE,
   };
 
-  const classId = ref();
   const queryParam = reactive({ ...queryParamState });
   const tableData = ref([]);
   let tableLoading = ref(false);
   const total = ref(0);
 
+  // 当前查询的接收人类型（由发送表单传入：1 后台用户 / 2 前台用户）
+  const receiverUserType = ref();
+
   // 搜索
   function searchQuery() {
+    queryParam.pageNum = 1;
     queryList();
   }
 
@@ -85,18 +87,19 @@
     Object.assign(queryParam, queryParamState);
     queryList();
   }
-  function showModal(receiverIdList) {
-    selectedRowKeyList.value = receiverIdList;
+  function showModal(receiverIdList, userType) {
+    selectedRowKeyList.value = receiverIdList || [];
+    selectedRowsList.value = [];
+    receiverUserType.value = userType;
+    queryParam.pageNum = 1;
+    queryParam.keyword = null;
     queryList();
     visible.value = true;
   }
-  function selectSearchWord(e) {
-    queryParam.keyword = queryParam.searchWord;
-  }
   const columns = [
     {
-      title: '姓名',
-      dataIndex: 'actualName',
+      title: '用户名',
+      dataIndex: 'username',
       align: 'center',
     },
     {
@@ -109,10 +112,10 @@
   async function queryList() {
     try {
       tableLoading.value = true;
-      let res = await backendUserApi.queryBackendUser(queryParam);
-      const list = res.data.list;
+      queryParam.receiverUserType = receiverUserType.value;
+      let res = await messageApi.queryReceiverUser(queryParam);
+      tableData.value = res.data.list;
       total.value = res.data.total;
-      tableData.value = list;
     } catch (e) {
       smartSentry.captureError(e);
     } finally {
@@ -120,7 +123,7 @@
     }
   }
 
-  // 选择成绩表
+  // 选择接收人
   const selectedRowKeyList = ref([]);
   const selectedRowsList = ref([]);
   function onSelectChange(keyArray, selectedRows) {
@@ -131,7 +134,7 @@
   // 弹窗管理
   function onClose() {
     visible.value = false;
-    let nameList = selectedRowsList.value.map((item) => item.actualName);
+    let nameList = selectedRowsList.value.map((item) => item.username);
     emit('reloadList', selectedRowKeyList.value, nameList);
   }
   const emit = defineEmits(['reloadList']);
@@ -142,8 +145,6 @@
       onClose();
     } catch (error) {
       smartSentry.captureError(error);
-    } finally {
-      SmartLoading.hide();
     }
   }
 

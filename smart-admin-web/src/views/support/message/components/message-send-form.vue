@@ -4,6 +4,9 @@
       <a-form-item label="标题" name="title">
         <a-input style="width: 100%" v-model:value="form.title" placeholder="标题" />
       </a-form-item>
+      <a-form-item label="接收人类型" name="receiverUserType">
+        <SmartEnumSelect width="100%" v-model:value="form.receiverUserType" placeholder="请选择接收人类型" enum-name="USER_TYPE_ENUM" @change="onReceiverUserTypeChange" />
+      </a-form-item>
       <a-form-item label="接收人" name="receiverUserIdList">
         <a-button @click="selectReceiver" type="primary"> 选择接收人 </a-button>
         <div>{{ nameListString }}</div>
@@ -73,6 +76,7 @@
   const rules = {
     title: [{ required: true, message: '标题 必填' }],
     content: [{ required: true, message: '推送内容 必填' }],
+    receiverUserType: [{ required: true, message: '接收人类型 必填' }],
     receiverUserIdList: [{ required: true, message: '推送人 必填' }],
     messageType: [{ required: true, message: '消息类型 必填' }],
   };
@@ -83,9 +87,15 @@
     nameListString.value = nameList.join(',');
   }
 
+  // 接收人类型切换后，之前选择的接收人不再有效
+  function onReceiverUserTypeChange() {
+    form.receiverUserIdList = null;
+    nameListString.value = null;
+  }
+
   const receiverModalRef = ref();
   function selectReceiver() {
-    receiverModalRef.value.showModal(form.receiverUserIdList);
+    receiverModalRef.value.showModal(form.receiverUserIdList, form.receiverUserType);
   }
 
   // 点击确定，验证表单
@@ -109,7 +119,7 @@
           receiverUserId: userId,
           content: form.content,
           messageType: form.messageType,
-          receiverUserType: USER_TYPE_ENUM.ADMIN_EMPLOYEE.value,
+          receiverUserType: form.receiverUserType,
         });
       }
       await messageApi.sendMessages(messageList);

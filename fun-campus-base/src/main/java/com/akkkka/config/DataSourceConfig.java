@@ -136,7 +136,7 @@ public class DataSourceConfig {
         MybatisSqlSessionFactoryBean factoryBean = new MybatisSqlSessionFactoryBean();
         factoryBean.setDataSource(druidDataSource());
         PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
-        Resource[] resources = resolver.getResources("classpath*:/dao/**/*.xml");
+        Resource[] resources = resolver.getResources("classpath*:/mapper/**/*.xml");
         factoryBean.setMapperLocations(resources);
 
         // 设置 MyBatis-Plus 分页插件 注意此处myBatisPlugin一定要放在后面

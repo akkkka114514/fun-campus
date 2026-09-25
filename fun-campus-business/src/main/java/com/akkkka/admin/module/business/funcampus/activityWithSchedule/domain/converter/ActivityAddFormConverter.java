@@ -1,5 +1,6 @@
 package com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.converter;
 
+import com.akkkka.admin.module.business.funcampus.activityOrder.constant.RefundPolicy;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityAddForm;
 import org.springframework.stereotype.Component;
@@ -31,6 +32,14 @@ public class ActivityAddFormConverter {
         activity.setCategoryId(addForm.getCategoryId());
         activity.setCoverImg(addForm.getCoverImg());
         activity.setActivityManagerId(addForm.getActivityManagerId());
+        // 付费信息：付费活动未配置退款政策时，默认「报名截止前可退」
+        activity.setPaidFlag(addForm.getPaidFlag());
+        activity.setPriceFen(addForm.getPriceFen());
+        RefundPolicy refundPolicy = RefundPolicy.fromCode(addForm.getRefundPolicy());
+        if (refundPolicy == null && Boolean.TRUE.equals(addForm.getPaidFlag())) {
+            refundPolicy = RefundPolicy.BEFORE_ENROLL_END;
+        }
+        activity.setRefundPolicy(refundPolicy);
 
         return activity;
     }

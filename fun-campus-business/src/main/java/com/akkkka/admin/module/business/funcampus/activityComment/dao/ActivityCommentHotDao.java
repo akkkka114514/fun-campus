@@ -26,9 +26,14 @@ public interface ActivityCommentHotDao extends BaseMapper<ActivityCommentHotEnti
     void likeComment(@Param("commentId") Long commentId);
 
     /**
-     * 撤销点赞评论（热度-1，热度归零时删除记录）
+     * 撤销点赞评论（热度-1）
      */
     void unlikeComment(@Param("commentId") Long commentId);
+
+    /**
+     * 热度归零时删除热度记录
+     */
+    void deleteHotIfZero(@Param("commentId") Long commentId);
 
     /**
      * 分页查询热门评论

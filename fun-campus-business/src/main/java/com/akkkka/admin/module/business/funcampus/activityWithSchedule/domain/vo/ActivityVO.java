@@ -117,6 +117,21 @@ public class ActivityVO {
      */
     private String coverImg;
 
+    /**
+     * 是否付费活动
+     */
+    private Boolean paidFlag;
+
+    /**
+     * 报名费（单位：分）
+     */
+    private Integer priceFen;
+
+    /**
+     * 退款政策：1-报名截止前可退 2-活动开始前可退 3-不可退款
+     */
+    private Integer refundPolicy;
+
     private PortalUserVO activityManager;
 
 }

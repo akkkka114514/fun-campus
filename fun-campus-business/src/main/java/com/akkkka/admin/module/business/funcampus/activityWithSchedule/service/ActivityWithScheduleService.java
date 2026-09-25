@@ -7,6 +7,9 @@ import com.akkkka.admin.module.business.funcampus.activityCategory.service.Activ
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.entity.ActivityEnrollmentEntity;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.manager.ActivityEnrollmentManager;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.service.ActivityEnrollmentService;
+import com.akkkka.admin.module.business.funcampus.activityOrder.domain.entity.ActivityOrderEntity;
+import com.akkkka.admin.module.business.funcampus.activityOrder.domain.vo.ActivityOrderVO;
+import com.akkkka.admin.module.business.funcampus.activityOrder.manager.ActivityOrderManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.dao.ActivityEnrollNumDao;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEnrollNum;
 import com.akkkka.admin.module.business.funcampus.collegeInfo.service.CollegeInfoService;
@@ -42,6 +45,7 @@ import com.akkkka.common.code.UserErrorCode;
 import com.akkkka.common.domain.RequestUser;
 import com.akkkka.common.domain.ResponseDTO;
 import com.akkkka.common.domain.PageResult;
+import com.akkkka.common.enumeration.UserTypeEnum;
 import com.akkkka.common.exception.BusinessException;
 import com.akkkka.common.util.SmartRequestUtil;
 import com.akkkka.module.support.file.service.FileService;
@@ -91,6 +95,7 @@ public class ActivityWithScheduleService {
     private ActivityEnrollNumDao activityEnrollNumDao;
     private ActivityEnrollmentService activityEnrollmentService;
     private ActivityStatusCacheManager activityStatusCacheManager;
+    private ActivityOrderManager activityOrderManager;
 
     /**
      * 活动详情页
@@ -132,7 +137,35 @@ public class ActivityWithScheduleService {
         detailVO.setCanEnrollGrade(canEnrollGradeService.getIdNameByActivityId(activityId));
         detailVO.setCanEnrollTribe(canEnrollTribeService.getIdNameByActivityId(activityId));
 
+        // 付费活动：附加当前门户用户最新订单（未登录/非门户用户返回 null）
+        detailVO.setCurrentUserOrder(buildCurrentUserOrder(activityId));
+
         return detailVO;
+    }
+
+    /**
+     * 当前门户用户在该活动的最新订单（未登录/非门户用户/无订单时返回 null）
+     */
+    private ActivityOrderVO buildCurrentUserOrder(Long activityId) {
+        RequestUser requestUser = SmartRequestUtil.getRequestUser();
+        if (requestUser == null || requestUser.getUserType() != UserTypeEnum.PORTAL_USER) {
+            return null;
+        }
+        ActivityOrderEntity order = activityOrderManager.getLatestByActivityAndUser(activityId, requestUser.getUserId());
+        if (order == null) {
+            return null;
+        }
+        ActivityOrderVO orderVO = new ActivityOrderVO();
+        orderVO.setOrderNo(order.getOrderNo());
+        orderVO.setActivityId(order.getActivityId());
+        orderVO.setAmountFen(order.getAmountFen());
+        orderVO.setStatus(order.getStatus() == null ? null : order.getStatus().getCode());
+        orderVO.setPayChannel(order.getPayChannel() == null ? null : order.getPayChannel().getCode());
+        orderVO.setPayTime(order.getPayTime());
+        orderVO.setExpireTime(order.getExpireTime());
+        orderVO.setCloseTime(order.getCloseTime());
+        orderVO.setCreateTime(order.getCreateTime());
+        return orderVO;
     }
 
     private ActivityVO buildActivityVO(ActivityEntity activity) {
@@ -160,6 +193,10 @@ public class ActivityWithScheduleService {
         // 分类
         vo.setCategoryId(activity.getCategoryId());
         vo.setCategoryName(activityCategoryService.getNameById(activity.getCategoryId()));
+        // 付费信息
+        vo.setPaidFlag(activity.getPaidFlag());
+        vo.setPriceFen(activity.getPriceFen());
+        vo.setRefundPolicy(activity.getRefundPolicy() == null ? null : activity.getRefundPolicy().getCode());
         // 活动管理员
         PortalUserEntity manager = portalUserManager.getById(activity.getActivityManagerId());
         if (manager != null) {

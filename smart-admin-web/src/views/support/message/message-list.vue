@@ -50,7 +50,7 @@
     <!---------- 表格操作行 end ----------->
 
     <!---------- 表格 begin ----------->
-    <a-table size="small" :dataSource="tableData" :columns="columns" rowKey="telephoneId" bordered :loading="tableLoading" :pagination="false">
+    <a-table size="small" :dataSource="tableData" :columns="columns" rowKey="messageId" bordered :loading="tableLoading" :pagination="false">
       <template #bodyCell="{ record, column, text }">
         <template v-if="column.dataIndex === 'readFlag'">
           {{ text ? '已读' : '未读' }}

@@ -15,14 +15,9 @@ import com.akkkka.common.code.SystemErrorCode;
 import com.akkkka.common.code.UserErrorCode;
 import com.akkkka.common.domain.RequestUser;
 import com.akkkka.common.domain.ResponseDTO;
-import com.akkkka.common.repository.DisableIpDocument;
-import com.akkkka.common.repository.DisableUserDocument;
 import com.akkkka.common.util.SmartRequestUtil;
 import com.akkkka.common.util.SmartResponseUtil;
 import org.apache.commons.lang3.ArrayUtils;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -48,8 +43,6 @@ public class AdminInterceptor implements HandlerInterceptor {
     private LoginService loginService;
     @Resource
     private PortalLoginService portalLoginService;
-    @Resource
-    private MongoTemplate mongoTemplate;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -80,16 +73,13 @@ public class AdminInterceptor implements HandlerInterceptor {
             log.debug("Processing request URL: {}", url);
             
             RequestUser requestUser = null;
-            String system = null;
             String[] urlSplit = url.split("/");
             if (ArrayUtils.contains(urlSplit,"portal")) {
                 log.debug("Identified as portal request, attempting to get portal user");
-                system="portal";
                 requestUser = portalLoginService.getLoginPortalUser(loginId, request);
                 log.debug("Portal user retrieved: {}", requestUser != null ? requestUser.getUserId() : "null");
             } else if (ArrayUtils.contains(urlSplit,"backend")) {
                 log.debug("Identified as backend request, attempting to get backend user");
-                system="backend";
                 requestUser = loginService.getLoginBackendUser(loginId, request);
                 log.debug("Backend user retrieved: {}", requestUser != null ? requestUser.getUserId() : "null");
             } else {
@@ -115,24 +105,6 @@ public class AdminInterceptor implements HandlerInterceptor {
             if (requestUser == null) {
                 log.warn("Authentication failed: requestUser is null for URL: {}, method: {}", url, method.getName());
                 SmartResponseUtil.write(response, ResponseDTO.error(UserErrorCode.LOGIN_STATE_INVALID));
-                return false;
-            }
-
-            Query ipQuery = new Query(
-                    Criteria.where("ip").is(requestUser.getIp())
-                            .and("deleted").is(false)
-            );
-            Query userQuery = new Query(
-                    Criteria.where("userId").is(requestUser.getUserId())
-                    .and("system").is(system)
-                    .and("deleted").is(false)
-            );
-            if(mongoTemplate.exists(ipQuery,DisableIpDocument.class)){
-                log.warn("ip:{}已根据过去行为拦截",requestUser.getIp());
-                return false;
-            }
-            if(mongoTemplate.exists(userQuery, DisableUserDocument.class)){
-                log.warn("user:{},system:{}已根据过去行为拦截",requestUser.getUserId(),system);
                 return false;
             }
 

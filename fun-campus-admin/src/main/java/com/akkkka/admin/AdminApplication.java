@@ -1,5 +1,6 @@
 package com.akkkka.admin;
 
+import com.akkkka.constant.BasePackageConst;
 import com.akkkka.listener.Ip2RegionListener;
 import com.akkkka.listener.LogVariableListener;
 import org.apache.ibatis.annotations.Mapper;
@@ -24,12 +25,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableCaching
 @EnableScheduling
 @EnableAspectJAutoProxy(proxyTargetClass = true, exposeProxy = true)
-@ComponentScan(AdminApplication.COMPONENT_SCAN)
-@MapperScan(value = AdminApplication.COMPONENT_SCAN, annotationClass = Mapper.class)
+@ComponentScan(BasePackageConst.BASE_PACKAGE)
+@MapperScan(value = BasePackageConst.BASE_PACKAGE, annotationClass = Mapper.class)
 @SpringBootApplication(exclude = {UserDetailsServiceAutoConfiguration.class})
 public class  AdminApplication {
-
-    public static final String COMPONENT_SCAN = "com.akkkka";
 
     public static void main(String[] args) {
         SpringApplication application = new SpringApplication(AdminApplication.class);

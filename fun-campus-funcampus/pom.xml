@@ -1,0 +1,68 @@
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.akkkka</groupId>
+        <artifactId>fun-campus-parent</artifactId>
+        <version>3.0.0</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>fun-campus-funcampus</artifactId>
+    <version>3.0.0</version>
+
+    <name>fun-campus-funcampus</name>
+
+    <description>校园业务模块：活动/报名/审核/签到/支付/社团/组织/前台用户等</description>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>com.akkkka</groupId>
+            <artifactId>fun-campus-system</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.akkkka</groupId>
+            <artifactId>fun-campus-core</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.akkkka</groupId>
+            <artifactId>fun-campus-support-base</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.akkkka</groupId>
+            <artifactId>fun-campus-support-log</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.akkkka</groupId>
+            <artifactId>fun-campus-support-feature</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+
+        <!-- 二维码生成：签到二维码 -->
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>javase</artifactId>
+        </dependency>
+
+        <!-- COLA 状态机：活动审核流转 -->
+        <dependency>
+            <groupId>com.alibaba.cola</groupId>
+            <artifactId>cola-component-statemachine</artifactId>
+        </dependency>
+
+    </dependencies>
+
+</project>

@@ -1,0 +1,46 @@
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.akkkka</groupId>
+        <artifactId>fun-campus-parent</artifactId>
+        <version>3.0.0</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>fun-campus-system</artifactId>
+    <version>3.0.0</version>
+
+    <name>fun-campus-system</name>
+
+    <description>系统管理模块：后台用户/角色/菜单/登录/数据权限/通知/消息</description>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>com.akkkka</groupId>
+            <artifactId>fun-campus-core</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.akkkka</groupId>
+            <artifactId>fun-campus-support-base</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.akkkka</groupId>
+            <artifactId>fun-campus-support-log</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.akkkka</groupId>
+            <artifactId>fun-campus-support-feature</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+
+    </dependencies>
+
+</project>

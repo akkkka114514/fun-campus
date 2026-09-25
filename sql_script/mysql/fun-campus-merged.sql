@@ -12,9 +12,9 @@
 --   * 本文件面向全新环境初始化; 目标库已有数据时请勿整库执行。
 --   * *Menu.sql 依赖 t_menu 表(位于 fc_portal.sql), 且不可重复执行,
 --     重复执行会再次插入相同菜单。
---   * ActivityEnrollmentMenu.sql 源文件中同一段菜单插入重复了 4 次,
---     第 2 段起 SELECT ... INTO @parent_id 会命中多行报错, 属源文件
---     既有问题, 合并时原样保留。
+--   * ActivityEnrollmentMenu.sql 原同一段菜单插入重复 4 次, 第 2 段起
+--     SELECT ... INTO @parent_id 会命中多行报错, 属源文件既有问题;
+--     已修复为仅保留第 1 段。
 -- ============================================================
 
 -- ----------------------------------------------------------------------------
@@ -2623,7 +2623,9 @@ ALTER TABLE `portal_user`
   ADD COLUMN `grade_id` bigint NULL DEFAULT NULL COMMENT '年级id' AFTER `can_publish_activity`,
   ADD COLUMN `grade_score` decimal(10,2) NULL DEFAULT 0.00 COMMENT '学分' AFTER `grade_id`,
   ADD COLUMN `credit_score` int NULL DEFAULT 100 COMMENT '信誉分' AFTER `grade_score`,
-  ADD COLUMN `organization_id` bigint NULL DEFAULT NULL COMMENT '组织id' AFTER `credit_score`;
+  ADD COLUMN `organization_id` bigint NULL DEFAULT NULL COMMENT '组织id' AFTER `credit_score`,
+  DROP COLUMN `school_name`,
+  DROP COLUMN `college_name`;
 
 -- ----------------------------
 -- 5. backend_user 表：新增学校/学院/组织/审核权限字段
@@ -2990,74 +2992,8 @@ VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'activityCategor
 
 
 -- ----------------------------------------------------------------------------
--- 来源文件: ActivityEnrollmentMenu.sql (共 88 行)
+-- 来源文件: ActivityEnrollmentMenu.sql (共 22 行)
 -- ----------------------------------------------------------------------------
-# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
-# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
-# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
-VALUES ( '活动报名关系', 2, 0, '/activity-enrollment/list', '/business/activity-enrollment/activity-enrollment-list.vue', false, false, true, false, 1, 1 );
-
-# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
-SET @parent_id = NULL;
-SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '活动报名关系';
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'activityEnrollment:query', 'activityEnrollment:query', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'activityEnrollment:add', 'activityEnrollment:add', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'activityEnrollment:update', 'activityEnrollment:update', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'activityEnrollment:delete', 'activityEnrollment:delete', @parent_id, 1 );
-# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
-# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
-# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
-VALUES ( '活动报名关系', 2, 0, '/activity-enrollment/list', '/business/activity-enrollment/activity-enrollment-list.vue', false, false, true, false, 1, 1 );
-
-# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
-SET @parent_id = NULL;
-SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '活动报名关系';
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'activityEnrollment:query', 'activityEnrollment:query', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'activityEnrollment:add', 'activityEnrollment:add', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'activityEnrollment:update', 'activityEnrollment:update', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'activityEnrollment:delete', 'activityEnrollment:delete', @parent_id, 1 );
-# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
-# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
-# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
-VALUES ( '活动报名关系', 2, 0, '/activity-enrollment/list', '/business/activity-enrollment/activity-enrollment-list.vue', false, false, true, false, 1, 1 );
-
-# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
-SET @parent_id = NULL;
-SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '活动报名关系';
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'activityEnrollment:query', 'activityEnrollment:query', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'activityEnrollment:add', 'activityEnrollment:add', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'activityEnrollment:update', 'activityEnrollment:update', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'activityEnrollment:delete', 'activityEnrollment:delete', @parent_id, 1 );
 # 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
 # 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
 # 如果你一切都是按照默认，那么下面的 SQL 基本不用改

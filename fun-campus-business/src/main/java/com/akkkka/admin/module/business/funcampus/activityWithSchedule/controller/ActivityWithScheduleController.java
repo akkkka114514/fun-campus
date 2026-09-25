@@ -265,6 +265,10 @@ public class ActivityWithScheduleController {
         activityVO.setCategoryId(activity.getCategoryId());
         activityVO.setCategoryName(activityCategoryService.getNameById(activity.getCategoryId()));
         activityVO.setCoverImg(activity.getCoverImg());
+        // 付费信息
+        activityVO.setPaidFlag(activity.getPaidFlag());
+        activityVO.setPriceFen(activity.getPriceFen());
+        activityVO.setRefundPolicy(activity.getRefundPolicy() == null ? null : activity.getRefundPolicy().getCode());
         PortalUserEntity managerEntity = portalUserManager.getById(activity.getActivityManagerId());
         if (managerEntity != null) {
             PortalUserVO managerVO = new PortalUserVO();

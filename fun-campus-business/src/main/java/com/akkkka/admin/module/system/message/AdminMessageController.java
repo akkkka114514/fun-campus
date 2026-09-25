@@ -5,6 +5,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import com.akkkka.admin.constant.AdminSwaggerTagConst;
+import com.akkkka.admin.module.system.message.domain.MessageReceiverQueryForm;
+import com.akkkka.admin.module.system.message.domain.MessageReceiverVO;
+import com.akkkka.admin.module.system.message.service.MessageReceiverService;
+import com.akkkka.admin.module.system.message.service.MessageSelfService;
 import com.akkkka.common.domain.PageResult;
 import com.akkkka.common.domain.ResponseDTO;
 import com.akkkka.common.domain.ValidateList;
@@ -29,6 +33,38 @@ public class AdminMessageController {
 
     @Autowired
     private MessageService messageService;
+
+    @Autowired
+    private MessageSelfService messageSelfService;
+
+    @Autowired
+    private MessageReceiverService messageReceiverService;
+
+    @Operation(summary = "通知消息-分页查询我收到的消息")
+    @PostMapping("/message/queryMyMessage")
+    public ResponseDTO<PageResult<MessageVO>> queryMyMessage(@RequestBody @Valid MessageQueryForm queryForm) {
+        return ResponseDTO.ok(messageSelfService.queryMyMessage(queryForm));
+    }
+
+    @Operation(summary = "通知消息-查询我的未读消息数量")
+    @GetMapping("/message/getUnreadCount")
+    public ResponseDTO<Long> getMyUnreadCount() {
+        return ResponseDTO.ok(messageSelfService.getMyUnreadCount());
+    }
+
+    @Operation(summary = "通知消息-将我的消息标记为已读")
+    @GetMapping("/message/read/{messageId}")
+    public ResponseDTO<String> readMyMessage(@PathVariable Long messageId) {
+        messageSelfService.readMyMessage(messageId);
+        return ResponseDTO.ok();
+    }
+
+    @Operation(summary = "通知消息-分页查询消息接收人")
+    @PostMapping("/message/receiver/query")
+    @SaCheckPermission("system:message:send")
+    public ResponseDTO<PageResult<MessageReceiverVO>> queryReceiverPage(@RequestBody @Valid MessageReceiverQueryForm queryForm) {
+        return ResponseDTO.ok(messageReceiverService.queryReceiverPage(queryForm));
+    }
 
     @Operation(summary = "通知消息-新建  @author 卓大")
     @PostMapping("/message/sendMessages")

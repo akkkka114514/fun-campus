@@ -11,7 +11,7 @@ import org.apache.ibatis.annotations.Param;
 import java.util.List;
 
 /**
- * 消息 接受者类型枚举
+ * 消息 dao
  *
  * @author luoyi
  * @date 2024/06/22 20:20

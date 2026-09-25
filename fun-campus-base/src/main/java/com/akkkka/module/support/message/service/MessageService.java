@@ -11,6 +11,7 @@ import com.akkkka.common.util.SmartBeanUtil;
 import com.akkkka.common.util.SmartPageUtil;
 import com.akkkka.module.support.message.constant.MessageTemplateEnum;
 import com.akkkka.module.support.message.dao.MessageDao;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.text.StringSubstitutor;
 import org.springframework.stereotype.Service;
 
@@ -56,6 +57,7 @@ public class MessageService {
 
     /**
      * 发送【模板消息】
+     * 支持群发：设置 receiverUserIdList 时向列表中的每位接收者各发一条，否则发给单个 receiverUserId
      */
     public void sendTemplateMessage(MessageTemplateSendForm... sendTemplateForms) {
         List<MessageSendForm> sendFormList = Lists.newArrayList();
@@ -64,15 +66,20 @@ public class MessageService {
             StringSubstitutor stringSubstitutor = new StringSubstitutor(sendTemplateForm.getContentParam());
             String content = stringSubstitutor.replace(msgTemplateTypeEnum.getContent());
 
-            MessageSendForm messageSendForm = new MessageSendForm();
-            messageSendForm.setMessageType(msgTemplateTypeEnum.getMessageTypeEnum().getValue());
-            messageSendForm.setReceiverUserType(sendTemplateForm.getReceiverUserType().getValue());
-            messageSendForm.setReceiverUserId(sendTemplateForm.getReceiverUserId());
-            messageSendForm.setTitle(msgTemplateTypeEnum.getDesc());
-            messageSendForm.setContent(content);
-            messageSendForm.setDataId(sendTemplateForm.getDataId());
-            sendFormList.add(messageSendForm);
-
+            // 群发：优先使用接收者id列表，否则使用单个接收者id
+            List<Long> receiverUserIdList = CollectionUtils.isEmpty(sendTemplateForm.getReceiverUserIdList())
+                    ? Lists.newArrayList(sendTemplateForm.getReceiverUserId())
+                    : sendTemplateForm.getReceiverUserIdList();
+            for (Long receiverUserId : receiverUserIdList) {
+                MessageSendForm messageSendForm = new MessageSendForm();
+                messageSendForm.setMessageType(msgTemplateTypeEnum.getMessageTypeEnum().getValue());
+                messageSendForm.setReceiverUserType(sendTemplateForm.getReceiverUserType().getValue());
+                messageSendForm.setReceiverUserId(receiverUserId);
+                messageSendForm.setTitle(msgTemplateTypeEnum.getDesc());
+                messageSendForm.setContent(content);
+                messageSendForm.setDataId(sendTemplateForm.getDataId());
+                sendFormList.add(messageSendForm);
+            }
         }
         this.sendMessage(sendFormList);
     }

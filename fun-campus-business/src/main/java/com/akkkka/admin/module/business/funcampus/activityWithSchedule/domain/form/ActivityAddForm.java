@@ -99,5 +99,37 @@ public class ActivityAddForm {
     @Min(value = 0L, message = "活动管理员和发起者 不能小于0")
     private Long activityManagerId;
 
+    /**
+     * 是否付费活动
+     */
+    @Schema(description = "是否付费活动（true 时报名需下单支付）")
+    private Boolean paidFlag;
+
+    /**
+     * 报名费（单位：分）
+     */
+    @Schema(description = "报名费（单位：分，付费活动必填且大于0）")
+    @Min(value = 0L, message = "报名费 不能小于0")
+    private Integer priceFen;
+
+    /**
+     * 退款政策
+     */
+    @Schema(description = "退款政策：1-报名截止前可退 2-活动开始前可退 3-不可退款")
+    @Min(value = 1L, message = "退款政策 取值1-3")
+    @Max(value = 3L, message = "退款政策 取值1-3")
+    private Integer refundPolicy;
+
+    /**
+     * 付费活动必须具备大于0的报名费（Bean Validation 自定义校验）
+     */
+    @AssertTrue(message = "付费活动必须配置大于0的报名费")
+    @Schema(hidden = true)
+    public boolean isPriceValid() {
+        if (Boolean.TRUE.equals(paidFlag)) {
+            return priceFen != null && priceFen > 0;
+        }
+        return true;
+    }
 
 }

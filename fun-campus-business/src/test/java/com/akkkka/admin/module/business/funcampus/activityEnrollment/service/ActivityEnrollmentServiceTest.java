@@ -26,6 +26,9 @@ import com.akkkka.common.code.UserErrorCode;
 import com.akkkka.common.enumeration.UserTypeEnum;
 import com.akkkka.common.exception.BusinessException;
 import com.akkkka.common.util.SmartRequestUtil;
+import com.akkkka.module.support.message.constant.MessageTemplateEnum;
+import com.akkkka.module.support.message.domain.MessageTemplateSendForm;
+import com.akkkka.module.support.message.service.MessageService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -97,6 +100,8 @@ public class ActivityEnrollmentServiceTest {
     private ActivitySigninManagerService signinManagerService;
     @Mock
     private ActivityScheduleManager activityScheduleManager;
+    @Mock
+    private MessageService messageService;
 
     private ActivityEnrollmentService service;
 
@@ -110,7 +115,7 @@ public class ActivityEnrollmentServiceTest {
                 activityEnrollmentDao, activityEnrollmentManager, activityManager,
                 activityEnrollNumDao, transactionTemplate, portalUserManager, portalUserValidator,
                 activityValidator, enrollmentDomainService, signInManagerValidator, redisTemplate,
-                enrollmentManager, signinManagerService, activityScheduleManager);
+                enrollmentManager, signinManagerService, activityScheduleManager, messageService);
     }
 
     @AfterEach
@@ -250,6 +255,70 @@ public class ActivityEnrollmentServiceTest {
         assertEquals(12L, captor.getValue().getUserId());
         assertFalse(captor.getValue().getSignInStatus());
         assertFalse(captor.getValue().getDeletedFlag());
+    }
+
+    // ------------------------------ 报名结果站内信 ------------------------------
+
+    @Test
+    void enroll_whenSuccess_sendSuccessMessage() {
+        setPortalUser(12L);
+        ActivityEntity activity = activityWithStatus(ActivityStatus.ENROLLING);
+        activity.setTitle("迎新晚会");
+        when(activityValidator.validateActivityId(7L)).thenReturn(activity);
+        when(portalUserManager.getById(12L)).thenReturn(portalUserEntity(12L));
+        runTransactionNow();
+        when(activityEnrollNumDao.increaseEnrollNum(7L)).thenReturn(true);
+        when(activityEnrollmentDao.insert(any(ActivityEnrollmentEntity.class))).thenReturn(1);
+        when(activityManager.getById(7L)).thenReturn(activity);
+
+        service.enroll(7L);
+
+        ArgumentCaptor<MessageTemplateSendForm> captor = ArgumentCaptor.forClass(MessageTemplateSendForm.class);
+        verify(messageService).sendTemplateMessage(captor.capture());
+        MessageTemplateSendForm form = captor.getValue();
+        assertEquals(MessageTemplateEnum.ACTIVITY_ENROLL_SUCCESS, form.getMessageTemplateEnum());
+        assertEquals(UserTypeEnum.PORTAL_USER, form.getReceiverUserType());
+        assertEquals(12L, form.getReceiverUserId());
+        assertEquals(7L, form.getDataId());
+        assertEquals("迎新晚会", form.getContentParam().get("activityTitle"));
+    }
+
+    @Test
+    void enroll_whenEnrollNumFull_sendFailMessageWithReason() {
+        setPortalUser(12L);
+        ActivityEntity activity = activityWithStatus(ActivityStatus.ENROLLING);
+        activity.setTitle("迎新晚会");
+        when(activityValidator.validateActivityId(7L)).thenReturn(activity);
+        runTransactionNow();
+        when(activityEnrollNumDao.increaseEnrollNum(7L)).thenReturn(false);
+        when(activityManager.getById(7L)).thenReturn(activity);
+
+        assertThrows(BusinessException.class, () -> service.enroll(7L));
+
+        ArgumentCaptor<MessageTemplateSendForm> captor = ArgumentCaptor.forClass(MessageTemplateSendForm.class);
+        verify(messageService).sendTemplateMessage(captor.capture());
+        MessageTemplateSendForm form = captor.getValue();
+        assertEquals(MessageTemplateEnum.ACTIVITY_ENROLL_FAIL, form.getMessageTemplateEnum());
+        assertEquals(12L, form.getReceiverUserId());
+        assertEquals("活动报名人数已满", form.getContentParam().get("reason"));
+    }
+
+    @Test
+    void enroll_whenMessageServiceUnavailable_enrollNotAffected() {
+        setPortalUser(12L);
+        ActivityEntity activity = activityWithStatus(ActivityStatus.ENROLLING);
+        activity.setTitle("迎新晚会");
+        when(activityValidator.validateActivityId(7L)).thenReturn(activity);
+        when(portalUserManager.getById(12L)).thenReturn(portalUserEntity(12L));
+        runTransactionNow();
+        when(activityEnrollNumDao.increaseEnrollNum(7L)).thenReturn(true);
+        when(activityEnrollmentDao.insert(any(ActivityEnrollmentEntity.class))).thenReturn(1);
+        when(activityManager.getById(7L)).thenReturn(activity);
+        doThrow(new RuntimeException("消息服务不可用")).when(messageService).sendTemplateMessage(any(MessageTemplateSendForm.class));
+
+        // 站内信发送失败不影响报名成功
+        assertDoesNotThrow(() -> service.enroll(7L));
+        verify(activityEnrollmentDao).insert(any(ActivityEnrollmentEntity.class));
     }
 
     // ---------------------------------- 签到二维码 ----------------------------------

@@ -9,15 +9,18 @@
         ON DUPLICATE KEY UPDATE comment_hot = comment_hot + 1
     </insert>
 
-    <!-- 撤销点赞评论：热度-1，热度归零时删除记录 -->
+    <!-- 撤销点赞评论：热度-1 -->
     <update id="unlikeComment">
         UPDATE activity_comment_hot
         SET comment_hot = comment_hot - 1
-        WHERE comment_id = #{commentId} AND comment_hot > 0;
-
-        DELETE FROM activity_comment_hot
-        WHERE comment_id = #{commentId} AND comment_hot &lt;= 0;
+        WHERE comment_id = #{commentId} AND comment_hot > 0
     </update>
+
+    <!-- 热度归零时删除记录 -->
+    <delete id="deleteHotIfZero">
+        DELETE FROM activity_comment_hot
+        WHERE comment_id = #{commentId} AND comment_hot &lt;= 0
+    </delete>
 
     <!-- 分页查询热门评论（关联评论表获取评论详情） -->
     <select id="queryHotCommentsByActivityId" resultType="com.akkkka.admin.module.business.funcampus.activityComment.domain.vo.ActivityCommentHotVO">
@@ -32,7 +35,7 @@
         INNER JOIN activity_comment ac ON ach.comment_id = ac.id
         WHERE ac.activity_id = #{activityId}
           AND ac.deleted = 0
-        ORDER BY ach.comment_hot DESC
+        ORDER BY ach.comment_hot DESC, ac.create_time DESC
     </select>
 
 </mapper>

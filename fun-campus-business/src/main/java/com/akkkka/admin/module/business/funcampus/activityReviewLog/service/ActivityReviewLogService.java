@@ -15,6 +15,7 @@ import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.enti
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.manager.ActivityEnrollmentManager;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.service.ActivityEnrollmentService;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.service.ActivityEnrollmentValidator;
+import com.akkkka.admin.module.business.funcampus.activityOrder.service.ActivityRefundService;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewEvent;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewStage;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.dto.EnrollersChangeDTO;
@@ -45,8 +46,12 @@ import com.akkkka.common.code.UserErrorCode;
 import com.akkkka.common.domain.IdNameVO;
 import com.akkkka.common.domain.PageResult;
 import com.akkkka.common.domain.ResponseDTO;
+import com.akkkka.common.enumeration.UserTypeEnum;
 import com.akkkka.common.exception.BusinessException;
 import com.akkkka.common.util.SmartPageUtil;
+import com.akkkka.module.support.message.constant.MessageTemplateEnum;
+import com.akkkka.module.support.message.domain.MessageTemplateSendForm;
+import com.akkkka.module.support.message.service.MessageService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -85,6 +90,8 @@ public class ActivityReviewLogService {
     private final ActivityReviewLogValidator reviewLogValidator;
     private final ActivitySigninManagerService signinManagerService;
     private final PortalUserValidator portalUserValidator;
+    private final MessageService messageService;
+    private final ActivityRefundService activityRefundService;
 
     public PageResult<ActivityReviewLogVO> queryPage(ActivityReviewLogQueryForm queryForm) {
         Page<?> page = SmartPageUtil.convert2PageQuery(queryForm);
@@ -383,6 +390,10 @@ public class ActivityReviewLogService {
         currentReview.setCheckRemark(null);
         currentReview.setRejectReason(null);
 
+        //最终入选名单快照：用于事务成功后给学生发送审核结果站内信
+        boolean hasEnrollerSelection = enrollerIds != null && !enrollerIds.isEmpty();
+        List<Long> finalPassIds = hasEnrollerSelection ? List.copyOf(enrollerIds) : List.of();
+
         EnrollersChangeDTO finalEnrollersChangeDTO = new EnrollersChangeDTO();
         if (enrollerIds != null && !enrollerIds.isEmpty()) {
             List<Long> dbEnrollerIds = enrollmentService.listPortalUserIds(nextReview.getActivityId());
@@ -413,6 +424,60 @@ public class ActivityReviewLogService {
             }
         });
 
+        //事务提交成功后，向被筛选的学生发送报名审核结果站内信（发送失败不影响审核结果）
+        if (hasEnrollerSelection) {
+            List<Long> rejectIds = changeDTO.getDelList().stream()
+                    .map(ActivityEnrollmentEntity::getUserId)
+                    .toList();
+            try {
+                notifyEnrollReviewResult(nextReview.getActivityId(), finalPassIds, rejectIds);
+            } catch (Exception e) {
+                log.warn("报名审核结果站内信发送失败，activityId:{}", nextReview.getActivityId(), e);
+            }
+            // 付费活动：被剔除且已支付的订单联动系统退款（独立于审核事务，失败仅记录日志不影响审核结果）
+            try {
+                activityRefundService.refundForRejectedPaidUsers(nextReview.getActivityId(), rejectIds);
+            } catch (Exception e) {
+                log.warn("报名审核剔除联动退款失败，activityId:{}", nextReview.getActivityId(), e);
+            }
+        }
+
+    }
+
+    /**
+     * 发送报名审核结果站内信：最终入选者通知【审核通过】，被剔除者通知【未通过】
+     */
+    private void notifyEnrollReviewResult(Long activityId, List<Long> passIds, List<Long> rejectIds) {
+        if (passIds.isEmpty() && rejectIds.isEmpty()) {
+            return;
+        }
+        ActivityEntity activity = activityManager.getById(activityId);
+        if (activity == null) {
+            log.warn("报名审核结果站内信跳过：活动不存在，activityId:{}", activityId);
+            return;
+        }
+        Map<String, Object> contentParam = Map.of("activityTitle", Objects.toString(activity.getTitle(), ""));
+
+        if (!passIds.isEmpty()) {
+            MessageTemplateSendForm passForm = new MessageTemplateSendForm();
+            passForm.setMessageTemplateEnum(MessageTemplateEnum.ACTIVITY_ENROLL_PASS);
+            passForm.setReceiverUserType(UserTypeEnum.PORTAL_USER);
+            passForm.setReceiverUserIdList(passIds);
+            passForm.setDataId(activityId);
+            passForm.setContentParam(contentParam);
+            messageService.sendTemplateMessage(passForm);
+        }
+        if (!rejectIds.isEmpty()) {
+            MessageTemplateSendForm rejectForm = new MessageTemplateSendForm();
+            rejectForm.setMessageTemplateEnum(MessageTemplateEnum.ACTIVITY_ENROLL_REJECT);
+            rejectForm.setReceiverUserType(UserTypeEnum.PORTAL_USER);
+            rejectForm.setReceiverUserIdList(rejectIds);
+            rejectForm.setDataId(activityId);
+            rejectForm.setContentParam(contentParam);
+            messageService.sendTemplateMessage(rejectForm);
+        }
+        log.info("报名审核结果站内信已发送，activityId:{}，通过:{}人，未通过:{}人",
+                activityId, passIds.size(), rejectIds.size());
     }
     private enum SignInAndOut{
         SIGN_IN,

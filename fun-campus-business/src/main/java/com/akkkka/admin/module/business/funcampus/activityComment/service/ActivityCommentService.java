@@ -73,8 +73,9 @@ public class ActivityCommentService {
     }
 
     /**
-     * 删除评论（仅评论作者可删除，内容替换为"内容已删除"并逻辑删除，不影响子评论）
+     * 删除评论（仅评论作者可删除，内容替换为"内容已删除"并逻辑删除，不影响子评论；同步清理热度记录）
      */
+    @Transactional(rollbackFor = Exception.class)
     public void deleteComment(Long commentId) {
         Long userId = getCurrentPortalUserId();
 
@@ -87,6 +88,9 @@ public class ActivityCommentService {
         comment.setContent("内容已删除");
         comment.setDeleted(true);
         activityCommentManager.updateById(comment);
+
+        // 评论已逻辑删除，热度记录随之清理：否则点赞过的用户无法再撤销（撤销校验会拒绝已删评论），热度永远无法归零
+        activityCommentHotManager.remove(activityCommentHotManager.qwByCommentId(commentId));
 
         log.info("ActivityCommentService.deleteComment success: commentId={}, userId={}", commentId, userId);
     }
@@ -119,8 +123,9 @@ public class ActivityCommentService {
             throw new BusinessException(UserErrorCode.PARAM_ERROR, "评论不存在");
         }
 
-        // 撤销点赞（热度-1，归零时删除记录）
+        // 撤销点赞（热度-1，归零时删除记录；两条单语句执行，不依赖 allowMultiQueries 连接参数）
         activityCommentHotDao.unlikeComment(commentId);
+        activityCommentHotDao.deleteHotIfZero(commentId);
 
         log.info("ActivityCommentService.unlikeComment success: commentId={}", commentId);
     }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="net.lab1024.sa.admin.module.business.funcampus.ActivitySigninManager.dao.ActivitySigninManagerDao">
+<mapper namespace="com.akkkka.admin.module.business.funcampus.activitySigninManager.dao.ActivitySigninManagerDao">
 
     <!-- 查询结果列 -->
     <sql id="base_columns">
@@ -14,7 +14,7 @@
     </sql>
 
     <!-- 分页查询 -->
-    <select id="queryPage" resultType="net.lab1024.sa.admin.module.business.funcampus.ActivitySigninManager.domain.vo.ActivitySigninManagerVO">
+    <select id="queryPage" resultType="com.akkkka.admin.module.business.funcampus.activitySigninManager.domain.vo.ActivitySigninManagerVO">
         SELECT
         <include refid="base_columns"/>
         FROM activity_signin_manager

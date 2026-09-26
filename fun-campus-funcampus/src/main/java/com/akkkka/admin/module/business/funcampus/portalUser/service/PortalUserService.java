@@ -8,7 +8,9 @@ import com.akkkka.admin.module.business.funcampus.portalUser.domain.form.PortalU
 import com.akkkka.admin.module.business.funcampus.portalUser.domain.form.PortalUserQueryForm;
 import com.akkkka.admin.module.business.funcampus.portalUser.domain.form.PortalUserProfileUpdateForm;
 import com.akkkka.admin.module.business.funcampus.portalUser.domain.form.PortalUserUpdateForm;
+import com.akkkka.admin.module.business.funcampus.portalUser.domain.vo.CreditScoreLogVO;
 import com.akkkka.admin.module.business.funcampus.portalUser.domain.vo.CurrentPortalUserVO;
+import com.akkkka.admin.module.business.funcampus.portalUser.domain.vo.GradeScoreDetailVO;
 import com.akkkka.admin.module.business.funcampus.portalUser.domain.vo.PortalUserVO;
 import com.akkkka.admin.module.business.funcampus.portalUser.manager.PortalUserManager;
 import com.akkkka.admin.module.business.funcampus.schoolInfo.service.SchoolInfoService;
@@ -98,6 +100,7 @@ public class PortalUserService {
         CurrentPortalUserVO vo = new CurrentPortalUserVO();
         vo.setId(portalUser.getId());
         vo.setUsername(portalUser.getUsername());
+        vo.setNickname(portalUser.getNickname());
         vo.setAvatar(portalUser.getAvatar());
         vo.setGender(portalUser.getGender());
         vo.setPhone(portalUser.getPhone());
@@ -123,20 +126,50 @@ public class PortalUserService {
     }
 
     /**
-     * 更新当前登录门户用户的个人资料（仅允许修改头像/手机号/性别）
+     * 更新当前登录门户用户的个人资料（仅允许修改昵称/头像/手机号/性别）
      */
     public void updateProfile(PortalUserProfileUpdateForm updateForm) {
         Long userId = getCurrentPortalUserId();
-        if (updateForm.getAvatar() == null && updateForm.getPhone() == null && updateForm.getGender() == null) {
+        if (updateForm.getAvatar() == null && updateForm.getPhone() == null && updateForm.getGender() == null
+                && updateForm.getNickname() == null) {
             throw new BusinessException(UserErrorCode.PARAM_ERROR, "请至少填写一项要修改的资料");
+        }
+        if (updateForm.getNickname() != null && updateForm.getNickname().isBlank()) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "昵称不能为空");
         }
 
         LambdaUpdateWrapper<PortalUserEntity> updateWrapper = new LambdaUpdateWrapper<>();
         updateWrapper.eq(PortalUserEntity::getId, userId)
+                .set(updateForm.getNickname() != null, PortalUserEntity::getNickname, updateForm.getNickname())
                 .set(updateForm.getAvatar() != null, PortalUserEntity::getAvatar, updateForm.getAvatar())
                 .set(updateForm.getPhone() != null, PortalUserEntity::getPhone, updateForm.getPhone())
                 .set(updateForm.getGender() != null, PortalUserEntity::getGender, updateForm.getGender());
         portalUserManager.update(updateWrapper);
+    }
+
+    /** 爽约扣分（活动结束未签到） */
+    private static final Integer NO_SHOW_PENALTY_SCORE = -5;
+
+    /** 爽约原因文案 */
+    private static final String NO_SHOW_REASON = "活动结束未签到";
+
+    /**
+     * 实践积分明细（已结束且已签到的活动，派生自报名数据）
+     */
+    public List<GradeScoreDetailVO> queryGradeScoreDetailList() {
+        return portalUserManager.getBaseMapper().queryGradeScoreDetailList(getCurrentPortalUserId());
+    }
+
+    /**
+     * 信誉分变动记录（已结束未签到的报名，即爽约，派生自报名数据）
+     */
+    public List<CreditScoreLogVO> queryCreditScoreLogList() {
+        List<CreditScoreLogVO> list = portalUserManager.getBaseMapper().queryCreditScorePenaltyList(getCurrentPortalUserId());
+        for (CreditScoreLogVO vo : list) {
+            vo.setChangeScore(NO_SHOW_PENALTY_SCORE);
+            vo.setReason(NO_SHOW_REASON);
+        }
+        return list;
     }
 
     /**

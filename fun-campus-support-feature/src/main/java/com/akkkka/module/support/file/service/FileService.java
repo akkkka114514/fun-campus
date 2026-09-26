@@ -22,6 +22,7 @@ import com.akkkka.module.support.file.domain.vo.FileVO;
 import com.akkkka.module.support.securityprotect.service.SecurityFileService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -51,7 +52,10 @@ public class FileService {
     @Resource
     private IFileStorageService fileStorageService;
 
-    @Resource
+    /**
+     * 云存储实现：仅 file.storage.mode=cloud 时存在该 bean（local 模式下为 null）
+     */
+    @Autowired(required = false)
     private FileStorageCloudServiceImpl fileStorageCloudServiceImpl;
 
     @Resource
@@ -224,10 +228,18 @@ public class FileService {
         if (StringUtils.isBlank(bucket)){
             return ResponseDTO.userErrorParam("minio桶名不能为空");
         }
+        // local 存储模式无云服务，不支持预签名上传
+        if (fileStorageCloudServiceImpl == null) {
+            return ResponseDTO.userErrorParam("当前文件存储模式不支持预签名上传");
+        }
         // 调用底层存储服务生成预签名上传 URL
         return fileStorageCloudServiceImpl.generatePresignedUploadUrl(originalFileName, folderTypeEnum.getFolder(),bucket);
     }
     public void validateFileKey(String fileKey,String bucket){
+        // local 存储模式无云服务，跳过云侧文件归属校验
+        if (fileStorageCloudServiceImpl == null) {
+            return;
+        }
         fileStorageCloudServiceImpl.validateFileKey(fileKey,bucket);
     }
 

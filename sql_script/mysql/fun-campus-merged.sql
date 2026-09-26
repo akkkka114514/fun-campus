@@ -2663,6 +2663,12 @@ ALTER TABLE `backend_user`
   ADD COLUMN `organization_id` bigint NULL DEFAULT NULL COMMENT '组织id' AFTER `college_id`,
   ADD COLUMN `can_review` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否具有审核权限' AFTER `organization_id`;
 
+-- ----------------------------
+-- 6. portal_user 表：新增昵称字段
+-- ----------------------------
+ALTER TABLE `portal_user`
+  ADD COLUMN `nickname` varchar(50) NULL DEFAULT NULL COMMENT '昵称' AFTER `username`;
+
 
 -- =====================================================================
 -- 三、插入测试数据

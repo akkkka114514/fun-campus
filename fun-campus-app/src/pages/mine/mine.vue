@@ -7,19 +7,19 @@
         <text v-else class="avatar-text">{{ firstChar }}</text>
       </view>
       <view class="user-info">
-        <text class="user-name">{{ userInfo.username || '未登录' }}</text>
+        <text class="user-name">{{ userInfo.nickname || userInfo.username || '未登录' }}</text>
         <text class="user-sub">{{ schoolText }}</text>
       </view>
     </view>
 
     <!-- 学分 / 信誉分 -->
     <view class="score-card">
-      <view class="score-item">
+      <view class="score-item" @click="goScore('grade')">
         <text class="score-value">{{ scoreText(userInfo.gradeScore) }}</text>
         <text class="score-label">实践学分</text>
       </view>
       <view class="score-divider" />
-      <view class="score-item">
+      <view class="score-item" @click="goScore('credit')">
         <text class="score-value">{{ scoreText(userInfo.creditScore) }}</text>
         <text class="score-label">信誉分</text>
       </view>
@@ -78,7 +78,7 @@ const avatarUrl = computed(() =>
 );
 
 const firstChar = computed(() => {
-  const name = userInfo.value.username || '';
+  const name = userInfo.value.nickname || userInfo.value.username || '';
   return name ? name.slice(0, 1).toUpperCase() : '?';
 });
 
@@ -95,7 +95,7 @@ const menuList = [
   { key: 'signinCode', text: '我的签到码', url: '/pages/signin/code' },
   { key: 'myActivity', text: '我的活动', url: '/pages/activity/my' },
   { key: 'myOrder', text: '我的订单', url: '/pages/order/list' },
-  { key: 'profile', text: '资料编辑' },
+  { key: 'profile', text: '资料编辑', url: '/pages/mine/profile' },
 ];
 
 function scoreText(score) {
@@ -120,6 +120,10 @@ async function refreshTodoCounts() {
 
 function goTodo() {
   uni.navigateTo({ url: '/pages/mine/todo' });
+}
+
+function goScore(tab) {
+  uni.navigateTo({ url: `/pages/mine/score?tab=${tab}` });
 }
 
 function onMenuClick(menu) {

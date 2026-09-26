@@ -51,4 +51,11 @@ export const activityApi = {
       return postRequest('/backend/activity/batchDelete', idList);
   },
 
+  /**
+   * 取消活动（状态置为已取消，并对全部已支付订单发起退款）  @author  akkkka114514
+   */
+  cancelActivity: (activityId) => {
+      return postRequest('/backend/activity/cancel', activityId);
+  },
+
 };

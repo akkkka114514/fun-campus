@@ -79,6 +79,30 @@ public class ActivityOrderManager extends ServiceImpl<ActivityOrderDao, Activity
     }
 
     /**
+     * 查询某活动的全部已支付订单（用于活动取消后批量系统退款）
+     */
+    public List<ActivityOrderEntity> listPaidOrdersByActivity(Long activityId) {
+        return this.list(
+                new LambdaQueryWrapper<ActivityOrderEntity>()
+                        .eq(ActivityOrderEntity::getActivityId, activityId)
+                        .eq(ActivityOrderEntity::getStatus, OrderStatus.PAID)
+                        .eq(ActivityOrderEntity::getDeletedFlag, false)
+        );
+    }
+
+    /**
+     * 查询某活动的全部待支付订单（用于活动取消时批量关单，防止取消后继续完成支付）
+     */
+    public List<ActivityOrderEntity> listWaitPayOrdersByActivity(Long activityId) {
+        return this.list(
+                new LambdaQueryWrapper<ActivityOrderEntity>()
+                        .eq(ActivityOrderEntity::getActivityId, activityId)
+                        .eq(ActivityOrderEntity::getStatus, OrderStatus.WAIT_PAY)
+                        .eq(ActivityOrderEntity::getDeletedFlag, false)
+        );
+    }
+
+    /**
      * 查询超时未支付订单（扫描关单任务使用）
      */
     public List<ActivityOrderEntity> listTimeoutOrders(LocalDateTime now, int limit) {

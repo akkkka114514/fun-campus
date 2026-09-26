@@ -2877,24 +2877,26 @@ UPDATE `t_smart_job` SET `job_class` = 'com.akkkka.module.support.job.sample.Sma
 UPDATE `t_smart_job` SET `job_class` = 'com.akkkka.module.support.job.sample.SmartJobSample2' WHERE `job_id` = 2;
 
 -- ----------------------------
--- 20. 活动状态字典整理（时间阶段 0-4 + 业务状态 9；签到/签退旧值 5、6 退役）
+-- 20. 活动状态字典整理（时间阶段 0-4 + 业务状态 8、9；签到/签退旧值 5、6 退役）
 -- ----------------------------
 -- 背景：状态值历史上混用了“时间阶段”（0-4）与“签到/签退窗口标记”（5-8），
 -- 且 t_dict_data(dict_id=4 ACTIVITY_STATUS) 与代码枚举不一致。
 -- 现统一为（与 ActivityStatus 枚举、activity.status 列注释同源）：
 --   0-等待报名 → 1-报名中 → 2-报名结束 → 3-进行中 → 4-已结束（时间阶段，由定时任务推进）
+--   8-已取消（业务状态：管理端取消活动后的终态，不参与时间阶段流转）
 --   9-待审核（业务状态，预留：报名需审核时使用，不参与时间阶段流转）
 -- 签到/签退不再使用状态值，由时间窗口校验承担。
--- 排序：sort_order 越大越靠前，故按生命周期逆序赋 5..1，待审核置 0 排在末尾。
-ALTER TABLE `activity` MODIFY COLUMN `status` tinyint NOT NULL COMMENT '活动状态：0-等待报名 1-报名中 2-报名结束 3-进行中 4-已结束 9-待审核（业务状态，预留）；签到/签退由时间窗口校验，不设状态值';
+-- 排序：sort_order 越大越靠前，故按生命周期逆序赋 6..2，业务状态 8-已取消置 1、9-待审核置 0 排在末尾。
+ALTER TABLE `activity` MODIFY COLUMN `status` tinyint NOT NULL COMMENT '活动状态：0-等待报名 1-报名中 2-报名结束 3-进行中 4-已结束 8-已取消（业务状态，管理端取消活动后的终态） 9-待审核（业务状态，预留）；签到/签退由时间窗口校验，不设状态值';
 DELETE FROM `t_dict_data` WHERE `dict_id` = 4;
 INSERT INTO `t_dict_data` (`dict_data_id`, `dict_id`, `data_value`, `data_label`, `remark`, `sort_order`, `disabled_flag`, `create_time`, `update_time`) VALUES
-(9, 4, '0', '等待报名', '', 5, 0, NOW(), NOW()),
-(10, 4, '1', '报名中', '', 4, 0, NOW(), NOW()),
-(11, 4, '2', '报名结束', '', 3, 0, NOW(), NOW()),
-(12, 4, '3', '进行中', '', 2, 0, NOW(), NOW()),
-(13, 4, '4', '已结束', '', 1, 0, NOW(), NOW()),
-(14, 4, '9', '待审核', '业务状态（预留）：报名需审核时等待审核', 0, 0, NOW(), NOW());
+(9, 4, '0', '等待报名', '', 6, 0, NOW(), NOW()),
+(10, 4, '1', '报名中', '', 5, 0, NOW(), NOW()),
+(11, 4, '2', '报名结束', '', 4, 0, NOW(), NOW()),
+(12, 4, '3', '进行中', '', 3, 0, NOW(), NOW()),
+(13, 4, '4', '已结束', '', 2, 0, NOW(), NOW()),
+(14, 4, '9', '待审核', '业务状态（预留）：报名需审核时等待审核', 0, 0, NOW(), NOW()),
+(15, 4, '8', '已取消', '业务状态：管理端取消活动后的终态，不参与时间推进', 1, 0, NOW(), NOW());
 
 SET FOREIGN_KEY_CHECKS = 1;
 
@@ -3648,4 +3650,22 @@ SELECT 1, t_menu.menu_id, NOW(), NOW() FROM t_menu WHERE t_menu.parent_id = @ref
 
 INSERT INTO t_role_menu ( role_id, menu_id, create_time, update_time )
 SELECT 2, t_menu.menu_id, NOW(), NOW() FROM t_menu WHERE t_menu.parent_id = @refund_menu_id AND t_menu.deleted_flag = 0;
+
+-- ----------------------------------------------------------------------------
+-- 来源文件: ActivityCancelMenu.sql —— 活动取消按钮权限（t_menu，配合接口 @SaCheckPermission("activity:cancel")）
+-- ----------------------------------------------------------------------------
+
+# 活动管理菜单下的「取消活动」按钮（按钮本身不参与侧边栏渲染，仅作为权限点）
+SET @activity_manage_menu_id = NULL;
+SELECT t_menu.menu_id INTO @activity_manage_menu_id FROM t_menu WHERE t_menu.menu_name = '活动管理' AND t_menu.parent_id = 301 AND t_menu.deleted_flag = 0;
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '取消活动', 3, @activity_manage_menu_id, false, false, true, false, 1, 'activity:cancel', 'activity:cancel', @activity_manage_menu_id, 1 );
+
+SET @cancel_btn_menu_id = NULL;
+SELECT t_menu.menu_id INTO @cancel_btn_menu_id FROM t_menu WHERE t_menu.menu_name = '取消活动' AND t_menu.parent_id = @activity_manage_menu_id AND t_menu.deleted_flag = 0;
+
+# 关联到角色（1-admin 管理端管理员；2-organization 组织账号），否则接口无权限
+INSERT INTO t_role_menu ( role_id, menu_id, create_time, update_time )
+VALUES ( 1, @cancel_btn_menu_id, NOW(), NOW() ), ( 2, @cancel_btn_menu_id, NOW(), NOW() );
 

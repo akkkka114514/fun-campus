@@ -71,6 +71,7 @@
                 <template v-if="column.dataIndex === 'action'">
                     <div class="smart-table-operate">
                         <a-button @click="showForm(record)" type="link">编辑</a-button>
+                        <a-button v-if="record.status != 4 && record.status != 8" @click="onCancel(record)" danger type="link">取消活动</a-button>
                         <a-button @click="onDelete(record)" danger type="link">删除</a-button>
                     </div>
                 </template>
@@ -225,7 +226,7 @@
         formRef.value.show(data);
     }
 
-    // ---------------------------- 单个删除 ----------------------------
+    // ---------------------------- 删除 ----------------------------
     //确认删除
     function onDelete(data){
         Modal.confirm({
@@ -285,6 +286,37 @@
             SmartLoading.show();
             await activityApi.batchDelete(selectedRowKeyList.value);
             message.success('删除成功');
+            queryData();
+        } catch (e) {
+            smartSentry.captureError(e);
+        } finally {
+            SmartLoading.hide();
+        }
+    }
+
+    // ---------------------------- 取消活动 ----------------------------
+
+    // 确认取消活动（将对该活动全部已支付订单发起退款）
+    function onCancel(data) {
+        Modal.confirm({
+            title: '取消活动',
+            content: '确定取消该活动吗？取消后活动状态将变为「已取消」，并对该活动全部已支付订单发起退款，操作不可恢复。',
+            okText: '确定取消',
+            okType: 'danger',
+            onOk() {
+                requestCancel(data);
+            },
+            cancelText: '再想想',
+            onCancel() {},
+        });
+    }
+
+    //请求取消活动
+    async function requestCancel(data) {
+        SmartLoading.show();
+        try {
+            await activityApi.cancelActivity(data.id);
+            message.success('活动已取消，已支付订单将自动退款');
             queryData();
         } catch (e) {
             smartSentry.captureError(e);

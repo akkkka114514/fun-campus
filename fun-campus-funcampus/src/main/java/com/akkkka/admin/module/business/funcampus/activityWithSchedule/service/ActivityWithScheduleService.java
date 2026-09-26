@@ -11,6 +11,7 @@ import com.akkkka.admin.module.business.funcampus.activityEnrollment.service.Act
 import com.akkkka.admin.module.business.funcampus.activityOrder.domain.entity.ActivityOrderEntity;
 import com.akkkka.admin.module.business.funcampus.activityOrder.domain.vo.ActivityOrderVO;
 import com.akkkka.admin.module.business.funcampus.activityOrder.manager.ActivityOrderManager;
+import com.akkkka.admin.module.business.funcampus.activityOrder.service.ActivityRefundService;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.dao.ActivityEnrollNumDao;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEnrollNum;
 import com.akkkka.admin.module.business.funcampus.collegeInfo.service.CollegeInfoService;
@@ -103,6 +104,7 @@ public class ActivityWithScheduleService {
     private ActivityEnrollmentService activityEnrollmentService;
     private ActivityStatusCacheManager activityStatusCacheManager;
     private ActivityOrderManager activityOrderManager;
+    private ActivityRefundService activityRefundService;
 
     /**
      * 活动详情页
@@ -294,6 +296,57 @@ public class ActivityWithScheduleService {
                     activityId, currentStatus, expectedStatus);
             return true;
         }));
+    }
+
+    /**
+     * 管理端取消活动：活动置为「已取消」并对全部已支付订单发起系统退款
+     * <p>
+     * - 取消窗口：已结束/已取消不可再取消，其余状态（等待报名~进行中）均可取消；
+     * - 状态更新使用 CAS 条件更新，与定时任务推进互斥，防并发覆盖；
+     * - 状态更新成功后依次处理存量订单：待支付订单立即 CAS 关单并释放名额（防止取消后继续完成支付）；
+     *   已支付订单批量系统退款（单笔失败仅记日志，可在退款管理页重试）
+     */
+    public ResponseDTO<String> cancelActivity(Long activityId) {
+        ActivityEntity activity = activityValidator.validateActivityId(activityId);
+        ActivityStatus currentStatus = activity.getStatus();
+        if (currentStatus == ActivityStatus.CANCELLED) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "活动已取消，请勿重复操作");
+        }
+        if (currentStatus == ActivityStatus.FINISHED) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "活动已结束，不可取消");
+        }
+        if (!activityManager.updateStatusIfMatch(activityId, ActivityStatus.CANCELLED, currentStatus)) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "活动状态已变更，取消失败，请刷新后重试");
+        }
+        log.info("管理端取消活动成功：activityId={}，原状态={}", activityId, currentStatus);
+        // 状态更新成功后依次处理存量订单：先关待支付，再退已支付
+        closeWaitPayOrdersForCancel(activityId);
+        activityRefundService.refundForCanceledActivity(activityId);
+        return ResponseDTO.ok();
+    }
+
+    /**
+     * 活动取消联动关单：关闭全部待支付订单并释放锁定的名额
+     * <p>
+     * 防止取消后用户从已打开的收银台继续完成支付（与超时关单同为 CAS 抢占，
+     * 在途支付输给关单时由支付回调按「回调晚于关单」记录补偿日志）
+     */
+    private void closeWaitPayOrdersForCancel(Long activityId) {
+        List<ActivityOrderEntity> waitPayOrders = activityOrderManager.listWaitPayOrdersByActivity(activityId);
+        if (waitPayOrders.isEmpty()) {
+            return;
+        }
+        LocalDateTime closeTime = LocalDateTime.now();
+        for (ActivityOrderEntity order : waitPayOrders) {
+            if (!activityOrderManager.closeIfWaitPayCas(order.getId(), closeTime)) {
+                // CAS 失败：订单已被支付回调/用户取消先行处理，跳过
+                continue;
+            }
+            if (!activityEnrollNumDao.decreaseEnrollNum(activityId)) {
+                log.warn("活动取消关单释放名额失败：activityId={}，orderNo={}", activityId, order.getOrderNo());
+            }
+        }
+        log.info("活动取消联动关单完成：activityId={}，待支付订单数={}", activityId, waitPayOrders.size());
     }
 
     public ResponseDTO<PageResult<ActivityWithScheduleVO>> queryActivityWithSchedule(ActivityWithScheduleQueryForm queryForm) {

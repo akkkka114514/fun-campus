@@ -474,9 +474,9 @@ CREATE TABLE `activity_refund` (
 
 - [✅] 用户退款申请 `POST /activityOrder/refundApply`：按活动 `refund_policy` 校验（报名截止前 / 活动开始前），创建退款单并发起渠道退款
 - [✅] 退款回调 `POST /payment/callback/{channel}/refund`：更新退款单与订单状态 → 逻辑删除报名记录 + `decreaseEnrollNum` + 通知
-- [✅] 系统自动退款场景（部分）：
+- [✅] 系统自动退款场景：
   - [✅] 报名审核剔除已支付用户（`ActivityReviewLogService.reviewEnroll` → `ActivityRefundService` 系统退款，reasonType=审核未通过，不受退款政策限制）
-  - [ ] 活动取消（管理端对全部已支付订单批量退款）—— 未实现
+  - [✅] 活动取消（管理端对全部已支付订单批量退款）：活动状态置为「已取消」(8，业务状态不参与时间表推进)；入口 `POST /backend/activity/cancel`（权限点 `activity:cancel`，CAS 状态更新防并发），退款 reasonType=活动取消；待支付订单在取消时立即 CAS 关单并释放名额（防止取消后继续完成支付，在途支付由支付回调「回调晚于关单」补偿日志兜底），退款失败可在退款管理页重试
 - [🟡] 退款失败重试：管理端手动重试已实现（`POST /backend/activityOrder/refundRetry`，新建退款单重走渠道受理）；SmartJob 定时重试未做
 
 #### 9.4 与现有模块的整合点 —— ✅ 已完成
@@ -492,6 +492,7 @@ CREATE TABLE `activity_refund` (
 - [✅] `activity-form.vue` 已接入「付费参加」开关、价格（表单按元录入、提交换算为分）、退款规则配置（随活动表单接通一并完成）
 - [✅] 订单管理页已接通：新建 `activity-order-list.vue`（状态 / 关键词[订单号/活动标题/用户名] / 时间范围筛选、订单详情弹窗）；后端新增 `ActivityOrderAdminController`（`POST /backend/activityOrder/queryPage`、`GET /backend/activityOrder/detail`，联表带出活动标题与下单用户名）；菜单与按钮权限已入库并关联 admin/organization 角色
 - [✅] 退款管理页已接通：新建 `activity-refund-list.vue`（退款单列表 + 失败重试）；后端新增 `POST /backend/activityOrder/refundQueryPage` 与 `POST /backend/activityOrder/refundRetry`（重试=校验原单失败状态后新建退款单重走渠道受理，保留原单凭证）；菜单与按钮权限已入库并关联角色
+- [✅] 活动管理页「取消活动」已接通：行操作新增「取消活动」按钮（已结束/已取消隐藏）+ 二次确认弹窗（提示将批量退款），取消成功后列表刷新，状态经字典 `ACTIVITY_STATUS` 显示为「已取消」；字典值与按钮权限（`activity:cancel`）已入库并关联 admin/organization 角色
 - [ ] 订单导出 Excel —— 未做
 - [ ] 活动收入统计（按活动汇总报名费）
 

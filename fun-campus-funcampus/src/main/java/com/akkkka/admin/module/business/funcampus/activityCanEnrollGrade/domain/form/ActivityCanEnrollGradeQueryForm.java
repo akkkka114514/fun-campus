@@ -1,6 +1,7 @@
 package com.akkkka.admin.module.business.funcampus.activityCanEnrollGrade.domain.form;
 
 import com.akkkka.common.domain.PageParam;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -15,5 +16,8 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class ActivityCanEnrollGradeQueryForm extends PageParam {
+
+    @Schema(description = "活动id")
+    private Long activityId;
 
 }

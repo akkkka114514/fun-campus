@@ -5,6 +5,7 @@ import com.akkkka.admin.module.business.funcampus.tribe.domain.form.TribeApplica
 import com.akkkka.admin.module.business.funcampus.tribe.domain.form.TribeApplicationReviewForm;
 import com.akkkka.admin.module.business.funcampus.tribe.domain.form.TribeQueryForm;
 import com.akkkka.admin.module.business.funcampus.tribe.domain.form.TribeUpdateForm;
+import com.akkkka.admin.module.business.funcampus.tribe.domain.vo.SimpleTribeVO;
 import com.akkkka.admin.module.business.funcampus.tribe.domain.vo.TribeApplicationVO;
 import com.akkkka.admin.module.business.funcampus.tribe.domain.vo.TribeVO;
 import com.akkkka.admin.module.business.funcampus.tribe.service.TribeApplicationService;
@@ -18,6 +19,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
+
+import java.util.List;
 
 /**
  * 部落 Controller（管理端）
@@ -45,6 +48,13 @@ public class TribeAdminController {
     @SaCheckPermission("tribe:query")
     public ResponseDTO<PageResult<TribeVO>> queryPage(@RequestBody @Valid TribeQueryForm queryForm) {
         return ResponseDTO.ok(tribeService.queryPage(queryForm));
+    }
+
+    @Operation(summary = "部落简要列表（下拉选择） @author akkkka114514")
+    @GetMapping("/tribe/simpleList")
+    public ResponseDTO<List<SimpleTribeVO>> simpleList(@RequestParam(required = false) Long schoolId,
+                                                       @RequestParam(required = false) String keyword) {
+        return ResponseDTO.ok(tribeService.querySimpleListBySchool(schoolId, keyword));
     }
 
     @Operation(summary = "添加 @author akkkka114514")

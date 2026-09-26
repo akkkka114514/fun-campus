@@ -146,6 +146,7 @@ public class ActivityStatusUpdateJob implements SmartJob {
 
     /**
      * 根据当前时间和活动时间表计算活动应该处于的状态
+     * 计算逻辑委托 {@link ActivityStatus#calculate}，与新建活动初始化状态同源
      * 时间字段缺失时返回 null，由调用方跳过
      *
      * @param now 当前时间
@@ -153,26 +154,10 @@ public class ActivityStatusUpdateJob implements SmartJob {
      * @return 活动状态，无法计算时返回 null
      */
     private ActivityStatus calculateActivityStatus(LocalDateTime now, ActivityScheduleEntity schedule) {
-        LocalDateTime enrollStartTime = schedule.getEnrollStartTime();
-        LocalDateTime enrollEndTime = schedule.getEnrollEndTime();
-        LocalDateTime activityStartTime = schedule.getActivityStartTime();
-        LocalDateTime activityEndTime = schedule.getActivityEndTime();
-        if (enrollStartTime == null || enrollEndTime == null
-                || activityStartTime == null || activityEndTime == null) {
-            return null;
-        }
-        if (now.isBefore(enrollStartTime)) {
-            return ActivityStatus.WAIT_ENROLL;
-        }
-        if (now.isBefore(enrollEndTime)) {
-            return ActivityStatus.ENROLLING;
-        }
-        if (now.isBefore(activityStartTime)) {
-            return ActivityStatus.ENROLL_ENDED;
-        }
-        if (now.isBefore(activityEndTime)) {
-            return ActivityStatus.ONGOING;
-        }
-        return ActivityStatus.FINISHED;
+        return ActivityStatus.calculate(now,
+                schedule.getEnrollStartTime(),
+                schedule.getEnrollEndTime(),
+                schedule.getActivityStartTime(),
+                schedule.getActivityEndTime());
     }
 }

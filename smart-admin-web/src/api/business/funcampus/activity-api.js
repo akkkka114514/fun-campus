@@ -5,7 +5,7 @@
  * @Date:      2025-09-04 13:41:42
  * @Copyright  akkkka114514
  */
-import { postRequest } from '/@/lib/axios';
+import { postRequest, getRequest } from '/@/lib/axios';
 
 export const activityApi = {
 
@@ -14,6 +14,27 @@ export const activityApi = {
    */
   queryPage : (param) => {
     return postRequest('/backend/activity/query', param);
+  },
+
+  /**
+   * 活动详情（含时间表，编辑回显）  @author  akkkka114514
+   */
+  detail: (activityId) => {
+    return getRequest('/backend/activity/detail', { activityId });
+  },
+
+  /**
+   * 增加  @author  akkkka114514
+   */
+  add: (param) => {
+      return postRequest('/backend/activity/add', param);
+  },
+
+  /**
+   * 修改  @author  akkkka114514
+   */
+  update: (param) => {
+      return postRequest('/backend/activity/update', param);
   },
 
   /**

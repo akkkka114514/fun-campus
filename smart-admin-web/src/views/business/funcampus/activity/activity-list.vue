@@ -31,6 +31,12 @@
         <!---------- 表格操作行 begin ----------->
         <a-row class="smart-table-btn-block">
             <div class="smart-table-operate-block">
+                <a-button @click="showForm" type="primary" size="small">
+                    <template #icon>
+                        <PlusOutlined />
+                    </template>
+                    新建活动
+                </a-button>
                 <a-button @click="confirmBatchDelete" type="primary" danger size="small" :disabled="selectedRowKeyList.length == 0">
                     <template #icon>
                         <DeleteOutlined />
@@ -64,6 +70,7 @@
 
                 <template v-if="column.dataIndex === 'action'">
                     <div class="smart-table-operate">
+                        <a-button @click="showForm(record)" type="link">编辑</a-button>
                         <a-button @click="onDelete(record)" danger type="link">删除</a-button>
                     </div>
                 </template>
@@ -87,6 +94,8 @@
             />
         </div>
 
+        <ActivityForm ref="formRef" @reloadList="queryData" />
+
     </a-card>
 </template>
 <script setup>
@@ -99,6 +108,7 @@
     import TableOperator from '/@/components/support/table-operator/index.vue';
     import { DICT_CODE_ENUM } from '/@/constants/support/dict-const.js';
     import DictLabel from '/@/components/support/dict-label/index.vue';
+    import ActivityForm from './activity-form.vue';
 
     // ---------------------------- 表格列 ----------------------------
 
@@ -206,6 +216,14 @@
 
 
     onMounted(queryData);
+
+    // ---------------------------- 新建/编辑 ----------------------------
+
+    const formRef = ref();
+
+    function showForm(data) {
+        formRef.value.show(data);
+    }
 
     // ---------------------------- 单个删除 ----------------------------
     //确认删除

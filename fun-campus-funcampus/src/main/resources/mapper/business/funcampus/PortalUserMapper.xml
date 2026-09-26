@@ -56,6 +56,10 @@
         <if test="queryForm.schoolName != null and queryForm.schoolName != ''">
             AND school_info.name LIKE CONCAT('%', #{queryForm.schoolName}, '%')
         </if>
+        <!--学校id-->
+        <if test="queryForm.schoolId != null and queryForm.schoolId != ''">
+            AND portal_user.school_id = #{queryForm.schoolId}
+        </if>
         <!--学院名-->
         <if test="queryForm.collegeName != null and queryForm.collegeName != ''">
             AND college_info.name LIKE CONCAT('%', #{queryForm.collegeName}, '%')

@@ -1,5 +1,6 @@
 package com.akkkka.admin.module.business.funcampus.activityWithSchedule.constant;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import com.baomidou.mybatisplus.annotation.EnumValue;
@@ -105,6 +106,42 @@ public enum ActivityStatus {
                 .filter(status -> status != FINISHED)
                 .map(ActivityStatus::getCode)
                 .toList();
+    }
+
+    /**
+     * 依据当前时间与时间表计算活动应处于的时间阶段状态（与 ActivityStatusUpdateJob 的推进规则同源，
+     * 供新建活动初始化状态等场景复用）
+     * 关键时间缺失时返回 null，由调用方决定处理方式
+     *
+     * @param now               当前时间
+     * @param enrollStartTime   报名开始时间
+     * @param enrollEndTime     报名结束时间
+     * @param activityStartTime 活动开始时间
+     * @param activityEndTime   活动结束时间
+     * @return 期望的时间阶段状态；关键时间缺失或 now 为空时返回 null
+     */
+    public static ActivityStatus calculate(LocalDateTime now,
+                                           LocalDateTime enrollStartTime,
+                                           LocalDateTime enrollEndTime,
+                                           LocalDateTime activityStartTime,
+                                           LocalDateTime activityEndTime) {
+        if (now == null || enrollStartTime == null || enrollEndTime == null
+                || activityStartTime == null || activityEndTime == null) {
+            return null;
+        }
+        if (now.isBefore(enrollStartTime)) {
+            return WAIT_ENROLL;
+        }
+        if (now.isBefore(enrollEndTime)) {
+            return ENROLLING;
+        }
+        if (now.isBefore(activityStartTime)) {
+            return ENROLL_ENDED;
+        }
+        if (now.isBefore(activityEndTime)) {
+            return ONGOING;
+        }
+        return FINISHED;
     }
 
     /**

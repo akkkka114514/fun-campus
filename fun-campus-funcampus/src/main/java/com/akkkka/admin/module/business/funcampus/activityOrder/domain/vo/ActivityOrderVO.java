@@ -25,6 +25,12 @@ public class ActivityOrderVO {
     @Schema(description = "活动标题")
     private String activityTitle;
 
+    @Schema(description = "下单用户id")
+    private Long userId;
+
+    @Schema(description = "下单用户名（管理端列表展示）")
+    private String username;
+
     @Schema(description = "订单金额（分）")
     private Integer amountFen;
 
@@ -33,6 +39,9 @@ public class ActivityOrderVO {
 
     @Schema(description = "支付渠道：1-微信 2-支付宝 3-Mock")
     private Integer payChannel;
+
+    @Schema(description = "渠道订单号")
+    private String channelOrderNo;
 
     @Schema(description = "支付时间")
     private LocalDateTime payTime;

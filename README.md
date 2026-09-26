@@ -136,7 +136,7 @@ pu签到二维码按钮
 | 后端 | 部落（列表/详情/成员/活动/加入申请+审核） | ✅ 已完成 |
 | 后端 | 活动付费链路（下单锁座 / 模拟支付回调 / 退款 / 超时关单） | ✅ 已完成（Mock 渠道） |
 | 后端 | AI 校园助手（SSE 流式问答 / 找活动 / RAG / 降级） | ✅ 已完成（学生端 App 待集成） |
-| 管理后台前端 | 37 个业务页面（活动/基础数据/报名/审核/部落等） | 🟡 import 与菜单已修复，多数页面后端就绪可联调；活动表单保存、组织干事/组织账号运营者等少数未接通 |
+| 管理后台前端 | 业务页面（活动/基础数据/报名/审核/部落/学分认定/订单/退款等） | 🟡 import 与菜单已修复；活动新建/编辑、学分认定审核、订单/退款管理已接通可联调；组织干事/组织账号运营者未接通 |
 | 学生端前端 | fun-campus-app（uni-app，登录/首页/详情/支付/收银台/签到码/消息/我的） | 🟡 核心页面已实现；部落为占位页，订单列表/我的活动等入口显示"开发中" |
 | 质量保障 | 单元测试 | 🟡 13 个测试类（活动/报名/审核/状态推进/登录/消息） |
 
@@ -146,10 +146,6 @@ pu签到二维码按钮
 
 > 背景：管理后台前端已生成 37 个业务页面（含 API 封装与菜单 SQL），但排查代码后发现：部分模块后端完全缺失，部分 Controller 为空壳（仅有 `@Resource` 注入、无任何接口方法），部分接口路径与前端约定不一致。本阶段目标是把「前端已画好、后端接不上」的缺口逐个补齐。
 
-#### 0.1 后端模块完全缺失（前端页面 + API + 菜单均已存在）
-
-- [ ] 组织干事用户（organizer-cadre）：仍未补齐 —— 前端有 `organizer-cadre-list/form.vue`、`organizer-cadre-api.js`（调用无前缀的 `/organizationCadre/*`）、菜单已入库；后端无任何模块、数据库无 `organizer_cadre` 表 —— 需建表 + 补 entity/service/controller，或确认该功能废弃并清理前端
-- [ ] 组织账号运营者（portal-organizer-user）：仍未补齐 —— 前端有 `portal-organization-user-list/form.vue`、`portal-organization-user-api.js`（调用无前缀的 `/portalOrganizationUser/*`）；`portal_organization_user` 表已存在；后端无对应 service/controller
 
 #### 0.2 后端 Controller 为空壳（需补 CRUD 接口）—— ✅ 已全部补齐
 
@@ -364,10 +360,10 @@ pu签到二维码按钮
 #### 8.1 状态与待办
 - [✅] 活动分类 / 年级信息 / 签到管理员 / 报名范围（学院、年级、部落）页面：后端 CRUD 已就绪（Phase 0.2），可直接联调
 - [✅] 活动报名关系 / 审核日志页面：后端管理接口已就绪（Phase 0.4）
-- [ ] 活动新增/编辑表单未接通：`activity-list.vue` 无新增/编辑入口，`activity-api.js` 缺 `add/update` 方法（后端提交/草稿接口已就绪）
+- [✅] 活动新增/编辑表单已接通：`activity-list.vue` 已加新建/编辑入口；`activity-form.vue` 重写为完整表单（基本信息/时间表/报名范围/签到员，含付费配置与编辑回显）；后端新增 `/backend/activity/{add,update,detail}` 管理端接口（归属 0 占位、状态按时间表初始化）
 - [ ] 活动时间表页面：待 Phase 0.4「活动时间表」结论（独立模块去留）
-- [ ] 学分认定审核管理页面：后端已就绪（`/backend/creditApplication/{queryPage,review}`），前端页面待建
-- [ ] 付费配置与订单/退款管理页面：见 Phase 9.5
+- [✅] 学分认定审核管理页面已接通：新建 `credit-application-list.vue`（状态/关键词筛选、详情与审核弹窗、证明材料图片预览）；菜单与按钮权限已入库并关联 admin/organization 角色（顺带修复 org_reviewer_1 悬空角色引用 3→2）
+- [✅] 付费配置与订单/退款管理页面：已接通（见 Phase 9.5）
 - [ ] 组织干事用户 / 组织账号运营者页面：后端缺失（见 Phase 0.1）
 
 ---
@@ -481,7 +477,7 @@ CREATE TABLE `activity_refund` (
 - [✅] 系统自动退款场景（部分）：
   - [✅] 报名审核剔除已支付用户（`ActivityReviewLogService.reviewEnroll` → `ActivityRefundService` 系统退款，reasonType=审核未通过，不受退款政策限制）
   - [ ] 活动取消（管理端对全部已支付订单批量退款）—— 未实现
-- [ ] 退款失败重试（SmartJob 定时重试或管理端手动重试）—— 未实现
+- [🟡] 退款失败重试：管理端手动重试已实现（`POST /backend/activityOrder/refundRetry`，新建退款单重走渠道受理）；SmartJob 定时重试未做
 
 #### 9.4 与现有模块的整合点 —— ✅ 已完成
 
@@ -491,11 +487,12 @@ CREATE TABLE `activity_refund` (
 - [✅] 活动详情接口补充付费信息：价格、退款规则、当前用户订单状态（`currentUserOrder`）
 - [✅] 消息通知：支付成功、退款到账、订单超时关闭（已接入消息模板站内信）
 
-#### 9.5 管理后台前端 —— 未开始（活动表单尚未接通保存）
+#### 9.5 管理后台前端 —— 🟡 部分完成
 
-- [ ] `activity-form.vue` 增加「付费参加」开关、价格、退款规则配置
-- [ ] 订单管理页：分页查询（活动 / 状态 / 用户 / 时间筛选）、订单详情、导出 Excel
-- [ ] 退款管理页：退款单列表、失败重试
+- [✅] `activity-form.vue` 已接入「付费参加」开关、价格（表单按元录入、提交换算为分）、退款规则配置（随活动表单接通一并完成）
+- [✅] 订单管理页已接通：新建 `activity-order-list.vue`（状态 / 关键词[订单号/活动标题/用户名] / 时间范围筛选、订单详情弹窗）；后端新增 `ActivityOrderAdminController`（`POST /backend/activityOrder/queryPage`、`GET /backend/activityOrder/detail`，联表带出活动标题与下单用户名）；菜单与按钮权限已入库并关联 admin/organization 角色
+- [✅] 退款管理页已接通：新建 `activity-refund-list.vue`（退款单列表 + 失败重试）；后端新增 `POST /backend/activityOrder/refundQueryPage` 与 `POST /backend/activityOrder/refundRetry`（重试=校验原单失败状态后新建退款单重走渠道受理，保留原单凭证）；菜单与按钮权限已入库并关联角色
+- [ ] 订单导出 Excel —— 未做
 - [ ] 活动收入统计（按活动汇总报名费）
 
 #### 9.6 移动端前端 —— ✅ 核心已完成

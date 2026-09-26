@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.akkkka.admin.module.business.funcampus.activityOrder.dao.ActivityRefundDao">
+
+    <!-- 管理端分页查询：退款单列表（联表带出订单号/活动标题/用户名） -->
+    <select id="queryPageForAdmin" resultType="com.akkkka.admin.module.business.funcampus.activityOrder.domain.vo.ActivityRefundVO">
+        SELECT
+            activity_refund.refund_no,
+            activity_order.order_no,
+            activity_refund.activity_id,
+            activity.title AS activity_title,
+            activity_refund.user_id,
+            portal_user.username,
+            activity_refund.amount_fen,
+            activity_refund.reason_type,
+            activity_refund.reason,
+            activity_refund.status,
+            activity_refund.channel_refund_no,
+            activity_refund.refund_time,
+            activity_refund.create_time
+        FROM activity_refund
+        LEFT JOIN activity_order ON activity_order.id = activity_refund.order_id
+        LEFT JOIN activity ON activity.id = activity_refund.activity_id
+        LEFT JOIN portal_user ON portal_user.id = activity_refund.user_id
+        WHERE activity_refund.deleted_flag = 0
+        <if test="queryForm.status != null">
+            AND activity_refund.status = #{queryForm.status}
+        </if>
+        <if test="queryForm.activityId != null">
+            AND activity_refund.activity_id = #{queryForm.activityId}
+        </if>
+        <if test="queryForm.userId != null">
+            AND activity_refund.user_id = #{queryForm.userId}
+        </if>
+        <if test="queryForm.keyword != null and queryForm.keyword != ''">
+            AND (activity_refund.refund_no LIKE CONCAT('%', #{queryForm.keyword}, '%')
+                OR activity_order.order_no LIKE CONCAT('%', #{queryForm.keyword}, '%')
+                OR portal_user.username LIKE CONCAT('%', #{queryForm.keyword}, '%'))
+        </if>
+        <if test="queryForm.beginCreateTime != null">
+            AND activity_refund.create_time &gt;= #{queryForm.beginCreateTime}
+        </if>
+        <if test="queryForm.endCreateTime != null">
+            AND activity_refund.create_time &lt;= #{queryForm.endCreateTime}
+        </if>
+        ORDER BY activity_refund.id DESC
+    </select>
+
+</mapper>

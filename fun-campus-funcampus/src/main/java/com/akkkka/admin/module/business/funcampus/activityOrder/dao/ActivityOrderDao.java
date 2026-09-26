@@ -31,4 +31,13 @@ public interface ActivityOrderDao extends BaseMapper<ActivityOrderEntity> {
      */
     List<ActivityOrderVO> queryPage(Page page, @Param("queryForm") ActivityOrderQueryForm queryForm, @Param("userId") Long userId);
 
+    /**
+     * 管理端分页查询订单（不限定用户；支持状态/活动/用户/关键词/时间范围筛选，联表带出活动标题与下单用户名）
+     *
+     * @param page      分页参数
+     * @param queryForm 查询条件
+     * @return 订单列表
+     */
+    List<ActivityOrderVO> queryPageForAdmin(Page page, @Param("queryForm") ActivityOrderQueryForm queryForm);
+
 }

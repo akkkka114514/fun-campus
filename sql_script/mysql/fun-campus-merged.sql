@@ -2757,7 +2757,7 @@ VALUES (2, NOW(), NOW(), 0, 2, 'college_reviewer_1', '$argon2id$v=19$m=16384,t=2
 
 -- 新增组织审核人
 INSERT INTO `backend_user` (`id`, `update_time`, `create_time`, `deleted_flag`, `role_id`, `username`, `password`, `disabled_flag`, `email`, `school_id`, `college_id`, `organization_id`, `can_review`)
-VALUES (3, NOW(), NOW(), 0, 3, 'org_reviewer_1', '$argon2id$v=19$m=16384,t=2,p=1$test$testhash', 0, 'orgreviewer1@lyut.edu.cn', 1, NULL, 1, 1);
+VALUES (3, NOW(), NOW(), 0, 2, 'org_reviewer_1', '$argon2id$v=19$m=16384,t=2,p=1$test$testhash', 0, 'orgreviewer1@lyut.edu.cn', 1, NULL, 1, 1);
 
 -- ----------------------------
 -- 10. activity 活动（更新已有记录 + 新增）
@@ -3585,4 +3585,67 @@ VALUES ( '审核', 3, @parent_id, false, false, true, false, 1, 'creditApplicati
 
 # 学分认定菜单排序（排在 funcampus 菜单组最后）
 UPDATE t_menu SET sort = 200 WHERE menu_name = '学分认定' AND parent_id = 301 AND deleted_flag = 0;
+
+# 菜单与按钮权限关联到角色（1-admin 管理端管理员；2-organization 组织账号），否则菜单不显示、审核接口无权限
+INSERT INTO t_role_menu ( role_id, menu_id, create_time, update_time )
+VALUES ( 1, @parent_id, NOW(), NOW() ), ( 2, @parent_id, NOW(), NOW() );
+
+INSERT INTO t_role_menu ( role_id, menu_id, create_time, update_time )
+SELECT 1, t_menu.menu_id, NOW(), NOW() FROM t_menu WHERE t_menu.parent_id = @parent_id AND t_menu.deleted_flag = 0;
+
+INSERT INTO t_role_menu ( role_id, menu_id, create_time, update_time )
+SELECT 2, t_menu.menu_id, NOW(), NOW() FROM t_menu WHERE t_menu.parent_id = @parent_id AND t_menu.deleted_flag = 0;
+
+-- ----------------------------------------------------------------------------
+-- 来源文件: ActivityOrderMenu.sql —— 订单/退款管理菜单与按钮权限数据（t_menu）
+-- ----------------------------------------------------------------------------
+
+# 订单管理菜单（付款链路管理侧，与前端 /views/business/funcampus/activity-order 对应）
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
+VALUES ( '订单管理', 2, 301, '/activity-order/list', '/business/funcampus/activity-order/activity-order-list.vue', false, false, true, false, 1, 1 );
+
+# 按菜单名称 + 父菜单精确查询该菜单的 menu_id（避免菜单重名歧义）
+SET @order_menu_id = NULL;
+SELECT t_menu.menu_id INTO @order_menu_id FROM t_menu WHERE t_menu.menu_name = '订单管理' AND t_menu.parent_id = 301 AND t_menu.deleted_flag = 0;
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '查询', 3, @order_menu_id, false, false, true, false, 1, 'activityOrder:query', 'activityOrder:query', @order_menu_id, 1 );
+
+# 订单管理菜单排序（排在学分认定之后）
+UPDATE t_menu SET sort = 210 WHERE menu_name = '订单管理' AND parent_id = 301 AND deleted_flag = 0;
+
+# 退款管理菜单
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
+VALUES ( '退款管理', 2, 301, '/activity-refund/list', '/business/funcampus/activity-order/activity-refund-list.vue', false, false, true, false, 1, 1 );
+
+SET @refund_menu_id = NULL;
+SELECT t_menu.menu_id INTO @refund_menu_id FROM t_menu WHERE t_menu.menu_name = '退款管理' AND t_menu.parent_id = 301 AND t_menu.deleted_flag = 0;
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '查询', 3, @refund_menu_id, false, false, true, false, 1, 'activityRefund:query', 'activityRefund:query', @refund_menu_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '重试', 3, @refund_menu_id, false, false, true, false, 1, 'activityRefund:retry', 'activityRefund:retry', @refund_menu_id, 1 );
+
+# 退款管理菜单排序
+UPDATE t_menu SET sort = 220 WHERE menu_name = '退款管理' AND parent_id = 301 AND deleted_flag = 0;
+
+# 菜单与按钮权限关联到角色（1-admin 管理端管理员；2-organization 组织账号），否则菜单不显示、接口无权限
+INSERT INTO t_role_menu ( role_id, menu_id, create_time, update_time )
+VALUES ( 1, @order_menu_id, NOW(), NOW() ), ( 2, @order_menu_id, NOW(), NOW() );
+
+INSERT INTO t_role_menu ( role_id, menu_id, create_time, update_time )
+SELECT 1, t_menu.menu_id, NOW(), NOW() FROM t_menu WHERE t_menu.parent_id = @order_menu_id AND t_menu.deleted_flag = 0;
+
+INSERT INTO t_role_menu ( role_id, menu_id, create_time, update_time )
+SELECT 2, t_menu.menu_id, NOW(), NOW() FROM t_menu WHERE t_menu.parent_id = @order_menu_id AND t_menu.deleted_flag = 0;
+
+INSERT INTO t_role_menu ( role_id, menu_id, create_time, update_time )
+VALUES ( 1, @refund_menu_id, NOW(), NOW() ), ( 2, @refund_menu_id, NOW(), NOW() );
+
+INSERT INTO t_role_menu ( role_id, menu_id, create_time, update_time )
+SELECT 1, t_menu.menu_id, NOW(), NOW() FROM t_menu WHERE t_menu.parent_id = @refund_menu_id AND t_menu.deleted_flag = 0;
+
+INSERT INTO t_role_menu ( role_id, menu_id, create_time, update_time )
+SELECT 2, t_menu.menu_id, NOW(), NOW() FROM t_menu WHERE t_menu.parent_id = @refund_menu_id AND t_menu.deleted_flag = 0;
 

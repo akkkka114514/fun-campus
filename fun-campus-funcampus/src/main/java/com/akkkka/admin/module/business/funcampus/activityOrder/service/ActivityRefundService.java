@@ -14,6 +14,8 @@ import com.akkkka.admin.module.business.funcampus.activityOrder.constant.RefundS
 import com.akkkka.admin.module.business.funcampus.activityOrder.domain.entity.ActivityOrderEntity;
 import com.akkkka.admin.module.business.funcampus.activityOrder.domain.entity.ActivityRefundEntity;
 import com.akkkka.admin.module.business.funcampus.activityOrder.domain.form.ActivityRefundApplyForm;
+import com.akkkka.admin.module.business.funcampus.activityOrder.domain.form.ActivityRefundQueryForm;
+import com.akkkka.admin.module.business.funcampus.activityOrder.domain.vo.ActivityRefundVO;
 import com.akkkka.admin.module.business.funcampus.activityOrder.manager.ActivityOrderManager;
 import com.akkkka.admin.module.business.funcampus.activityOrder.manager.ActivityRefundManager;
 import com.akkkka.admin.module.business.funcampus.activityOrder.util.OrderNoUtil;
@@ -25,10 +27,13 @@ import com.akkkka.admin.module.business.funcampus.payment.domain.dto.RefundChann
 import com.akkkka.admin.module.business.funcampus.payment.service.PaymentService;
 import com.akkkka.common.code.SystemErrorCode;
 import com.akkkka.common.code.UserErrorCode;
+import com.akkkka.common.domain.PageResult;
 import com.akkkka.common.domain.RequestUser;
 import com.akkkka.common.enumeration.UserTypeEnum;
 import com.akkkka.common.exception.BusinessException;
+import com.akkkka.common.util.SmartPageUtil;
 import com.akkkka.common.util.SmartRequestUtil;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -98,6 +103,66 @@ public class ActivityRefundService {
         }
         log.info("退款申请成功：orderNo:{}，refundNo:{}，amountFen:{}", order.getOrderNo(), refund.getRefundNo(), refund.getAmountFen());
         return refund.getRefundNo();
+    }
+
+    /**
+     * 管理端分页查询退款单（全量，支持状态/活动/用户/关键词/时间范围筛选）
+     */
+    public PageResult<ActivityRefundVO> queryPageForAdmin(ActivityRefundQueryForm queryForm) {
+        Page<?> page = SmartPageUtil.convert2PageQuery(queryForm);
+        List<ActivityRefundVO> list = refundManager.getBaseMapper().queryPageForAdmin(page, queryForm);
+        list.forEach(vo -> {
+            RefundReasonType reasonType = RefundReasonType.fromCode(vo.getReasonType());
+            vo.setReasonTypeName(reasonType == null ? null : reasonType.getLabel());
+            RefundStatus refundStatus = RefundStatus.fromCode(vo.getStatus());
+            vo.setStatusName(refundStatus == null ? null : refundStatus.getLabel());
+        });
+        return SmartPageUtil.convert2PageResult(page, list);
+    }
+
+    /**
+     * 管理端重试失败退款单
+     * <p>
+     * - 仅「退款失败」的退款单可重试，订单须为「退款失败」（与用户重新申请走同一 CAS 链路）；
+     * - 跳过退款政策校验：用户申请时已校验，此处仅重试渠道调用；
+     * - 新建退款单（保留原单作为历史凭证），渠道再次受理失败仍回退为退款失败
+     *
+     * @param refundNo 原退款单号
+     * @return 新退款单号
+     */
+    public String retryRefund(String refundNo) {
+        ActivityRefundEntity originRefund = refundManager.getByRefundNo(refundNo);
+        if (originRefund == null) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "退款单不存在");
+        }
+        if (originRefund.getStatus() != RefundStatus.FAILED) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "仅退款失败的退款单可重试");
+        }
+        ActivityOrderEntity order = orderManager.getById(originRefund.getOrderId());
+        if (order == null) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "关联订单不存在");
+        }
+        if (order.getStatus() != OrderStatus.REFUND_FAILED) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "订单当前状态不可重试退款");
+        }
+
+        String originReason = originRefund.getReason() == null ? "" : originRefund.getReason();
+        String retryReason = "管理端重试（原退款单 " + refundNo + "）：" + originReason;
+        // reason 列 varchar(255)，拼接后做截断保护
+        if (retryReason.length() > 200) {
+            retryReason = retryReason.substring(0, 200);
+        }
+        ActivityRefundEntity retryRefund = buildRefund(order, originRefund.getReasonType(), retryReason);
+        startRefunding(order, retryRefund);
+
+        RefundChannelResult result = paymentService.refund(order, retryRefund);
+        if (result == null || !result.isAccepted()) {
+            rollbackRefunding(order, retryRefund);
+            throw new BusinessException(SystemErrorCode.SYSTEM_ERROR, "渠道退款受理失败，请稍后重试");
+        }
+        log.info("管理端退款重试成功：orderNo:{}，originRefundNo:{}，refundNo:{}",
+                order.getOrderNo(), refundNo, retryRefund.getRefundNo());
+        return retryRefund.getRefundNo();
     }
 
     /**

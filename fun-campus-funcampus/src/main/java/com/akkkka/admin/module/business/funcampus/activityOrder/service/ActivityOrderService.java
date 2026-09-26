@@ -199,6 +199,31 @@ public class ActivityOrderService {
     }
 
     /**
+     * 管理端分页查询订单（全量订单；支持状态/活动/用户/关键词/时间范围筛选）
+     */
+    public PageResult<ActivityOrderVO> queryPageForAdmin(ActivityOrderQueryForm queryForm) {
+        Page<?> page = SmartPageUtil.convert2PageQuery(queryForm);
+        List<ActivityOrderVO> list = orderManager.getBaseMapper().queryPageForAdmin(page, queryForm);
+        return SmartPageUtil.convert2PageResult(page, list);
+    }
+
+    /**
+     * 管理端订单详情（不限用户；补充下单用户与渠道订单号）
+     */
+    public ActivityOrderVO detailForAdmin(String orderNo) {
+        ActivityOrderEntity order = orderManager.getByOrderNo(orderNo);
+        if (order == null) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "订单不存在");
+        }
+        ActivityOrderVO vo = convertToVO(order);
+        vo.setUserId(order.getUserId());
+        vo.setChannelOrderNo(order.getChannelOrderNo());
+        PortalUserEntity portalUser = portalUserManager.getById(order.getUserId());
+        vo.setUsername(portalUser == null ? null : portalUser.getUsername());
+        return vo;
+    }
+
+    /**
      * 订单详情（仅本人可见）
      */
     public ActivityOrderVO detail(String orderNo) {

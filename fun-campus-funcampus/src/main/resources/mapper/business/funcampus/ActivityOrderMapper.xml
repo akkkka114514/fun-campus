@@ -28,4 +28,47 @@
         ORDER BY activity_order.id DESC
     </select>
 
+    <!-- 管理端分页查询：全量订单（联表带出活动标题与下单用户名） -->
+    <select id="queryPageForAdmin" resultType="com.akkkka.admin.module.business.funcampus.activityOrder.domain.vo.ActivityOrderVO">
+        SELECT
+            activity_order.order_no,
+            activity_order.activity_id,
+            activity.title AS activity_title,
+            activity_order.user_id,
+            portal_user.username,
+            activity_order.amount_fen,
+            activity_order.status,
+            activity_order.pay_channel,
+            activity_order.channel_order_no,
+            activity_order.pay_time,
+            activity_order.expire_time,
+            activity_order.close_time,
+            activity_order.create_time
+        FROM activity_order
+        LEFT JOIN activity ON activity.id = activity_order.activity_id
+        LEFT JOIN portal_user ON portal_user.id = activity_order.user_id
+        WHERE activity_order.deleted_flag = 0
+        <if test="queryForm.status != null">
+            AND activity_order.status = #{queryForm.status}
+        </if>
+        <if test="queryForm.activityId != null">
+            AND activity_order.activity_id = #{queryForm.activityId}
+        </if>
+        <if test="queryForm.userId != null">
+            AND activity_order.user_id = #{queryForm.userId}
+        </if>
+        <if test="queryForm.keyword != null and queryForm.keyword != ''">
+            AND (activity_order.order_no LIKE CONCAT('%', #{queryForm.keyword}, '%')
+                OR activity.title LIKE CONCAT('%', #{queryForm.keyword}, '%')
+                OR portal_user.username LIKE CONCAT('%', #{queryForm.keyword}, '%'))
+        </if>
+        <if test="queryForm.beginCreateTime != null">
+            AND activity_order.create_time &gt;= #{queryForm.beginCreateTime}
+        </if>
+        <if test="queryForm.endCreateTime != null">
+            AND activity_order.create_time &lt;= #{queryForm.endCreateTime}
+        </if>
+        ORDER BY activity_order.id DESC
+    </select>
+
 </mapper>

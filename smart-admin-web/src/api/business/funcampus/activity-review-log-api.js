@@ -13,21 +13,21 @@ export const activityReviewLogApi = {
    * 分页查询  @author  akkkka114514
    */
   queryPage : (param) => {
-    return postRequest('/activityReviewLog/queryPage', param);
+    return postRequest('/backend/activityReviewLog/queryPage', param);
   },
 
   /**
    * 增加  @author  akkkka114514
    */
   add: (param) => {
-      return postRequest('/activityReviewLog/add', param);
+      return postRequest('/backend/activityReviewLog/add', param);
   },
 
   /**
    * 修改  @author  akkkka114514
    */
   update: (param) => {
-      return postRequest('/activityReviewLog/update', param);
+      return postRequest('/backend/activityReviewLog/update', param);
   },
 
 

@@ -8,7 +8,7 @@
   * @Copyright  1024创新实验室 （ https://1024lab.net ），Since 2012
 -->
 <template>
-  <div id="smartAdminPageTag" class="page-tag-div">
+  <div id="funcampusPageTag" class="page-tag-div">
     <DefaultTab v-if="pageTagStyle === PAGE_TAG_ENUM.DEFAULT.value" />
     <AntdTab v-if="pageTagStyle === PAGE_TAG_ENUM.ANTD.value" />
     <ChromeTab v-if="pageTagStyle === PAGE_TAG_ENUM.CHROME.value" />

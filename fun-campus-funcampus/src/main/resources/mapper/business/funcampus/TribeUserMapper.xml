@@ -18,6 +18,7 @@
         SELECT
         <include refid="base_columns"/>
         FROM tribe_user
+        WHERE tribe_user.deleted_flag = 0
     </select>
 
     <update id="batchUpdateDeleted">
@@ -33,5 +34,21 @@
         where id = #{id}
     </update>
 
+    <!-- 门户：部落成员分页（联表带出头像） -->
+    <select id="queryMemberPage" resultType="com.akkkka.admin.module.business.funcampus.tribe.domain.vo.TribeMemberVO">
+        SELECT
+            tribe_user.portal_user_id,
+            tribe_user.username,
+            portal_user.avatar,
+            tribe_user.create_time
+        FROM tribe_user
+        LEFT JOIN portal_user ON portal_user.id = tribe_user.portal_user_id
+        WHERE tribe_user.deleted_flag = 0
+          AND tribe_user.tribe_id = #{queryForm.tribeId}
+        <if test="queryForm.keyword != null and queryForm.keyword != ''">
+            AND tribe_user.username LIKE CONCAT('%', #{queryForm.keyword}, '%')
+        </if>
+        ORDER BY tribe_user.id ASC
+    </select>
 
 </mapper>

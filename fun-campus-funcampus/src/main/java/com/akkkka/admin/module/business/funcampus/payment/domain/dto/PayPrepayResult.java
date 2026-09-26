@@ -1,6 +1,7 @@
 package com.akkkka.admin.module.business.funcampus.payment.domain.dto;
 
 import com.akkkka.admin.module.business.funcampus.payment.constant.PayChannelEnum;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import lombok.Data;
 
@@ -17,8 +18,10 @@ import lombok.Data;
 public class PayPrepayResult {
 
     /** 渠道 */
+    @Schema(description = "渠道")
     private PayChannelEnum channel;
 
     /** 收银台/支付跳转链接（mock 为模拟收银台页面地址） */
+    @Schema(description = "收银台/支付跳转链接（mock 为模拟收银台页面地址）")
     private String cashierUrl;
 }

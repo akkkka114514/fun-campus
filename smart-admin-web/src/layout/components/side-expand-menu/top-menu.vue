@@ -37,7 +37,7 @@
   import { router } from '/@/router';
   import { useAppConfigStore } from '/@/store/modules/system/app-config';
   import { useUserStore } from '/@/store/modules/system/user';
-  import logoImg from '/@/assets/images/logo/smart-admin-logo.png';
+  import logoImg from '/@/assets/images/logo/funcampus-logo.png';
   import menuEmitter from './side-expand-menu-mitt';
 
   const websiteName = computed(() => useAppConfigStore().websiteName);

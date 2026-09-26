@@ -1,13 +1,17 @@
 package com.akkkka.admin.module.business.funcampus.activityEnrollment.controller;
 
+import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.form.MyEnrollmentQueryForm;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.form.QRCodeSignInForm;
+import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.vo.MyEnrollmentVO;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.vo.SignInQRCodeVO;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.service.ActivityEnrollmentService;
+import com.akkkka.common.domain.PageResult;
 import com.akkkka.module.support.repeatsubmit.annoation.RepeatSubmit;
 import org.springframework.web.bind.annotation.GetMapping;
 import com.akkkka.common.domain.ResponseDTO;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,6 +28,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @Tag(name = "活动报名关系")
+@RequestMapping("portal")
 public class ActivityEnrollmentController {
 
     @Resource
@@ -35,6 +40,20 @@ public class ActivityEnrollmentController {
     @RepeatSubmit(intervalMilliSecond = 3 * 1000 )
     public ResponseDTO<String> enroll(@RequestBody Long activityId) {
         activityEnrollmentService.enroll(activityId);
+        return ResponseDTO.ok();
+    }
+
+    @Operation(summary = "分页查询我的报名 @author akkkka114514")
+    @PostMapping("/activityEnrollment/queryMy")
+    public ResponseDTO<PageResult<MyEnrollmentVO>> queryMy(@RequestBody @Valid MyEnrollmentQueryForm queryForm) {
+        return ResponseDTO.ok(activityEnrollmentService.queryMyEnrollment(queryForm));
+    }
+
+    @Operation(summary = "取消报名（仅免费活动，报名截止前） @author akkkka114514")
+    @PostMapping("/activityEnrollment/cancel")
+    @RepeatSubmit(intervalMilliSecond = 3 * 1000)
+    public ResponseDTO<String> cancel(@RequestBody Long activityId) {
+        activityEnrollmentService.cancelEnrollment(activityId);
         return ResponseDTO.ok();
     }
 

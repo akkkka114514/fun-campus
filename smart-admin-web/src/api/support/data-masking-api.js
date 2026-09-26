@@ -12,6 +12,6 @@ export const dataMaskingApi = {
    * 查询脱敏数据
    */
   query: () => {
-    return getRequest('/support/dataMasking/demo/query');
+    return getRequest('/backend/dataMasking/demo/query');
   },
 };

@@ -9,7 +9,7 @@
 -->
 <template>
   <div class="version">
-    <a target="_blank" class="smart-copyright" href="https://www.1024lab.net"> ©2012-{{ currentYear }} SmartAdmin | 1024创新实验室 </a>
+    <span class="smart-copyright"> ©2025-{{ currentYear }} Fun Campus </span>
   </div>
 </template>
 <script setup>

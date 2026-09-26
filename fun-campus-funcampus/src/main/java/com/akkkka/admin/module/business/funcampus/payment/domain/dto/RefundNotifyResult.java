@@ -3,6 +3,7 @@ package com.akkkka.admin.module.business.funcampus.payment.domain.dto;
 import java.time.LocalDateTime;
 
 import com.akkkka.admin.module.business.funcampus.payment.constant.PayChannelEnum;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import lombok.Data;
 
@@ -19,20 +20,26 @@ import lombok.Data;
 public class RefundNotifyResult {
 
     /** 渠道 */
+    @Schema(description = "渠道")
     private PayChannelEnum channel;
 
     /** 商户退款单号 */
+    @Schema(description = "商户退款单号")
     private String refundNo;
 
     /** 渠道退款单号 */
+    @Schema(description = "渠道退款单号")
     private String channelRefundNo;
 
     /** 退款是否成功 */
+    @Schema(description = "退款是否成功")
     private boolean success;
 
     /** 退款完成时间（success=true 时有值） */
+    @Schema(description = "退款完成时间（success=true 时有值）")
     private LocalDateTime refundTime;
 
     /** 失败原因（success=false 时有值） */
+    @Schema(description = "失败原因（success=false 时有值）")
     private String failReason;
 }

@@ -5,8 +5,11 @@ import java.util.List;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.entity.ActivityEnrollmentEntity;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.form.ActivityEnrollmentQueryForm;
+import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.form.MyEnrollmentQueryForm;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.vo.ActivityEnrollmentVO;
+import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.vo.MyEnrollmentVO;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -29,6 +32,27 @@ public interface ActivityEnrollmentDao extends BaseMapper<ActivityEnrollmentEnti
      * @return
      */
     List<ActivityEnrollmentVO> queryPage(Page<?> page, @Param("queryForm") ActivityEnrollmentQueryForm queryForm);
+
+    /**
+     * 分页 查询我的报名（联表带出活动与时间表信息）
+     *
+     * @param page
+     * @param userId
+     * @param queryForm
+     * @return
+     */
+    List<MyEnrollmentVO> queryMyEnrollment(Page<?> page, @Param("userId") Long userId, @Param("queryForm") MyEnrollmentQueryForm queryForm);
+
+    /**
+     * 报名记录 upsert：不存在则插入；已存在软删记录（如取消报名后重新报名）则复活并重置签到/签退状态
+     * <p>
+     * activity_enrollment 以 (activity_id, user_id) 为复合主键，取消报名为逻辑删除，
+     * 直接 insert 会主键冲突，因此统一走 ON DUPLICATE KEY UPDATE。
+     */
+    @Insert("INSERT INTO activity_enrollment (activity_id, user_id, sign_in_status, sign_out_status, create_time, update_time, deleted_flag) "
+            + "VALUES (#{activityId}, #{userId}, false, false, NOW(), NOW(), false) "
+            + "ON DUPLICATE KEY UPDATE deleted_flag = false, sign_in_status = false, sign_out_status = false, update_time = NOW()")
+    int upsertEnrollment(@Param("activityId") Long activityId, @Param("userId") Long userId);
 
     /**
      * 更新删除状态

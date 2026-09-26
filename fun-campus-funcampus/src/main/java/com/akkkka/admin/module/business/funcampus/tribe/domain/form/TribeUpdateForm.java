@@ -19,4 +19,22 @@ public class TribeUpdateForm {
     @NotNull(message = "部落id 不能为空")
     private Long id;
 
+    @Schema(description = "部落名")
+    private String name;
+
+    @Schema(description = "部落图标（文件key）")
+    private String icon;
+
+    @Schema(description = "部落简介")
+    private String description;
+
+    @Schema(description = "部落类型")
+    private Long categoryId;
+
+    @Schema(description = "主席id")
+    private Long presidentId;
+
+    @Schema(description = "1-》组织，2-》院系")
+    private Integer belongTo;
+
 }

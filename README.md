@@ -446,7 +446,7 @@ CREATE TABLE `activity_refund` (
 ) COMMENT = '活动报名退款记录';
 ```
 
-- [ ] SQL 脚本放入 `sql_script/mysql/`，并同步维护到 `fun-campus-merged.sql`
+- [ ] SQL 脚本统一维护在 `sql_script/mysql/fun-campus-merged.sql`（全量合并版，建库初始化唯一入口）
 
 #### 9.2 后端 — 订单与支付
 

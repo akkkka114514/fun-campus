@@ -1,5 +1,6 @@
 package com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -13,8 +14,10 @@ import lombok.Data;
 public class ActivityWithScheduleVO {
 
     /** 活动基本信息 */
+    @Schema(description = "活动基本信息")
     private ActivityVO activity;
 
     /** 活动时间表 */
+    @Schema(description = "活动时间表")
     private ActivityScheduleVO schedule;
 }

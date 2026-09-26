@@ -17,8 +17,11 @@ import java.util.List;
 @Data
 public class ActivityWithScheduleUpdateForm{
     @Nullable
+    @Schema(description = "活动基本信息")
     private ActivityUpdateForm activityUpdateForm;
+
     @Nullable
+    @Schema(description = "活动时间表")
     private ActivityScheduleUpdateForm activityScheduleUpdateForm;
     /**
      * 能报名的年级的id

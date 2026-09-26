@@ -17,6 +17,7 @@ import java.util.Date;
 @Data
 public class HeartBeatRecordVO {
 
+    @Schema(description = "心跳记录ID")
     private Integer heartBeatRecordId;
 
     @Schema(description = "项目路径")

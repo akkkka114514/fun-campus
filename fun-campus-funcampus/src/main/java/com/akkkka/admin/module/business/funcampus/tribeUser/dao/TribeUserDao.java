@@ -1,6 +1,8 @@
 package com.akkkka.admin.module.business.funcampus.tribeUser.dao;
 
 import java.util.List;
+import com.akkkka.admin.module.business.funcampus.tribe.domain.form.TribeMemberQueryForm;
+import com.akkkka.admin.module.business.funcampus.tribe.domain.vo.TribeMemberVO;
 import com.akkkka.admin.module.business.funcampus.tribeUser.domain.entity.TribeUserEntity;
 import com.akkkka.admin.module.business.funcampus.tribeUser.domain.form.TribeUserQueryForm;
 import com.akkkka.admin.module.business.funcampus.tribeUser.domain.vo.TribeUserVO;
@@ -39,5 +41,9 @@ public interface TribeUserDao extends BaseMapper<TribeUserEntity> {
      */
     void batchUpdateDeleted(@Param("idList")List<Long> idList,@Param("deletedFlag")boolean deletedFlag);
 
+    /**
+     * 门户：部落成员分页（联表带出头像）
+     */
+    List<TribeMemberVO> queryMemberPage(Page<?> page, @Param("queryForm") TribeMemberQueryForm queryForm);
 
 }

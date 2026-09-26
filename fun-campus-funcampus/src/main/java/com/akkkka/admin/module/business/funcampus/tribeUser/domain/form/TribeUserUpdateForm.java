@@ -19,4 +19,13 @@ public class TribeUserUpdateForm {
     @NotNull(message = "主键 不能为空")
     private Long id;
 
+    @Schema(description = "部落id")
+    private Long tribeId;
+
+    @Schema(description = "参与部落的前端用户id")
+    private Long portalUserId;
+
+    @Schema(description = "用户名")
+    private String username;
+
 }

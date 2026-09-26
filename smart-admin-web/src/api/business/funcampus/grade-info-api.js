@@ -13,21 +13,21 @@ export const gradeInfoApi = {
    * 分页查询  @author  akkkka114514
    */
   queryPage : (param) => {
-    return postRequest('/gradeInfo/queryPage', param);
+    return postRequest('/backend/gradeInfo/queryPage', param);
   },
 
   /**
    * 增加  @author  akkkka114514
    */
   add: (param) => {
-      return postRequest('/gradeInfo/add', param);
+      return postRequest('/backend/gradeInfo/add', param);
   },
 
   /**
    * 修改  @author  akkkka114514
    */
   update: (param) => {
-      return postRequest('/gradeInfo/update', param);
+      return postRequest('/backend/gradeInfo/update', param);
   },
 
 
@@ -35,14 +35,14 @@ export const gradeInfoApi = {
    * 删除  @author  akkkka114514
    */
   delete: (id) => {
-      return getRequest(`/gradeInfo/delete/${id}`);
+      return getRequest(`/backend/gradeInfo/delete/${id}`);
   },
 
   /**
    * 批量删除  @author  akkkka114514
    */
   batchDelete: (idList) => {
-      return postRequest('/gradeInfo/batchDelete', idList);
+      return postRequest('/backend/gradeInfo/batchDelete', idList);
   },
 
 };

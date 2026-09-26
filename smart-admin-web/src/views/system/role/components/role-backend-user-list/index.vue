@@ -13,7 +13,7 @@
     <div class="header">
       <div>
         关键字：
-        <a-input style="width: 250px" v-model:value="queryForm.keywords" placeholder="姓名/手机号/登录账号" />
+        <a-input style="width: 250px" v-model:value="queryForm.keywords" placeholder="登录账号/邮箱" />
         <a-button class="button-style" v-if="selectRoleId" type="primary" @click="onSearch">搜索</a-button>
         <a-button class="button-style" v-if="selectRoleId" type="default" @click="resetQueryRoleBackendUser">重置</a-button>
       </div>
@@ -40,7 +40,7 @@
       :columns="columns"
       :pagination="false"
       :scroll="{ y: 400 }"
-      rowKey="employeeId"
+      rowKey="id"
       :row-selection="{ selectedRowKeys: selectedRowKeyList, onChange: onSelectChange }"
       size="small"
       bordered
@@ -49,11 +49,8 @@
         <template v-if="column.dataIndex === 'disabledFlag'">
           <a-tag :color="text ? 'error' : 'processing'">{{ text ? '禁用' : '启用' }}</a-tag>
         </template>
-        <template v-else-if="column.dataIndex === 'gender'">
-          <span>{{ $smartEnumPlugin.getDescByValue('GENDER_ENUM', text) }}</span>
-        </template>
-        <template v-if="column.dataIndex === 'operate'">
-          <a @click="deleteBackendUserRole(record.employeeId)" v-privilege="'system:role:backendUser:delete'">移除</a>
+        <template v-else-if="column.dataIndex === 'operate'">
+          <a @click="deleteBackendUserRole(record.id)" v-privilege="'system:role:backendUser:delete'">移除</a>
         </template>
       </template>
     </a-table>
@@ -136,20 +133,13 @@
 
   const columns = reactive([
     {
-      title: '姓名',
-      dataIndex: 'actualName',
-    },
-    {
-      title: '手机号',
-      dataIndex: 'phone',
-    },
-    {
       title: '登录账号',
-      dataIndex: 'loginName',
+      dataIndex: 'username',
     },
     {
-      title: '部门',
-      dataIndex: 'departmentName',
+      title: '邮箱',
+      dataIndex: 'email',
+      ellipsis: true,
     },
     {
       title: '状态',
@@ -167,7 +157,7 @@
 
   async function addRoleBackendUser() {
     let res = await roleApi.getRoleAllBackendUser(selectRoleId.value);
-    let selectedIdList = res.data.map((e) => e.employeeId) || [];
+    let selectedIdList = res.data.map((e) => e.id) || [];
     selectBackendUserModal.value.showModal(selectedIdList);
   }
 
@@ -179,7 +169,7 @@
     SmartLoading.show();
     try {
       let params = {
-        employeeIdList: list,
+        backendUserIdList: list,
         roleId: selectRoleId.value,
       };
       await roleApi.batchAddRoleBackendUser(params);
@@ -194,7 +184,7 @@
 
   // ----------------------- 移除成员 ---------------------------------
   // 删除角色成员方法
-  async function deleteBackendUserRole(employeeId) {
+  async function deleteBackendUserRole(backendUserId) {
     Modal.confirm({
       title: '提示',
       content: '确定要删除该角色成员么？',
@@ -203,7 +193,7 @@
       async onOk() {
         SmartLoading.show();
         try {
-          await roleApi.deleteBackendUserRole(employeeId, selectRoleId.value);
+          await roleApi.deleteBackendUserRole(backendUserId, selectRoleId.value);
           message.success('移除成功');
           await queryRoleBackendUser();
         } catch (e) {
@@ -241,7 +231,7 @@
         SmartLoading.show();
         try {
           let params = {
-            employeeIdList: selectedRowKeyList.value,
+            backendUserIdList: selectedRowKeyList.value,
             roleId: selectRoleId.value,
           };
           await roleApi.batchRemoveRoleBackendUser(params);

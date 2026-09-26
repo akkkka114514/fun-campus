@@ -2,6 +2,7 @@ package com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.f
 
 import com.akkkka.admin.module.business.funcampus.activityOrder.constant.RefundPolicy;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -12,6 +13,7 @@ import java.time.LocalDateTime;
  */
 @Data
 public class ActivityUpdateForm extends ActivityAddForm{
+    @Schema(description = "活动ID")
     private Long id;
 
     public static ActivityEntity convert(ActivityUpdateForm updateForm){

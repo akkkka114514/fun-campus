@@ -16,7 +16,7 @@
     </a-layout-sider>
 
     <!--中间内容，一共三部分：1、顶部;2、中间内容区域;3、底部（一般是公司版权信息）;-->
-    <a-layout class="admin-layout-main" :style="`height: ${windowHeight}px`" id="smartAdminMain">
+    <a-layout class="admin-layout-main" :style="`height: ${windowHeight}px`" id="funcampusMain">
       <!-- 顶部头部信息 -->
       <a-layout-header class="smart-layout-header">
         <a-row justify="space-between" class="smart-layout-header-user">
@@ -50,7 +50,7 @@
       </a-layout-header>
 
       <!--中间内容-->
-      <a-layout-content class="admin-layout-content" id="smartAdminLayoutContent">
+      <a-layout-content class="admin-layout-content" id="funcampusLayoutContent">
         <!--不keepAlive的iframe使用单个iframe组件-->
         <IframeIndex v-show="iframeNotKeepAlivePageFlag" :key="route.name" :name="route.name" :url="route.meta.frameUrl" />
         <!--keepAlive的iframe 每个页面一个iframe组件-->
@@ -164,7 +164,7 @@
   //页面初始化的时候加载水印
   onMounted(() => {
     if (watermarkFlag.value) {
-      watermark.set('smartAdminLayoutContent', useUserStore().actualName);
+      watermark.set('funcampusLayoutContent', useUserStore().actualName);
     } else {
       watermark.clear();
     }
@@ -174,7 +174,7 @@
     () => watermarkFlag.value,
     (newValue) => {
       if (newValue) {
-        watermark.set('smartAdminLayoutContent', useUserStore().actualName);
+        watermark.set('funcampusLayoutContent', useUserStore().actualName);
       } else {
         watermark.clear();
       }
@@ -187,7 +187,7 @@
 
   //回到顶部
   const backTopTarget = () => {
-    return document.getElementById('smartAdminMain');
+    return document.getElementById('funcampusMain');
   };
   // ----------------------- keep-alive相关 -----------------------
   let { route, keepAliveIncludes, iframeNotKeepAlivePageFlag, keepAliveIframePages } = smartKeepAlive();

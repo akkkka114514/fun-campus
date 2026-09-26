@@ -11,7 +11,7 @@
 /**
  * key前缀
  */
-const KEY_PREFIX = 'smart_admin_';
+const KEY_PREFIX = 'fun_campus_';
 /**
  * localStorageKey集合
  */

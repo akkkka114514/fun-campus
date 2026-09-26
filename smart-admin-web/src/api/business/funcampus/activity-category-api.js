@@ -13,21 +13,21 @@ export const activityCategoryApi = {
    * 分页查询  @author  akkkka114514
    */
   queryPage : (param) => {
-    return postRequest('/activityCategory/queryPage', param);
+    return postRequest('/backend/activityCategory/queryPage', param);
   },
 
   /**
    * 增加  @author  akkkka114514
    */
   add: (param) => {
-      return postRequest('/activityCategory/add', param);
+      return postRequest('/backend/activityCategory/add', param);
   },
 
   /**
    * 修改  @author  akkkka114514
    */
   update: (param) => {
-      return postRequest('/activityCategory/update', param);
+      return postRequest('/backend/activityCategory/update', param);
   },
 
 
@@ -35,14 +35,14 @@ export const activityCategoryApi = {
    * 删除  @author  akkkka114514
    */
   delete: (id) => {
-      return getRequest(`/activityCategory/delete/${id}`);
+      return getRequest(`/backend/activityCategory/delete/${id}`);
   },
 
   /**
    * 批量删除  @author  akkkka114514
    */
   batchDelete: (idList) => {
-      return postRequest('/activityCategory/batchDelete', idList);
+      return postRequest('/backend/activityCategory/batchDelete', idList);
   },
 
 };

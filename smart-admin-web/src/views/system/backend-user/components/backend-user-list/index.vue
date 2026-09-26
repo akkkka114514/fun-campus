@@ -8,16 +8,16 @@
   * @Copyright  1024创新实验室 （ https://1024lab.net ），Since 2012
 -->
 <template>
-  <a-card class="employee-container">
+  <a-card class="backend-user-container">
     <div class="header">
-      <a-typography-title :level="5">部门人员</a-typography-title>
+      <a-typography-title :level="5">后台用户</a-typography-title>
       <div class="query-operate">
         <a-radio-group v-model:value="params.disabledFlag" style="margin: 8px; flex-shrink: 0" @change="queryBackendUserByKeyword(false)">
           <a-radio-button :value="undefined">全部</a-radio-button>
           <a-radio-button :value="false">启用</a-radio-button>
           <a-radio-button :value="true">禁用</a-radio-button>
         </a-radio-group>
-        <a-input-search v-model:value.trim="params.keyword" placeholder="姓名/手机号/登录账号" @search="queryBackendUserByKeyword(true)">
+        <a-input-search v-model:value.trim="params.keyword" placeholder="登录账号/邮箱" @search="queryBackendUserByKeyword(true)">
           <template #enterButton>
             <a-button type="primary">
               <template #icon>
@@ -36,11 +36,11 @@
       </div>
     </div>
     <div class="btn-group">
-      <a-button class="btn" type="primary" @click="showDrawer" v-privilege="'system:backendUser:add'">添加成员</a-button>
+      <a-button class="btn" type="primary" @click="showDrawer" v-privilege="'system:backendUser:add'">添加用户</a-button>
       <a-button class="btn" @click="batchDelete" v-privilege="'system:backendUser:delete'">批量删除</a-button>
 
       <span class="smart-table-column-operate">
-        <TableOperator v-model="columns" :tableId="backend-user" :refresh="queryBackendUser" />
+        <TableOperator v-model="columns" table-id="backend-user" :refresh="queryBackendUser" />
       </span>
     </div>
 
@@ -52,18 +52,12 @@
       :pagination="false"
       :loading="tableLoading"
       :scroll="{ x: 1500 }"
-      row-key="employeeId"
+      row-key="id"
       bordered
     >
       <template #bodyCell="{ text, record, index, column }">
-        <template v-if="column.dataIndex === 'administratorFlag'">
-          <a-tag color="error" v-if="text">超管</a-tag>
-        </template>
         <template v-if="column.dataIndex === 'disabledFlag'">
           <a-tag :color="text ? 'error' : 'processing'">{{ text ? '禁用' : '启用' }}</a-tag>
-        </template>
-        <template v-else-if="column.dataIndex === 'gender'">
-          <span>{{ $smartEnumPlugin.getDescByValue('GENDER_ENUM', text) }}</span>
         </template>
         <template v-else-if="column.dataIndex === 'operate'">
           <div class="smart-table-operate">
@@ -72,10 +66,10 @@
               v-privilege="'system:backendUser:password:reset'"
               type="link"
               size="small"
-              @click="resetPassword(record.employeeId, record.loginName)"
+              @click="resetPassword(record.id, record.username)"
               >重置密码</a-button
             >
-            <a-button v-privilege="'system:backendUser:disabled'" type="link" @click="updateDisabled(record.employeeId, record.disabledFlag)">{{
+            <a-button v-privilege="'system:backendUser:disabled'" type="link" @click="updateDisabled(record.id, record.disabledFlag)">{{
               record.disabledFlag ? '启用' : '禁用'
             }}</a-button>
           </div>
@@ -96,16 +90,15 @@
         :show-total="showTableTotal"
       />
     </div>
-    <BackendUserFormModal ref="employeeFormModal" @refresh="queryBackendUser" @show-account="showAccount" />
-    <BackendUserDepartmentFormModal ref="employeeDepartmentFormModal" @refresh="queryBackendUser" />
-    <BackendUserPasswordDialog ref="employeePasswordDialog" />
+    <BackendUserFormModal ref="backendUserFormModal" @refresh="queryBackendUser" @show-account="showAccount" />
+    <BackendUserPasswordDialog ref="backendUserPasswordDialog" />
   </a-card>
 </template>
 <script setup>
   import { ExclamationCircleOutlined } from '@ant-design/icons-vue';
   import { message, Modal } from 'ant-design-vue';
   import _ from 'lodash';
-  import { computed, createVNode, reactive, ref, watch } from 'vue';
+  import { computed, createVNode, reactive, ref } from 'vue';
   import { backendUserApi } from '/src/api/system/backend-user-api';
   import { PAGE_SIZE } from '/@/constants/common-const';
   import { SmartLoading } from '/@/components/framework/smart-loading';
@@ -127,41 +120,35 @@
   //字段
   const columns = ref([
     {
-      title: '性别',
-      dataIndex: 'gender',
-      width: 70,
-    },
-    {
       title: '登录账号',
-      dataIndex: 'loginName',
-      width: 100,
+      dataIndex: 'username',
+      width: 120,
     },
     {
       title: '邮箱',
       dataIndex: 'email',
-      width: 100,
-      ellipsis: true,
-    },
-    {
-      title: '状态',
-      dataIndex: 'disabledFlag',
-      width: 60,
-    },
-    {
-      title: '职务',
-      dataIndex: 'positionName',
-      width: 100,
+      width: 140,
       ellipsis: true,
     },
     {
       title: '角色',
       dataIndex: 'roleNameList',
-      width: 100,
+      width: 120,
+    },
+    {
+      title: '状态',
+      dataIndex: 'disabledFlag',
+      width: 70,
+    },
+    {
+      title: '创建时间',
+      dataIndex: 'createTime',
+      width: 150,
     },
     {
       title: '操作',
       dataIndex: 'operate',
-      width: 140,
+      width: 180,
     },
   ]);
   const tableData = ref();
@@ -188,7 +175,6 @@
   async function queryBackendUser() {
     tableLoading.value = true;
     try {
-      params.departmentId = props.departmentId;
       let res = await backendUserApi.queryBackendUser(params);
       for (const item of res.data.list) {
         item.roleNameList = _.join(item.roleNameList, ',');
@@ -244,18 +230,18 @@
       message.warning('请选择要删除的后台用户');
       return;
     }
-    const actualNameArray = selectedRows.value.map((e) => e.actualName);
-    const employeeIdArray = selectedRows.value.map((e) => e.employeeId);
+    const usernameArray = selectedRows.value.map((e) => e.username);
+    const backendUserIdArray = selectedRows.value.map((e) => e.id);
     Modal.confirm({
       title: '确定要删除如下后台用户吗?',
       icon: createVNode(ExclamationCircleOutlined),
-      content: _.join(actualNameArray, ','),
+      content: _.join(usernameArray, ','),
       okText: '删除',
       okType: 'danger',
       async onOk() {
         SmartLoading.show();
         try {
-          await backendUserApi.batchDeleteBackendUser(employeeIdArray);
+          await backendUserApi.batchDeleteBackendUser(backendUserIdArray);
           message.success('删除成功');
           queryBackendUser();
           selectedRowKeys.value = [];
@@ -281,8 +267,7 @@
     let params = {};
     if (rowData) {
       params = _.cloneDeep(rowData);
-      params.disabledFlag = params.disabledFlag ? 1 : 0;
-
+    }
     backendUserFormModal.value.showDrawer(params);
   }
 
@@ -336,8 +321,6 @@
       onCancel() {},
     });
   }
-}
-
 </script>
 <style scoped lang="less">
   .header {

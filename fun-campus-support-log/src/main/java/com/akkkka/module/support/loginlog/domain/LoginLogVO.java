@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 @Data
 public class LoginLogVO {
 
+    @Schema(description = "登录日志id")
     private Long loginLogId;
 
     @Schema(description = "用户id")
@@ -46,8 +47,10 @@ public class LoginLogVO {
     @SchemaEnum(LoginLogResultEnum.class)
     private Integer loginResult;
 
+    @Schema(description = "登录设备")
     private String loginDevice;
 
+    @Schema(description = "创建时间")
     private LocalDateTime createTime;
 
 }

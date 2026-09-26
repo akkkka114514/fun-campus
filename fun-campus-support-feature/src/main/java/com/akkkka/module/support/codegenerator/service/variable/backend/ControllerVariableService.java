@@ -57,7 +57,7 @@ public class ControllerVariableService extends CodeGenerateBaseVariableService {
             CodeDeleteEnum codeDeleteEnum = SmartEnumUtil.getEnumByValue(form.getDeleteInfo().getDeleteEnum(), CodeDeleteEnum.class);
             if (codeDeleteEnum == CodeDeleteEnum.BATCH || codeDeleteEnum == CodeDeleteEnum.SINGLE_AND_BATCH) {
                 //2、批量删除的话，要导入ValidateList
-                packageSet.add("import domain.common.com.akkkka.ValidateList;");
+                packageSet.add("import com.akkkka.common.domain.ValidateList;");
             }
 
             if (codeDeleteEnum == CodeDeleteEnum.SINGLE || codeDeleteEnum == CodeDeleteEnum.SINGLE_AND_BATCH) {

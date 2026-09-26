@@ -14,72 +14,72 @@ export const roleApi = {
    * @description: 获取所有角色
    */
   queryAll: () => {
-    return getRequest('/role/getAll');
+    return getRequest('/backend/role/getAll');
   },
   /**
    * @description:添加角色
    */
   addRole: (data) => {
-    return postRequest('/role/add', data);
+    return postRequest('/backend/role/add', data);
   },
   /**
    * @description:更新角色
    */
   updateRole: (data) => {
-    return postRequest('/role/update', data);
+    return postRequest('/backend/role/update', data);
   },
   /**
    * @description: 删除角色
    */
   deleteRole: (roleId) => {
-    return getRequest(`/role/delete/${roleId}`);
+    return getRequest(`/backend/role/delete/${roleId}`);
   },
   /**
    * @description: 批量设置某角色数据范围
    */
   updateDataScope: (data) => {
-    return postRequest('/role/dataScope/updateRoleDataScopeList', data);
+    return postRequest('/backend/role/dataScope/updateRoleDataScopeList', data);
   },
   /**
    * @description: 获取当前系统所配置的所有数据范围
    */
   getDataScopeList: () => {
-    return getRequest('/dataScope/list');
+    return getRequest('/backend/dataScope/list');
   },
   /**
    * @description: 获取某角色所设置的数据范围
    */
   getDataScopeByRoleId: (roleId) => {
-    return getRequest(`/role/dataScope/getRoleDataScopeList/${roleId}`);
+    return getRequest(`/backend/role/dataScope/getRoleDataScopeList/${roleId}`);
   },
   /**
    * @description: 获取角色成员-后台用户列表
    */
   queryRoleBackendUser: (params) => {
-    return postRequest('/role/backendUser/queryBackendUser', params);
+    return postRequest('/backend/role/backendUser/queryBackendUser', params);
   },
   /**
    * @description: 从角色成员列表中移除后台用户
    */
-  deleteBackendUserRole: (employeeId, roleId) => {
-    return getRequest('/role/backendUser/removeBackendUser?employeeId=' + employeeId + '&roleId=' + roleId);
+  deleteBackendUserRole: (backendUserId, roleId) => {
+    return getRequest('/backend/role/backendUser/removeBackendUser?backendUserId=' + backendUserId + '&roleId=' + roleId);
   },
   /**
    * @description: 从角色成员列表中批量移除后台用户
    */
   batchRemoveRoleBackendUser: (data) => {
-    return postRequest('/role/backendUser/batchRemoveRoleBackendUser', data);
+    return postRequest('/backend/role/backendUser/batchRemoveRoleBackendUser', data);
   },
   /**
    * @description: 根据角色id获取角色后台用户列表(无分页)
    */
   getRoleAllBackendUser: (roleId) => {
-    return getRequest(`/role/backendUser/getAllBackendUserByRoleId/${roleId}`);
+    return getRequest(`/backend/role/backendUser/getAllBackendUserByRoleId/${roleId}`);
   },
   /**
    * @description: 角色成员列表中批量添加后台用户
    */
   batchAddRoleBackendUser: (data) => {
-    return postRequest('/role/backendUser/batchAddRoleBackendUser', data);
+    return postRequest('/backend/role/backendUser/batchAddRoleBackendUser', data);
   },
 };

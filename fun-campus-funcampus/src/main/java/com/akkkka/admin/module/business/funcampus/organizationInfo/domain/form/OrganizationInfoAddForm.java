@@ -18,7 +18,6 @@ import lombok.Data;
 public class OrganizationInfoAddForm {
 
     @Schema(description = "组织id", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "组织id 不能为空")
     private Long id;
 
     @Schema(description = "属于学校的id", requiredMode = Schema.RequiredMode.REQUIRED)
@@ -30,15 +29,12 @@ public class OrganizationInfoAddForm {
     private String name;
 
     @Schema(description = "是否已删除", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "是否已删除 不能为空")
     private Boolean deletedFlag;
 
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "创建时间 不能为空")
     private LocalDateTime createTime;
 
     @Schema(description = "修改时间", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "修改时间 不能为空")
     private LocalDateTime updateTime;
 
 }

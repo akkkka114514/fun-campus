@@ -13,21 +13,21 @@ export const activityCanEnrollCollegeApi = {
    * 分页查询  @author  akkkka114514
    */
   queryPage : (param) => {
-    return postRequest('/activityCanEnrollCollege/queryPage', param);
+    return postRequest('/backend/activityCanEnrollCollege/queryPage', param);
   },
 
   /**
    * 增加  @author  akkkka114514
    */
   add: (param) => {
-      return postRequest('/activityCanEnrollCollege/add', param);
+      return postRequest('/backend/activityCanEnrollCollege/add', param);
   },
 
   /**
    * 修改  @author  akkkka114514
    */
   update: (param) => {
-      return postRequest('/activityCanEnrollCollege/update', param);
+      return postRequest('/backend/activityCanEnrollCollege/update', param);
   },
 
 
@@ -35,14 +35,14 @@ export const activityCanEnrollCollegeApi = {
    * 删除  @author  akkkka114514
    */
   delete: (id) => {
-      return getRequest(`/activityCanEnrollCollege/delete/${id}`);
+      return getRequest(`/backend/activityCanEnrollCollege/delete/${id}`);
   },
 
   /**
    * 批量删除  @author  akkkka114514
    */
   batchDelete: (idList) => {
-      return postRequest('/activityCanEnrollCollege/batchDelete', idList);
+      return postRequest('/backend/activityCanEnrollCollege/batchDelete', idList);
   },
 
 };

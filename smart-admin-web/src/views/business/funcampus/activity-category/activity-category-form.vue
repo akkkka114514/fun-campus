@@ -45,7 +45,7 @@
   import _ from 'lodash';
   import { message } from 'ant-design-vue';
   import { SmartLoading } from '/@/components/framework/smart-loading';
-  import { activityCategoryApi } from '/@/api/business/activity-category/activity-category-api';
+  import { activityCategoryApi } from '/@/api/business/funcampus/activity-category-api';
   import { smartSentry } from '/@/lib/smart-sentry';
   import BooleanSelect from '/@/components/framework/boolean-select/index.vue';
 

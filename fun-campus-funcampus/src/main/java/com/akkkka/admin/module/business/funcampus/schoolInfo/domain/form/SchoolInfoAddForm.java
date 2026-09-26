@@ -66,15 +66,12 @@ public class SchoolInfoAddForm {
     private Integer sort;
 
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "创建时间 不能为空")
     private LocalDateTime createTime;
 
     @Schema(description = "更新时间", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "更新时间 不能为空")
     private LocalDateTime updateTime;
 
     @Schema(description = "删除标识(0:未删除,1:已删除)", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "删除标识(0:未删除,1:已删除) 不能为空")
     private Boolean deletedFlag;
 
 }

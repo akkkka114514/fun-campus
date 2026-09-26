@@ -1,5 +1,6 @@
 package com.akkkka.module.support.file.domain.vo;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -17,11 +18,13 @@ public class FileDownloadVO {
     /**
      * 文件字节数据
      */
+    @Schema(description = "文件字节数据")
     private byte[] data;
 
     /**
      * 文件元数据
      */
+    @Schema(description = "文件元数据")
     private FileMetadataVO metadata;
 
 

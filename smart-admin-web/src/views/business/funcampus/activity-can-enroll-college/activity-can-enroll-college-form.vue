@@ -48,7 +48,7 @@
   import _ from 'lodash';
   import { message } from 'ant-design-vue';
   import { SmartLoading } from '/@/components/framework/smart-loading';
-  import { activityCanEnrollCollegeApi } from '/@/api/business/activity-can-enroll-college/activity-can-enroll-college-api';
+  import { activityCanEnrollCollegeApi } from '/@/api/business/funcampus/activity-can-enroll-college-api';
   import { smartSentry } from '/@/lib/smart-sentry';
   import BooleanSelect from '/@/components/framework/boolean-select/index.vue';
 

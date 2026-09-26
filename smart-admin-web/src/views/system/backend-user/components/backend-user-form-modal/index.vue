@@ -9,30 +9,25 @@
 -->
 <template>
   <a-drawer
-    :title="form.employeeId ? '编辑' : '添加'"
+    :title="form.id ? '编辑' : '添加'"
     :width="600"
     :open="visible"
     :body-style="{ paddingBottom: '80px' }"
     @close="onClose"
     destroyOnClose
   >
-    <a-alert message="超管需要直接在数据库表 t_employee修改哦" type="error" closable />
-    <br />
     <a-form ref="formRef" :model="form" :rules="rules" layout="vertical">
-      <a-form-item label="登录名" name="username">
-        <a-input v-model:value.trim="form.username" placeholder="请输入登录名" />
+      <a-form-item label="登录账号" name="username">
+        <a-input v-model:value.trim="form.username" placeholder="4-30位字母、数字或下划线" />
         <p class="hint">初始密码默认为：随机</p>
       </a-form-item>
       <a-form-item label="邮箱" name="email">
         <a-input v-model:value.trim="form.email" placeholder="请输入邮箱" />
       </a-form-item>
-      <a-form-item label="性别" name="gender">
-        <smart-enum-select style="width: 100%" v-model:value="form.gender" placeholder="请选择性别" enum-name="GENDER_ENUM" />
-      </a-form-item>
       <a-form-item label="状态" name="disabledFlag">
         <a-select v-model:value="form.disabledFlag" placeholder="请选择状态">
-          <a-select-option :value="0">启用</a-select-option>
-          <a-select-option :value="1">禁用</a-select-option>
+          <a-select-option :value="false">启用</a-select-option>
+          <a-select-option :value="true">禁用</a-select-option>
         </a-select>
       </a-form-item>
 
@@ -41,11 +36,26 @@
           <a-select-option v-for="item in roleList" :key="item.roleId" :title="item.roleName">{{ item.roleName }}</a-select-option>
         </a-select>
       </a-form-item>
+      <a-form-item label="学校id" name="schoolId">
+        <a-input-number v-model:value="form.schoolId" placeholder="请输入学校id" :min="1" style="width: 100%" />
+      </a-form-item>
+      <a-form-item label="学院id" name="collegeId">
+        <a-input-number v-model:value="form.collegeId" placeholder="请输入学院id" :min="1" style="width: 100%" />
+      </a-form-item>
+      <a-form-item label="组织id" name="organizationId">
+        <a-input-number v-model:value="form.organizationId" placeholder="请输入组织id" :min="1" style="width: 100%" />
+      </a-form-item>
+      <a-form-item label="审核权限" name="canReview">
+        <a-select v-model:value="form.canReview" placeholder="请选择是否具有审核权限">
+          <a-select-option :value="true">是</a-select-option>
+          <a-select-option :value="false">否</a-select-option>
+        </a-select>
+      </a-form-item>
     </a-form>
     <div class="footer">
       <a-button style="margin-right: 8px" @click="onClose">取消</a-button>
       <a-button type="primary" style="margin-right: 8px" @click="onSubmit(false)">保存</a-button>
-      <a-button v-if="!form.employeeId" type="primary" @click="onSubmit(true)">保存并继续添加</a-button>
+      <a-button v-if="!form.id" type="primary" @click="onSubmit(true)">保存并继续添加</a-button>
     </div>
   </a-drawer>
 </template>
@@ -55,12 +65,9 @@
   import { nextTick, reactive, ref } from 'vue';
   import { backendUserApi } from '/src/api/system/backend-user-api';
   import { roleApi } from '/@/api/system/role-api';
-  import SmartEnumSelect from '/@/components/framework/smart-enum-select/index.vue';
-  import { GENDER_ENUM } from '/@/constants/common-const';
   import { SmartLoading } from '/@/components/framework/smart-loading';
   import { smartSentry } from '/@/lib/smart-sentry';
   // ----------------------- 以下是字段定义 emits props ---------------------
-  const departmentTreeSelect = ref();
   // emit
   const emit = defineEmits(['refresh', 'show-account']);
 
@@ -95,13 +102,14 @@
   const formRef = ref(); // 组件ref
   const formDefault = {
     id: undefined,
-    disabledFlag: 0,
-    leaveFlag: 0,
-    gender: GENDER_ENUM.MAN.value,
+    disabledFlag: false,
     username: undefined,
-    phone: undefined,
     roleIdList: undefined,
     email: undefined,
+    schoolId: undefined,
+    collegeId: undefined,
+    organizationId: undefined,
+    canReview: false,
   };
 
   let form = reactive(_.cloneDeep(formDefault));
@@ -115,13 +123,15 @@
   const rules = {
     username: [
       { required: true, message: '登录账号不能为空' },
-      { max: 30, message: '登录账号不能大于30个字符', trigger: 'blur' },
+      { min: 4, max: 30, message: '登录账号长度为4-30个字符', trigger: 'blur' },
+      { pattern: /^[a-zA-Z0-9_]+$/, message: '登录账号只能包含字母、数字和下划线', trigger: 'blur' },
     ],
     gender: [{ required: true, message: '性别不能为空' }],
     disabledFlag: [{ required: true, message: '状态不能为空' }],
     email: [{ required: true, message: '请输入邮箱' }],
+    roleIdList: [{ required: true, message: '角色不能为空' }],
+    schoolId: [{ required: true, message: '学校id不能为空' }],
   };
-
   // 校验表单
   function validateForm(formRef) {
     return new Promise((resolve) => {
@@ -144,7 +154,7 @@
       return;
     }
     SmartLoading.show();
-    if (form.employeeId) {
+    if (form.id) {
       await updateBackendUser(keepAdding);
     } else {
       await addBackendUser(keepAdding);
@@ -155,7 +165,7 @@
     try {
       let { data } = await backendUserApi.addBackendUser(form);
       message.success('添加成功');
-      emit('show-account', form.loginName, data);
+      emit('show-account', form.username, data);
       if (keepAdding) {
         reset();
       } else {

@@ -19,10 +19,11 @@ import java.util.List;
 public class ActivityEnrollmentValidator {
     private final ActivityEnrollmentManager enrollmentManager;
     public void validateEnrollmentDuplicate(Long activityId,Long userId){
-        // 检查用户是否已经报名过该活动
+        // 检查用户是否已经报名过该活动（已取消/软删除的记录不算重复）
         LambdaQueryWrapper<ActivityEnrollmentEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(ActivityEnrollmentEntity::getActivityId, activityId)
-                .eq(ActivityEnrollmentEntity::getUserId, userId);
+                .eq(ActivityEnrollmentEntity::getUserId, userId)
+                .eq(ActivityEnrollmentEntity::getDeletedFlag, false);
         ActivityEnrollmentEntity enrollment=enrollmentManager.getOne(queryWrapper);
         if(enrollment!=null){
             throw new BusinessException(UserErrorCode.PARAM_ERROR,"请勿重复报名");

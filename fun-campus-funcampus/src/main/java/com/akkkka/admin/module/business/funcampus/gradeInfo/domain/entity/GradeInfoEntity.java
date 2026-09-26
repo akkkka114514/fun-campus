@@ -45,6 +45,6 @@ public class GradeInfoEntity {
     /**
      * 修改时间
      */
-    private LocalDateTime udpateTime;
+    private LocalDateTime updateTime;
 
 }

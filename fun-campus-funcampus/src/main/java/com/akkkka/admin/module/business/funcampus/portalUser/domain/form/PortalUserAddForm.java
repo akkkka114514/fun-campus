@@ -34,12 +34,16 @@ public class PortalUserAddForm{
 
     @Schema(description = "学院id", requiredMode = Schema.RequiredMode.REQUIRED)
     private Long collegeId;
+
+    @Schema(description = "学校名")
+    private String schoolName;
+
+    @Schema(description = "学院名")
+    private String collegeName;
     @Schema(description = "是否已删除", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "是否已删除 不能为空")
     private Boolean deletedFlag;
 
     @Schema(description = "是否禁用", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "是否禁用 不能为空")
     private Boolean disableFlag;
 
     @Schema(description = "手机号", requiredMode = Schema.RequiredMode.REQUIRED)

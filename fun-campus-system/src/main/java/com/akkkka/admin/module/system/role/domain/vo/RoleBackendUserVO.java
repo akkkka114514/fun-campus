@@ -1,5 +1,6 @@
 package com.akkkka.admin.module.system.role.domain.vo;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -14,9 +15,12 @@ import lombok.Data;
 @Data
 public class RoleBackendUserVO {
 
+    @Schema(description = "角色ID")
     private Long roleId;
 
+    @Schema(description = "后台用户ID")
     private Long backendUserId;
 
+    @Schema(description = "角色名称")
     private String roleName;
 }

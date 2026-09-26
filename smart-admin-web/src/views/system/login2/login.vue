@@ -12,8 +12,8 @@
   <div class="login-container">
     <div class="box-item desc">
       <div class="welcome">
-        <p>欢迎登录 SmartAdmin V3</p>
-        <p class="sub-welcome">「高质量代码、简洁、安全」的开发平台</p>
+        <p>欢迎登录 Fun Campus</p>
+        <p class="sub-welcome">校园活动一站式管理平台</p>
       </div>
     </div>
     <div class="box-item login">

@@ -15,20 +15,7 @@
       <strong class="help-doc-close" @click="hideHelpDoc"><close-outlined /></strong>
     </div>
 
-    <!-----联系客服区域---->
-    <div class="help-doc-contact" @click="contactModal.show">
-      <div class="help-doc-contact-left">
-        <phone-outlined style="font-size: 23px; line-height: 50px; margin-top: 5px" />
-      </div>
-      <div class="help-doc-contact-right">
-        <a>联系客服</a>
-        <div class="help-doc-contac-time">9:00-17:00 5x7小时</div>
-      </div>
-    </div>
-
-    <a-divider />
-
-    <!-----意见反馈---->
+    <!-----意见反馈----->
     <div class="feedback">
       <div>反馈让您不满意的点，我们争取做到更好<smile-outlined style="margin-left: 5px" /></div>
       <div class="feedback-message-list">
@@ -49,9 +36,7 @@
       </div>
     </div>
 
-    <!-----联系客服---->
-    <ContactModal ref="contactModal" />
-    <!----- 提交意见反馈 ---->
+    <!----- 提交意见反馈 ----->
     <FeedbackModal ref="feedbackModal" />
   </div>
 </template>
@@ -60,7 +45,6 @@
   import { useRoute } from 'vue-router';
   import _ from 'lodash';
   import { helpDocApi } from '/@/api/support/help-doc-api';
-  import ContactModal from './components/contact-modal.vue';
   import FeedbackModal from './components/feedback-modal.vue';
   import { useAppConfigStore } from '/@/store/modules/system/app-config';
   import { feedbackApi } from '/@/api/support/feedback-api';
@@ -70,9 +54,6 @@
   function hideHelpDoc() {
     useAppConfigStore().hideHelpDoc();
   }
-
-  // ------------------ 联系客服 --------------------------
-  const contactModal = ref();
 
   // ------------------ 意见反馈 --------------------------
   let feedbackMessageList = ref([]);
@@ -140,7 +121,7 @@
   watch(
     currentRoute,
     () => {
-      //SmartAdmin中 router的name 就是 后端存储menu的id
+      //Fun Campus 中 router的name 就是 后端存储menu的id
       let menuId = -1;
       try {
         if (currentRoute.name === HOME_PAGE_NAME) {

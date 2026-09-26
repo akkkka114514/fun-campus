@@ -19,4 +19,10 @@ public class ActivityCanEnrollTribeUpdateForm {
     @NotNull(message = "id 不能为空")
     private Long id;
 
+    @Schema(description = "活动id")
+    private Long activityId;
+
+    @Schema(description = "能报名的部落id")
+    private Long canEnrollTribe;
+
 }

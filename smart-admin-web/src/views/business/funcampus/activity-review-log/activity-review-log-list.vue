@@ -91,7 +91,7 @@
     import { reactive, ref, onMounted } from 'vue';
     import { message, Modal } from 'ant-design-vue';
     import { SmartLoading } from '/@/components/framework/smart-loading';
-    import { activityReviewLogApi } from '/@/api/business/activity-review-log/activity-review-log-api';
+    import { activityReviewLogApi } from '/@/api/business/funcampus/activity-review-log-api';
     import { PAGE_SIZE_OPTIONS } from '/@/constants/common-const';
     import { smartSentry } from '/@/lib/smart-sentry';
     import TableOperator from '/@/components/support/table-operator/index.vue';

@@ -99,7 +99,7 @@
     import { reactive, ref, onMounted } from 'vue';
     import { message, Modal } from 'ant-design-vue';
     import { SmartLoading } from '/@/components/framework/smart-loading';
-    import { activityCanEnrollTribeApi } from '/@/api/business/activity-can-enroll-tribe/activity-can-enroll-tribe-api';
+    import { activityCanEnrollTribeApi } from '/@/api/business/funcampus/activity-can-enroll-tribe-api';
     import { PAGE_SIZE_OPTIONS } from '/@/constants/common-const';
     import { smartSentry } from '/@/lib/smart-sentry';
     import TableOperator from '/@/components/support/table-operator/index.vue';

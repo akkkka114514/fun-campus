@@ -108,11 +108,11 @@
     import { reactive, ref, onMounted } from 'vue';
     import { message, Modal } from 'ant-design-vue';
     import { SmartLoading } from '/@/components/framework/smart-loading';
-    import { organizationCadreApi } from '/@/api/business/organization-cadre/organization-cadre-api';
+    import { organizationCadreApi } from '/@/api/business/funcampus/organizer-cadre-api';
     import { PAGE_SIZE_OPTIONS } from '/@/constants/common-const';
     import { smartSentry } from '/@/lib/smart-sentry';
     import TableOperator from '/@/components/support/table-operator/index.vue';
-    import OrganizationCadreForm from './organization-cadre-form.vue';
+    import OrganizationCadreForm from './organizer-cadre-form.vue';
 
     // ---------------------------- 表格列 ----------------------------
 

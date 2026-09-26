@@ -2,6 +2,7 @@ package com.akkkka.module.support.table.domain;
 
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.List;
@@ -19,9 +20,11 @@ import java.util.List;
 public class TableColumnUpdateForm {
 
     @NotNull(message = "表id不能为空")
+    @Schema(description = "表id")
     private Integer tableId;
 
     @NotEmpty(message = "请上传列")
+    @Schema(description = "列列表")
     private List<TableColumnItemForm> columnList;
 
 }

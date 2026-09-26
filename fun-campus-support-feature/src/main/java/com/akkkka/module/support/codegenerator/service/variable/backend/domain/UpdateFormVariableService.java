@@ -89,8 +89,8 @@ public class UpdateFormVariableService extends CodeGenerateBaseVariableService {
 
             // 枚举
             if (SmartStringUtil.isNotEmpty(codeField.getEnumName())) {
-                packageList.add("import swagger.common.com.akkkka.SchemaEnum;");
-                packageList.add("import enumeration.validator.common.com.akkkka.CheckEnum;");
+                packageList.add("import com.akkkka.common.swagger.SchemaEnum;");
+                packageList.add("import com.akkkka.common.validator.enumeration.CheckEnum;");
                 packageList.add("import " + form.getBasic().getJavaPackageName() + ".constant." + codeField.getEnumName() + ";");
 
                 //enum check
@@ -120,14 +120,14 @@ public class UpdateFormVariableService extends CodeGenerateBaseVariableService {
             if (SmartStringUtil.isNotEmpty(codeField.getDict())) {
                 finalFieldMap.put("dict", "\n    @JsonDeserialize(using = DictDataDeserializer.class)");
                 packageList.add("import com.fasterxml.jackson.databind.annotation.JsonDeserialize;");
-                packageList.add("import deserializer.json.common.com.akkkka.DictDataDeserializer;");
+                packageList.add("import com.akkkka.common.json.deserializer.DictDataDeserializer;");
             }
 
             //文件上传
             if (CodeFrontComponentEnum.FILE_UPLOAD.equalsValue(field.getFrontComponent())) {
                 finalFieldMap.put("file", "\n    @JsonDeserialize(using = FileKeyVoDeserializer.class)");
                 packageList.add("import com.fasterxml.jackson.databind.annotation.JsonDeserialize;");
-                packageList.add("import deserializer.json.common.com.akkkka.FileKeyVoDeserializer;");
+                packageList.add("import com.akkkka.common.json.deserializer.FileKeyVoDeserializer;");
             }
 
             packageList.add(getJavaPackageName(codeField.getJavaType()));

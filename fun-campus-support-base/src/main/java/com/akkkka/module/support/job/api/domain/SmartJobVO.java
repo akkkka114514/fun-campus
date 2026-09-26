@@ -52,10 +52,13 @@ public class SmartJobVO {
     @Schema(description = "排序")
     private Integer sort;
 
+    @Schema(description = "更新人")
     private String updateName;
 
+    @Schema(description = "更新时间")
     private LocalDateTime updateTime;
 
+    @Schema(description = "创建时间")
     private LocalDateTime createTime;
 
     @Schema(description = "上次执行记录")

@@ -32,6 +32,16 @@ public class TribeEntity {
     private String name;
 
     /**
+     * 部落图标（文件key）
+     */
+    private String icon;
+
+    /**
+     * 部落简介
+     */
+    private String description;
+
+    /**
      * 部落类型
      */
     private Long categoryId;

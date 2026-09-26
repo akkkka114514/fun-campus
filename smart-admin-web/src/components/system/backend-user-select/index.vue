@@ -17,9 +17,8 @@
     :size="size"
     @change="onChange"
   >
-    <a-select-option v-for="item in employeeList" :key="item.employeeId" :value="item.employeeId">
-      {{ item.actualName }}
-      <template v-if="item.departmentName"> （{{ item.departmentName }}） </template>
+    <a-select-option v-for="item in employeeList" :key="item.id" :value="item.id">
+      {{ item.username }}
     </a-select-option>
   </a-select>
 </template>

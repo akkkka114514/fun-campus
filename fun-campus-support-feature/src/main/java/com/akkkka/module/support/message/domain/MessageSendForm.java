@@ -39,6 +39,7 @@ public class MessageSendForm {
     /**
      * 相关业务id | 可选
      */
+    @Schema(description = "相关业务id | 可选")
     private Object dataId;
 
 }

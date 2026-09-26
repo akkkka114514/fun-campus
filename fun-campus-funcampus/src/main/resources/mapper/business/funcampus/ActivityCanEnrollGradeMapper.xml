@@ -17,6 +17,7 @@
         SELECT
         <include refid="base_columns"/>
         FROM activity_can_enroll_grade
+        WHERE activity_can_enroll_grade.deleted_flag = 0
     </select>
 
     <update id="batchUpdateDeleted">

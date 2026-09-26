@@ -1,0 +1,42 @@
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.w3.org/2001/XMLSchema"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.akkkka</groupId>
+        <artifactId>fun-campus-parent</artifactId>
+        <version>3.0.0</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>fun-campus-support-ai</artifactId>
+    <version>3.0.0</version>
+
+    <name>fun-campus-support-ai</name>
+
+    <description>AI 支撑模块：学生端智能助手（RAG 检索 + 工具调用 + 流式会话）</description>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>com.akkkka</groupId>
+            <artifactId>fun-campus-support-base</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+
+        <!--
+            Spring AI：OpenAI 兼容协议（对话：DeepSeek；向量化：阿里百炼 compatible-mode）。
+            使用库依赖而非 starter：两套模型 base-url 不同，需在 AiModelConfig 手动装配独立实例；
+            同时避免 starter 自动配置在未配置 api-key 时导致应用启动失败
+        -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-openai</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-client-chat</artifactId>
+        </dependency>
+
+    </dependencies>
+
+</project>

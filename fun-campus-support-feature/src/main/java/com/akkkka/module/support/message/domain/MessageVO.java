@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 @Data
 public class MessageVO {
 
+    @Schema(description = "消息id")
     private Long messageId;
 
     @SchemaEnum(value = MessageTypeEnum.class)

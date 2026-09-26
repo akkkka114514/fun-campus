@@ -7,7 +7,7 @@ export default [
     {
         icon: 'ExperimentTwoTone',
         title: '请求',
-        path: '/log/operate-log/list'
+        path: '/support/operate-log/operate-log-list'
     },
     {
         icon: 'FireTwoTone',
@@ -18,10 +18,5 @@ export default [
         icon: 'HourglassTwoTone',
         title: '字典',
         path: '/setting/dict'
-    },
-    {
-        icon: 'MessageTwoTone',
-        title: '单号',
-        path: '/support/serial-number/serial-number-list'
     }
 ]

@@ -17,13 +17,28 @@ import lombok.Data;
 
 @Data
 public class ActivityScheduleVO {
+    @Schema(description = "报名开始时间")
     private LocalDateTime enrollStartTime;
+
+    @Schema(description = "报名结束时间")
     private LocalDateTime enrollEndTime;
+
+    @Schema(description = "活动开始时间")
     private LocalDateTime activityStartTime;
+
+    @Schema(description = "活动结束时间")
     private LocalDateTime activityEndTime;
+
+    @Schema(description = "签到开始时间")
     private LocalDateTime signinStartTime;
+
+    @Schema(description = "签到结束时间")
     private LocalDateTime signinEndTime;
+
+    @Schema(description = "签退开始时间")
     private LocalDateTime signoutStartTime;
+
+    @Schema(description = "签退结束时间")
     private LocalDateTime signoutEndTime;
 
 }

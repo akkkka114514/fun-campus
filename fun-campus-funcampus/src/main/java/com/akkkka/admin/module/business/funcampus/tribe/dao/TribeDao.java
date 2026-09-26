@@ -2,8 +2,11 @@ package com.akkkka.admin.module.business.funcampus.tribe.dao;
 
 import java.util.List;
 import com.akkkka.admin.module.business.funcampus.tribe.domain.entity.TribeEntity;
+import com.akkkka.admin.module.business.funcampus.tribe.domain.form.TribePortalQueryForm;
 import com.akkkka.admin.module.business.funcampus.tribe.domain.form.TribeQueryForm;
 import com.akkkka.admin.module.business.funcampus.tribe.domain.vo.SimpleTribeVO;
+import com.akkkka.admin.module.business.funcampus.tribe.domain.vo.TribeActivityVO;
+import com.akkkka.admin.module.business.funcampus.tribe.domain.vo.TribePortalVO;
 import com.akkkka.admin.module.business.funcampus.tribe.domain.vo.TribeVO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -42,4 +45,14 @@ public interface TribeDao extends BaseMapper<TribeEntity> {
 
     // 查询所属学校的满足关键字的部落
     List<SimpleTribeVO> querySimpleList(Long schoolId, String keyword);
+
+    /**
+     * 门户：本校部落分页（带成员数、主席名、我是否已加入）
+     */
+    List<TribePortalVO> queryPortalPage(Page<?> page, @Param("schoolId") Long schoolId, @Param("userId") Long userId, @Param("queryForm") TribePortalQueryForm queryForm);
+
+    /**
+     * 门户：部落发起的活动分页（通过活动可报名部落关联）
+     */
+    List<TribeActivityVO> queryTribeActivityPage(Page<?> page, @Param("tribeId") Long tribeId);
 }

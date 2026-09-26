@@ -67,7 +67,7 @@ public class ActivityCanEnrollCollegeService {
         }
         for(ActivityCanEnrollCollegeEntity e:list){
             IdNameVO vo = new IdNameVO();
-            vo.setId(e.getId());
+            vo.setId(e.getCanEnrollCollege());
             vo.setName(collegeInfoService.getNameById(e.getCanEnrollCollege()));
             result.add(vo);
         }

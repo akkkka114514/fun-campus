@@ -19,4 +19,7 @@ public class GradeInfoUpdateForm {
     @NotNull(message = "主键 不能为空")
     private Long id;
 
+    @Schema(description = "年级")
+    private String name;
+
 }

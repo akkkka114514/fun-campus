@@ -42,7 +42,7 @@ import lombok.extern.slf4j.Slf4j;
  * 活动报名退款 Service
  * <p>
  * - 退款申请：订单 CAS（已支付→退款中）防重复申请，退款单落库后向渠道发起；
- *   渠道受理失败回退为「退款失败」，支持重新申请（退款失败→退款中）；
+ *   渠道受理失败或调用异常均回退为「退款失败」，支持重新申请（退款失败→退款中）；
  * - 到账以渠道异步回调为准，由 PaymentService.handleRefundNotify 统一处理（释放名额 + 通知）；
  * - 审核剔除联动：报名审核剔除的已支付订单走系统退款（reasonType=报名审核未通过），
  *   不受活动退款政策限制，由审核流程在事务提交后调用；
@@ -98,7 +98,7 @@ public class ActivityRefundService {
         startRefunding(order, refund);
 
         // 事务提交后向渠道发起退款：受理成功不代表到账，最终以异步回调为准
-        RefundChannelResult result = paymentService.refund(order, refund);
+        RefundChannelResult result = requestChannelRefund(order, refund);
         if (result == null || !result.isAccepted()) {
             rollbackRefunding(order, refund);
             throw new BusinessException(SystemErrorCode.SYSTEM_ERROR, "渠道退款受理失败，请稍后重试");
@@ -157,7 +157,7 @@ public class ActivityRefundService {
         ActivityRefundEntity retryRefund = buildRefund(order, originRefund.getReasonType(), retryReason);
         startRefunding(order, retryRefund);
 
-        RefundChannelResult result = paymentService.refund(order, retryRefund);
+        RefundChannelResult result = requestChannelRefund(order, retryRefund);
         if (result == null || !result.isAccepted()) {
             rollbackRefunding(order, retryRefund);
             throw new BusinessException(SystemErrorCode.SYSTEM_ERROR, "渠道退款受理失败，请稍后重试");
@@ -219,12 +219,27 @@ public class ActivityRefundService {
         ActivityRefundEntity refund = buildRefund(order, reasonType, reason);
         startRefunding(order, refund);
 
-        RefundChannelResult result = paymentService.refund(order, refund);
+        RefundChannelResult result = requestChannelRefund(order, refund);
         if (result == null || !result.isAccepted()) {
             rollbackRefunding(order, refund);
             return;
         }
         log.info("系统自动退款已发起：orderNo:{}，refundNo:{}，reasonType:{}", order.getOrderNo(), refund.getRefundNo(), reasonType);
+    }
+
+    /**
+     * 调用渠道退款并兜住异常：渠道不可用/网络异常与受理失败同样处理，
+     * 回退为「退款失败」（可重新申请或由管理端重试），避免订单卡在退款中
+     *
+     * @return 渠道受理结果；调用异常时返回 null
+     */
+    private RefundChannelResult requestChannelRefund(ActivityOrderEntity order, ActivityRefundEntity refund) {
+        try {
+            return paymentService.refund(order, refund);
+        } catch (Exception e) {
+            log.error("渠道退款调用异常：orderNo:{}，refundNo:{}", order.getOrderNo(), refund.getRefundNo(), e);
+            return null;
+        }
     }
 
     /**

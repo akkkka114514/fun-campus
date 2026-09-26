@@ -223,7 +223,7 @@ public class ActivityEnrollmentServiceTest {
 
         BusinessException ex = assertThrows(BusinessException.class, () -> service.enroll(7L));
         assertTrue(ex.getMessage().contains("活动报名人数已满"));
-        verify(activityEnrollmentDao, never()).insert(any(ActivityEnrollmentEntity.class));
+        verify(activityEnrollmentDao, never()).upsertEnrollment(any(), any());
     }
 
     @Test
@@ -232,7 +232,7 @@ public class ActivityEnrollmentServiceTest {
         when(activityValidator.validateActivityId(7L)).thenReturn(activityWithStatus(ActivityStatus.ENROLLING));
         runTransactionNow();
         when(activityEnrollNumDao.increaseEnrollNum(7L)).thenReturn(true);
-        when(activityEnrollmentDao.insert(any(ActivityEnrollmentEntity.class))).thenReturn(0);
+        when(activityEnrollmentDao.upsertEnrollment(7L, 12L)).thenReturn(0);
 
         BusinessException ex = assertThrows(BusinessException.class, () -> service.enroll(7L));
         assertTrue(ex.getMessage().contains("报名失败"));
@@ -245,16 +245,12 @@ public class ActivityEnrollmentServiceTest {
         when(portalUserManager.getById(12L)).thenReturn(portalUserEntity(12L));
         runTransactionNow();
         when(activityEnrollNumDao.increaseEnrollNum(7L)).thenReturn(true);
-        when(activityEnrollmentDao.insert(any(ActivityEnrollmentEntity.class))).thenReturn(1);
+        when(activityEnrollmentDao.upsertEnrollment(7L, 12L)).thenReturn(1);
 
         assertDoesNotThrow(() -> service.enroll(7L));
         verify(activityEnrollNumDao).increaseEnrollNum(7L);
-        ArgumentCaptor<ActivityEnrollmentEntity> captor = ArgumentCaptor.forClass(ActivityEnrollmentEntity.class);
-        verify(activityEnrollmentDao).insert(captor.capture());
-        assertEquals(7L, captor.getValue().getActivityId());
-        assertEquals(12L, captor.getValue().getUserId());
-        assertFalse(captor.getValue().getSignInStatus());
-        assertFalse(captor.getValue().getDeletedFlag());
+        // 报名记录以 upsert 落库：取消过报名的场景会复活原记录，签到状态/删除标记在 SQL 内处理
+        verify(activityEnrollmentDao).upsertEnrollment(7L, 12L);
     }
 
     // ------------------------------ 报名结果站内信 ------------------------------
@@ -268,7 +264,7 @@ public class ActivityEnrollmentServiceTest {
         when(portalUserManager.getById(12L)).thenReturn(portalUserEntity(12L));
         runTransactionNow();
         when(activityEnrollNumDao.increaseEnrollNum(7L)).thenReturn(true);
-        when(activityEnrollmentDao.insert(any(ActivityEnrollmentEntity.class))).thenReturn(1);
+        when(activityEnrollmentDao.upsertEnrollment(7L, 12L)).thenReturn(1);
         when(activityManager.getById(7L)).thenReturn(activity);
 
         service.enroll(7L);
@@ -312,13 +308,13 @@ public class ActivityEnrollmentServiceTest {
         when(portalUserManager.getById(12L)).thenReturn(portalUserEntity(12L));
         runTransactionNow();
         when(activityEnrollNumDao.increaseEnrollNum(7L)).thenReturn(true);
-        when(activityEnrollmentDao.insert(any(ActivityEnrollmentEntity.class))).thenReturn(1);
+        when(activityEnrollmentDao.upsertEnrollment(7L, 12L)).thenReturn(1);
         when(activityManager.getById(7L)).thenReturn(activity);
         doThrow(new RuntimeException("消息服务不可用")).when(messageService).sendTemplateMessage(any(MessageTemplateSendForm.class));
 
         // 站内信发送失败不影响报名成功
         assertDoesNotThrow(() -> service.enroll(7L));
-        verify(activityEnrollmentDao).insert(any(ActivityEnrollmentEntity.class));
+        verify(activityEnrollmentDao).upsertEnrollment(7L, 12L);
     }
 
     // ---------------------------------- 签到二维码 ----------------------------------

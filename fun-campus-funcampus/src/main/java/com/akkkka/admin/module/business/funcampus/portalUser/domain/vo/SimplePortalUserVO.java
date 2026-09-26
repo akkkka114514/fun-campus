@@ -1,6 +1,7 @@
 package com.akkkka.admin.module.business.funcampus.portalUser.domain.vo;
 
 import com.akkkka.common.domain.IdNameVO;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -16,5 +17,6 @@ import lombok.EqualsAndHashCode;
 public class SimplePortalUserVO extends IdNameVO {
 
     /** 头像Key */
+    @Schema(description = "头像Key")
     private String avatarKey;
 }

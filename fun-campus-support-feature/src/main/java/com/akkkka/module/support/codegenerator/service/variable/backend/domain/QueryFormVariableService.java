@@ -91,8 +91,8 @@ public class QueryFormVariableService extends CodeGenerateBaseVariableService {
                         continue;
                     }
 
-                    packageList.add("import swagger.common.com.akkkka.SchemaEnum;");
-                    packageList.add("import enumeration.validator.common.com.akkkka.CheckEnum;");
+                    packageList.add("import com.akkkka.common.swagger.SchemaEnum;");
+                    packageList.add("import com.akkkka.common.validator.enumeration.CheckEnum;");
                     packageList.add("import " + form.getBasic().getJavaPackageName() + ".constant." + codeField.getEnumName() + ";");
 
                     //enum check
@@ -108,7 +108,7 @@ public class QueryFormVariableService extends CodeGenerateBaseVariableService {
                     if (SmartStringUtil.isNotEmpty(codeField.getDict())) {
                         finalFieldMap.put("dict", "\n    @JsonDeserialize(using = DictDataDeserializer.class)");
                         packageList.add("import com.fasterxml.jackson.databind.annotation.JsonDeserialize;");
-                        packageList.add("import deserializer.json.common.com.akkkka.DictDataDeserializer;");
+                        packageList.add("import com.akkkka.common.json.deserializer.DictDataDeserializer;");
                     }
                     finalFieldMap.put("javaType", "String");
                 default:

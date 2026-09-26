@@ -1,6 +1,6 @@
 #############################################################################################################
 #                                                                                                           #
-# 为了减少重复配置，本配置文件为此sa-admin的独有配置，更多配置请查看 sa-base 项目中的 sa-base.yaml 通用配置文件。      #
+# 为了减少重复配置，本配置文件为此fun-campus的独有配置，更多配置请查看 sa-base 项目中的 sa-base.yaml 通用配置文件。    #
 # 其中此文件中配置可以覆盖 sa-base.yaml 中的通用配置，具体实现类请看类：YamlProcessor.java                          #
 #                                                                                                           #
 #############################################################################################################
@@ -8,7 +8,7 @@
 # 项目配置: 名称、日志目录
 project:
   name: fun-campus
-  log-directory: ${localPath:/home}/logs/smart_admin_v3/${project.name}/${spring.profiles.active}
+  log-directory: ${localPath:/home}/logs/fun-campus/${project.name}/${spring.profiles.active}
 
 # 项目端口和url根路径
 server:
@@ -20,3 +20,11 @@ server:
 spring:
   profiles:
     active: '@profiles.active@'
+  # MVC 异步请求超时（毫秒）：AI 助手 SSE 流式响应耗时较长，放宽默认 30 秒限制
+  mvc:
+    async:
+      request-timeout: 120000
+  # Spring AI（OpenAI 兼容协议）占位配置：未配置真实 key 时避免自动装配失败，接入真实模型时替换
+  ai:
+    openai:
+      api-key: placeholder-api-key

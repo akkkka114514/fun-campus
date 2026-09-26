@@ -50,7 +50,8 @@ public class LoginManager {
     /**
      * 获取请求用户信息
      */
-    @Cacheable(AdminCacheConst.Login.REQUEST_USER)
+    // key 统一加 admin: 前缀，与门户用户（portal:）缓存隔离，避免同一缓存空间互相覆盖
+    @Cacheable(value = AdminCacheConst.Login.REQUEST_USER, key = "'admin:' + #requestBackendUserId")
     public RequestBackendUser getRequestBackendUser(Long requestBackendUserId) {
         if (requestBackendUserId == null) {
             return null;
@@ -67,7 +68,7 @@ public class LoginManager {
     /**
      * 获取登录的用户信息
      */
-    @CachePut(value = AdminCacheConst.Login.REQUEST_USER, key = "#backendUserEntity.id")
+    @CachePut(value = AdminCacheConst.Login.REQUEST_USER, key = "'admin:' + #backendUserEntity.id")
     public RequestBackendUser loadLoginInfo(BackendUserEntity backendUserEntity) {
         // 基础信息
         RequestBackendUser requestBackendUser = SmartBeanUtil.copy(backendUserEntity, RequestBackendUser.class);
@@ -78,7 +79,7 @@ public class LoginManager {
     /**
      * 获取用户权限
      */
-    @Cacheable(AdminCacheConst.Login.USER_PERMISSION)
+    @Cacheable(value = AdminCacheConst.Login.USER_PERMISSION, key = "'admin:' + #employeeId")
     public UserPermission getUserPermission(Long employeeId) {
         UserPermission userPermission = new UserPermission();
         userPermission.setRoleList(new ArrayList<>());
@@ -116,7 +117,7 @@ public class LoginManager {
     /**
      * 更新用户权限
      */
-    @CachePut(value = AdminCacheConst.Login.USER_PERMISSION)
+    @CachePut(value = AdminCacheConst.Login.USER_PERMISSION, key = "'admin:' + #id")
     public UserPermission loadUserPermission(Long id) {
         UserPermission userPermission = new UserPermission();
         userPermission.setPermissionList(new ArrayList<>());
@@ -154,7 +155,7 @@ public class LoginManager {
     /**
      * 清除用户权限
      */
-    @CacheEvict(value = AdminCacheConst.Login.USER_PERMISSION)
+    @CacheEvict(value = AdminCacheConst.Login.USER_PERMISSION, key = "'admin:' + #userId")
     public void clearUserPermission(Long userId) {
         log.info("clear user permission cache, user Id:{}", userId);
     }
@@ -162,7 +163,7 @@ public class LoginManager {
     /**
      * 清除用户登录信息
      */
-    @CacheEvict(value = AdminCacheConst.Login.REQUEST_USER)
+    @CacheEvict(value = AdminCacheConst.Login.REQUEST_USER, key = "'admin:' + #userId")
     public void clearUserLoginInfo(Long userId) {
         log.info("clear user login info cache, user Id:{}", userId);
     }

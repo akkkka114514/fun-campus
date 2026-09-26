@@ -54,7 +54,7 @@
   import _ from 'lodash';
   import { message } from 'ant-design-vue';
   import { SmartLoading } from '/@/components/framework/smart-loading';
-  import { tribeApi } from '/@/api/business/tribe/tribe-api';
+  import { tribeApi } from '/@/api/business/funcampus/tribe-api';
   import { smartSentry } from '/@/lib/smart-sentry';
   import BooleanSelect from '/@/components/framework/boolean-select/index.vue';
 

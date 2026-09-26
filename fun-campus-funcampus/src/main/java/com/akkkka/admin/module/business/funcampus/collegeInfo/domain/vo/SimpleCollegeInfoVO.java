@@ -1,5 +1,6 @@
 package com.akkkka.admin.module.business.funcampus.collegeInfo.domain.vo;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -13,8 +14,10 @@ import lombok.Data;
 public class SimpleCollegeInfoVO {
 
     /** 学院ID */
+    @Schema(description = "学院ID")
     private Long id;
 
     /** 学院名称 */
+    @Schema(description = "学院名称")
     private String name;
 }

@@ -13,8 +13,8 @@ import dayjs from 'dayjs';
 /**
  *  水印DOM id
  */
-const WATER_MARK_DOM_ID = 'smart_admin_water_mark';
-let smartAdminWaterMarkIntervalId = null;
+const WATER_MARK_DOM_ID = 'fun_campus_water_mark';
+let funcampusWaterMarkIntervalId = null;
 
 /**
  *
@@ -81,7 +81,7 @@ const watermark = {
         setWatermark(id, str);
 
         //每隔1分钟检查一次水印
-        smartAdminWaterMarkIntervalId = setInterval(() => {
+        funcampusWaterMarkIntervalId = setInterval(() => {
             setWatermark(id, str);
         }, 60000);
 
@@ -97,9 +97,9 @@ const watermark = {
         }
 
         window.removeEventListener('resize', setWatermark);
-        if (smartAdminWaterMarkIntervalId) {
-            clearInterval(smartAdminWaterMarkIntervalId);
-            smartAdminWaterMarkIntervalId = null;
+        if (funcampusWaterMarkIntervalId) {
+            clearInterval(funcampusWaterMarkIntervalId);
+            funcampusWaterMarkIntervalId = null;
         }
     },
 };

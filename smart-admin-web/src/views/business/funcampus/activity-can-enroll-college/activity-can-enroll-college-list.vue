@@ -108,7 +108,7 @@
     import { reactive, ref, onMounted } from 'vue';
     import { message, Modal } from 'ant-design-vue';
     import { SmartLoading } from '/@/components/framework/smart-loading';
-    import { activityCanEnrollCollegeApi } from '/@/api/business/activity-can-enroll-college/activity-can-enroll-college-api';
+    import { activityCanEnrollCollegeApi } from '/@/api/business/funcampus/activity-can-enroll-college-api';
     import { PAGE_SIZE_OPTIONS } from '/@/constants/common-const';
     import { smartSentry } from '/@/lib/smart-sentry';
     import TableOperator from '/@/components/support/table-operator/index.vue';

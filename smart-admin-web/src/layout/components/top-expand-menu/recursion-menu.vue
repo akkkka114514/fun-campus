@@ -47,7 +47,7 @@
   import menuEmitter from './top-expand-menu-mitt';
   import { useAppConfigStore } from '/@/store/modules/system/app-config';
   import { useUserStore } from '/@/store/modules/system/user';
-  import logoImg from '/@/assets/images/logo/smart-admin-logo.png';
+  import logoImg from '/@/assets/images/logo/funcampus-logo.png';
 
   const websiteName = computed(() => useAppConfigStore().websiteName);
   const theme = computed(() => useAppConfigStore().$state.sideMenuTheme);

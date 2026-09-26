@@ -11,9 +11,6 @@
 <template>
   <a-card class="user-header">
     <a-page-header :title="welcomeSentence">
-      <template #subTitle>
-        <a-typography-text type="secondary" style="margin-left: 20px">所属部门： {{ departmentName }}</a-typography-text>
-      </template>
       <template #extra>
         <a-typography-text type="secondary">{{ dayInfo }}</a-typography-text>
       </template>
@@ -46,8 +43,6 @@
 
   const userStore = useUserStore();
 
-  const departmentName = computed(() => userStore.departmentName);
-
   // 欢迎语
   const welcomeSentence = computed(() => {
     let sentence = '';
@@ -63,7 +58,7 @@
     } else {
       sentence = '晚上好，';
     }
-    return sentence + userStore.$state.actualName;
+    return sentence + userStore.actualName;
   });
 
   //上次登录信息

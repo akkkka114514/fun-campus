@@ -26,6 +26,7 @@ import com.akkkka.common.util.SmartBeanUtil;
 import com.akkkka.common.util.SmartPageUtil;
 import com.akkkka.common.domain.ResponseDTO;
 import com.akkkka.common.domain.PageResult;
+import com.akkkka.common.domain.ValidateList;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.AllArgsConstructor;
@@ -67,8 +68,8 @@ public class ActivityCanEnrollTribeService {
         List<IdNameVO> result = new LinkedList<>();
         for(ActivityCanEnrollTribeEntity e:list){
             IdNameVO vo = new IdNameVO();
-            vo.setId(e.getId());
-            vo.setName(tribeService.getNameById(e.getId()));
+            vo.setId(e.getCanEnrollTribe());
+            vo.setName(tribeService.getNameById(e.getCanEnrollTribe()));
             result.add(vo);
         }
         return result;
@@ -147,5 +148,56 @@ public class ActivityCanEnrollTribeService {
             }
         });
 
+    }
+
+    /**
+     * 分页查询
+     */
+    public PageResult<ActivityCanEnrollTribeVO> queryPage(ActivityCanEnrollTribeQueryForm queryForm) {
+        Page<ActivityCanEnrollTribeVO> page = new Page<>(queryForm.getPageNum(), queryForm.getPageSize());
+        List<ActivityCanEnrollTribeVO> list = canEnrollTribeManager.getBaseMapper().queryPage(page, queryForm);
+        return SmartPageUtil.convert2PageResult(page, list);
+    }
+
+    /**
+     * 添加
+     */
+    public ResponseDTO<String> add(ActivityCanEnrollTribeAddForm addForm) {
+        ActivityCanEnrollTribeEntity entity = SmartBeanUtil.copy(addForm, ActivityCanEnrollTribeEntity.class);
+        entity.setId(null);
+        entity.setDeletedFlag(false);
+        canEnrollTribeManager.save(entity);
+        return ResponseDTO.ok();
+    }
+
+    /**
+     * 更新
+     */
+    public ResponseDTO<String> update(ActivityCanEnrollTribeUpdateForm updateForm) {
+        ActivityCanEnrollTribeEntity entity = SmartBeanUtil.copy(updateForm, ActivityCanEnrollTribeEntity.class);
+        canEnrollTribeManager.updateById(entity);
+        return ResponseDTO.ok();
+    }
+
+    /**
+     * 批量删除
+     */
+    public ResponseDTO<String> batchDelete(ValidateList<Long> idList) {
+        if (CollectionUtils.isEmpty(idList)) {
+            return ResponseDTO.ok();
+        }
+        canEnrollTribeManager.getBaseMapper().batchUpdateDeleted(idList, true);
+        return ResponseDTO.ok();
+    }
+
+    /**
+     * 单个删除
+     */
+    public ResponseDTO<String> delete(Long id) {
+        if (id == null) {
+            return ResponseDTO.ok();
+        }
+        canEnrollTribeManager.getBaseMapper().updateDeleted(id, true);
+        return ResponseDTO.ok();
     }
 }

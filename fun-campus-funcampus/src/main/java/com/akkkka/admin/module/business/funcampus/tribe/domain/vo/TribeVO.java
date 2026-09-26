@@ -22,6 +22,12 @@ public class TribeVO {
     @Schema(description = "部落名")
     private String name;
 
+    @Schema(description = "部落图标（文件key）")
+    private String icon;
+
+    @Schema(description = "部落简介")
+    private String description;
+
     @Schema(description = "部落类型")
     private Long categoryId;
 

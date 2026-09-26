@@ -1,5 +1,6 @@
 package com.akkkka.module.support.apiencrypt.domain;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -16,5 +17,6 @@ import lombok.Data;
 @Data
 public class ApiEncryptForm {
 
+    @Schema(description = "加密数据")
     private String encryptData;
 }

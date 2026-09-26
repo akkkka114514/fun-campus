@@ -12,6 +12,7 @@ import com.akkkka.common.domain.ResponseDTO;
 import com.akkkka.common.domain.PageResult;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,9 +30,45 @@ import jakarta.validation.Valid;
 
 @RestController
 @Tag(name = "活动分类")
+@RequestMapping("backend")
 public class ActivityCategoryController {
 
     @Resource
     private ActivityCategoryService activityCategoryService;
+
+    @Operation(summary = "分页查询 @author akkkka114514")
+    @PostMapping("/activityCategory/queryPage")
+    @SaCheckPermission("activityCategory:query")
+    public ResponseDTO<PageResult<ActivityCategoryVO>> queryPage(@RequestBody @Valid ActivityCategoryQueryForm queryForm) {
+        return ResponseDTO.ok(activityCategoryService.queryPage(queryForm));
+    }
+
+    @Operation(summary = "添加 @author akkkka114514")
+    @PostMapping("/activityCategory/add")
+    @SaCheckPermission("activityCategory:add")
+    public ResponseDTO<String> add(@RequestBody @Valid ActivityCategoryAddForm addForm) {
+        return activityCategoryService.add(addForm);
+    }
+
+    @Operation(summary = "更新 @author akkkka114514")
+    @PostMapping("/activityCategory/update")
+    @SaCheckPermission("activityCategory:update")
+    public ResponseDTO<String> update(@RequestBody @Valid ActivityCategoryUpdateForm updateForm) {
+        return activityCategoryService.update(updateForm);
+    }
+
+    @Operation(summary = "批量删除 @author akkkka114514")
+    @PostMapping("/activityCategory/batchDelete")
+    @SaCheckPermission("activityCategory:delete")
+    public ResponseDTO<String> batchDelete(@RequestBody ValidateList<Long> idList) {
+        return activityCategoryService.batchDelete(idList);
+    }
+
+    @Operation(summary = "单个删除 @author akkkka114514")
+    @GetMapping("/activityCategory/delete/{id}")
+    @SaCheckPermission("activityCategory:delete")
+    public ResponseDTO<String> delete(@PathVariable Long id) {
+        return activityCategoryService.delete(id);
+    }
 
 }

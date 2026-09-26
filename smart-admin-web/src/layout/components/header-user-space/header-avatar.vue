@@ -12,7 +12,7 @@
   <a-dropdown class="header-trigger" :get-popup-container="getPopupContainer">
     <div class="wrapper">
       <img class="avatar-image" :src="avatar" v-if="avatar" />
-      <a-avatar v-else style="margin: 0 5px" :size="20" id="smartAdminAvatar">
+      <a-avatar v-else style="margin: 0 5px" :size="20" id="funcampusAvatar">
         {{ avatarName }}
       </a-avatar>
       <span class="name">{{ actualName }}</span>
@@ -87,7 +87,7 @@
   function updateAvatar() {
     if (useUserStore().actualName) {
       avatarName.value = useUserStore().actualName.substr(0, 1);
-      const avatar = document.getElementById('smartAdminAvatar');
+      const avatar = document.getElementById('funcampusAvatar');
       if (avatar) {
         avatar.style.backgroundColor = AVATAR_BACKGROUND_COLOR_ARRAY[hashcode(avatarName.value) % 4];
       }

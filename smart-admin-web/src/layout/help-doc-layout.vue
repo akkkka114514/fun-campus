@@ -14,7 +14,7 @@
       2、中间内容区域
       3、底部（一般是公司版权信息）
      -->
-  <a-layout class="help-doc-layout" id="smartAdminMain">
+  <a-layout class="help-doc-layout" id="funcampusMain">
     <!-- 顶部头部信息 -->
     <a-layout-header class="layout-header">
       <a-row class="layout-header-title">
@@ -43,7 +43,7 @@
       </a-layout-sider>
 
       <!--中间内容-->
-      <a-layout-content id="smartAdminLayoutContent" class="help-doc-layout-content">
+      <a-layout-content id="funcampusLayoutContent" class="help-doc-layout-content">
         <router-view v-slot="{ Component }">
           <div :key="route.fullPath">
             <component :is="Component" />
@@ -69,7 +69,7 @@
   import SmartFooter from './components/smart-footer/index.vue';
   import { helpDocApi } from '/@/api/support/help-doc-api';
   import { helpDocCatalogApi } from '/@/api/support/help-doc-catalog-api';
-  import logoImg from '/@/assets/images/logo/smart-admin-logo-white.png';
+  import logoImg from '/@/assets/images/logo/funcampus-logo-white.png';
   import { SmartLoading } from '/@/components/framework/smart-loading';
   import { HOME_PAGE_NAME } from '/@/constants/system/home-const';
   import watermark from '../lib/smart-watermark';

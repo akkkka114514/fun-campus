@@ -19,6 +19,7 @@ import com.akkkka.common.util.SmartBeanUtil;
 import com.akkkka.common.util.SmartPageUtil;
 import com.akkkka.common.domain.ResponseDTO;
 import com.akkkka.common.domain.PageResult;
+import com.akkkka.common.domain.ValidateList;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.AllArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
@@ -54,6 +55,57 @@ public class ActivityCategoryService {
             vo.setName(entity.getName());
             return vo;
         }).toList();
+    }
+
+    /**
+     * 分页查询
+     */
+    public PageResult<ActivityCategoryVO> queryPage(ActivityCategoryQueryForm queryForm) {
+        Page<ActivityCategoryVO> page = new Page<>(queryForm.getPageNum(), queryForm.getPageSize());
+        List<ActivityCategoryVO> list = categoryManager.getBaseMapper().queryPage(page, queryForm);
+        return SmartPageUtil.convert2PageResult(page, list);
+    }
+
+    /**
+     * 添加
+     */
+    public ResponseDTO<String> add(ActivityCategoryAddForm addForm) {
+        ActivityCategoryEntity entity = SmartBeanUtil.copy(addForm, ActivityCategoryEntity.class);
+        entity.setId(null);
+        entity.setDeletedFlag(false);
+        categoryManager.save(entity);
+        return ResponseDTO.ok();
+    }
+
+    /**
+     * 更新
+     */
+    public ResponseDTO<String> update(ActivityCategoryUpdateForm updateForm) {
+        ActivityCategoryEntity entity = SmartBeanUtil.copy(updateForm, ActivityCategoryEntity.class);
+        categoryManager.updateById(entity);
+        return ResponseDTO.ok();
+    }
+
+    /**
+     * 批量删除
+     */
+    public ResponseDTO<String> batchDelete(ValidateList<Long> idList) {
+        if (CollectionUtils.isEmpty(idList)) {
+            return ResponseDTO.ok();
+        }
+        categoryManager.getBaseMapper().batchUpdateDeleted(idList, true);
+        return ResponseDTO.ok();
+    }
+
+    /**
+     * 单个删除
+     */
+    public ResponseDTO<String> delete(Long id) {
+        if (id == null) {
+            return ResponseDTO.ok();
+        }
+        categoryManager.getBaseMapper().updateDeleted(id, true);
+        return ResponseDTO.ok();
     }
 
 }

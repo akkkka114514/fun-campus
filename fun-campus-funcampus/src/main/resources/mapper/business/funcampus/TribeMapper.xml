@@ -6,6 +6,8 @@
     <sql id="base_columns">
         tribe.id,
         tribe.name,
+        tribe.icon,
+        tribe.description,
         tribe.category_id,
         tribe.president_id,
         tribe.belong_to,
@@ -20,6 +22,7 @@
         SELECT
         <include refid="base_columns"/>
         FROM tribe
+        WHERE tribe.deleted_flag = 0
     </select>
 
     <update id="batchUpdateDeleted">
@@ -47,5 +50,59 @@
         <if test="keyword != null">
             AND tribe.name LIKE CONCAT('%',#{keyword},'%')
         </if>
+    </select>
+
+    <!-- 门户：本校部落分页（带成员数、主席名、我是否已加入） -->
+    <select id="queryPortalPage" resultType="com.akkkka.admin.module.business.funcampus.tribe.domain.vo.TribePortalVO">
+        SELECT
+            tribe.id,
+            tribe.name,
+            tribe.icon,
+            tribe.category_id,
+            tribe.president_id,
+            president.username AS president_name,
+            tribe.belong_to,
+            (SELECT COUNT(*) FROM tribe_user tu WHERE tu.tribe_id = tribe.id AND tu.deleted_flag = 0) AS member_num,
+            EXISTS(SELECT 1 FROM tribe_user tu2 WHERE tu2.tribe_id = tribe.id AND tu2.portal_user_id = #{userId} AND tu2.deleted_flag = 0) AS joined_flag
+        FROM tribe
+        LEFT JOIN portal_user president ON president.id = tribe.president_id
+        WHERE tribe.deleted_flag = 0
+        <if test="schoolId != null">
+            AND tribe.school_id = #{schoolId}
+        </if>
+        <if test="queryForm.keyword != null and queryForm.keyword != ''">
+            AND tribe.name LIKE CONCAT('%', #{queryForm.keyword}, '%')
+        </if>
+        <choose>
+            <when test="queryForm.sortType != null and queryForm.sortType == 2">
+                ORDER BY member_num DESC, tribe.id ASC
+            </when>
+            <otherwise>
+                ORDER BY tribe.id ASC
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 门户：部落发起的活动分页（通过活动可报名部落关联） -->
+    <select id="queryTribeActivityPage" resultType="com.akkkka.admin.module.business.funcampus.tribe.domain.vo.TribeActivityVO">
+        SELECT
+            activity.id AS activity_id,
+            activity.title,
+            activity.cover_img,
+            activity.position,
+            activity.status AS activity_status,
+            activity.paid_flag,
+            activity.price_fen,
+            activity.score_can_get,
+            activity_enroll_num.enroll_num,
+            activity_schedule.activity_start_time,
+            activity_schedule.activity_end_time
+        FROM activity_can_enroll_tribe
+        INNER JOIN activity ON activity.id = activity_can_enroll_tribe.activity_id AND activity.deleted_flag = 0
+        LEFT JOIN activity_schedule ON activity_schedule.activity_id = activity.id
+        LEFT JOIN activity_enroll_num ON activity_enroll_num.activity_id = activity.id
+        WHERE activity_can_enroll_tribe.deleted_flag = 0
+          AND activity_can_enroll_tribe.can_enroll_tribe = #{tribeId}
+        ORDER BY activity.id DESC
     </select>
 </mapper>

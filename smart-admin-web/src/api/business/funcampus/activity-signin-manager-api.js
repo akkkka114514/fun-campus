@@ -13,21 +13,21 @@ export const activitySigninManagerApi = {
    * 分页查询  @author  akkkka114514
    */
   queryPage : (param) => {
-    return postRequest('/activitySigninManager/queryPage', param);
+    return postRequest('/backend/activitySigninManager/queryPage', param);
   },
 
   /**
    * 增加  @author  akkkka114514
    */
   add: (param) => {
-      return postRequest('/activitySigninManager/add', param);
+      return postRequest('/backend/activitySigninManager/add', param);
   },
 
   /**
    * 修改  @author  akkkka114514
    */
   update: (param) => {
-      return postRequest('/activitySigninManager/update', param);
+      return postRequest('/backend/activitySigninManager/update', param);
   },
 
 
@@ -35,14 +35,14 @@ export const activitySigninManagerApi = {
    * 删除  @author  akkkka114514
    */
   delete: (id) => {
-      return getRequest(`/activitySigninManager/delete/${id}`);
+      return getRequest(`/backend/activitySigninManager/delete/${id}`);
   },
 
   /**
    * 批量删除  @author  akkkka114514
    */
   batchDelete: (idList) => {
-      return postRequest('/activitySigninManager/batchDelete', idList);
+      return postRequest('/backend/activitySigninManager/batchDelete', idList);
   },
 
 };

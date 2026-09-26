@@ -50,7 +50,9 @@ public class SmartJobLogVO {
     @Schema(description = "程序目录")
     private String programPath;
 
+    @Schema(description = "创建人")
     private String createName;
 
+    @Schema(description = "创建时间")
     private LocalDateTime createTime;
 }

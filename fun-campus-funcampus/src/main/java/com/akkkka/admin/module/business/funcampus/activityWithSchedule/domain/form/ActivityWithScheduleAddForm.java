@@ -20,8 +20,13 @@ import java.util.List;
 @Data
 @ToString
 public class ActivityWithScheduleAddForm {
+    @Schema(description = "活动基本信息")
     private ActivityAddForm activityAddForm;
+
+    @Schema(description = "活动时间表")
     private ActivityScheduleAddForm activityScheduleAddForm;
+
+    @Schema(description = "审核日志")
     private ActivityReviewLogAddForm reviewLogAddForm;
 
     /**

@@ -20,6 +20,7 @@ import com.akkkka.module.support.changelog.constant.ChangeLogTypeEnum;
 @Data
 public class ChangeLogVO {
 
+    @Schema(description = "更新日志id")
     private Long changeLogId;
 
     @Schema(description = "版本")

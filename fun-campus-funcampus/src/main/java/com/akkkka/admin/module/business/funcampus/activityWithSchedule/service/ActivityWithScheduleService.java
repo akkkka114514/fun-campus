@@ -5,6 +5,7 @@ import com.akkkka.admin.module.business.funcampus.activityCanEnrollGrade.service
 import com.akkkka.admin.module.business.funcampus.activityCanEnrollTribe.service.ActivityCanEnrollTribeService;
 import com.akkkka.admin.module.business.funcampus.activityCategory.service.ActivityCategoryService;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.entity.ActivityEnrollmentEntity;
+import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.vo.MyEnrollmentStatusVO;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.manager.ActivityEnrollmentManager;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.service.ActivityEnrollmentService;
 import com.akkkka.admin.module.business.funcampus.activityOrder.domain.entity.ActivityOrderEntity;
@@ -23,6 +24,7 @@ import com.akkkka.admin.module.business.funcampus.activityReviewLog.manager.Acti
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.service.ActivityReviewLogService;
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.service.ActivitySigninManagerService;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.constant.ActivityStatus;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.constant.IndexActivityPageConst;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.dao.ActivityDao;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.converter.ActivityAddFormConverter;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.converter.ActivityScheduleAddFormConverter;
@@ -47,6 +49,7 @@ import com.akkkka.common.domain.ResponseDTO;
 import com.akkkka.common.domain.PageResult;
 import com.akkkka.common.enumeration.UserTypeEnum;
 import com.akkkka.common.exception.BusinessException;
+import com.akkkka.common.util.SmartPageUtil;
 import com.akkkka.common.util.SmartRequestUtil;
 import com.akkkka.module.support.file.service.FileService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -58,7 +61,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 /**
@@ -142,6 +147,9 @@ public class ActivityWithScheduleService {
         // 付费活动：附加当前门户用户最新订单（未登录/非门户用户返回 null）
         detailVO.setCurrentUserOrder(buildCurrentUserOrder(activityId));
 
+        // 当前门户用户的报名状态（未登录/非门户用户返回 null，免费付费通用）
+        detailVO.setCurrentUserEnrollment(buildCurrentUserEnrollment(activityId));
+
         return detailVO;
     }
 
@@ -168,6 +176,25 @@ public class ActivityWithScheduleService {
         orderVO.setCloseTime(order.getCloseTime());
         orderVO.setCreateTime(order.getCreateTime());
         return orderVO;
+    }
+
+    /**
+     * 当前门户用户在该活动的报名状态（未登录/非门户用户返回 null；未报名时 enrolled=false）
+     */
+    private MyEnrollmentStatusVO buildCurrentUserEnrollment(Long activityId) {
+        RequestUser requestUser = SmartRequestUtil.getRequestUser();
+        if (requestUser == null || requestUser.getUserType() != UserTypeEnum.PORTAL_USER) {
+            return null;
+        }
+        ActivityEnrollmentEntity enrollment = activityEnrollmentManager.getOne(
+                activityEnrollmentManager.qwByActivityId(activityId)
+                        .eq(ActivityEnrollmentEntity::getUserId, requestUser.getUserId()));
+        MyEnrollmentStatusVO vo = new MyEnrollmentStatusVO();
+        vo.setActivityId(activityId);
+        vo.setEnrolled(enrollment != null);
+        vo.setSignInStatus(enrollment != null && Boolean.TRUE.equals(enrollment.getSignInStatus()));
+        vo.setSignOutStatus(enrollment != null && Boolean.TRUE.equals(enrollment.getSignOutStatus()));
+        return vo;
     }
 
     private ActivityVO buildActivityVO(ActivityEntity activity) {
@@ -262,7 +289,10 @@ public class ActivityWithScheduleService {
     }
 
     public ResponseDTO<PageResult<ActivityWithScheduleVO>> queryActivityWithSchedule(ActivityWithScheduleQueryForm queryForm) {
-        return null; // TODO: implement
+        Page<?> page = SmartPageUtil.convert2PageQuery(queryForm);
+        List<ActivityWithScheduleVO> list = activityDao.queryActivityWithSchedule(page, queryForm);
+        PageResult<ActivityWithScheduleVO> pageResult = SmartPageUtil.convert2PageResult(page, list);
+        return ResponseDTO.ok(pageResult);
     }
 
     public ResponseDTO<String> batchDelete(List<Long> ids) {
@@ -493,6 +523,42 @@ public class ActivityWithScheduleService {
         }
         Long schoolId = portalUserEntity.getSchoolId();
         return activityDao.notStartAndPendingEnrollActivity(page,schoolId);
+    }
+
+    /**
+     * 活动日历：按日期区间查询活动
+     * <p>
+     * 命中规则：活动时间与 [startDate, endDate]（含当天）有重叠；
+     * activeActivityPage：1-本校（取当前用户学校） 2-全局
+     */
+    public List<ActivityCalendarVO> calendar(LocalDate startDate, LocalDate endDate, Integer activeActivityPage) {
+        if (startDate == null || endDate == null) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "日期不能为空");
+        }
+        if (endDate.isBefore(startDate)) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "结束日期不能早于开始日期");
+        }
+        if (ChronoUnit.DAYS.between(startDate, endDate) > 62) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "查询范围最多62天");
+        }
+        if (activeActivityPage == null || (!activeActivityPage.equals(IndexActivityPageConst.MY_SCHOOL_ACTIVITY)
+                && !activeActivityPage.equals(IndexActivityPageConst.GLOBAL_ACTIVITY))) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "活动范围参数错误");
+        }
+        Long schoolId = null;
+        if (activeActivityPage.equals(IndexActivityPageConst.MY_SCHOOL_ACTIVITY)) {
+            Long userId = SmartRequestUtil.getRequestUserId();
+            PortalUserEntity portalUser = portalUserManager.getById(userId);
+            if (portalUser == null || Boolean.TRUE.equals(portalUser.getDeletedFlag())) {
+                throw new BusinessException(UnexpectedErrorCode.BUSINESS_HANDING, "用户不存在");
+            }
+            if (portalUser.getSchoolId() == null) {
+                throw new BusinessException(UserErrorCode.PARAM_ERROR, "当前用户未绑定学校");
+            }
+            schoolId = portalUser.getSchoolId();
+        }
+        // 半开区间 [startDate 00:00, endDate+1 00:00)，与活动时间有交集即命中
+        return activityDao.queryCalendar(schoolId, startDate.atStartOfDay(), endDate.plusDays(1).atStartOfDay());
     }
 
     /**

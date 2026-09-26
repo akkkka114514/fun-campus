@@ -12,8 +12,8 @@
   <div class="login-container">
     <div class="box-item desc">
       <div class="welcome">
-        <p>欢迎登录 SmartAdmin V3</p>
-        <p class="sub-welcome">「高质量代码、简洁、高效、安全」的开发平台</p>
+        <p>欢迎登录 Fun Campus 管理后台</p>
+        <p class="sub-welcome">「简洁、高效、安全」的校园活动管理平台</p>
       </div>
       <img class="welcome-img" :src="loginGif" />
     </div>
@@ -21,8 +21,8 @@
       <img class="login-qr" :src="loginQR" />
       <div class="login-title">账号登录</div>
       <a-form ref="formRef" class="login-form" :model="loginForm" :rules="rules">
-        <a-form-item name="loginName">
-          <a-input v-model:value.trim="loginForm.loginName" placeholder="请输入用户名" />
+        <a-form-item name="username">
+          <a-input v-model:value.trim="loginForm.username" placeholder="请输入用户名" />
         </a-form-item>
         <a-form-item name="emailCode" v-if="emailCodeShowFlag">
           <a-input-group compact>
@@ -46,7 +46,7 @@
         </a-form-item>
         <a-form-item>
           <a-checkbox v-model:checked="rememberPwd">记住密码</a-checkbox>
-          <span> ( 账号：admin, 密码：123456)</span>
+          <span> ( 账号：akkkka )</span>
         </a-form-item>
         <a-form-item>
           <div class="btn" @click="onLogin">登录</div>
@@ -234,7 +234,7 @@
   async function sendSmsCode() {
     try {
       SmartLoading.show();
-      let result = await loginApi.sendLoginEmailCode(loginForm.loginName);
+      let result = await loginApi.sendLoginEmailCode(loginForm.username);
       message.success('验证码发送成功!请登录邮箱查看验证码~');
       runCountDown();
     } catch (e) {

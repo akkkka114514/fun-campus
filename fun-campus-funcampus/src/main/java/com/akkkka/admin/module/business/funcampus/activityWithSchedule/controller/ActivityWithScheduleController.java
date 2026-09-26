@@ -1,8 +1,10 @@
 package com.akkkka.admin.module.business.funcampus.activityWithSchedule.controller;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,6 +26,7 @@ import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.en
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleAddForm;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleQueryForm;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleUpdateForm;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityCalendarVO;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityDetailVO;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityPhaseCountdownVO;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityReviewProposalVO;
@@ -179,6 +182,15 @@ public class ActivityWithScheduleController {
         indexActivityVO.setMySchoolActivities(mySchoolActivities);
         indexActivityVO.setGlobalActivities(globalActivities);
         return ResponseDTO.ok(indexActivityVO);
+    }
+
+    @Operation(summary = "活动日历（按日期区间查询活动，1-本校 2-全局） @author akkkka114514")
+    @GetMapping("/activity/calendar")
+    public ResponseDTO<List<ActivityCalendarVO>> calendar(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam Integer activeActivityPage) {
+        return ResponseDTO.ok(activityWithScheduleService.calendar(startDate, endDate, activeActivityPage));
     }
 
 

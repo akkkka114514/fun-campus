@@ -1,6 +1,7 @@
 package com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -10,6 +11,9 @@ import lombok.Data;
  */
 @Data
 public class IndexActivityVO {
+    @Schema(description = "本校活动列表")
     private Page<ActivityWithScheduleVO> mySchoolActivities;
+
+    @Schema(description = "全局活动列表")
     private Page<ActivityWithScheduleVO> globalActivities;
 }

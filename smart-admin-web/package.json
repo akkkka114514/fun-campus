@@ -1,5 +1,5 @@
 {
-  "name": "smartadmin",
+  "name": "fun-campus-web",
   "version": "3.0.0",
   "author": {
     "name": "1024创新实验室（1024lab）",
@@ -7,7 +7,6 @@
     "url": "https://www.1024lab.net"
   },
   "license": "MIT",
-  "homepage": "https://smartadmin.1024lab.net",
   "scripts": {
     "localhost": "vite --mode localhost",
     "dev": "vite",
@@ -66,9 +65,5 @@
   },
   "engines": {
     "node": ">=18"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/1024-lab/smart-admin.git"
   }
 }

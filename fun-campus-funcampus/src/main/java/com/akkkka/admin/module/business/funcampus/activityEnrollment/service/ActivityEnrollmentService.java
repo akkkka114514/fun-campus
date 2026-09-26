@@ -10,8 +10,11 @@ import java.util.concurrent.TimeUnit;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.constant.RedisKey;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.dao.ActivityEnrollmentDao;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.entity.ActivityEnrollmentEntity;
+import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.form.ActivityEnrollmentKeyForm;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.form.ActivityEnrollmentQueryForm;
+import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.form.MyEnrollmentQueryForm;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.vo.ActivityEnrollmentVO;
+import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.vo.MyEnrollmentVO;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.manager.ActivityEnrollmentManager;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.dto.EnrollersChangeDTO;
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.service.ActivitySigninManagerService;
@@ -139,12 +142,6 @@ public class ActivityEnrollmentService {
         portalUserValidator.validateUserCanEnrollTribe(activityId,portalUser);
         enrollmentDomainService.validateEnrollmentDuplicate(activityId,userId);
 
-        ActivityEnrollmentEntity enrollmentEntity = new ActivityEnrollmentEntity();
-        enrollmentEntity.setActivityId(activityId);
-        enrollmentEntity.setUserId(userId);
-        enrollmentEntity.setSignInStatus(false);
-        enrollmentEntity.setDeletedFlag(false);
-
         transactionTemplate.executeWithoutResult(status -> {
             // 尝试增加报名人数，如果达到上限则返回false
             if (!activityEnrollNumDao.increaseEnrollNum(activityId)) {
@@ -153,8 +150,8 @@ public class ActivityEnrollmentService {
                 throw new BusinessException(UserErrorCode.PARAM_ERROR, "活动报名人数已满");
             }
 
-            // 如果增加报名人数成功，则插入报名记录
-            if (activityEnrollmentDao.insert(enrollmentEntity) == 0) {
+            // 如果增加报名人数成功，则写入报名记录（取消过报名的情况会复活原记录）
+            if (activityEnrollmentDao.upsertEnrollment(activityId, userId) == 0) {
                 log.error("ActivityEnrollmentService.enroll failed: failed to insert enrollment record, activityId={}", activityId);
                 status.setRollbackOnly();
                 throw new BusinessException(UserErrorCode.PARAM_ERROR, "报名失败");
@@ -182,14 +179,8 @@ public class ActivityEnrollmentService {
             return;
         }
 
-        ActivityEnrollmentEntity enrollmentEntity = new ActivityEnrollmentEntity();
-        enrollmentEntity.setActivityId(activityId);
-        enrollmentEntity.setUserId(userId);
-        enrollmentEntity.setSignInStatus(false);
-        enrollmentEntity.setSignOutStatus(false);
-        enrollmentEntity.setDeletedFlag(false);
-        if (activityEnrollmentDao.insert(enrollmentEntity) == 0) {
-            log.error("saveEnrollmentRecord failed: insert error, activityId={}, userId={}", activityId, userId);
+        if (activityEnrollmentDao.upsertEnrollment(activityId, userId) == 0) {
+            log.error("saveEnrollmentRecord failed: upsert error, activityId={}, userId={}", activityId, userId);
             throw new BusinessException(UserErrorCode.PARAM_ERROR, "写报名记录失败");
         }
         log.info("saveEnrollmentRecord success: activityId={}, userId={}", activityId, userId);
@@ -237,6 +228,72 @@ public class ActivityEnrollmentService {
         }
         int idx = message.indexOf(':');
         return idx >= 0 && idx + 1 < message.length() ? message.substring(idx + 1) : message;
+    }
+
+    /**
+     * 分页查询我的报名（联表带出活动标题/封面/时间表）
+     */
+    public PageResult<MyEnrollmentVO> queryMyEnrollment(MyEnrollmentQueryForm queryForm) {
+        Long userId = getCurrentPortalUserId();
+        Page<MyEnrollmentVO> page = new Page<>(queryForm.getPageNum(), queryForm.getPageSize());
+        List<MyEnrollmentVO> list = activityEnrollmentDao.queryMyEnrollment(page, userId, queryForm);
+        return SmartPageUtil.convert2PageResult(page, list);
+    }
+
+    /**
+     * 取消报名（仅免费活动；付费活动须走退款链路）
+     * <p>
+     * 校验：报名记录存在且未签到 → 非付费活动 → 未过报名截止时间（半开区间）；
+     * 事务内：CAS 逻辑删报名记录 + 释放名额（防重复取消重复释放）
+     */
+    public void cancelEnrollment(Long activityId) {
+        Long userId = getCurrentPortalUserId();
+        ActivityEntity activity = activityValidator.validateActivityId(activityId);
+        // 报名记录必须存在（未删除）
+        ActivityEnrollmentEntity enrollmentEntity = enrollmentDomainService.validateEnrollmentExist(activityId, userId);
+        // 已签到的不允许取消
+        if (Boolean.TRUE.equals(enrollmentEntity.getSignInStatus())) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "已签到，无法取消报名");
+        }
+        // 付费活动：报名记录来自支付成功，取消报名须走退款链路（退款回调统一释放名额并删除报名记录）
+        if (Boolean.TRUE.equals(activity.getPaidFlag())) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "付费活动请通过「申请退款」取消报名");
+        }
+        // 报名截止后不允许取消（半开区间：now < enroll_end_time）
+        ActivityScheduleEntity schedule = getActivitySchedule(activityId);
+        if (schedule.getEnrollEndTime() != null && !LocalDateTime.now().isBefore(schedule.getEnrollEndTime())) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "报名已截止，无法取消报名");
+        }
+
+        transactionTemplate.executeWithoutResult(status -> {
+            // 先 CAS 逻辑删报名记录（未删除时 1 行，防重复取消重复释放名额）
+            LambdaUpdateWrapper<ActivityEnrollmentEntity> updateWrapper = new LambdaUpdateWrapper<>();
+            updateWrapper.eq(ActivityEnrollmentEntity::getActivityId, activityId)
+                    .eq(ActivityEnrollmentEntity::getUserId, userId)
+                    .eq(ActivityEnrollmentEntity::getDeletedFlag, false)
+                    .set(ActivityEnrollmentEntity::getDeletedFlag, true);
+            if (!activityEnrollmentManager.update(updateWrapper)) {
+                status.setRollbackOnly();
+                throw new BusinessException(UserErrorCode.SERVICE_BUSY, "取消失败，请稍后重试");
+            }
+            // 释放名额
+            if (!activityEnrollNumDao.decreaseEnrollNum(activityId)) {
+                status.setRollbackOnly();
+                throw new BusinessException(UserErrorCode.SERVICE_BUSY, "取消失败，请稍后重试");
+            }
+            log.info("ActivityEnrollmentService.cancelEnrollment success: activityId={}, userId={}", activityId, userId);
+        });
+    }
+
+    /**
+     * 获取当前登录的门户用户id（我的报名相关接口仅允许门户用户访问）
+     */
+    private Long getCurrentPortalUserId() {
+        RequestUser requestUser = SmartRequestUtil.getRequestUser();
+        if (requestUser == null || requestUser.getUserType() != UserTypeEnum.PORTAL_USER) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "用户类型错误");
+        }
+        return requestUser.getUserId();
     }
     /*
         产生二维码不指定属于哪个活动，仅提供userId和uuid，activityId需扫描者指定
@@ -539,5 +596,64 @@ public class ActivityEnrollmentService {
             throw new BusinessException(UserErrorCode.PARAM_ERROR,"活动时间表不存在");
         }
         return schedule;
+    }
+
+    /**
+     * 分页查询报名记录（管理后台）
+     * <p>默认仅查询未删除记录；queryForm.deletedFlag 显式传入时可查询已删除记录。
+     */
+    public PageResult<ActivityEnrollmentVO> queryEnrollmentPage(ActivityEnrollmentQueryForm queryForm) {
+        if (queryForm.getDeletedFlag() == null) {
+            queryForm.setDeletedFlag(false);
+        }
+        Page<ActivityEnrollmentVO> page = new Page<>(queryForm.getPageNum(), queryForm.getPageSize());
+        List<ActivityEnrollmentVO> list = activityEnrollmentDao.queryPage(page, queryForm);
+        return SmartPageUtil.convert2PageResult(page, list);
+    }
+
+    /**
+     * 逻辑删除单条报名记录（管理后台，同步释放名额）
+     */
+    public void deleteEnrollment(Long activityId, Long userId) {
+        Boolean deleted = transactionTemplate.execute(status -> doDeleteEnrollment(activityId, userId));
+        if (!Boolean.TRUE.equals(deleted)) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "报名记录不存在或已删除");
+        }
+    }
+
+    /**
+     * 批量逻辑删除报名记录（管理后台，单事务；已删除记录自动跳过）
+     */
+    public void batchDeleteEnrollment(List<ActivityEnrollmentKeyForm> keyList) {
+        if (keyList == null || keyList.isEmpty()) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "删除列表不能为空");
+        }
+        transactionTemplate.executeWithoutResult(status -> {
+            for (ActivityEnrollmentKeyForm key : keyList) {
+                doDeleteEnrollment(key.getActivityId(), key.getUserId());
+            }
+        });
+    }
+
+    /**
+     * 执行逻辑删除（CAS：仅未删除记录命中；命中的记录同步释放名额）
+     */
+    private boolean doDeleteEnrollment(Long activityId, Long userId) {
+        LambdaUpdateWrapper<ActivityEnrollmentEntity> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(ActivityEnrollmentEntity::getActivityId, activityId)
+                .eq(ActivityEnrollmentEntity::getUserId, userId)
+                .eq(ActivityEnrollmentEntity::getDeletedFlag, false)
+                .set(ActivityEnrollmentEntity::getDeletedFlag, true);
+        if (!activityEnrollmentManager.update(updateWrapper)) {
+            log.warn("deleteEnrollment skip: enrollment not found or already deleted, activityId={}, userId={}", activityId, userId);
+            return false;
+        }
+        // 释放名额（释放失败抛异常回滚逻辑删除，保持报名计数与记录一致）
+        if (!activityEnrollNumDao.decreaseEnrollNum(activityId)) {
+            log.error("deleteEnrollment failed: decreaseEnrollNum error, activityId={}, userId={}", activityId, userId);
+            throw new BusinessException(UserErrorCode.SERVICE_BUSY, "删除失败：释放名额异常，请稍后重试");
+        }
+        log.info("deleteEnrollment success: activityId={}, userId={}", activityId, userId);
+        return true;
     }
 }

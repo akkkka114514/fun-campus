@@ -14,13 +14,10 @@
         <a-form-item label="关键字" class="smart-query-form-item">
           <a-input style="width: 150px" v-model:value="params.keyword" placeholder="关键字" />
         </a-form-item>
-        <a-form-item label="部门" class="smart-query-form-item">
-          <DepartmentTreeSelect style="width: 200px" ref="departmentTreeSelect" v-model:value="params.departmentId" />
-        </a-form-item>
         <a-form-item label="状态" class="smart-query-form-item">
           <a-select style="width: 120px" v-model:value="params.disabledFlag" placeholder="请选择状态" allowClear>
-            <a-select-option :key="1"> 禁用 </a-select-option>
-            <a-select-option :key="0"> 启用 </a-select-option>
+            <a-select-option :value="true"> 禁用 </a-select-option>
+            <a-select-option :value="false"> 启用 </a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item class="smart-query-form-item smart-margin-left10">
@@ -47,16 +44,12 @@
       :data-source="tableData"
       :pagination="false"
       bordered
-      rowKey="employeeId"
+      rowKey="id"
       :scroll="{ y: 300 }"
     >
       <template #bodyCell="{ text, column }">
         <template v-if="column.dataIndex === 'disabledFlag'">
           <a-tag :color="text ? 'error' : 'processing'">{{ text ? '禁用' : '启用' }}</a-tag>
-        </template>
-
-        <template v-if="column.dataIndex === 'gender'">
-          <span>{{ $smartEnumPlugin.getDescByValue('GENDER_ENUM', text) }}</span>
         </template>
       </template>
     </a-table>
@@ -105,13 +98,10 @@
   }
   // ----------------------- 后台用户查询表单与查询 ---------------------
   const tableLoading = ref(false);
-  const departmentTreeSelect = ref();
   const total = ref();
 
   let defaultParams = {
-    departmentId: undefined,
     disabledFlag: undefined,
-    employeeIdList: undefined,
     keyword: undefined,
     searchCount: undefined,
     pageNum: 1,
@@ -165,7 +155,7 @@
   function getCheckboxProps(record) {
     return {
       // 角色后台用户列表的添加后台用户弹窗中 禁止添加选择已存在该角色的后台用户
-      disabled: originalRowKeyList.value.includes(record.employeeId),
+      disabled: originalRowKeyList.value.includes(record.id),
     };
   }
 
@@ -174,20 +164,13 @@
   //字段
   const columns = [
     {
-      title: '姓名',
-      dataIndex: 'actualName',
-    },
-    {
-      title: '手机号',
-      dataIndex: 'phone',
-    },
-    {
-      title: '性别',
-      dataIndex: 'gender',
-    },
-    {
       title: '登录账号',
-      dataIndex: 'loginName',
+      dataIndex: 'username',
+    },
+    {
+      title: '邮箱',
+      dataIndex: 'email',
+      ellipsis: true,
     },
     {
       title: '状态',

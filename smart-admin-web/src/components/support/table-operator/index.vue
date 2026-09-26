@@ -128,7 +128,7 @@
 
   // 处理退出全屏
   function handleExitFullScreen() {
-    document.querySelector('#smartAdminHeader').style.display = 'block';
+    document.querySelector('#funcampusHeader').style.display = 'block';
     fullScreenFlag.value = false;
     useAppConfigStore().exitFullScreen();
     document.removeEventListener('fullscreenchange', handleFullscreenChange);
@@ -139,7 +139,7 @@
 
   //判断各种浏览器 -全屏
   function launchElementFullScreen(element) {
-    document.querySelector('#smartAdminHeader').style.display = 'none';
+    document.querySelector('#funcampusHeader').style.display = 'none';
     if (element.requestFullscreen) {
       element.requestFullscreen();
     } else if (element.mozRequestFullScreen) {

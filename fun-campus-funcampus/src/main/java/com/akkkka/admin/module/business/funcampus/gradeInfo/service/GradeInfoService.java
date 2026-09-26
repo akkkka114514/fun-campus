@@ -18,6 +18,7 @@ import com.akkkka.common.util.SmartBeanUtil;
 import com.akkkka.common.util.SmartPageUtil;
 import com.akkkka.common.domain.ResponseDTO;
 import com.akkkka.common.domain.PageResult;
+import com.akkkka.common.domain.ValidateList;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.AllArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
@@ -60,5 +61,56 @@ public class GradeInfoService {
         GradeInfoEntity entity = gradeInfoManager.getById(id);
         AssertUtil.ifTrueThrowParamError(Objects.isNull(entity));
         return entity.getName();
+    }
+
+    /**
+     * 分页查询
+     */
+    public PageResult<GradeInfoVO> queryPage(GradeInfoQueryForm queryForm) {
+        Page<GradeInfoVO> page = new Page<>(queryForm.getPageNum(), queryForm.getPageSize());
+        List<GradeInfoVO> list = gradeInfoManager.getBaseMapper().queryPage(page, queryForm);
+        return SmartPageUtil.convert2PageResult(page, list);
+    }
+
+    /**
+     * 添加
+     */
+    public ResponseDTO<String> add(GradeInfoAddForm addForm) {
+        GradeInfoEntity entity = SmartBeanUtil.copy(addForm, GradeInfoEntity.class);
+        entity.setId(null);
+        entity.setDeletedFlag(false);
+        gradeInfoManager.save(entity);
+        return ResponseDTO.ok();
+    }
+
+    /**
+     * 更新
+     */
+    public ResponseDTO<String> update(GradeInfoUpdateForm updateForm) {
+        GradeInfoEntity entity = SmartBeanUtil.copy(updateForm, GradeInfoEntity.class);
+        gradeInfoManager.updateById(entity);
+        return ResponseDTO.ok();
+    }
+
+    /**
+     * 批量删除
+     */
+    public ResponseDTO<String> batchDelete(ValidateList<Long> idList) {
+        if (CollectionUtils.isEmpty(idList)) {
+            return ResponseDTO.ok();
+        }
+        gradeInfoManager.getBaseMapper().batchUpdateDeleted(idList, true);
+        return ResponseDTO.ok();
+    }
+
+    /**
+     * 单个删除
+     */
+    public ResponseDTO<String> delete(Long id) {
+        if (id == null) {
+            return ResponseDTO.ok();
+        }
+        gradeInfoManager.getBaseMapper().updateDeleted(id, true);
+        return ResponseDTO.ok();
     }
 }

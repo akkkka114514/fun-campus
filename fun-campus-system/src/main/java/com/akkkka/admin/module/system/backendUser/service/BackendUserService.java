@@ -119,9 +119,10 @@ public class BackendUserService extends ServiceImpl<BackendUserDao, BackendUserE
         entity.setUpdateTime(LocalDateTime.now());
         entity.setCreateTime(LocalDateTime.now());
         entity.setDeletedFlag(false);
-        entity.setDisabledFlag(false);
+        entity.setDisabledFlag(backendUserAddForm.getDisabledFlag());
         entity.setRoleId(backendUserAddForm.getRoleIdList().get(0));
         entity.setUsername(backendUserAddForm.getUsername());
+        entity.setEmail(backendUserAddForm.getEmail());
         entity.setSchoolId(backendUserAddForm.getSchoolId());
         entity.setCollegeId(backendUserAddForm.getCollegeId());
         entity.setOrganizationId(backendUserAddForm.getOrganizationId());

@@ -1,6 +1,7 @@
 package com.akkkka.admin.module.business.funcampus.payment.domain.dto;
 
 import com.akkkka.admin.module.business.funcampus.payment.constant.PayChannelEnum;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import lombok.Data;
 
@@ -17,20 +18,26 @@ import lombok.Data;
 public class PayNotifyResult {
 
     /** 渠道 */
+    @Schema(description = "渠道")
     private PayChannelEnum channel;
 
     /** 商户订单号 */
+    @Schema(description = "商户订单号")
     private String orderNo;
 
     /** 渠道订单号 */
+    @Schema(description = "渠道订单号")
     private String channelOrderNo;
 
     /** 支付金额（分），用于与订单金额比对，防止金额篡改 */
+    @Schema(description = "支付金额（分），用于与订单金额比对，防止金额篡改")
     private Integer amountFen;
 
     /** 支付是否成功 */
+    @Schema(description = "支付是否成功")
     private boolean success;
 
     /** 失败原因（success=false 时有值） */
+    @Schema(description = "失败原因（success=false 时有值）")
     private String failReason;
 }

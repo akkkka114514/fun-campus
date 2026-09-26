@@ -19,4 +19,13 @@ public class ActivitySigninManagerUpdateForm {
     @NotNull(message = "主键 不能为空")
     private Long id;
 
+    @Schema(description = "活动主键")
+    private Long activityId;
+
+    @Schema(description = "活动签到员主键")
+    private Long portalUserId;
+
+    @Schema(description = "签到员用户名")
+    private String username;
+
 }

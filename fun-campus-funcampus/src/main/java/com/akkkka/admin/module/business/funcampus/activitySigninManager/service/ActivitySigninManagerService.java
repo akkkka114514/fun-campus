@@ -5,15 +5,26 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.akkkka.admin.module.business.funcampus.activitySigninManager.domain.form.ActivitySigninManagerAddForm;
+import com.akkkka.admin.module.business.funcampus.activitySigninManager.domain.form.ActivitySigninManagerQueryForm;
+import com.akkkka.admin.module.business.funcampus.activitySigninManager.domain.form.ActivitySigninManagerUpdateForm;
+import com.akkkka.admin.module.business.funcampus.activitySigninManager.domain.vo.ActivitySigninManagerVO;
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.manager.ActivitySigninManagerManager;
 import com.akkkka.admin.module.business.funcampus.portalUser.manager.PortalUserManager;
+import com.akkkka.common.domain.PageResult;
+import com.akkkka.common.domain.ResponseDTO;
+import com.akkkka.common.domain.ValidateList;
+import com.akkkka.common.util.SmartBeanUtil;
+import com.akkkka.common.util.SmartPageUtil;
 import com.akkkka.common.code.SystemErrorCode;
 import com.akkkka.common.exception.BusinessException;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.dao.ActivitySigninManagerDao;
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.domain.entity.ActivitySigninManagerEntity;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import lombok.AllArgsConstructor;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
 
 import org.springframework.transaction.support.TransactionTemplate;
@@ -119,5 +130,56 @@ public class ActivitySigninManagerService {
             }
         });
 
+    }
+
+    /**
+     * 分页查询
+     */
+    public PageResult<ActivitySigninManagerVO> queryPage(ActivitySigninManagerQueryForm queryForm) {
+        Page<ActivitySigninManagerVO> page = new Page<>(queryForm.getPageNum(), queryForm.getPageSize());
+        List<ActivitySigninManagerVO> list = signinManagerManager.getBaseMapper().queryPage(page, queryForm);
+        return SmartPageUtil.convert2PageResult(page, list);
+    }
+
+    /**
+     * 添加
+     */
+    public ResponseDTO<String> add(ActivitySigninManagerAddForm addForm) {
+        ActivitySigninManagerEntity entity = SmartBeanUtil.copy(addForm, ActivitySigninManagerEntity.class);
+        entity.setId(null);
+        entity.setDeletedFlag(false);
+        signinManagerManager.save(entity);
+        return ResponseDTO.ok();
+    }
+
+    /**
+     * 更新
+     */
+    public ResponseDTO<String> update(ActivitySigninManagerUpdateForm updateForm) {
+        ActivitySigninManagerEntity entity = SmartBeanUtil.copy(updateForm, ActivitySigninManagerEntity.class);
+        signinManagerManager.updateById(entity);
+        return ResponseDTO.ok();
+    }
+
+    /**
+     * 批量删除
+     */
+    public ResponseDTO<String> batchDelete(ValidateList<Long> idList) {
+        if (CollectionUtils.isEmpty(idList)) {
+            return ResponseDTO.ok();
+        }
+        signinManagerManager.getBaseMapper().batchUpdateDeleted(idList, true);
+        return ResponseDTO.ok();
+    }
+
+    /**
+     * 单个删除
+     */
+    public ResponseDTO<String> delete(Long id) {
+        if (id == null) {
+            return ResponseDTO.ok();
+        }
+        signinManagerManager.getBaseMapper().updateDeleted(id, true);
+        return ResponseDTO.ok();
     }
 }

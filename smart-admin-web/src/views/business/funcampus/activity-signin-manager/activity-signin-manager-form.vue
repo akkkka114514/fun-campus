@@ -51,7 +51,7 @@
   import _ from 'lodash';
   import { message } from 'ant-design-vue';
   import { SmartLoading } from '/@/components/framework/smart-loading';
-  import { activitySigninManagerApi } from '/@/api/business/activity-signin-manager/activity-signin-manager-api';
+  import { activitySigninManagerApi } from '/@/api/business/funcampus/activity-signin-manager-api';
   import { smartSentry } from '/@/lib/smart-sentry';
   import BooleanSelect from '/@/components/framework/boolean-select/index.vue';
 

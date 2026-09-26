@@ -29,6 +29,7 @@ public class LoginForm extends CaptchaForm {
     @NotBlank(message = "密码不能为空")
     private String password;
 
+    @Schema(description = "登录设备类型")
     @Min(value = 1, message = "登录设备类型错误")
     @Max(value = 5, message = "登录设备类型错误")
     private Integer loginDevice;

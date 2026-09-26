@@ -4,7 +4,7 @@
  * @LastEditTime: 2022-06-11
  * @LastEditors: zhuoda
  * @Description:
- * @FilePath: /smart-admin/@/views/system/home/components/gauge.vue
+ * @FilePath: /fun-campus/@/views/system/home/components/gauge.vue
 -->
 <template>
   <default-home-card icon="Rocket" title="业绩完成度">

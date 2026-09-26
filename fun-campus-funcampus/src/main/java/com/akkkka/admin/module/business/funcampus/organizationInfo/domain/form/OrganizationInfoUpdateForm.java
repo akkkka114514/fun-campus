@@ -19,4 +19,10 @@ public class OrganizationInfoUpdateForm {
     @NotNull(message = "组织id 不能为空")
     private Long id;
 
+    @Schema(description = "属于学校的id")
+    private Long schoolId;
+
+    @Schema(description = "组织名称")
+    private String name;
+
 }

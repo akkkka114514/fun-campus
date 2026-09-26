@@ -1,5 +1,6 @@
 package com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -13,15 +14,19 @@ import lombok.Data;
 public class ActivityPhaseCountdownVO {
 
     /** 当前阶段名称 */
+    @Schema(description = "当前阶段名称")
     private String currentPhase;
 
     /** 下一阶段名称 */
+    @Schema(description = "下一阶段名称")
     private String nextPhase;
 
     /** 下一阶段开始时间 */
+    @Schema(description = "下一阶段开始时间")
     private String nextPhaseStartTime;
 
     /** 距离下一阶段剩余秒数，-1表示活动已结束 */
+    @Schema(description = "距离下一阶段剩余秒数，-1表示活动已结束")
     private Long remainingSeconds;
 
 }

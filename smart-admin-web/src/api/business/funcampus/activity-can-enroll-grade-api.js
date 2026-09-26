@@ -13,21 +13,21 @@ export const activityCanEnrollGradeApi = {
    * 分页查询  @author  akkkka114514
    */
   queryPage : (param) => {
-    return postRequest('/activityCanEnrollGrade/queryPage', param);
+    return postRequest('/backend/activityCanEnrollGrade/queryPage', param);
   },
 
   /**
    * 增加  @author  akkkka114514
    */
   add: (param) => {
-      return postRequest('/activityCanEnrollGrade/add', param);
+      return postRequest('/backend/activityCanEnrollGrade/add', param);
   },
 
   /**
    * 修改  @author  akkkka114514
    */
   update: (param) => {
-      return postRequest('/activityCanEnrollGrade/update', param);
+      return postRequest('/backend/activityCanEnrollGrade/update', param);
   },
 
 
@@ -35,14 +35,14 @@ export const activityCanEnrollGradeApi = {
    * 删除  @author  akkkka114514
    */
   delete: (id) => {
-      return getRequest(`/activityCanEnrollGrade/delete/${id}`);
+      return getRequest(`/backend/activityCanEnrollGrade/delete/${id}`);
   },
 
   /**
    * 批量删除  @author  akkkka114514
    */
   batchDelete: (idList) => {
-      return postRequest('/activityCanEnrollGrade/batchDelete', idList);
+      return postRequest('/backend/activityCanEnrollGrade/batchDelete', idList);
   },
 
 };

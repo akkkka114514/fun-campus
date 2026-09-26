@@ -29,6 +29,6 @@ public class GradeInfoVO {
     private LocalDateTime createTime;
 
     @Schema(description = "修改时间")
-    private LocalDateTime udpateTime;
+    private LocalDateTime updateTime;
 
 }

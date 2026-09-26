@@ -1,9 +1,11 @@
 package com.akkkka.admin.module.business.funcampus.activityWithSchedule.dao;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleQueryForm;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityCalendarVO;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityWithScheduleVO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -42,4 +44,11 @@ public interface ActivityDao extends BaseMapper<ActivityEntity> {
     Page<ActivityWithScheduleVO> notStartAndPendingEnrollActivityGlobal(Page<?> page);
 
     Page<ActivityWithScheduleVO> notStartAndPendingEnrollActivity(Page<?> page, Long schoolId);
+
+    /**
+     * 活动日历：按日期区间查询活动（活动时间与区间有重叠即命中）
+     */
+    List<ActivityCalendarVO> queryCalendar(@Param("schoolId") Long schoolId,
+                                           @Param("startTime") LocalDateTime startTime,
+                                           @Param("endTimeExclusive") LocalDateTime endTimeExclusive);
 }

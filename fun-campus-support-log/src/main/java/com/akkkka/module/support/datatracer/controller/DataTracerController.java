@@ -13,6 +13,7 @@ import com.akkkka.module.support.datatracer.domain.vo.DataTracerVO;
 import com.akkkka.module.support.datatracer.service.DataTracerService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @Tag(name = SwaggerTagConst.Support.DATA_TRACER)
 @RestController
+@RequestMapping("backend")
 public class DataTracerController extends SupportBaseController {
 
     @Resource

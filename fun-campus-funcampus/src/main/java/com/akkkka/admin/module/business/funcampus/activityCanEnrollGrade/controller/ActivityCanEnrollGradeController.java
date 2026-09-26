@@ -12,6 +12,7 @@ import com.akkkka.common.domain.ResponseDTO;
 import com.akkkka.common.domain.PageResult;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,6 +30,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @Tag(name = "活动能报名的年级")
+@RequestMapping("backend")
 public class ActivityCanEnrollGradeController {
 
     @Resource

@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import com.akkkka.common.domain.PageParam;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -18,10 +19,12 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class TribeQueryForm extends PageParam {
+    @Schema(description = "关键词")
     @Size(max = 255, message = "关键词长度不能超过255个字符")
     @NotBlank(message = "关键词不能为空")
     private String keyword;
-    
+
+    @Schema(description = "学校ID")
     @Min(value = 0, message = "学校ID必须大于0")
     private Long schoolId;
 

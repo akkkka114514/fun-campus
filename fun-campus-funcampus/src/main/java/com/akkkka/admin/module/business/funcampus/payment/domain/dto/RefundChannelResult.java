@@ -1,5 +1,6 @@
 package com.akkkka.admin.module.business.funcampus.payment.domain.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -15,11 +16,14 @@ import lombok.Data;
 public class RefundChannelResult {
 
     /** 渠道是否受理成功 */
+    @Schema(description = "渠道是否受理成功")
     private boolean accepted;
 
     /** 渠道退款单号（受理成功时有值） */
+    @Schema(description = "渠道退款单号（受理成功时有值）")
     private String channelRefundNo;
 
     /** 受理失败原因（accepted=false 时有值） */
+    @Schema(description = "受理失败原因（accepted=false 时有值）")
     private String failReason;
 }

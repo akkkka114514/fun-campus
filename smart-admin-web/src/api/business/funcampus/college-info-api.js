@@ -13,21 +13,21 @@ export const collegeInfoApi = {
    * 分页查询  @author  akkkka114514
    */
   queryPage : (param) => {
-    return postRequest('/collegeInfo/queryPage', param);
+    return postRequest('/backend/collegeInfo/queryPage', param);
   },
 
   /**
    * 增加  @author  akkkka114514
    */
   add: (param) => {
-      return postRequest('/collegeInfo/add', param);
+      return postRequest('/backend/collegeInfo/add', param);
   },
 
   /**
    * 修改  @author  akkkka114514
    */
   update: (param) => {
-      return postRequest('/collegeInfo/update', param);
+      return postRequest('/backend/collegeInfo/update', param);
   },
 
 
@@ -35,14 +35,14 @@ export const collegeInfoApi = {
    * 删除  @author  akkkka114514
    */
   delete: (id) => {
-      return getRequest(`/collegeInfo/delete/${id}`);
+      return getRequest(`/backend/collegeInfo/delete/${id}`);
   },
 
   /**
    * 批量删除  @author  akkkka114514
    */
   batchDelete: (idList) => {
-      return postRequest('/collegeInfo/batchDelete', idList);
+      return postRequest('/backend/collegeInfo/batchDelete', idList);
   },
 
 };

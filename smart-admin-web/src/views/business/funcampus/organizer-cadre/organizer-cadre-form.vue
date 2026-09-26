@@ -45,7 +45,7 @@
   import _ from 'lodash';
   import { message } from 'ant-design-vue';
   import { SmartLoading } from '/@/components/framework/smart-loading';
-  import { organizationCadreApi } from '/@/api/business/organization-cadre/organization-cadre-api';
+  import { organizationCadreApi } from '/@/api/business/funcampus/organizer-cadre-api';
   import { smartSentry } from '/@/lib/smart-sentry';
   import BooleanSelect from '/@/components/framework/boolean-select/index.vue';
 

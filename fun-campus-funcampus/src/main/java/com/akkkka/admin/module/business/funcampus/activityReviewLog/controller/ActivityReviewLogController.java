@@ -3,17 +3,20 @@ package com.akkkka.admin.module.business.funcampus.activityReviewLog.controller;
 import jakarta.annotation.Nullable;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.entity.ActivityReviewLogEntity;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.form.ActivityReviewLogAddForm;
+import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.form.ActivityReviewLogQueryForm;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.form.ActivityReviewLogUpdateForm;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.vo.ActivityReviewLogVO;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.service.ActivityReviewLogValidator;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.service.ActivityReviewLogService;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleUpdateForm;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityWithScheduleUpdateFormValidator;
+import com.akkkka.common.domain.PageResult;
 import com.akkkka.common.domain.ResponseDTO;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,6 +34,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @Tag(name = "活动审核日志")
+@RequestMapping("backend")
 public class ActivityReviewLogController {
 
     @Resource
@@ -40,6 +44,13 @@ public class ActivityReviewLogController {
     @Resource
     private ActivityWithScheduleUpdateFormValidator activityWithScheduleUpdateFormValidator;
 
+
+    @Operation(summary = "分页查询 @author akkkka114514")
+    @PostMapping("/activityReviewLog/queryPage")
+    @SaCheckPermission("activityReviewLog:query")
+    public ResponseDTO<PageResult<ActivityReviewLogVO>> queryPage(@RequestBody @Valid ActivityReviewLogQueryForm queryForm) {
+        return ResponseDTO.ok(activityReviewLogService.queryPage(queryForm));
+    }
 
     @Operation(summary = "添加 @author akkkka114514")
     @PostMapping("/activityReviewLog/add")

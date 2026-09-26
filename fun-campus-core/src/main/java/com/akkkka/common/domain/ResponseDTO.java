@@ -32,8 +32,10 @@ public class ResponseDTO<T> {
     @Schema(description = "级别")
     private String level;
 
+    @Schema(description = "返回消息")
     private String msg;
 
+    @Schema(description = "是否成功")
     private Boolean ok;
 
     @Schema(description = "返回数据")

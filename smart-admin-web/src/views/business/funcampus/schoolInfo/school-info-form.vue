@@ -78,7 +78,7 @@
   import _ from 'lodash';
   import { message } from 'ant-design-vue';
   import { SmartLoading } from '/@/components/framework/smart-loading';
-  import { schoolInfoApi } from '/@/api/business/school-info/school-info-api';
+  import { schoolInfoApi } from '/@/api/business/funcampus/school-info-api';
   import { smartSentry } from '/@/lib/smart-sentry';
 
   // ------------------------ 事件 ------------------------

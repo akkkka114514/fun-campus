@@ -47,6 +47,13 @@
             <version>3.0.0</version>
         </dependency>
 
+        <!-- AI 支撑：智能助手工具层（ActivityQueryPort 实现侧） -->
+        <dependency>
+            <groupId>com.akkkka</groupId>
+            <artifactId>fun-campus-support-ai</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+
         <!-- 二维码生成：签到二维码 -->
         <dependency>
             <groupId>com.google.zxing</groupId>

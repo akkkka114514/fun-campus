@@ -31,12 +31,6 @@
         <!---------- 表格操作行 begin ----------->
         <a-row class="smart-table-btn-block">
             <div class="smart-table-operate-block">
-                <a-button @click="showForm" type="primary" size="small">
-                    <template #icon>
-                        <PlusOutlined />
-                    </template>
-                    新建
-                </a-button>
                 <a-button @click="confirmBatchDelete" type="primary" danger size="small" :disabled="selectedRowKeyList.length == 0">
                     <template #icon>
                         <DeleteOutlined />
@@ -70,7 +64,6 @@
 
                 <template v-if="column.dataIndex === 'action'">
                     <div class="smart-table-operate">
-                        <a-button @click="showForm(record)" type="link">编辑</a-button>
                         <a-button @click="onDelete(record)" danger type="link">删除</a-button>
                     </div>
                 </template>
@@ -94,8 +87,6 @@
             />
         </div>
 
-        <ActivityForm  ref="formRef" @reloadList="queryData"/>
-
     </a-card>
 </template>
 <script setup>
@@ -106,7 +97,6 @@
     import { PAGE_SIZE_OPTIONS } from '/@/constants/common-const';
     import { smartSentry } from '/@/lib/smart-sentry';
     import TableOperator from '/@/components/support/table-operator/index.vue';
-    import ActivityForm from './activity-form.vue';
     import { DICT_CODE_ENUM } from '/@/constants/support/dict-const.js';
     import DictLabel from '/@/components/support/dict-label/index.vue';
 
@@ -145,17 +135,12 @@
         },
         {
             title: '活动所属学校',
-            dataIndex: 'activitySchoolId',
+            dataIndex: 'activityBelongToSchoolName',
             ellipsis: true,
         },
         {
             title: '活动所属组织',
-            dataIndex: 'activityOrganizationId',
-            ellipsis: true,
-        },
-        {
-            title: '是否已删除',
-            dataIndex: 'deletedFlag',
+            dataIndex: 'activityBelongToOrganizationName',
             ellipsis: true,
         },
         {
@@ -210,7 +195,7 @@
         tableLoading.value = true;
         try {
             let queryResult = await activityApi.queryPage(queryForm);
-            tableData.value = queryResult.data.list;
+            tableData.value = queryResult.data.list.map((item) => (item.activity ? { ...item.activity, schedule: item.schedule } : item));
             total.value = queryResult.data.total;
         } catch (e) {
             smartSentry.captureError(e);
@@ -221,13 +206,6 @@
 
 
     onMounted(queryData);
-
-    // ---------------------------- 添加/修改 ----------------------------
-    const formRef = ref();
-
-    function showForm(data) {
-        formRef.value.show(data);
-    }
 
     // ---------------------------- 单个删除 ----------------------------
     //确认删除
@@ -249,9 +227,6 @@
     async function requestDelete(data){
         SmartLoading.show();
         try {
-            let deleteForm = {
-                goodsIdList: selectedRowKeyList.value,
-            };
             await activityApi.delete(data.id);
             message.success('删除成功');
             queryData();

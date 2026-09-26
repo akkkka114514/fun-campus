@@ -57,6 +57,10 @@ export const useUserStore = defineStore({
     toBeDoneCount: 0,
   }),
   getters: {
+    // 用户展示名称（本项目用户表没有独立姓名字段，使用登录名展示；布局水印、头像、首页问候语均引用该字段）
+    actualName(state) {
+      return state.username;
+    },
     getToken(state) {
       if (state.token) {
         return state.token;
@@ -140,11 +144,10 @@ export const useUserStore = defineStore({
     },
     //设置登录信息
     setUserLoginInfo(data) {
-      console.log(data)
       // 用户基本信息
       this.token = data.token;
-      this.id = data.id;
-      this.username = data.username;
+      this.backendUserId = data.id;
+      this.username = data.userName || data.username;
       this.needUpdatePwdFlag = data.needUpdatePwdFlag;
       this.lastLoginIp = data.lastLoginIp;
       this.lastLoginIpRegion = data.lastLoginIpRegion;

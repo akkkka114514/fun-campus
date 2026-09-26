@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 @Data
 public class LoginFailVO {
 
+    @Schema(description = "登录失败记录ID")
     private Long loginFailId;
 
 

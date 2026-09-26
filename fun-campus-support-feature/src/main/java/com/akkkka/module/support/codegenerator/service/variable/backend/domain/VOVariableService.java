@@ -71,7 +71,7 @@ public class VOVariableService extends CodeGenerateBaseVariableService {
 
             // 枚举
             if (SmartStringUtil.isNotEmpty(codeField.getEnumName())) {
-                packageList.add("import swagger.common.com.akkkka.SchemaEnum;");
+                packageList.add("import com.akkkka.common.swagger.SchemaEnum;");
                 packageList.add("import " + form.getBasic().getJavaPackageName() + ".constant." + codeField.getEnumName() + ";");
 
                 finalFieldMap.put("apiModelProperty", "@SchemaEnum(value = " + codeField.getEnumName() + ".class, desc = \"" + codeField.getLabel() + "\")");
@@ -88,7 +88,7 @@ public class VOVariableService extends CodeGenerateBaseVariableService {
             if (isFile(field.getColumnName(), form)) {
                 finalFieldMap.put("file", "\n    @JsonSerialize(using = FileKeyVoSerializer.class)");
                 packageList.add("import com.fasterxml.jackson.databind.annotation.JsonSerialize;");
-                packageList.add("import serializer.json.common.com.akkkka.FileKeyVoSerializer;");
+                packageList.add("import com.akkkka.common.json.serializer.FileKeyVoSerializer;");
             }
 
             packageList.add(getJavaPackageName(codeField.getJavaType()));

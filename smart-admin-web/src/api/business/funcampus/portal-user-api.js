@@ -13,21 +13,21 @@ export const portalUserApi = {
    * 分页查询  @author  akkkka114514
    */
   queryPage : (param) => {
-    return postRequest('/portalUser/queryPage', param);
+    return postRequest('/backend/portalUser/queryPage', param);
   },
 
   /**
    * 增加  @author  akkkka114514
    */
   add: (param) => {
-      return postRequest('/portalUser/add', param);
+      return postRequest('/backend/portalUser/add', param);
   },
 
   /**
    * 修改  @author  akkkka114514
    */
   update: (param) => {
-      return postRequest('/portalUser/update', param);
+      return postRequest('/backend/portalUser/update', param);
   },
 
 
@@ -35,14 +35,14 @@ export const portalUserApi = {
    * 删除  @author  akkkka114514
    */
   delete: (id) => {
-      return getRequest(`/portalUser/delete/${id}`);
+      return getRequest(`/backend/portalUser/delete/${id}`);
   },
 
   /**
    * 批量删除  @author  akkkka114514
    */
   batchDelete: (idList) => {
-      return postRequest('/portalUser/batchDelete', idList);
+      return postRequest('/backend/portalUser/batchDelete', idList);
   },
 
 };

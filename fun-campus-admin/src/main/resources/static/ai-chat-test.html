@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 助手联调页 - Fun Campus</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Microsoft YaHei", -apple-system, sans-serif; background: #eef1f6; height: 100vh; display: flex; justify-content: center; }
+  .app { width: 100%; max-width: 900px; height: 100vh; display: flex; flex-direction: column; background: #fff; box-shadow: 0 0 24px rgba(0,0,0,.08); }
+  header { padding: 14px 20px; border-bottom: 1px solid #e5e9f0; background: #fafbfc; }
+  header h1 { font-size: 16px; color: #26343f; margin-bottom: 10px; }
+  header h1 small { font-size: 12px; color: #8592a6; font-weight: normal; margin-left: 8px; }
+  .cfg { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .cfg input { flex: 1; min-width: 260px; padding: 7px 10px; border: 1px solid #d5dbe6; border-radius: 6px; font-size: 13px; }
+  .cfg button { padding: 7px 12px; border: 1px solid #d5dbe6; background: #fff; border-radius: 6px; font-size: 13px; cursor: pointer; color: #2f6ee0; }
+  .cfg button:hover { background: #f0f5ff; }
+  .meta { margin-top: 8px; font-size: 12px; color: #8592a6; display: flex; gap: 16px; }
+  .meta b { color: #26343f; }
+  main { flex: 1; overflow-y: auto; padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; background: #f6f8fb; }
+  .msg { display: flex; }
+  .msg.user { justify-content: flex-end; }
+  .bubble { max-width: 78%; padding: 10px 14px; border-radius: 10px; font-size: 14px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
+  .msg.user .bubble { background: #2f6ee0; color: #fff; border-bottom-right-radius: 3px; }
+  .msg.assistant .bubble { background: #fff; color: #26343f; border: 1px solid #e5e9f0; border-bottom-left-radius: 3px; }
+  .msg.error .bubble { background: #fff2f0; color: #d4380d; border: 1px solid #ffccc7; font-size: 13px; }
+  footer { padding: 12px 20px; border-top: 1px solid #e5e9f0; display: flex; gap: 10px; background: #fafbfc; }
+  footer textarea { flex: 1; height: 64px; resize: none; padding: 9px 12px; border: 1px solid #d5dbe6; border-radius: 8px; font-size: 14px; font-family: inherit; }
+  footer textarea:focus { outline: none; border-color: #2f6ee0; }
+  footer button { width: 96px; border: none; background: #2f6ee0; color: #fff; border-radius: 8px; font-size: 14px; cursor: pointer; }
+  footer button:disabled { background: #a9c0ea; cursor: not-allowed; }
+  .empty-tip { text-align: center; color: #a3adc2; font-size: 13px; margin-top: 40px; line-height: 2; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Fun Campus AI 助手 · 联调页 <small>POST /portal/ai/chat（SSE 流式）</small></h1>
+    <div class="cfg">
+      <input id="token" placeholder="粘贴门户登录 token（如登录接口返回的 token，可带 Bearer 前缀）">
+      <button onclick="saveToken()">保存 Token</button>
+      <button onclick="testConn()">测试连接</button>
+      <button onclick="newChat()">新会话</button>
+    </div>
+    <div class="meta">
+      <span>conversationId：<b id="convId">-</b></span>
+      <span>状态：<b id="status">待连接</b></span>
+    </div>
+  </header>
+  <main id="messages">
+    <div class="empty-tip">
+      登录门户（学生端）获得 token 后粘贴到上方；<br>
+      Enter 发送提问，Shift+Enter 换行。可试问：「怎么报名活动」「帮我找找可以报名的活动」「我报了哪些活动」
+    </div>
+  </main>
+  <footer>
+    <textarea id="input" placeholder="输入问题，Enter 发送，Shift+Enter 换行"></textarea>
+    <button id="send" onclick="send()">发送</button>
+  </footer>
+</div>
+<script>
+const LS_KEY = 'ai_chat_test_token';
+let conversationId = null;
+let sending = false;
+let currentBubble = null;
+
+function getToken() {
+  return document.getElementById('token').value.trim().replace(/^Bearer\s+/i, '');
+}
+function saveToken() {
+  localStorage.setItem(LS_KEY, getToken());
+  setStatus('token 已保存到本地');
+}
+function setStatus(text) {
+  document.getElementById('status').textContent = text;
+}
+function clearMsgs() {
+  document.getElementById('messages').innerHTML = '';
+}
+function scrollBottom() {
+  const box = document.getElementById('messages');
+  box.scrollTop = box.scrollHeight;
+}
+function addMsg(role, text) {
+  const box = document.getElementById('messages');
+  const wrapper = document.createElement('div');
+  wrapper.className = 'msg ' + role;
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.textContent = text;
+  wrapper.appendChild(bubble);
+  box.appendChild(wrapper);
+  scrollBottom();
+  return bubble;
+}
+function appendError(text) {
+  addMsg('error', text);
+}
+
+async function testConn() {
+  try {
+    const resp = await fetch('/portal/ai/conversation/list', { headers: { Authorization: 'Bearer ' + getToken() } });
+    const data = await resp.json();
+    if (data.code === 1) {
+      setStatus('连接成功，历史会话数：' + (data.data || []).length);
+    } else {
+      setStatus('失败：' + (data.msg || data.code));
+    }
+  } catch (e) {
+    setStatus('网络错误：' + e.message);
+  }
+}
+
+function newChat() {
+  conversationId = null;
+  document.getElementById('convId').textContent = '-';
+  clearMsgs();
+  setStatus('已开启新会话');
+  document.getElementById('input').focus();
+}
+
+async function send() {
+  const inputEl = document.getElementById('input');
+  const content = inputEl.value.trim();
+  if (!content || sending) return;
+  inputEl.value = '';
+  if (document.querySelector('.empty-tip')) clearMsgs();
+  addMsg('user', content);
+  sending = true;
+  document.getElementById('send').disabled = true;
+  currentBubble = addMsg('assistant', '');
+  setStatus('生成中…');
+  try {
+    const resp = await fetch('/portal/ai/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
+      body: JSON.stringify({ conversationId: conversationId, content: content })
+    });
+    const contentType = resp.headers.get('content-type') || '';
+    if (!contentType.includes('text/event-stream')) {
+      const data = await resp.json().catch(() => ({ msg: 'HTTP ' + resp.status }));
+      appendError('请求失败：' + (data.msg || data.code || ('HTTP ' + resp.status)));
+      return;
+    }
+    await readSse(resp);
+  } catch (e) {
+    appendError('网络错误：' + e.message);
+  } finally {
+    sending = false;
+    document.getElementById('send').disabled = false;
+    if (currentBubble && !currentBubble.textContent) currentBubble.textContent = '（无内容）';
+    currentBubble = null;
+  }
+}
+
+async function readSse(resp) {
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder('utf-8');
+  let buffer = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    let idx;
+    while ((idx = buffer.indexOf('\n\n')) >= 0) {
+      handleFrame(buffer.slice(0, idx));
+      buffer = buffer.slice(idx + 2);
+    }
+  }
+  if (buffer.trim()) handleFrame(buffer);
+}
+
+function handleFrame(frame) {
+  const dataLines = [];
+  for (const line of frame.split('\n')) {
+    if (line.startsWith('data:')) dataLines.push(line.slice(5));
+  }
+  if (!dataLines.length) return;
+  const raw = dataLines.join('\n').trim();
+  if (!raw) return;
+  let evt;
+  try { evt = JSON.parse(raw); } catch (e) { appendError('事件解析失败：' + raw); return; }
+  switch (evt.type) {
+    case 'meta':
+      conversationId = evt.conversationId;
+      document.getElementById('convId').textContent = evt.conversationId;
+      break;
+    case 'delta':
+      if (currentBubble) {
+        currentBubble.textContent += evt.content || '';
+        scrollBottom();
+      }
+      break;
+    case 'error':
+      appendError(evt.content || '服务异常');
+      break;
+    case 'done':
+      setStatus('完成');
+      break;
+  }
+}
+
+window.addEventListener('DOMContentLoaded', function () {
+  document.getElementById('token').value = localStorage.getItem(LS_KEY) || '';
+  const input = document.getElementById('input');
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      send();
+    }
+  });
+});
+</script>
+</body>
+</html>

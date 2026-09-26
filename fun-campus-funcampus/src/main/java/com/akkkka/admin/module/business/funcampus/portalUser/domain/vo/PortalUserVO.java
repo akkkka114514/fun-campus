@@ -18,30 +18,43 @@ import lombok.Data;
 @Data
 public class PortalUserVO {
 
+    @Schema(description = "用户ID")
     private Long id;
 
+    @Schema(description = "用户名")
     private String username;
 
+    @Schema(description = "性别")
     private Boolean gender;
 
+    @Schema(description = "学校ID")
     private Long schoolId;
 
+    @Schema(description = "学校名称")
     private String schoolName;
 
+    @Schema(description = "学院ID")
     private Long collegeId;
 
+    @Schema(description = "学院名称")
     private String collegeName;
 
+    @Schema(description = "是否禁用")
     private Boolean disableFlag;
 
+    @Schema(description = "手机号")
     private String phone;
 
+    @Schema(description = "头像")
     private String avatar;
 
+    @Schema(description = "是否能发布活动")
     private boolean canPublishActivity;
 
+    @Schema(description = "年级ID")
     private Long gradeId;
 
+    @Schema(description = "年级名称")
     private String gradeName;
 
 }

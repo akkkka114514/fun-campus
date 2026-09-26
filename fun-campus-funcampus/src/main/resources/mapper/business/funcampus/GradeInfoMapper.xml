@@ -8,7 +8,7 @@
         grade_info.name,
         grade_info.deleted_flag,
         grade_info.create_time,
-        grade_info.udpate_time
+        grade_info.update_time
     </sql>
 
     <!-- 分页查询 -->
@@ -16,6 +16,7 @@
         SELECT
         <include refid="base_columns"/>
         FROM grade_info
+        WHERE grade_info.deleted_flag = 0
     </select>
 
     <update id="batchUpdateDeleted">

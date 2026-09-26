@@ -99,7 +99,7 @@
     import { reactive, ref, onMounted } from 'vue';
     import { message, Modal } from 'ant-design-vue';
     import { SmartLoading } from '/@/components/framework/smart-loading';
-    import { activitySigninManagerApi } from '/@/api/business/activity-signin-manager/activity-signin-manager-api';
+    import { activitySigninManagerApi } from '/@/api/business/funcampus/activity-signin-manager-api';
     import { PAGE_SIZE_OPTIONS } from '/@/constants/common-const';
     import { smartSentry } from '/@/lib/smart-sentry';
     import TableOperator from '/@/components/support/table-operator/index.vue';

@@ -35,7 +35,8 @@ public class PortalLoginManager {
     /**
      * 获取请求用户信息
      */
-    @Cacheable(AdminCacheConst.Login.REQUEST_USER)
+    // key 统一加 portal: 前缀，与后台用户（admin:）缓存隔离，避免同一缓存空间互相覆盖
+    @Cacheable(value = AdminCacheConst.Login.REQUEST_USER, key = "'portal:' + #requestPortalUserId")
     public RequestPortalUser getRequestPortalUser(Long requestPortalUserId) {
         if (requestPortalUserId == null) {
             return null;
@@ -52,7 +53,7 @@ public class PortalLoginManager {
     /**
      * 获取登录的用户信息
      */
-    @CachePut(value = AdminCacheConst.Login.REQUEST_USER, key = "#portalUserEntity.id")
+    @CachePut(value = AdminCacheConst.Login.REQUEST_USER, key = "'portal:' + #portalUserEntity.id")
     public RequestPortalUser loadLoginInfo(PortalUserEntity portalUserEntity) {
         // 基础信息
         RequestPortalUser requestPortalUser = SmartBeanUtil.copy(portalUserEntity, RequestPortalUser.class);
@@ -62,7 +63,7 @@ public class PortalLoginManager {
     /**
      * 清除用户权限
      */
-    @CacheEvict(value = AdminCacheConst.Login.USER_PERMISSION)
+    @CacheEvict(value = AdminCacheConst.Login.USER_PERMISSION, key = "'portal:' + #userId")
     public void clearUserPermission(Long userId) {
         log.info("clear user permission cache, userId:{}", userId);
     }
@@ -70,7 +71,7 @@ public class PortalLoginManager {
     /**
      * 清除用户登录信息
      */
-    @CacheEvict(value = AdminCacheConst.Login.REQUEST_USER)
+    @CacheEvict(value = AdminCacheConst.Login.REQUEST_USER, key = "'portal:' + #userId")
     public void clearUserLoginInfo(Long userId) {
         log.info("clear user login info cache, userId:{}", userId);
     }

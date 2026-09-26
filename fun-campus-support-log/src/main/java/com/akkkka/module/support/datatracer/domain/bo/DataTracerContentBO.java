@@ -1,5 +1,6 @@
 package com.akkkka.module.support.datatracer.domain.bo;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.lang.reflect.Field;
@@ -19,21 +20,25 @@ public class DataTracerContentBO {
     /**
      * 变动字段
      */
+    @Schema(description = "变动字段")
     private Field field;
 
     /**
      * 变动字段的值
      */
+    @Schema(description = "变动字段的值")
     private Object fieldValue;
 
     /**
      * 变动字段描述
      */
+    @Schema(description = "变动字段描述")
     private String fieldDesc;
 
     /**
      * 变动内容
      */
+    @Schema(description = "变动内容")
     private String fieldContent;
 
 }

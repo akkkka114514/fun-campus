@@ -66,8 +66,8 @@ public class ActivityCanEnrollGradeService {
         List<IdNameVO> result = new LinkedList<>();
         for(ActivityCanEnrollGradeEntity e:list){
             IdNameVO vo =  new IdNameVO();
-            vo.setId(e.getId());
-            vo.setName(gradeInfoService.getNameById(e.getId()));
+            vo.setId(e.getCanEnrollGrade());
+            vo.setName(gradeInfoService.getNameById(e.getCanEnrollGrade()));
 
             result.add(vo);
         }

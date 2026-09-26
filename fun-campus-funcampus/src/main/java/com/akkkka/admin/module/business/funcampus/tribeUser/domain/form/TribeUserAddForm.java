@@ -18,7 +18,6 @@ import lombok.Data;
 public class TribeUserAddForm {
 
     @Schema(description = "主键", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "主键 不能为空")
     private Long id;
 
     @Schema(description = "部落id", requiredMode = Schema.RequiredMode.REQUIRED)
@@ -34,15 +33,12 @@ public class TribeUserAddForm {
     private String username;
 
     @Schema(description = "是否已删除", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "是否已删除 不能为空")
     private Boolean deletedFlag;
 
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "创建时间 不能为空")
     private LocalDateTime createTime;
 
     @Schema(description = "修改时间", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "修改时间 不能为空")
     private LocalDateTime updateTime;
 
 }

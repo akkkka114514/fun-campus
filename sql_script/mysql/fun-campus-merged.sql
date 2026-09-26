@@ -1,24 +1,22 @@
 -- ============================================================
--- Fun Campus 数据库全量脚本（合并版）
+-- Fun Campus 数据库初始化脚本（全量合并版，唯一入口）
 -- ============================================================
--- 说明: 本文件由脚本自动合并 sql_script/mysql 目录下所有 .sql 文件,
---       各段内容与源文件完全一致, 未做任何修改。
--- 合并顺序(即推荐执行顺序):
+-- 说明: 本文件由 sql_script/mysql 目录下全部 21 个脚本合并而成，
+--       是建库初始化的唯一 SQL 文件；各段内容与来源脚本完全一致。
+-- 内容与顺序（即推荐执行顺序）:
 --   1. fc_portal.sql                       全量库结构 + 基础数据 (Navicat Dump)
 --   2. ActivityFavoriteMenu.sql            activity_favorite 表结构
 --   3. update_schema_and_test_data.sql     表结构更新 + 测试数据
---   4. 其余 16 个 *Menu.sql                业务菜单与按钮权限 (t_menu)
+--   4. ActivityOrderPayment.sql            Phase 9 活动付费参加（订单/支付/退款）
+--   5. 其余 17 个 *Menu.sql                业务菜单与按钮权限 (t_menu)
 -- 注意:
---   * 本文件面向全新环境初始化; 目标库已有数据时请勿整库执行。
---   * *Menu.sql 依赖 t_menu 表(位于 fc_portal.sql), 且不可重复执行,
---     重复执行会再次插入相同菜单。
---   * ActivityEnrollmentMenu.sql 原同一段菜单插入重复 4 次, 第 2 段起
---     SELECT ... INTO @parent_id 会命中多行报错, 属源文件既有问题;
---     已修复为仅保留第 1 段。
+--   * 面向全新环境初始化；目标库已有数据时请勿整库执行。
+--   * *Menu.sql 段不可重复执行，重复执行会再次插入相同菜单。
+--   * MessagePermissionMenu 段自带 NOT EXISTS 保护，可重复执行。
 -- ============================================================
 
 -- ----------------------------------------------------------------------------
--- 来源文件: fc_portal.sql (共 2316 行)
+-- 来源文件: fc_portal.sql —— 全量库结构 + 基础数据（Navicat Dump）
 -- ----------------------------------------------------------------------------
 /*
  Navicat Premium Dump SQL
@@ -793,50 +791,40 @@ CREATE TABLE `t_menu`  (
 INSERT INTO `t_menu` VALUES (26, '菜单管理', 2, 50, 1, '/menu/list', '/system/menu/menu-list.vue', NULL, NULL, NULL, 'CopyOutlined', NULL, 0, NULL, 1, 1, 0, 0, 2, '2021-08-09 15:04:35', 1, '2023-12-01 19:39:03');
 INSERT INTO `t_menu` VALUES (40, '删除', 3, 26, NULL, NULL, NULL, 1, 'system:menu:batchDelete', 'system:menu:batchDelete', NULL, 26, 0, NULL, 0, 1, 0, 0, 1, '2021-08-12 09:45:56', 1, '2023-10-07 18:15:50');
 INSERT INTO `t_menu` VALUES (45, '组织架构', 1, 0, 3, '/organization', NULL, NULL, NULL, NULL, 'UserSwitchOutlined', NULL, 0, NULL, 0, 1, 0, 0, 1, '2021-08-12 16:13:27', 1, '2024-07-02 19:27:44');
-INSERT INTO `t_menu` VALUES (46, '后台用户管理', 2, 45, 3, '/organization/employee', '/system/employee/index.vue', NULL, NULL, NULL, 'AuditOutlined', NULL, 0, NULL, 0, 1, 0, 0, 1, '2021-08-12 16:21:50', 1, '2025-09-16 15:47:34');
+INSERT INTO `t_menu` VALUES (46, '后台用户管理', 2, 45, 3, '/organization/backend-user', '/system/backend-user/index.vue', NULL, NULL, NULL, 'AuditOutlined', NULL, 0, NULL, 0, 1, 0, 0, 1, '2021-08-12 16:21:50', 1, '2025-09-16 15:47:34');
 INSERT INTO `t_menu` VALUES (50, '系统设置', 1, 0, 6, '/setting', NULL, NULL, NULL, NULL, 'SettingOutlined', NULL, 0, NULL, 0, 1, 0, 0, 1, '2021-08-13 16:41:33', 1, '2023-12-01 19:38:03');
 INSERT INTO `t_menu` VALUES (76, '角色管理', 2, 45, 4, '/organization/role', '/system/role/index.vue', NULL, NULL, NULL, 'SlidersOutlined', NULL, 0, NULL, 0, 1, 0, 0, 1, '2021-08-26 10:31:00', 1, '2024-07-02 20:15:28');
-INSERT INTO `t_menu` VALUES (79, '自定义分组', 2, 48, 3, '/erp/catalog/custom', '/business/erp/catalog/custom-catalog.vue', NULL, NULL, NULL, 'AppstoreAddOutlined', NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-05-18 23:37:53', 1, '2023-12-01 19:33:16');
 INSERT INTO `t_menu` VALUES (81, '用户操作记录', 2, 213, 6, '/support/operate-log/operate-log-list', '/support/operate-log/operate-log-list.vue', NULL, NULL, NULL, 'VideoCameraOutlined', NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-05-20 12:37:24', 44, '2024-08-13 14:34:10');
-INSERT INTO `t_menu` VALUES (85, '组件演示', 2, 84, NULL, '/demonstration/index', '/support/demonstration/index.vue', NULL, NULL, NULL, 'ClearOutlined', NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-05-20 23:16:46', NULL, '2022-05-20 23:16:46');
-INSERT INTO `t_menu` VALUES (91, '添加后台用户', 3, 46, NULL, NULL, NULL, 1, 'system:employee:add', 'system:employee:add', NULL, NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-05-27 00:11:38', 1, '2025-09-16 15:47:23');
-INSERT INTO `t_menu` VALUES (92, '编辑后台用户', 3, 46, NULL, NULL, NULL, 1, 'system:employee:update', 'system:employee:update', NULL, NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-05-27 00:12:10', 1, '2025-09-16 15:47:17');
-INSERT INTO `t_menu` VALUES (93, '禁用启用后台用户', 3, 46, NULL, NULL, NULL, 1, 'system:employee:disabled', 'system:employee:disabled', NULL, NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-05-27 00:12:37', 1, '2025-09-16 15:47:15');
-INSERT INTO `t_menu` VALUES (95, '重置密码', 3, 46, NULL, NULL, NULL, 1, 'system:employee:password:reset', 'system:employee:password:reset', NULL, NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-05-27 00:13:30', 1, '2023-10-07 18:27:57');
-INSERT INTO `t_menu` VALUES (96, '删除后台用户', 3, 46, NULL, NULL, NULL, 1, 'system:employee:delete', 'system:employee:delete', NULL, NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-05-27 00:14:08', 1, '2025-09-16 16:20:00');
+INSERT INTO `t_menu` VALUES (91, '添加后台用户', 3, 46, NULL, NULL, NULL, 1, 'system:backendUser:add', 'system:backendUser:add', NULL, NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-05-27 00:11:38', 1, '2025-09-16 15:47:23');
+INSERT INTO `t_menu` VALUES (92, '编辑后台用户', 3, 46, NULL, NULL, NULL, 1, 'system:backendUser:update', 'system:backendUser:update', NULL, NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-05-27 00:12:10', 1, '2025-09-16 15:47:17');
+INSERT INTO `t_menu` VALUES (93, '禁用启用后台用户', 3, 46, NULL, NULL, NULL, 1, 'system:backendUser:disabled', 'system:backendUser:disabled', NULL, NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-05-27 00:12:37', 1, '2025-09-16 15:47:15');
+INSERT INTO `t_menu` VALUES (95, '重置密码', 3, 46, NULL, NULL, NULL, 1, 'system:backendUser:password:reset', 'system:backendUser:password:reset', NULL, NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-05-27 00:13:30', 1, '2023-10-07 18:27:57');
+INSERT INTO `t_menu` VALUES (96, '删除后台用户', 3, 46, NULL, NULL, NULL, 1, 'system:backendUser:delete', 'system:backendUser:delete', NULL, NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-05-27 00:14:08', 1, '2025-09-16 16:20:00');
 INSERT INTO `t_menu` VALUES (97, '添加角色', 3, 76, NULL, NULL, NULL, 1, 'system:role:add', 'system:role:add', NULL, NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-05-27 00:34:00', 1, '2023-10-07 18:42:31');
 INSERT INTO `t_menu` VALUES (98, '删除角色', 3, 76, NULL, NULL, NULL, 1, 'system:role:delete', 'system:role:delete', NULL, NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-05-27 00:34:19', 1, '2023-10-07 18:42:35');
 INSERT INTO `t_menu` VALUES (99, '编辑角色', 3, 76, NULL, NULL, NULL, 1, 'system:role:update', 'system:role:update', NULL, NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-05-27 00:34:55', 1, '2023-10-07 18:42:44');
 INSERT INTO `t_menu` VALUES (100, '更新数据范围', 3, 76, NULL, NULL, NULL, 1, 'system:role:dataScope:update', 'system:role:dataScope:update', NULL, NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-05-27 00:37:03', 1, '2023-10-07 18:41:49');
-INSERT INTO `t_menu` VALUES (101, '批量移除后台用户', 3, 76, NULL, NULL, NULL, 1, 'system:role:employee:batch:delete', 'system:role:employee:batch:delete', NULL, NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-05-27 00:39:05', 1, '2025-09-16 15:47:04');
-INSERT INTO `t_menu` VALUES (102, '移除后台用户', 3, 76, NULL, NULL, NULL, 1, 'system:role:employee:delete', 'system:role:employee:delete', NULL, NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-05-27 00:39:21', 1, '2025-09-16 15:47:09');
-INSERT INTO `t_menu` VALUES (103, '添加后台用户', 3, 76, NULL, NULL, NULL, 1, 'system:role:employee:add', 'system:role:employee:add', NULL, NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-05-27 00:39:38', 1, '2025-09-16 15:47:00');
+INSERT INTO `t_menu` VALUES (101, '批量移除后台用户', 3, 76, NULL, NULL, NULL, 1, 'system:role:backendUser:batch:delete', 'system:role:backendUser:batch:delete', NULL, NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-05-27 00:39:05', 1, '2025-09-16 15:47:04');
+INSERT INTO `t_menu` VALUES (102, '移除后台用户', 3, 76, NULL, NULL, NULL, 1, 'system:role:backendUser:delete', 'system:role:backendUser:delete', NULL, NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-05-27 00:39:21', 1, '2025-09-16 15:47:09');
+INSERT INTO `t_menu` VALUES (103, '添加后台用户', 3, 76, NULL, NULL, NULL, 1, 'system:role:backendUser:add', 'system:role:backendUser:add', NULL, NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-05-27 00:39:38', 1, '2025-09-16 15:47:00');
 INSERT INTO `t_menu` VALUES (104, '修改权限', 3, 76, NULL, NULL, NULL, 1, 'system:role:menu:update', 'system:role:menu:update', NULL, NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-05-27 00:41:55', 1, '2023-10-07 18:44:11');
 INSERT INTO `t_menu` VALUES (105, '添加', 3, 26, NULL, NULL, NULL, 1, 'system:menu:add', 'system:menu:add', NULL, 26, 0, NULL, 0, 1, 0, 0, 1, '2022-05-27 00:44:37', 1, '2023-10-07 17:35:35');
 INSERT INTO `t_menu` VALUES (106, '编辑', 3, 26, NULL, NULL, NULL, 1, 'system:menu:update', 'system:menu:update', NULL, 26, 0, NULL, 0, 1, 0, 0, 1, '2022-05-27 00:44:59', 1, '2023-10-07 17:35:48');
 INSERT INTO `t_menu` VALUES (109, '参数配置', 2, 50, 3, '/config/config-list', '/support/config/config-list.vue', NULL, NULL, NULL, 'AntDesignOutlined', NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-05-27 13:34:41', 1, '2022-06-23 16:24:16');
 INSERT INTO `t_menu` VALUES (110, '数据字典', 2, 50, 4, '/setting/dict', '/support/dict/index.vue', NULL, NULL, NULL, 'BarcodeOutlined', NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-05-27 17:53:00', 1, '2022-05-27 18:09:14');
 INSERT INTO `t_menu` VALUES (111, '监控服务', 1, 0, 100, '/monitor', NULL, NULL, NULL, NULL, 'BarChartOutlined', NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-06-17 11:13:23', 1, '2023-11-28 17:43:56');
-INSERT INTO `t_menu` VALUES (113, '查询', 3, 112, NULL, NULL, NULL, NULL, NULL, 'ad', NULL, NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-06-17 11:31:36', NULL, '2022-06-17 11:31:36');
 INSERT INTO `t_menu` VALUES (114, '运维工具', 1, 0, 200, NULL, NULL, NULL, NULL, NULL, 'NodeCollapseOutlined', NULL, 0, NULL, 0, 1, 0, 1, 1, '2022-06-20 10:09:16', 1, '2023-12-01 19:36:18');
 INSERT INTO `t_menu` VALUES (117, 'Reload', 2, 50, 12, '/hook', '/support/reload/reload-list.vue', NULL, NULL, NULL, 'ReloadOutlined', NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-06-20 10:16:49', 1, '2023-12-01 19:39:17');
 INSERT INTO `t_menu` VALUES (122, '数据库监控', 2, 111, 4, '/support/druid/index', NULL, NULL, NULL, NULL, 'ConsoleSqlOutlined', NULL, 1, 'http://localhost:1024/druid', 1, 1, 0, 0, 1, '2022-06-20 14:49:33', 1, '2023-02-16 19:15:58');
-INSERT INTO `t_menu` VALUES (132, '公告管理', 2, 138, 2, '/oa/notice/notice-list', '/business/oa/notice/notice-list.vue', NULL, NULL, NULL, 'SoundOutlined', NULL, 0, NULL, 1, 1, 0, 0, 1, '2022-06-24 18:23:09', 1, '2024-07-08 13:58:51');
 INSERT INTO `t_menu` VALUES (133, '缓存管理', 2, 50, 11, '/support/cache/cache-list', '/support/cache/cache-list.vue', NULL, NULL, NULL, 'BorderInnerOutlined', NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-06-24 18:52:25', 1, '2023-12-01 19:39:13');
-INSERT INTO `t_menu` VALUES (138, '功能Demo', 1, 0, 1, NULL, NULL, NULL, NULL, NULL, 'BankOutlined', NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-06-24 20:09:18', 1, '2024-07-08 13:46:54');
-INSERT INTO `t_menu` VALUES (142, '公告详情', 2, 132, NULL, '/oa/notice/notice-detail', '/business/oa/notice/notice-detail.vue', NULL, NULL, NULL, NULL, NULL, 0, NULL, 0, 0, 0, 0, 1, '2022-06-25 16:38:47', 1, '2022-09-14 19:46:17');
 INSERT INTO `t_menu` VALUES (143, '登录登出记录', 2, 213, 5, '/support/login-log/login-log-list', '/support/login-log/login-log-list.vue', NULL, NULL, NULL, 'LoginOutlined', NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-06-28 15:01:38', 44, '2024-08-13 14:33:49');
 INSERT INTO `t_menu` VALUES (147, '帮助文档', 2, 218, 1, '/help-doc/help-doc-manage-list', '/support/help-doc/management/help-doc-manage-list.vue', NULL, NULL, NULL, 'FolderViewOutlined', NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-09-14 19:59:01', 1, '2023-12-01 19:38:23');
 INSERT INTO `t_menu` VALUES (148, '意见反馈', 2, 218, 2, '/feedback/feedback-list', '/support/feedback/feedback-list.vue', NULL, NULL, NULL, 'CoffeeOutlined', NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-09-14 19:59:52', 1, '2023-12-01 19:38:40');
-INSERT INTO `t_menu` VALUES (149, '我的通知', 2, 132, NULL, '/oa/notice/notice-employee-list', '/business/oa/notice/notice-employee-list.vue', NULL, NULL, NULL, NULL, NULL, 0, NULL, 0, 0, 0, 0, 1, '2022-09-14 20:29:41', 1, '2022-09-14 20:31:23');
-INSERT INTO `t_menu` VALUES (150, '我的通知公告详情', 2, 132, NULL, '/oa/notice/notice-employee-detail', '/business/oa/notice/notice-employee-detail.vue', NULL, NULL, NULL, NULL, NULL, 0, NULL, 0, 0, 0, 0, 1, '2022-09-14 20:30:25', 1, '2022-09-14 20:31:38');
 INSERT INTO `t_menu` VALUES (151, '代码生成', 2, 0, 600, '/support/code-generator', '/support/code-generator/code-generator-list.vue', NULL, NULL, NULL, 'CoffeeOutlined', NULL, 0, NULL, 0, 1, 0, 0, 1, '2022-09-21 18:25:05', 1, '2022-10-22 11:27:58');
 INSERT INTO `t_menu` VALUES (152, '更新日志', 2, 218, 3, '/support/change-log/change-log-list', '/support/change-log/change-log-list.vue', NULL, NULL, NULL, 'HeartOutlined', NULL, 0, NULL, 0, 1, 0, 0, 44, '2022-10-10 10:31:20', 1, '2023-12-01 19:38:51');
 INSERT INTO `t_menu` VALUES (153, '清除缓存', 3, 133, NULL, NULL, NULL, 1, 'support:cache:delete', 'support:cache:delete', NULL, 133, 0, NULL, 0, 1, 1, 0, 1, '2022-10-15 22:45:13', 1, '2023-10-07 16:22:29');
 INSERT INTO `t_menu` VALUES (154, '获取缓存key', 3, 133, NULL, NULL, NULL, 1, 'support:cache:keys', 'support:cache:keys', NULL, 133, 0, NULL, 0, 1, 1, 0, 1, '2022-10-15 22:45:48', 1, '2023-10-07 16:22:35');
 INSERT INTO `t_menu` VALUES (156, '查看结果', 3, 117, NULL, NULL, NULL, 1, 'support:reload:result', 'support:reload:result', NULL, 117, 0, NULL, 0, 1, 0, 0, 1, '2022-10-15 23:17:23', 1, '2023-10-07 14:31:47');
-INSERT INTO `t_menu` VALUES (157, '单号生成', 3, 130, NULL, NULL, NULL, 1, 'support:serialNumber:generate', 'support:serialNumber:generate', NULL, 130, 0, NULL, 0, 1, 0, 0, 1, '2022-10-15 23:21:06', 1, '2023-10-07 18:22:46');
-INSERT INTO `t_menu` VALUES (158, '生成记录', 3, 130, NULL, NULL, NULL, 1, 'support:serialNumber:record', 'support:serialNumber:record', NULL, 130, 0, NULL, 0, 1, 0, 0, 1, '2022-10-15 23:21:34', 1, '2023-10-07 18:22:55');
 INSERT INTO `t_menu` VALUES (159, '查询', 3, 110, NULL, NULL, NULL, 1, 'support:dict:query', 'support:dict:query', NULL, 110, 0, NULL, 0, 1, 0, 0, 1, '2022-10-15 23:23:51', 1, '2025-04-08 19:42:25');
 INSERT INTO `t_menu` VALUES (160, '添加', 3, 110, NULL, NULL, NULL, 1, 'support:dict:add', 'support:dict:add', NULL, 110, 0, NULL, 0, 1, 0, 0, 1, '2022-10-15 23:24:05', 1, '2025-04-08 19:43:02');
 INSERT INTO `t_menu` VALUES (161, '更新', 3, 110, NULL, NULL, NULL, 1, 'support:dict:update', 'support:dict:update', NULL, 110, 0, NULL, 0, 1, 0, 0, 1, '2022-10-15 23:24:34', 1, '2025-04-08 19:43:34');
@@ -847,22 +835,6 @@ INSERT INTO `t_menu` VALUES (168, '查询', 3, 147, 11, NULL, NULL, 1, 'support:
 INSERT INTO `t_menu` VALUES (169, '新建', 3, 147, 12, NULL, NULL, 1, 'support:helpDoc:add', 'support:helpDoc:add', NULL, 147, 0, NULL, 0, 1, 0, 0, 1, '2022-10-16 20:12:37', 1, '2023-10-07 14:05:56');
 INSERT INTO `t_menu` VALUES (170, '新建目录', 3, 147, 1, NULL, NULL, 1, 'support:helpDocCatalog:addCategory', 'support:helpDocCatalog:addCategory', NULL, 147, 0, NULL, 0, 1, 0, 0, 1, '2022-10-16 20:12:57', 1, '2023-10-07 14:06:38');
 INSERT INTO `t_menu` VALUES (171, '修改目录', 3, 147, 2, NULL, NULL, 1, 'support:helpDocCatalog:update', 'support:helpDocCatalog:update', NULL, 147, 0, NULL, 0, 1, 0, 0, 1, '2022-10-16 20:13:46', 1, '2023-10-07 14:06:49');
-INSERT INTO `t_menu` VALUES (173, '新建', 3, 78, NULL, NULL, NULL, 1, 'category:add', 'category:add', NULL, 78, 0, NULL, 0, 1, 0, 0, 1, '2022-10-16 20:17:02', 1, '2023-10-07 13:54:01');
-INSERT INTO `t_menu` VALUES (174, '查询', 3, 78, NULL, NULL, NULL, 1, 'category:tree', 'category:tree', NULL, 78, 0, NULL, 0, 1, 0, 0, 1, '2022-10-16 20:17:22', 1, '2023-10-07 13:54:33');
-INSERT INTO `t_menu` VALUES (175, '编辑', 3, 78, NULL, NULL, NULL, 1, 'category:update', 'category:update', NULL, 78, 0, NULL, 0, 1, 0, 0, 1, '2022-10-16 20:17:38', 1, '2023-10-07 13:54:18');
-INSERT INTO `t_menu` VALUES (176, '删除', 3, 78, NULL, NULL, NULL, 1, 'category:delete', 'category:delete', NULL, 78, 0, NULL, 0, 1, 0, 0, 1, '2022-10-16 20:17:50', 1, '2023-10-07 13:54:27');
-INSERT INTO `t_menu` VALUES (177, '新建', 3, 79, NULL, NULL, NULL, 1, 'category:add', 'custom:category:add', NULL, 78, 0, NULL, 0, 1, 0, 0, 1, '2022-10-16 20:17:02', 1, '2023-10-07 13:57:32');
-INSERT INTO `t_menu` VALUES (178, '查询', 3, 79, NULL, NULL, NULL, 1, 'category:tree', 'custom:category:tree', NULL, 78, 0, NULL, 0, 1, 0, 0, 1, '2022-10-16 20:17:22', 1, '2023-10-07 13:57:50');
-INSERT INTO `t_menu` VALUES (179, '编辑', 3, 79, NULL, NULL, NULL, 1, 'category:update', 'custom:category:update', NULL, 78, 0, NULL, 0, 1, 0, 0, 1, '2022-10-16 20:17:38', 1, '2023-10-07 13:58:02');
-INSERT INTO `t_menu` VALUES (180, '删除', 3, 79, NULL, NULL, NULL, 1, 'category:delete', 'custom:category:delete', NULL, 78, 0, NULL, 0, 1, 0, 0, 1, '2022-10-16 20:17:50', 1, '2023-10-07 13:58:12');
-INSERT INTO `t_menu` VALUES (181, '查询', 3, 144, NULL, NULL, NULL, 1, 'oa:enterprise:query', 'oa:enterprise:query', NULL, 144, 0, NULL, 0, 1, 0, 0, 1, '2022-10-16 20:25:14', 1, '2023-10-07 12:00:09');
-INSERT INTO `t_menu` VALUES (182, '新建', 3, 144, NULL, NULL, NULL, 1, 'oa:enterprise:add', 'oa:enterprise:add', NULL, 144, 0, NULL, 0, 1, 0, 0, 1, '2022-10-16 20:25:25', 1, '2023-10-07 12:00:17');
-INSERT INTO `t_menu` VALUES (183, '编辑', 3, 144, NULL, NULL, NULL, 1, 'oa:enterprise:update', 'oa:enterprise:update', NULL, 144, 0, NULL, 0, 1, 0, 0, 1, '2022-10-16 20:25:36', 1, '2023-10-07 12:00:38');
-INSERT INTO `t_menu` VALUES (184, '删除', 3, 144, NULL, NULL, NULL, 1, 'oa:enterprise:delete', 'oa:enterprise:delete', NULL, 144, 0, NULL, 0, 1, 0, 0, 1, '2022-10-16 20:25:53', 1, '2023-10-07 12:00:46');
-INSERT INTO `t_menu` VALUES (185, '查询', 3, 132, NULL, NULL, NULL, 1, 'oa:notice:query', 'oa:notice:query', NULL, 132, 0, NULL, 0, 1, 0, 0, 1, '2022-10-16 20:26:38', 1, '2023-10-07 11:43:01');
-INSERT INTO `t_menu` VALUES (186, '新建', 3, 132, NULL, NULL, NULL, 1, 'oa:notice:add', 'oa:notice:add', NULL, 132, 0, NULL, 0, 1, 0, 0, 1, '2022-10-16 20:27:04', 1, '2023-10-07 11:43:07');
-INSERT INTO `t_menu` VALUES (187, '编辑', 3, 132, NULL, NULL, NULL, 1, 'oa:notice:update', 'oa:notice:update', NULL, 132, 0, NULL, 0, 1, 0, 0, 1, '2022-10-16 20:27:15', 1, '2023-10-07 11:43:12');
-INSERT INTO `t_menu` VALUES (188, '删除', 3, 132, NULL, NULL, NULL, 1, 'oa:notice:delete', 'oa:notice:delete', NULL, 132, 0, NULL, 0, 1, 0, 0, 1, '2022-10-16 20:27:23', 1, '2023-10-07 11:43:18');
 INSERT INTO `t_menu` VALUES (190, '查询', 3, 152, NULL, NULL, NULL, 1, '', 'support:changeLog:query', NULL, 152, 0, NULL, 0, 1, 0, 0, 1, '2022-10-16 20:28:33', 1, '2023-10-07 14:25:05');
 INSERT INTO `t_menu` VALUES (191, '新建', 3, 152, NULL, NULL, NULL, 1, 'support:changeLog:add', 'support:changeLog:add', NULL, 152, 0, NULL, 0, 1, 0, 0, 1, '2022-10-16 20:28:46', 1, '2023-10-07 14:24:15');
 INSERT INTO `t_menu` VALUES (192, '批量删除', 3, 152, NULL, NULL, NULL, 1, 'support:changeLog:batchDelete', 'support:changeLog:batchDelete', NULL, 152, 0, NULL, 0, 1, 0, 0, 1, '2022-10-16 20:29:10', 1, '2023-10-07 14:24:22');
@@ -897,23 +869,20 @@ INSERT INTO `t_menu` VALUES (254, '添加字典数据', 3, 110, NULL, NULL, NULL
 INSERT INTO `t_menu` VALUES (255, '更新字典数据', 3, 110, NULL, NULL, NULL, 1, 'support:dictData:update', 'support:dictData:update', NULL, 110, 0, NULL, 0, 1, 0, 0, 1, '2025-04-08 19:48:19', NULL, '2025-04-08 19:48:19');
 INSERT INTO `t_menu` VALUES (256, '删除字典数据', 3, 110, NULL, NULL, NULL, 1, 'support:dictData:delete', 'support:dictData:delete', NULL, 110, 0, NULL, 0, 1, 0, 0, 1, '2025-04-08 19:48:38', NULL, '2025-04-08 19:48:38');
 INSERT INTO `t_menu` VALUES (257, '启用/禁用字典数据', 3, 110, NULL, NULL, NULL, 1, 'support:dictData:updateDisabled', 'support:dictData:updateDisabled', NULL, 110, 0, NULL, 0, 1, 0, 0, 1, '2025-04-08 19:48:57', NULL, '2025-04-08 19:48:57');
-INSERT INTO `t_menu` VALUES (258, '查询后台用户', 3, 145, NULL, NULL, NULL, 1, 'oa:enterprise:queryEmployee', 'oa:enterprise:queryEmployee', NULL, 145, 0, NULL, 0, 1, 0, 0, 75, '2025-04-08 21:11:46', 75, '2025-09-16 15:43:43');
-INSERT INTO `t_menu` VALUES (261, '添加后台用户', 3, 145, NULL, NULL, NULL, 1, 'oa:enterprise:addEmployee', 'oa:enterprise:addEmployee', NULL, 145, 0, NULL, 0, 1, 0, 0, 75, '2025-04-08 21:35:34', NULL, '2025-09-16 15:43:46');
-INSERT INTO `t_menu` VALUES (262, '删除后台用户', 3, 145, NULL, NULL, NULL, 1, 'oa:enterprise:deleteEmployee', 'oa:enterprise:deleteEmployee', NULL, 145, 0, NULL, 0, 1, 0, 0, 75, '2025-04-08 21:40:17', NULL, '2025-09-16 15:43:51');
 INSERT INTO `t_menu` VALUES (300, '消息管理', 2, 50, 30, '/message', '/support/message/message-list.vue', 1, NULL, NULL, 'MailOutlined', NULL, 0, NULL, 0, 1, 0, 0, 1, '2025-04-09 14:30:04', 1, '2025-04-10 20:19:36');
-INSERT INTO `t_menu` VALUES (301, 'funcampus', 1, 0, NULL, NULL, NULL, 1, NULL, NULL, NULL, NULL, 0, NULL, 0, 1, 0, 0, 1, '2025-09-05 14:36:19', NULL, '2025-09-05 14:36:19');
+INSERT INTO `t_menu` VALUES (301, '校园活动', 1, 0, NULL, NULL, NULL, 1, NULL, NULL, NULL, NULL, 0, NULL, 0, 1, 0, 0, 1, '2025-09-05 14:36:19', NULL, '2025-09-05 14:36:19');
 INSERT INTO `t_menu` VALUES (303, '查询', 3, 302, NULL, NULL, NULL, 1, 'activity:query', 'activity:query', NULL, 302, 0, NULL, 0, 1, 0, 1, 1, '2025-09-05 14:42:42', 1, '2025-09-05 14:49:27');
 INSERT INTO `t_menu` VALUES (304, '添加', 3, 302, NULL, NULL, NULL, 1, 'activity:add', 'activity:add', NULL, 302, 0, NULL, 0, 1, 0, 1, 1, '2025-09-05 14:42:42', 1, '2025-09-05 14:49:27');
 INSERT INTO `t_menu` VALUES (305, '更新', 3, 302, NULL, NULL, NULL, 1, 'activity:update', 'activity:update', NULL, 302, 0, NULL, 0, 1, 0, 1, 1, '2025-09-05 14:42:42', 1, '2025-09-05 14:49:27');
 INSERT INTO `t_menu` VALUES (306, '删除', 3, 302, NULL, NULL, NULL, 1, 'activity:delete', 'activity:delete', NULL, 302, 0, NULL, 0, 1, 0, 1, 1, '2025-09-05 14:42:42', 1, '2025-09-05 14:49:27');
-INSERT INTO `t_menu` VALUES (307, '活动管理', 2, 301, NULL, '/activity/list', '/bussiness/funcampus/activity/activity-list.vue', 1, NULL, NULL, NULL, NULL, 0, NULL, 0, 1, 0, 0, 1, '2025-09-05 14:44:22', 1, '2025-09-16 16:38:11');
+INSERT INTO `t_menu` VALUES (307, '活动管理', 2, 301, NULL, '/activity/list', '/business/funcampus/activity/activity-list.vue', 1, NULL, NULL, NULL, NULL, 0, NULL, 0, 1, 0, 0, 1, '2025-09-05 14:44:22', 1, '2025-09-16 16:38:11');
 INSERT INTO `t_menu` VALUES (308, '查询', 3, 307, NULL, NULL, NULL, 1, NULL, NULL, NULL, 307, 0, NULL, 0, 1, 0, 0, 1, '2025-09-05 15:28:33', NULL, '2025-09-05 15:28:33');
-INSERT INTO `t_menu` VALUES (309, '组织账号运营者', 2, 0, NULL, '/portal-organization-user/list', '/business/portal-organization-user/portal-organization-user-list.vue', 1, NULL, NULL, NULL, NULL, 0, NULL, 0, 1, 0, 0, 1, '2025-09-19 10:28:13', NULL, '2025-09-19 10:28:13');
+INSERT INTO `t_menu` VALUES (309, '组织账号运营者', 2, 301, NULL, '/portal-organization-user/list', '/business/funcampus/portalOrganizerUser/portal-organization-user-list.vue', 1, NULL, NULL, NULL, NULL, 0, NULL, 0, 1, 0, 0, 1, '2025-09-19 10:28:13', NULL, '2025-09-19 10:28:13');
 INSERT INTO `t_menu` VALUES (310, '查询', 3, 309, NULL, NULL, NULL, 1, 'portalOrganizationUser:query', 'portalOrganizationUser:query', NULL, 309, 0, NULL, 0, 1, 0, 0, 1, '2025-09-19 10:28:13', NULL, '2025-09-19 10:28:13');
 INSERT INTO `t_menu` VALUES (311, '添加', 3, 309, NULL, NULL, NULL, 1, 'portalOrganizationUser:add', 'portalOrganizationUser:add', NULL, 309, 0, NULL, 0, 1, 0, 0, 1, '2025-09-19 10:28:13', NULL, '2025-09-19 10:28:13');
 INSERT INTO `t_menu` VALUES (312, '更新', 3, 309, NULL, NULL, NULL, 1, 'portalOrganizationUser:update', 'portalOrganizationUser:update', NULL, 309, 0, NULL, 0, 1, 0, 0, 1, '2025-09-19 10:28:13', NULL, '2025-09-19 10:28:13');
 INSERT INTO `t_menu` VALUES (313, '删除', 3, 309, NULL, NULL, NULL, 1, 'portalOrganizationUser:delete', 'portalOrganizationUser:delete', NULL, 309, 0, NULL, 0, 1, 0, 0, 1, '2025-09-19 10:28:13', NULL, '2025-09-19 10:28:13');
-INSERT INTO `t_menu` VALUES (314, '学校信息表', 2, 0, NULL, '/school-info/list', '/business/school-info/school-info-list.vue', 1, NULL, NULL, NULL, NULL, 0, NULL, 0, 1, 0, 0, 1, '2025-09-23 09:05:33', NULL, '2025-09-23 09:05:33');
+INSERT INTO `t_menu` VALUES (314, '学校信息表', 2, 301, NULL, '/school-info/list', '/business/funcampus/schoolInfo/school-info-list.vue', 1, NULL, NULL, NULL, NULL, 0, NULL, 0, 1, 0, 0, 1, '2025-09-23 09:05:33', NULL, '2025-09-23 09:05:33');
 INSERT INTO `t_menu` VALUES (315, '查询', 3, 314, NULL, NULL, NULL, 1, 'schoolInfo:query', 'schoolInfo:query', NULL, 314, 0, NULL, 0, 1, 0, 0, 1, '2025-09-23 09:05:33', NULL, '2025-09-23 09:05:33');
 INSERT INTO `t_menu` VALUES (316, '添加', 3, 314, NULL, NULL, NULL, 1, 'schoolInfo:add', 'schoolInfo:add', NULL, 314, 0, NULL, 0, 1, 0, 0, 1, '2025-09-23 09:05:33', NULL, '2025-09-23 09:05:33');
 INSERT INTO `t_menu` VALUES (317, '更新', 3, 314, NULL, NULL, NULL, 1, 'schoolInfo:update', 'schoolInfo:update', NULL, 314, 0, NULL, 0, 1, 0, 0, 1, '2025-09-23 09:05:33', NULL, '2025-09-23 09:05:33');
@@ -1297,32 +1266,6 @@ INSERT INTO `t_role_menu` VALUES (1020, 59, 301, '2025-09-08 15:16:47', '2025-09
 INSERT INTO `t_role_menu` VALUES (1021, 2, 301, '2025-09-16 13:48:36', '2025-09-16 13:48:36');
 INSERT INTO `t_role_menu` VALUES (1022, 2, 307, '2025-09-16 13:48:36', '2025-09-16 13:48:36');
 INSERT INTO `t_role_menu` VALUES (1023, 2, 308, '2025-09-16 13:48:36', '2025-09-16 13:48:36');
-INSERT INTO `t_role_menu` VALUES (1024, 1, 138, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1025, 1, 132, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1026, 1, 142, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1027, 1, 149, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1028, 1, 150, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1029, 1, 185, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1030, 1, 186, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1031, 1, 187, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1032, 1, 188, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1033, 1, 145, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1034, 1, 196, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1035, 1, 144, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1036, 1, 181, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1037, 1, 183, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1038, 1, 184, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1039, 1, 165, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1040, 1, 47, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1041, 1, 48, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1042, 1, 137, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1043, 1, 166, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1044, 1, 194, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1045, 1, 78, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1046, 1, 173, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1047, 1, 174, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1048, 1, 175, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1049, 1, 176, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
 INSERT INTO `t_role_menu` VALUES (1050, 1, 50, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
 INSERT INTO `t_role_menu` VALUES (1051, 1, 26, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
 INSERT INTO `t_role_menu` VALUES (1052, 1, 40, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
@@ -1337,27 +1280,18 @@ INSERT INTO `t_role_menu` VALUES (1060, 1, 159, '2025-09-16 18:28:23', '2025-09-
 INSERT INTO `t_role_menu` VALUES (1061, 1, 160, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
 INSERT INTO `t_role_menu` VALUES (1062, 1, 161, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
 INSERT INTO `t_role_menu` VALUES (1063, 1, 162, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1064, 1, 130, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1065, 1, 157, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1066, 1, 158, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
 INSERT INTO `t_role_menu` VALUES (1067, 1, 133, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
 INSERT INTO `t_role_menu` VALUES (1068, 1, 117, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
 INSERT INTO `t_role_menu` VALUES (1069, 1, 156, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
 INSERT INTO `t_role_menu` VALUES (1070, 1, 193, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
 INSERT INTO `t_role_menu` VALUES (1071, 1, 200, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1072, 1, 220, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
 INSERT INTO `t_role_menu` VALUES (1073, 1, 45, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1074, 1, 219, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
 INSERT INTO `t_role_menu` VALUES (1075, 1, 46, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
 INSERT INTO `t_role_menu` VALUES (1076, 1, 91, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
 INSERT INTO `t_role_menu` VALUES (1077, 1, 92, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
 INSERT INTO `t_role_menu` VALUES (1078, 1, 93, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1079, 1, 94, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
 INSERT INTO `t_role_menu` VALUES (1080, 1, 95, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
 INSERT INTO `t_role_menu` VALUES (1081, 1, 96, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1082, 1, 86, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1083, 1, 87, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
-INSERT INTO `t_role_menu` VALUES (1084, 1, 88, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
 INSERT INTO `t_role_menu` VALUES (1085, 1, 76, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
 INSERT INTO `t_role_menu` VALUES (1086, 1, 97, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
 INSERT INTO `t_role_menu` VALUES (1087, 1, 98, '2025-09-16 18:28:23', '2025-09-16 18:28:23');
@@ -2337,9 +2271,8 @@ CREATE TABLE `t_table_column`  (
 
 SET FOREIGN_KEY_CHECKS = 1;
 
-
 -- ----------------------------------------------------------------------------
--- 来源文件: ActivityFavoriteMenu.sql (共 15 行)
+-- 来源文件: ActivityFavoriteMenu.sql —— activity_favorite 表结构
 -- ----------------------------------------------------------------------------
 -- ----------------------------
 -- 活动收藏表
@@ -2357,9 +2290,8 @@ CREATE TABLE `activity_favorite` (
   INDEX `idx_user_id`(`user_id` ASC) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '活动收藏' ROW_FORMAT = Dynamic;
 
-
 -- ----------------------------------------------------------------------------
--- 来源文件: update_schema_and_test_data.sql (共 494 行)
+-- 来源文件: update_schema_and_test_data.sql —— 表结构更新 + 测试数据
 -- ----------------------------------------------------------------------------
 -- =====================================================================
 -- Fun Campus 表结构更新 & 测试数据
@@ -2441,8 +2373,8 @@ CREATE TABLE `activity_review_log` (
   `activity_id` bigint NOT NULL COMMENT '活动id',
   `reviewer_id` bigint NULL DEFAULT NULL COMMENT '审核人id',
   `reviewer_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '审核人姓名',
-  `review_stage` int NULL DEFAULT NULL COMMENT '审核阶段: 1-初审 2-审阅 3-终审 4-完结审核',
-  `action` int NULL DEFAULT NULL COMMENT '审核行为: 1-通过 2-驳回 3-建议',
+  `review_stage` int NULL DEFAULT NULL COMMENT '审核阶段: 0-草稿 1-初审 2-审阅 3-终审 4-报名审核 5-完结审核',
+  `action` int NULL DEFAULT NULL COMMENT '审核行为: 0-提交 1-初审通过 2-初审退回 3-审阅通过 4-终审通过 5-终审退回 6-报名审核通过 7-完结审核通过 8-完结审核退回',
   `reject_reason` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '驳回原因',
   `check_remark` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '审阅修改建议',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -2505,6 +2437,8 @@ DROP TABLE IF EXISTS `tribe`;
 CREATE TABLE `tribe` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '部落id',
   `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '部落名',
+  `icon` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '部落图标（文件key）',
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '部落简介',
   `category_id` bigint NULL DEFAULT NULL COMMENT '部落类型',
   `president_id` bigint NULL DEFAULT NULL COMMENT '主席id',
   `belong_to` int NULL DEFAULT NULL COMMENT '1->组织，2->院系',
@@ -2574,6 +2508,99 @@ CREATE TABLE `organization_info` (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_school_id`(`school_id` ASC) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '各学校组织信息' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- 14. t_data_tracer 数据变更追踪（support-log 模块 DataTracerEntity 直连表，原脚本遗漏）
+--     使用 IF NOT EXISTS：全新环境创建；已有环境跳过，避免清空已有追踪数据
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `t_data_tracer` (
+  `data_tracer_id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `data_id` bigint NULL DEFAULT NULL COMMENT '数据id',
+  `type` int NULL DEFAULT NULL COMMENT '业务类型',
+  `content` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '内容',
+  `diff_old` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT 'diff差异：旧的数据',
+  `diff_new` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT 'diff差异：新的数据',
+  `extra_data` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '扩展字段',
+  `user_id` bigint NULL DEFAULT NULL COMMENT '用户id',
+  `user_type` int NULL DEFAULT NULL COMMENT '用户类型',
+  `user_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '用户名',
+  `ip` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '请求ip',
+  `ip_region` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '请求ip地区',
+  `user_agent` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '请求头',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`data_tracer_id`) USING BTREE,
+  INDEX `idx_data_id_type`(`data_id` ASC, `type` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '数据变更追踪' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- 15. tribe_application 部落加入申请
+-- ----------------------------
+DROP TABLE IF EXISTS `tribe_application`;
+CREATE TABLE `tribe_application` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `tribe_id` bigint NOT NULL COMMENT '部落id',
+  `portal_user_id` bigint NOT NULL COMMENT '申请的前端用户id',
+  `username` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '申请人用户名（快照）',
+  `reason` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '申请理由',
+  `status` int NOT NULL DEFAULT 0 COMMENT '审核状态: 0-待审核 1-已通过 2-已驳回',
+  `review_remark` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '审核意见',
+  `review_user_id` bigint NULL DEFAULT NULL COMMENT '审核人id（管理端用户）',
+  `review_time` datetime NULL DEFAULT NULL COMMENT '审核时间',
+  `deleted_flag` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否已删除',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_tribe_id`(`tribe_id` ASC) USING BTREE,
+  INDEX `idx_portal_user_id`(`portal_user_id` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '部落加入申请' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- 16. activity_evaluation 活动评价
+-- ----------------------------
+DROP TABLE IF EXISTS `activity_evaluation`;
+CREATE TABLE `activity_evaluation` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `activity_id` bigint NOT NULL COMMENT '活动id',
+  `user_id` bigint NOT NULL COMMENT '评价人id（portal_user）',
+  `username` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '评价人姓名（快照）',
+  `score` int NOT NULL COMMENT '评分：1-5',
+  `content` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '评价内容',
+  `deleted_flag` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否已删除',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_activity_id`(`activity_id` ASC) USING BTREE,
+  INDEX `idx_user_id`(`user_id` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '活动评价' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- 17. credit_application 学分认定申请
+-- ----------------------------
+DROP TABLE IF EXISTS `credit_application`;
+CREATE TABLE `credit_application` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '标题',
+  `semester` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '学期',
+  `content` varchar(2000) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '申请内容',
+  `image_list` varchar(2000) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '证明材料图片fileKey列表（逗号分隔，最多9张）',
+  `applicant_user_id` bigint NOT NULL COMMENT '申请人id（portal_user）',
+  `applicant_username` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '申请人用户名（快照）',
+  `applicant_school_id` bigint NULL DEFAULT NULL COMMENT '申请人学校id（快照）',
+  `review_user_id` bigint NULL DEFAULT NULL COMMENT '审核人id（backend_user，can_review=1）',
+  `review_user_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '审核人姓名（快照）',
+  `review_organization_id` bigint NULL DEFAULT NULL COMMENT '审核人院系/组织id',
+  `review_organization_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '审核人院系/组织名称（快照）',
+  `status` int NOT NULL DEFAULT 0 COMMENT '审核状态: 0-待审核 1-已通过 2-已驳回',
+  `review_remark` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '审核意见/驳回原因',
+  `review_time` datetime NULL DEFAULT NULL COMMENT '审核时间',
+  `deleted_flag` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否已删除',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_applicant_user_id`(`applicant_user_id` ASC) USING BTREE,
+  INDEX `idx_review_user_id`(`review_user_id` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '学分认定申请' ROW_FORMAT = Dynamic;
 
 
 -- =====================================================================
@@ -2873,455 +2900,30 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 -- =====================================================================
 -- 更新完成！
--- 新建表: 13 张 (activity_category, activity_can_enroll_college,
+-- 新建表: 14 张 (activity_category, activity_can_enroll_college,
 --   activity_can_enroll_grade, activity_can_enroll_tribe,
 --   activity_review_log, activity_attachment, activity_review_attachment,
 --   activity_signin_manager, tribe, tribe_user, college_info,
---   grade_info, organization_info)
+--   grade_info, organization_info, t_data_tracer)
 -- 修改表: 5 张 (activity, activity_schedule, activity_enrollment,
 --   portal_user, backend_user)
 -- =====================================================================
 
-
 -- ----------------------------------------------------------------------------
--- 来源文件: ActivityCanEnrollCollegeMenu.sql (共 22 行)
+-- 来源文件: ActivityOrderPayment.sql —— Phase 9 活动付费参加（订单/支付/退款/超时关单任务）
 -- ----------------------------------------------------------------------------
-# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
-# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
-# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
-VALUES ( '活动能报名的学院', 2, 0, '/activity-can-enroll-college/list', '/business/activity-can-enroll-college/activity-can-enroll-college-list.vue', false, false, true, false, 1, 1 );
-
-# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
-SET @parent_id = NULL;
-SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '活动能报名的学院';
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'activityCanEnrollCollege:query', 'activityCanEnrollCollege:query', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'activityCanEnrollCollege:add', 'activityCanEnrollCollege:add', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'activityCanEnrollCollege:update', 'activityCanEnrollCollege:update', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'activityCanEnrollCollege:delete', 'activityCanEnrollCollege:delete', @parent_id, 1 );
-
-
--- ----------------------------------------------------------------------------
--- 来源文件: ActivityCanEnrollGradeMenu.sql (共 22 行)
--- ----------------------------------------------------------------------------
-# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
-# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
-# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
-VALUES ( '活动能报名的年级', 2, 0, '/activity-can-enroll-grade/list', '/business/activity-can-enroll-grade/activity-can-enroll-grade-list.vue', false, false, true, false, 1, 1 );
-
-# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
-SET @parent_id = NULL;
-SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '活动能报名的年级';
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'activityCanEnrollGrade:query', 'activityCanEnrollGrade:query', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'activityCanEnrollGrade:add', 'activityCanEnrollGrade:add', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'activityCanEnrollGrade:update', 'activityCanEnrollGrade:update', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'activityCanEnrollGrade:delete', 'activityCanEnrollGrade:delete', @parent_id, 1 );
-
-
--- ----------------------------------------------------------------------------
--- 来源文件: ActivityCanEnrollTribeMenu.sql (共 22 行)
--- ----------------------------------------------------------------------------
-# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
-# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
-# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
-VALUES ( '活动能报名的部落', 2, 0, '/activity-can-enroll-tribe/list', '/business/activity-can-enroll-tribe/activity-can-enroll-tribe-list.vue', false, false, true, false, 1, 1 );
-
-# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
-SET @parent_id = NULL;
-SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '活动能报名的部落';
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'activityCanEnrollTribe:query', 'activityCanEnrollTribe:query', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'activityCanEnrollTribe:add', 'activityCanEnrollTribe:add', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'activityCanEnrollTribe:update', 'activityCanEnrollTribe:update', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'activityCanEnrollTribe:delete', 'activityCanEnrollTribe:delete', @parent_id, 1 );
-
-
--- ----------------------------------------------------------------------------
--- 来源文件: ActivityCategoryMenu.sql (共 22 行)
--- ----------------------------------------------------------------------------
-# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
-# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
-# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
-VALUES ( '活动分类', 2, 0, '/activity-category/list', '/business/activity-category/activity-category-list.vue', false, false, true, false, 1, 1 );
-
-# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
-SET @parent_id = NULL;
-SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '活动分类';
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'activityCategory:query', 'activityCategory:query', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'activityCategory:add', 'activityCategory:add', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'activityCategory:update', 'activityCategory:update', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'activityCategory:delete', 'activityCategory:delete', @parent_id, 1 );
-
-
--- ----------------------------------------------------------------------------
--- 来源文件: ActivityEnrollmentMenu.sql (共 22 行)
--- ----------------------------------------------------------------------------
-# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
-# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
-# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
-VALUES ( '活动报名关系', 2, 0, '/activity-enrollment/list', '/business/activity-enrollment/activity-enrollment-list.vue', false, false, true, false, 1, 1 );
-
-# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
-SET @parent_id = NULL;
-SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '活动报名关系';
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'activityEnrollment:query', 'activityEnrollment:query', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'activityEnrollment:add', 'activityEnrollment:add', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'activityEnrollment:update', 'activityEnrollment:update', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'activityEnrollment:delete', 'activityEnrollment:delete', @parent_id, 1 );
-
-
--- ----------------------------------------------------------------------------
--- 来源文件: ActivityReviewLogMenu.sql (共 22 行)
--- ----------------------------------------------------------------------------
-# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
-# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
-# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
-VALUES ( '活动审核日志', 2, 0, '/activity-review-log/list', '/business/activity-review-log/activity-review-log-list.vue', false, false, true, false, 1, 1 );
-
-# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
-SET @parent_id = NULL;
-SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '活动审核日志';
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'activityReviewLog:query', 'activityReviewLog:query', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'activityReviewLog:add', 'activityReviewLog:add', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'activityReviewLog:update', 'activityReviewLog:update', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'activityReviewLog:delete', 'activityReviewLog:delete', @parent_id, 1 );
-
-
--- ----------------------------------------------------------------------------
--- 来源文件: ActivitySigninManagerMenu.sql (共 22 行)
--- ----------------------------------------------------------------------------
-# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
-# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
-# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
-VALUES ( '活动签到管理员', 2, 0, '/activity-signin-manager/list', '/business/activity-signin-manager/activity-signin-manager-list.vue', false, false, true, false, 1, 1 );
-
-# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
-SET @parent_id = NULL;
-SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '活动签到管理员';
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'activitySigninManager:query', 'activitySigninManager:query', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'activitySigninManager:add', 'activitySigninManager:add', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'activitySigninManager:update', 'activitySigninManager:update', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'activitySigninManager:delete', 'activitySigninManager:delete', @parent_id, 1 );
-
-
--- ----------------------------------------------------------------------------
--- 来源文件: CollegeInfoMenu.sql (共 22 行)
--- ----------------------------------------------------------------------------
-# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
-# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
-# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
-VALUES ( '学院信息', 2, 0, '/college-info/list', '/business/college-info/college-info-list.vue', false, false, true, false, 1, 1 );
-
-# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
-SET @parent_id = NULL;
-SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '学院信息';
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'collegeInfo:query', 'collegeInfo:query', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'collegeInfo:add', 'collegeInfo:add', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'collegeInfo:update', 'collegeInfo:update', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'collegeInfo:delete', 'collegeInfo:delete', @parent_id, 1 );
-
-
--- ----------------------------------------------------------------------------
--- 来源文件: CollegeReviewerMenu.sql (共 22 行)
--- ----------------------------------------------------------------------------
-# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
-# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
-# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
-VALUES ( '学院的审核员', 2, 0, '/college-reviewer/list', '/business/college-reviewer/college-reviewer-list.vue', false, false, true, false, 1, 1 );
-
-# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
-SET @parent_id = NULL;
-SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '学院的审核员';
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'collegeReviewer:query', 'collegeReviewer:query', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'collegeReviewer:add', 'collegeReviewer:add', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'collegeReviewer:update', 'collegeReviewer:update', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'collegeReviewer:delete', 'collegeReviewer:delete', @parent_id, 1 );
-
-
--- ----------------------------------------------------------------------------
--- 来源文件: GradeInfoMenu.sql (共 22 行)
--- ----------------------------------------------------------------------------
-# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
-# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
-# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
-VALUES ( '年级信息', 2, 0, '/grade-info/list', '/business/grade-info/grade-info-list.vue', false, false, true, false, 1, 1 );
-
-# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
-SET @parent_id = NULL;
-SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '年级信息';
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'gradeInfo:query', 'gradeInfo:query', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'gradeInfo:add', 'gradeInfo:add', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'gradeInfo:update', 'gradeInfo:update', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'gradeInfo:delete', 'gradeInfo:delete', @parent_id, 1 );
-
-
--- ----------------------------------------------------------------------------
--- 来源文件: OrganizationInfoMenu.sql (共 22 行)
--- ----------------------------------------------------------------------------
-# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
-# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
-# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
-VALUES ( '各学校组织信息', 2, 0, '/organization-info/list', '/business/organization-info/organization-info-list.vue', false, false, true, false, 1, 1 );
-
-# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
-SET @parent_id = NULL;
-SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '各学校组织信息';
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'organizationInfo:query', 'organizationInfo:query', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'organizationInfo:add', 'organizationInfo:add', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'organizationInfo:update', 'organizationInfo:update', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'organizationInfo:delete', 'organizationInfo:delete', @parent_id, 1 );
-
-
--- ----------------------------------------------------------------------------
--- 来源文件: OrganizationReviewerMenu.sql (共 22 行)
--- ----------------------------------------------------------------------------
-# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
-# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
-# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
-VALUES ( '组织的审核员', 2, 0, '/organization-reviewer/list', '/business/organization-reviewer/organization-reviewer-list.vue', false, false, true, false, 1, 1 );
-
-# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
-SET @parent_id = NULL;
-SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '组织的审核员';
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'organizationReviewer:query', 'organizationReviewer:query', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'organizationReviewer:add', 'organizationReviewer:add', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'organizationReviewer:update', 'organizationReviewer:update', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'organizationReviewer:delete', 'organizationReviewer:delete', @parent_id, 1 );
-
-
--- ----------------------------------------------------------------------------
--- 来源文件: OrganizerCadreMenu.sql (共 22 行)
--- ----------------------------------------------------------------------------
-# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
-# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
-# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
-VALUES ( '组织干事用户', 2, 0, '/organization-cadre/list', '/business/organization-cadre/organization-cadre-list.vue', false, false, true, false, 1, 1 );
-
-# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
-SET @parent_id = NULL;
-SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '组织干事用户';
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'organizationCadre:query', 'organizationCadre:query', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'organizationCadre:add', 'organizationCadre:add', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'organizationCadre:update', 'organizationCadre:update', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'organizationCadre:delete', 'organizationCadre:delete', @parent_id, 1 );
-
-
--- ----------------------------------------------------------------------------
--- 来源文件: PortalUserMenu.sql (共 22 行)
--- ----------------------------------------------------------------------------
-# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
-# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
-# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
-VALUES ( '前端用户', 2, 0, '/portal-user/list', '/business/portal-user/portal-user-list.vue', false, false, true, false, 1, 1 );
-
-# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
-SET @parent_id = NULL;
-SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '前端用户';
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'portalUser:query', 'portalUser:query', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'portalUser:add', 'portalUser:add', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'portalUser:update', 'portalUser:update', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'portalUser:delete', 'portalUser:delete', @parent_id, 1 );
-
-
--- ----------------------------------------------------------------------------
--- 来源文件: TribeMenu.sql (共 22 行)
--- ----------------------------------------------------------------------------
-# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
-# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
-# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
-VALUES ( '部落', 2, 0, '/tribe/list', '/business/tribe/tribe-list.vue', false, false, true, false, 1, 1 );
-
-# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
-SET @parent_id = NULL;
-SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '部落';
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'tribe:query', 'tribe:query', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'tribe:add', 'tribe:add', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'tribe:update', 'tribe:update', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'tribe:delete', 'tribe:delete', @parent_id, 1 );
-
-
--- ----------------------------------------------------------------------------
--- 来源文件: TribeUserMenu.sql (共 22 行)
--- ----------------------------------------------------------------------------
-# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
-# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
-# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
-VALUES ( '参与部落的用户', 2, 0, '/tribe-user/list', '/business/tribe-user/tribe-user-list.vue', false, false, true, false, 1, 1 );
-
-# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
-SET @parent_id = NULL;
-SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '参与部落的用户';
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'tribeUser:query', 'tribeUser:query', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'tribeUser:add', 'tribeUser:add', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'tribeUser:update', 'tribeUser:update', @parent_id, 1 );
-
-INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
-VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'tribeUser:delete', 'tribeUser:delete', @parent_id, 1 );
-
-
 -- =====================================================================
--- Phase 9：活动付费参加（订单 / 支付 / 退款）
--- 来源：ActivityOrderPayment.sql（activity 付费字段、activity_order、activity_refund、订单超时关单任务）
+-- Fun Campus Phase 9：活动付费参加（订单 / 支付 / 退款）
+-- 内容：activity 付费配置字段、activity_order、activity_refund、订单超时关单任务
+-- 说明：脚本仅需执行一次；执行前请备份数据库
+-- Date: 2026-09-24
 -- =====================================================================
+
+SET NAMES utf8mb4;
+SET FOREIGN_KEY_CHECKS = 0;
 
 -- ----------------------------
--- activity 表新增付费配置字段
+-- 1. activity 表新增付费配置字段
 -- ----------------------------
 ALTER TABLE `activity`
   ADD COLUMN `paid_flag` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否付费活动',
@@ -3329,7 +2931,7 @@ ALTER TABLE `activity`
   ADD COLUMN `refund_policy` tinyint NULL COMMENT '退款规则：1-报名截止前可退 2-活动开始前可退 3-不可退款';
 
 -- ----------------------------
--- Table structure for activity_order
+-- 2. activity_order 活动报名订单
 -- ----------------------------
 DROP TABLE IF EXISTS `activity_order`;
 CREATE TABLE `activity_order` (
@@ -3354,7 +2956,7 @@ CREATE TABLE `activity_order` (
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '活动报名订单' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
--- Table structure for activity_refund
+-- 3. activity_refund 活动报名退款记录
 -- ----------------------------
 DROP TABLE IF EXISTS `activity_refund`;
 CREATE TABLE `activity_refund` (
@@ -3378,7 +2980,9 @@ CREATE TABLE `activity_refund` (
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '活动报名退款记录' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
--- t_smart_job 注册订单超时关单任务
+-- 4. t_smart_job 注册订单超时关单任务
+--    扫描超时未支付订单：CAS 关单（待支付→已关闭）+ 释放名额；
+--    与支付回调抢同一个 CAS（where status=待支付），谁先成功谁生效
 -- ----------------------------
 DELETE FROM `t_smart_job` WHERE `job_class` = 'com.akkkka.admin.module.business.funcampus.activityOrder.job.ActivityOrderTimeoutJob';
 INSERT INTO `t_smart_job`
@@ -3387,5 +2991,598 @@ VALUES
   ('订单超时关单', 'com.akkkka.admin.module.business.funcampus.activityOrder.job.ActivityOrderTimeoutJob', 'fixed_delay', '60', 1, NULL, 3,
    '扫描超时未支付订单：CAS 关单（待支付->已关闭）+ 释放名额；与支付回调抢同一个 CAS，谁先成功谁生效', 0, '管理员', NOW(), NOW());
 
+SET FOREIGN_KEY_CHECKS = 1;
 
+-- ----------------------------------------------------------------------------
+-- 来源文件: ActivityCanEnrollCollegeMenu.sql —— 菜单与按钮权限数据（t_menu）
+-- ----------------------------------------------------------------------------
+# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
+# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
+# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
+VALUES ( '活动能报名的学院', 2, 301, '/activity-can-enroll-college/list', '/business/funcampus/activity-can-enroll-college/activity-can-enroll-college-list.vue', false, false, true, false, 1, 1 );
+
+# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
+SET @parent_id = NULL;
+SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '活动能报名的学院';
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'activityCanEnrollCollege:query', 'activityCanEnrollCollege:query', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'activityCanEnrollCollege:add', 'activityCanEnrollCollege:add', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'activityCanEnrollCollege:update', 'activityCanEnrollCollege:update', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'activityCanEnrollCollege:delete', 'activityCanEnrollCollege:delete', @parent_id, 1 );
+
+-- ----------------------------------------------------------------------------
+-- 来源文件: ActivityCanEnrollGradeMenu.sql —— 菜单与按钮权限数据（t_menu）
+-- ----------------------------------------------------------------------------
+# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
+# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
+# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
+VALUES ( '活动能报名的年级', 2, 301, '/activity-can-enroll-grade/list', '/business/funcampus/activity-can-enroll-grade/activity-can-enroll-grade-list.vue', false, false, true, false, 1, 1 );
+
+# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
+SET @parent_id = NULL;
+SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '活动能报名的年级';
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'activityCanEnrollGrade:query', 'activityCanEnrollGrade:query', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'activityCanEnrollGrade:add', 'activityCanEnrollGrade:add', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'activityCanEnrollGrade:update', 'activityCanEnrollGrade:update', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'activityCanEnrollGrade:delete', 'activityCanEnrollGrade:delete', @parent_id, 1 );
+
+-- ----------------------------------------------------------------------------
+-- 来源文件: ActivityCanEnrollTribeMenu.sql —— 菜单与按钮权限数据（t_menu）
+-- ----------------------------------------------------------------------------
+# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
+# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
+# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
+VALUES ( '活动能报名的部落', 2, 301, '/activity-can-enroll-tribe/list', '/business/funcampus/activity-can-enroll-tribe/activity-can-enroll-tribe-list.vue', false, false, true, false, 1, 1 );
+
+# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
+SET @parent_id = NULL;
+SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '活动能报名的部落';
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'activityCanEnrollTribe:query', 'activityCanEnrollTribe:query', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'activityCanEnrollTribe:add', 'activityCanEnrollTribe:add', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'activityCanEnrollTribe:update', 'activityCanEnrollTribe:update', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'activityCanEnrollTribe:delete', 'activityCanEnrollTribe:delete', @parent_id, 1 );
+
+-- ----------------------------------------------------------------------------
+-- 来源文件: ActivityCategoryMenu.sql —— 菜单与按钮权限数据（t_menu）
+-- ----------------------------------------------------------------------------
+# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
+# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
+# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
+VALUES ( '活动分类', 2, 301, '/activity-category/list', '/business/funcampus/activity-category/activity-category-list.vue', false, false, true, false, 1, 1 );
+
+# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
+SET @parent_id = NULL;
+SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '活动分类';
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'activityCategory:query', 'activityCategory:query', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'activityCategory:add', 'activityCategory:add', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'activityCategory:update', 'activityCategory:update', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'activityCategory:delete', 'activityCategory:delete', @parent_id, 1 );
+
+-- ----------------------------------------------------------------------------
+-- 来源文件: ActivityEnrollmentMenu.sql —— 菜单与按钮权限数据（t_menu）
+-- ----------------------------------------------------------------------------
+# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
+# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
+# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
+VALUES ( '活动报名关系', 2, 301, '/activity-enrollment/list', '/business/funcampus/activity-enrollment/activity-enrollment-list.vue', false, false, true, false, 1, 1 );
+
+# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
+SET @parent_id = NULL;
+SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '活动报名关系';
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'activityEnrollment:query', 'activityEnrollment:query', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'activityEnrollment:add', 'activityEnrollment:add', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'activityEnrollment:update', 'activityEnrollment:update', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'activityEnrollment:delete', 'activityEnrollment:delete', @parent_id, 1 );
+
+-- ----------------------------------------------------------------------------
+-- 来源文件: ActivityReviewLogMenu.sql —— 菜单与按钮权限数据（t_menu）
+-- ----------------------------------------------------------------------------
+# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
+# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
+# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
+VALUES ( '活动审核日志', 2, 301, '/activity-review-log/list', '/business/funcampus/activity-review-log/activity-review-log-list.vue', false, false, true, false, 1, 1 );
+
+# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
+SET @parent_id = NULL;
+SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '活动审核日志';
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'activityReviewLog:query', 'activityReviewLog:query', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'activityReviewLog:add', 'activityReviewLog:add', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'activityReviewLog:update', 'activityReviewLog:update', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'activityReviewLog:delete', 'activityReviewLog:delete', @parent_id, 1 );
+
+-- ----------------------------------------------------------------------------
+-- 来源文件: ActivitySigninManagerMenu.sql —— 菜单与按钮权限数据（t_menu）
+-- ----------------------------------------------------------------------------
+# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
+# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
+# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
+VALUES ( '活动签到管理员', 2, 301, '/activity-signin-manager/list', '/business/funcampus/activity-signin-manager/activity-signin-manager-list.vue', false, false, true, false, 1, 1 );
+
+# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
+SET @parent_id = NULL;
+SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '活动签到管理员';
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'activitySigninManager:query', 'activitySigninManager:query', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'activitySigninManager:add', 'activitySigninManager:add', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'activitySigninManager:update', 'activitySigninManager:update', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'activitySigninManager:delete', 'activitySigninManager:delete', @parent_id, 1 );
+
+-- ----------------------------------------------------------------------------
+-- 来源文件: CollegeInfoMenu.sql —— 菜单与按钮权限数据（t_menu）
+-- ----------------------------------------------------------------------------
+# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
+# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
+# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
+VALUES ( '学院信息', 2, 301, '/college-info/list', '/business/funcampus/college-info/college-info-list.vue', false, false, true, false, 1, 1 );
+
+# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
+SET @parent_id = NULL;
+SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '学院信息';
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'collegeInfo:query', 'collegeInfo:query', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'collegeInfo:add', 'collegeInfo:add', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'collegeInfo:update', 'collegeInfo:update', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'collegeInfo:delete', 'collegeInfo:delete', @parent_id, 1 );
+
+-- ----------------------------------------------------------------------------
+-- 来源文件: CollegeReviewerMenu.sql —— 菜单与按钮权限数据（t_menu）
+-- ----------------------------------------------------------------------------
+# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
+# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
+# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
+VALUES ( '学院的审核员', 2, 301, '/college-reviewer/list', '/business/college-reviewer/college-reviewer-list.vue', false, false, true, false, 1, 1 );
+
+# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
+SET @parent_id = NULL;
+SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '学院的审核员';
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'collegeReviewer:query', 'collegeReviewer:query', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'collegeReviewer:add', 'collegeReviewer:add', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'collegeReviewer:update', 'collegeReviewer:update', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'collegeReviewer:delete', 'collegeReviewer:delete', @parent_id, 1 );
+
+-- ----------------------------------------------------------------------------
+-- 来源文件: GradeInfoMenu.sql —— 菜单与按钮权限数据（t_menu）
+-- ----------------------------------------------------------------------------
+# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
+# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
+# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
+VALUES ( '年级信息', 2, 301, '/grade-info/list', '/business/funcampus/grade-info/grade-info-list.vue', false, false, true, false, 1, 1 );
+
+# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
+SET @parent_id = NULL;
+SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '年级信息';
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'gradeInfo:query', 'gradeInfo:query', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'gradeInfo:add', 'gradeInfo:add', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'gradeInfo:update', 'gradeInfo:update', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'gradeInfo:delete', 'gradeInfo:delete', @parent_id, 1 );
+
+-- ----------------------------------------------------------------------------
+-- 来源文件: MessagePermissionMenu.sql —— 消息管理权限点补充（NOT EXISTS 保护，可重复执行）
+-- ----------------------------------------------------------------------------
+-- ----------------------------
+-- 消息管理：补充按钮权限点并授权
+-- 背景：菜单“消息管理”(menu_id=300) 已存在，但 system:message:send/query/delete
+--       三个权限点从未注册，导致 @SaCheckPermission 校验必然 403。
+-- 说明：接口权限来自 t_menu.api_perms（perms_type=1），并需通过 t_role_menu 授予角色。
+-- 本脚本可重复执行（带 NOT EXISTS 保护）。
+-- ----------------------------
+
+-- 定位“消息管理”父菜单
+SET @message_menu_id = NULL;
+SELECT menu_id INTO @message_menu_id FROM t_menu WHERE menu_name = '消息管理' AND menu_type = 2 LIMIT 1;
+
+-- 发送消息 system:message:send
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+SELECT '发送消息', 3, @message_menu_id, false, false, true, false, 1, 'system:message:send', 'system:message:send', @message_menu_id, 1
+FROM DUAL
+WHERE @message_menu_id IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM (SELECT menu_id FROM t_menu WHERE api_perms = 'system:message:send' AND menu_type = 3) t);
+
+-- 查询消息 system:message:query
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+SELECT '查询消息', 3, @message_menu_id, false, false, true, false, 1, 'system:message:query', 'system:message:query', @message_menu_id, 1
+FROM DUAL
+WHERE @message_menu_id IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM (SELECT menu_id FROM t_menu WHERE api_perms = 'system:message:query' AND menu_type = 3) t);
+
+-- 删除消息 system:message:delete
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+SELECT '删除消息', 3, @message_menu_id, false, false, true, false, 1, 'system:message:delete', 'system:message:delete', @message_menu_id, 1
+FROM DUAL
+WHERE @message_menu_id IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM (SELECT menu_id FROM t_menu WHERE api_perms = 'system:message:delete' AND menu_type = 3) t);
+
+-- 授权给角色1（超级管理员），已授权则跳过
+INSERT INTO t_role_menu ( role_id, menu_id, create_time, update_time )
+SELECT 1, m.menu_id, NOW(), NOW()
+FROM t_menu m
+WHERE m.menu_type = 3
+  AND m.api_perms IN ('system:message:send', 'system:message:query', 'system:message:delete')
+  AND NOT EXISTS (
+      SELECT 1 FROM (SELECT role_id, menu_id FROM t_role_menu) rm
+      WHERE rm.role_id = 1 AND rm.menu_id = m.menu_id
+  );
+
+-- ----------------------------------------------------------------------------
+-- 来源文件: OrganizationInfoMenu.sql —— 菜单与按钮权限数据（t_menu）
+-- ----------------------------------------------------------------------------
+# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
+# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
+# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
+VALUES ( '各学校组织信息', 2, 301, '/organization-info/list', '/business/funcampus/organization-info/organization-info-list.vue', false, false, true, false, 1, 1 );
+
+# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
+SET @parent_id = NULL;
+SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '各学校组织信息';
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'organizationInfo:query', 'organizationInfo:query', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'organizationInfo:add', 'organizationInfo:add', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'organizationInfo:update', 'organizationInfo:update', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'organizationInfo:delete', 'organizationInfo:delete', @parent_id, 1 );
+
+-- ----------------------------------------------------------------------------
+-- 来源文件: OrganizationReviewerMenu.sql —— 菜单与按钮权限数据（t_menu）
+-- ----------------------------------------------------------------------------
+# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
+# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
+# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
+VALUES ( '组织的审核员', 2, 301, '/organization-reviewer/list', '/business/organization-reviewer/organization-reviewer-list.vue', false, false, true, false, 1, 1 );
+
+# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
+SET @parent_id = NULL;
+SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '组织的审核员';
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'organizationReviewer:query', 'organizationReviewer:query', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'organizationReviewer:add', 'organizationReviewer:add', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'organizationReviewer:update', 'organizationReviewer:update', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'organizationReviewer:delete', 'organizationReviewer:delete', @parent_id, 1 );
+
+-- ----------------------------------------------------------------------------
+-- 来源文件: OrganizerCadreMenu.sql —— 菜单与按钮权限数据（t_menu）
+-- ----------------------------------------------------------------------------
+# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
+# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
+# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
+VALUES ( '组织干事用户', 2, 301, '/organization-cadre/list', '/business/funcampus/organizer-cadre/organizer-cadre-list.vue', false, false, true, false, 1, 1 );
+
+# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
+SET @parent_id = NULL;
+SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '组织干事用户';
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'organizationCadre:query', 'organizationCadre:query', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'organizationCadre:add', 'organizationCadre:add', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'organizationCadre:update', 'organizationCadre:update', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'organizationCadre:delete', 'organizationCadre:delete', @parent_id, 1 );
+
+-- ----------------------------------------------------------------------------
+-- 来源文件: PortalUserMenu.sql —— 菜单与按钮权限数据（t_menu）
+-- ----------------------------------------------------------------------------
+# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
+# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
+# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
+VALUES ( '前端用户', 2, 301, '/portal-user/list', '/business/funcampus/portal-user/portal-user-list.vue', false, false, true, false, 1, 1 );
+
+# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
+SET @parent_id = NULL;
+SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '前端用户';
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'portalUser:query', 'portalUser:query', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'portalUser:add', 'portalUser:add', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'portalUser:update', 'portalUser:update', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'portalUser:delete', 'portalUser:delete', @parent_id, 1 );
+
+-- ----------------------------------------------------------------------------
+-- 来源文件: TribeMenu.sql —— 菜单与按钮权限数据（t_menu）
+-- ----------------------------------------------------------------------------
+# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
+# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
+# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
+VALUES ( '部落', 2, 301, '/tribe/list', '/business/funcampus/tribe/tribe-list.vue', false, false, true, false, 1, 1 );
+
+# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
+SET @parent_id = NULL;
+SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '部落';
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'tribe:query', 'tribe:query', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'tribe:add', 'tribe:add', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'tribe:update', 'tribe:update', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'tribe:delete', 'tribe:delete', @parent_id, 1 );
+
+-- ----------------------------------------------------------------------------
+-- 来源文件: TribeUserMenu.sql —— 菜单与按钮权限数据（t_menu）
+-- ----------------------------------------------------------------------------
+# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
+# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
+# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
+VALUES ( '参与部落的用户', 2, 301, '/tribe-user/list', '/business/funcampus/tribe-user/tribe-user-list.vue', false, false, true, false, 1, 1 );
+
+# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
+SET @parent_id = NULL;
+SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '参与部落的用户';
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'tribeUser:query', 'tribeUser:query', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '添加', 3, @parent_id, false, false, true, false, 1, 'tribeUser:add', 'tribeUser:add', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '更新', 3, @parent_id, false, false, true, false, 1, 'tribeUser:update', 'tribeUser:update', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '删除', 3, @parent_id, false, false, true, false, 1, 'tribeUser:delete', 'tribeUser:delete', @parent_id, 1 );
+
+-- ----------------------------------------------------------------------------
+-- 来源文件: (fix) funcampus 菜单排序与可见性修复 —— 与生产库保持一致
+-- ----------------------------------------------------------------------------
+UPDATE t_menu SET sort = CASE menu_name
+  WHEN '活动管理' THEN 10 WHEN '活动分类' THEN 20 WHEN '活动报名关系' THEN 30 WHEN '活动审核日志' THEN 40
+  WHEN '活动签到管理员' THEN 50 WHEN '活动能报名的学院' THEN 60 WHEN '活动能报名的年级' THEN 70
+  WHEN '活动能报名的部落' THEN 80 WHEN '学院信息' THEN 90 WHEN '年级信息' THEN 100
+  WHEN '学校信息表' THEN 110 WHEN '各学校组织信息' THEN 120 WHEN '部落' THEN 130
+  WHEN '参与部落的用户' THEN 140 WHEN '组织干事用户' THEN 150 WHEN '前端用户' THEN 160
+  WHEN '组织账号运营者' THEN 170 WHEN '学院的审核员' THEN 180 WHEN '组织的审核员' THEN 190
+  ELSE sort END
+WHERE parent_id = 301 AND deleted_flag = 0;
+
+-- 隐藏无对应前端页面的菜单（学院的审核员、组织的审核员）
+UPDATE t_menu SET visible_flag = 0 WHERE menu_name IN ('学院的审核员','组织的审核员');
+
+-- ----------------------------------------------------------------------------
+-- 来源文件: AiAssistant.sql —— Phase AI 学生端智能助手（会话/消息/知识库）
+-- ----------------------------------------------------------------------------
+-- =====================================================================
+-- Fun Campus Phase AI：学生端智能助手（RAG 检索 + 工具调用）
+-- 内容：ai_conversation / ai_message / ai_knowledge 三表 + 平台规则 FAQ 初始数据
+-- 说明：embedding 字段留空，由应用首次加载知识库时计算并回写；切换向量模型后自动失效重算
+-- Date: 2026-09-25
+-- =====================================================================
+
+SET NAMES utf8mb4;
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- ----------------------------
+-- 1. ai_conversation AI 会话
+-- ----------------------------
+DROP TABLE IF EXISTS `ai_conversation`;
+CREATE TABLE `ai_conversation`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `user_id` bigint NOT NULL COMMENT '门户用户id',
+  `title` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '会话标题（取首条消息摘要）',
+  `last_message_time` datetime NOT NULL COMMENT '最后一条消息时间',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted_flag` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否已删除',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_user_last`(`user_id` ASC, `last_message_time` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = 'AI 会话' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- 2. ai_message AI 消息
+-- ----------------------------
+DROP TABLE IF EXISTS `ai_message`;
+CREATE TABLE `ai_message`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `conversation_id` bigint NOT NULL COMMENT '会话id',
+  `user_id` bigint NOT NULL COMMENT '用户id',
+  `role` tinyint NOT NULL COMMENT '角色：1-用户 2-助手',
+  `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '消息内容',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `deleted_flag` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否已删除',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_conversation`(`conversation_id` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = 'AI 消息' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- 3. ai_knowledge AI 知识库（平台规则 FAQ，供 RAG 检索）
+-- ----------------------------
+DROP TABLE IF EXISTS `ai_knowledge`;
+CREATE TABLE `ai_knowledge`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `title` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '条目标题',
+  `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '知识内容（FAQ 正文）',
+  `category` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'common' COMMENT '分类：enroll-报名 signin-签到 payment-支付 credit-学分 common-通用',
+  `status` tinyint NOT NULL DEFAULT 1 COMMENT '状态：0-禁用 1-启用',
+  `embedding` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '向量缓存（JSON 数组字符串，由应用懒计算并回写）',
+  `embedding_model` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '向量模型名（模型切换后自动失效重算）',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted_flag` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否已删除',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = 'AI 知识库（平台规则 FAQ）' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- 4. 平台规则 FAQ 初始数据
+-- ----------------------------
+INSERT INTO `ai_knowledge` (`title`, `content`, `category`, `status`) VALUES
+('活动如何报名', '在活动详情页点击报名按钮即可报名。只有处于「报名中」状态（报名时间窗口内）的活动可以报名；若活动设置了报名人数上限，名额满后将无法报名。报名成功后可在「我的-我的活动」中查看。', 'enroll', 1);
+INSERT INTO `ai_knowledge` (`title`, `content`, `category`, `status`) VALUES
+('报名范围限制', '部分活动仅限指定学院、指定年级或指定部落的同学报名。活动详情页会展示报名条件；不符合条件时，报名入口会给出提示说明。', 'enroll', 1);
+INSERT INTO `ai_knowledge` (`title`, `content`, `category`, `status`) VALUES
+('报名需要审核吗', '部分活动的报名需要组织方审核。提交报名后状态为「待审核」，审核通过后才算报名成功，审核结果会通过站内消息通知。需要审核的付费活动若审核未通过，报名费会自动退回。', 'enroll', 1);
+INSERT INTO `ai_knowledge` (`title`, `content`, `category`, `status`) VALUES
+('付费活动如何支付', '付费活动点击报名后先生成订单并锁定名额，随后跳转收银台完成支付；支付成功报名才正式生效（需审核的活动支付后进入待审核状态）。15 分钟内未完成支付，订单会自动关闭并释放名额。', 'payment', 1);
+INSERT INTO `ai_knowledge` (`title`, `content`, `category`, `status`) VALUES
+('订单超时与取消', '待支付订单可在「我的-我的订单」中手动取消；未在 15 分钟内支付的订单会被系统自动关闭，占用的名额随自动释放。已支付订单如需退出，按活动的退款政策申请退款。', 'payment', 1);
+INSERT INTO `ai_knowledge` (`title`, `content`, `category`, `status`) VALUES
+('退款政策', '付费活动的退款规则由活动方设置，分三种：报名截止前可退、活动开始前可退、不可退款，具体以活动详情页展示为准。符合规则的退款申请审核通过后原路退回支付账户。', 'payment', 1);
+INSERT INTO `ai_knowledge` (`title`, `content`, `category`, `status`) VALUES
+('签到怎么操作', '报名成功并进入签到时间窗口后，在「我的-签到码」出示个人专属二维码（30 秒有效，过期自动刷新），交给活动现场的签到员扫码即可完成签到。二维码一人一码、不绑定具体活动，签到成功后原码作废。', 'signin', 1);
+INSERT INTO `ai_knowledge` (`title`, `content`, `category`, `status`) VALUES
+('签退说明', '部分活动要求签退。若活动设置了签退时间窗口，请在活动结束时再次出示「我的-签到码」，由签到员扫码完成签退；未按时签退可能影响该活动的完成认定。', 'signin', 1);
+INSERT INTO `ai_knowledge` (`title`, `content`, `category`, `status`) VALUES
+('活动状态说明', '活动状态分为：等待报名（报名未开始）、报名中、报名结束、进行中、已结束。首页和活动详情页会实时展示当前状态与距离下一阶段的倒计时。', 'common', 1);
+INSERT INTO `ai_knowledge` (`title`, `content`, `category`, `status`) VALUES
+('实践分如何获得', '活动详情页会标注该活动可获得的实践分（学分）。报名并按要求完成签到（及签退）后，实践分按学校二课规则计入个人学分，具体发放以学校或组织方认定为准。', 'credit', 1);
+INSERT INTO `ai_knowledge` (`title`, `content`, `category`, `status`) VALUES
+('评论与点赞', '在活动详情页可以发表评论、回复他人评论，也可以对评论点赞或撤销点赞。评论列表支持按「最新」和「热门」两种方式排序，自己发表的评论可以删除。', 'common', 1);
+INSERT INTO `ai_knowledge` (`title`, `content`, `category`, `status`) VALUES
+('活动分享', '在活动详情页可以把活动生成分享链接发送给同学，对方打开链接后登录即可直接进入该活动详情页。', 'common', 1);
+
+-- ----------------------------------------------------------------------------
+-- 来源文件: CreditApplicationMenu.sql —— 菜单与按钮权限数据（t_menu）
+-- ----------------------------------------------------------------------------
+# 默认是按前端工程文件的 /views/business 文件夹的路径作为前端组件路径，如果你没把生成的 .vue 前端代码放在 /views/business 下，
+# 那就根据自己实际情况修改下面 SQL 的 path,component 字段值，避免执行 SQL 后菜单无法访问。
+# 如果你一切都是按照默认，那么下面的 SQL 基本不用改
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
+VALUES ( '学分认定', 2, 301, '/credit-application/list', '/business/funcampus/credit-application/credit-application-list.vue', false, false, true, false, 1, 1 );
+
+# 按菜单名称查询该菜单的 menu_id 作为按钮权限的 父菜单ID 与 功能点关联菜单ID
+SET @parent_id = NULL;
+SELECT t_menu.menu_id INTO @parent_id FROM t_menu WHERE t_menu.menu_name = '学分认定';
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '查询', 3, @parent_id, false, false, true, false, 1, 'creditApplication:query', 'creditApplication:query', @parent_id, 1 );
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '审核', 3, @parent_id, false, false, true, false, 1, 'creditApplication:review', 'creditApplication:review', @parent_id, 1 );
+
+# 学分认定菜单排序（排在 funcampus 菜单组最后）
+UPDATE t_menu SET sort = 200 WHERE menu_name = '学分认定' AND parent_id = 301 AND deleted_flag = 0;
 

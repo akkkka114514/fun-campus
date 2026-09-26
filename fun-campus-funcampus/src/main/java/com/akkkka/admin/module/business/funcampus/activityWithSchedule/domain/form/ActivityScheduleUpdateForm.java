@@ -1,6 +1,7 @@
 package com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form;
 
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityScheduleEntity;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -11,6 +12,7 @@ import java.time.LocalDateTime;
  */
 @Data
 public class ActivityScheduleUpdateForm extends ActivityScheduleAddForm{
+    @Schema(description = "活动ID")
     private Long activityId;
 
     public static ActivityScheduleEntity convert(ActivityScheduleUpdateForm updateForm){

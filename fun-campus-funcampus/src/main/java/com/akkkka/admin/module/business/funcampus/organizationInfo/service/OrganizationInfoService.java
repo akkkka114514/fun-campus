@@ -44,6 +44,10 @@ public class OrganizationInfoService {
     private final OrganizationInfoManager organizationInfoManager;
 
     public String getNameById(Long id){
+        // 展示用途：id 为空或占位 0 时返回 null（如活动不归属任何组织），避免详情回显直接报错
+        if (id == null || id == 0L) {
+            return null;
+        }
         OrganizationInfoEntity entity = organizationInfoManager.getById(id);
         AssertUtil.ifTrueThrowParamError(Objects.isNull(entity));
         return entity.getName();

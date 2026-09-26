@@ -24,6 +24,12 @@ public class ActivitySigninManagerVO {
     @Schema(description = "活动主键")
     private Long activityId;
 
+    @Schema(description = "活动签到员用户ID")
+    private Long portalUserId;
+
+    @Schema(description = "活动签到员用户名")
+    private String username;
+
     @Schema(description = "活动签到员主键")
     private PortalUserVO portalUserVO;
 
@@ -40,6 +46,8 @@ public class ActivitySigninManagerVO {
         ActivitySigninManagerVO vo = new ActivitySigninManagerVO();
         vo.setId(signinManager.getId());
         vo.setActivityId(signinManager.getActivityId());
+        vo.setPortalUserId(signinManager.getPortalUserId());
+        vo.setUsername(signinManager.getUsername());
         vo.setPortalUserVO(portalUserVO);
         vo.setDeletedFlag(false);
         vo.setCreateTime(signinManager.getCreateTime());

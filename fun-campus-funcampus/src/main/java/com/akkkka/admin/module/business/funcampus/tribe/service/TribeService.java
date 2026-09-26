@@ -74,6 +74,16 @@ public class TribeService {
     }
 
     /**
+     * 管理端：按学校查询部落简要列表（schoolId 必传，keyword 可空模糊匹配）
+     */
+    public List<SimpleTribeVO> querySimpleListBySchool(Long schoolId, String keyword) {
+        if (schoolId == null) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "学校id不能为空");
+        }
+        return tribeManager.getBaseMapper().querySimpleList(schoolId, keyword);
+    }
+
+    /**
      * 门户：本校部落分页（带成员数、主席名、我是否已加入）
      */
     public PageResult<TribePortalVO> queryPortalPage(TribePortalQueryForm queryForm) {

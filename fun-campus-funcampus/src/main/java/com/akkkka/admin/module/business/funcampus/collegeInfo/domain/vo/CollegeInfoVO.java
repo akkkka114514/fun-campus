@@ -24,6 +24,9 @@ public class CollegeInfoVO {
     private String name;
 
     @Schema(description = "所属学校id")
+    private Long schoolId;
+
+    @Schema(description = "所属学校")
     private SchoolInfoVO school;
 
     @Schema(description = "是否删除")

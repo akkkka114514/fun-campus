@@ -105,7 +105,7 @@ public class ActivitySigninManagerService {
         if(Objects.isNull(signInManagerIds)||signInManagerIds.isEmpty()){
             return;
         }
-        signInManagerValidator.validateSignInManagerIds(signInManagerIds,activityId);
+        signInManagerValidator.validateSignInManagerIds(signInManagerIds,schoolId);
         doDeleteBatchTransaction(activityId);
         doSaveBatchTransaction(signInManagerIds,schoolId,activityId);
     }

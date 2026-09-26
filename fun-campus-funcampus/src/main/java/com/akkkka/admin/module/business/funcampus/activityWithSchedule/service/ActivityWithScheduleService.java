@@ -253,8 +253,16 @@ public class ActivityWithScheduleService {
         return vo;
     }
 
+    /**
+     * 门户端更新活动（草稿/审核阶段）：校验通过后走既有草稿编辑链路
+     */
     public ResponseDTO<String> updateActivityWithSchedule(ActivityWithScheduleUpdateForm updateForm) {
-        // TODO: implement full update logic
+        if (updateForm == null || updateForm.getActivityUpdateForm() == null
+                || updateForm.getActivityUpdateForm().getId() == null) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "缺少活动ID");
+        }
+        Long activityId = updateForm.getActivityUpdateForm().getId();
+        editActivityDraft(activityId, updateForm);
         return ResponseDTO.ok();
     }
 
@@ -295,6 +303,20 @@ public class ActivityWithScheduleService {
         return ResponseDTO.ok(pageResult);
     }
 
+    /**
+     * 活动详情（含时间表）：按活动ID查询，供编辑回显使用
+     */
+    public ActivityWithScheduleVO detailWithSchedule(Long activityId) {
+        if (activityId == null) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "缺少活动ID");
+        }
+        ActivityWithScheduleVO vo = activityDao.getActivityWithScheduleById(activityId);
+        if (vo == null) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "活动不存在");
+        }
+        return vo;
+    }
+
     public ResponseDTO<String> batchDelete(List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
             return ResponseDTO.ok();
@@ -305,11 +327,12 @@ public class ActivityWithScheduleService {
 
 
     public void validateParticipateTypeNotEmpty(ActivityWithScheduleAddForm addForm){
-        //不能提交空列表
-        if(addForm.getCanEnrollTribeIdList().isEmpty()
-                &&addForm.getCanEnrollGradeIdList().isEmpty()
-                &&addForm.getCanEnrollCollegeIdList().isEmpty()){
-            throw new BusinessException(UserErrorCode.PARAM_ERROR);
+        //不能提交空列表（列表允许为 null，视为该维度不限）
+        boolean gradeEmpty = addForm.getCanEnrollGradeIdList()==null||addForm.getCanEnrollGradeIdList().isEmpty();
+        boolean collegeEmpty = addForm.getCanEnrollCollegeIdList()==null||addForm.getCanEnrollCollegeIdList().isEmpty();
+        boolean tribeEmpty = addForm.getCanEnrollTribeIdList()==null||addForm.getCanEnrollTribeIdList().isEmpty();
+        if(gradeEmpty&&collegeEmpty&&tribeEmpty){
+            throw new BusinessException(UserErrorCode.PARAM_ERROR,"报名范围不能为空，请至少选择学院/年级/部落其一");
         }
     }
 
@@ -324,13 +347,15 @@ public class ActivityWithScheduleService {
         //todo 重写定时任务
         ActivityEntity activityEntity= ActivityAddFormConverter.convert(addForm.getActivityAddForm());
         ActivityScheduleEntity scheduleEntity= ActivityScheduleAddFormConverter.convert(addForm.getActivityScheduleAddForm());
+        // 数据库 status 为 NOT NULL：按时间表初始化状态，避免插入失败
+        activityEntity.setStatus(calcInitStatus(scheduleEntity));
 
         transactionTemplate.executeWithoutResult(status -> {
             try {
                 Long activityId = doSaveActivityTransaction(activityEntity,portalUser);
                 scheduleEntity.setActivityId(activityId);
                 doSaveActivityScheduleTransaction(scheduleEntity
-                        ,addForm.getActivityAddForm().getNeedSignOut());
+                        ,Boolean.TRUE.equals(addForm.getActivityAddForm().getNeedSignOut()));
                 canEnrollGradeService.doSaveBatchTransaction(addForm.getCanEnrollGradeIdList(),activityId);
                 canEnrollCollegeService.doSaveBatchTransaction(addForm.getCanEnrollCollegeIdList(),activityId);
                 canEnrollTribeService.doSaveBatchTransaction(addForm.getCanEnrollTribeIdList(),activityId);
@@ -347,6 +372,49 @@ public class ActivityWithScheduleService {
         });
     }
 
+    /**
+     * 管理端创建活动：创建后按时间表直接进入对应时间阶段（无需走门户审核链路）
+     * 管理端无门户登录态，归属与活动管理员只做存在性/一致性校验，不校验当前用户归属
+     */
+    public ResponseDTO<String> createByAdmin(ActivityWithScheduleAddForm addForm) {
+        if (addForm == null || addForm.getActivityAddForm() == null
+                || addForm.getActivityScheduleAddForm() == null) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "活动基本信息与时间表不能为空");
+        }
+        validateParticipateTypeNotEmpty(addForm);
+        ActivityEntity activityEntity = ActivityAddFormConverter.convert(addForm.getActivityAddForm());
+        ActivityScheduleEntity scheduleEntity = ActivityScheduleAddFormConverter.convert(addForm.getActivityScheduleAddForm());
+        // 数据库 organization_id 为 NOT NULL：仅归属学院时以 0 占位，0 表示不归属组织
+        if (activityEntity.getActivityBelongToOrganizationId() == null) {
+            activityEntity.setActivityBelongToOrganizationId(0L);
+        }
+        // 数据库 status 为 NOT NULL：按时间表初始化状态
+        activityEntity.setStatus(calcInitStatus(scheduleEntity));
+        activityValidator.validateAddByAdmin(activityEntity);
+
+        transactionTemplate.executeWithoutResult(status -> {
+            try {
+                Long activityId = doSaveActivityEntityTransaction(activityEntity);
+                scheduleEntity.setActivityId(activityId);
+                doSaveActivityScheduleTransaction(scheduleEntity, Boolean.TRUE.equals(activityEntity.getNeedSignOut()));
+                replaceCanEnrollColleges(addForm.getCanEnrollCollegeIdList(), activityId);
+                replaceCanEnrollGrades(addForm.getCanEnrollGradeIdList(), activityId);
+                replaceCanEnrollTribes(addForm.getCanEnrollTribeIdList(), activityId);
+                replaceSigninManagers(addForm.getActivitySigninManagerIdList(),
+                        activityEntity.getActivityBelongToSchoolId(), activityId);
+                log.info("管理端创建活动成功, activityId={}", activityId);
+            } catch (BusinessException e) {
+                status.setRollbackOnly();
+                throw e;
+            } catch (Exception e) {
+                log.error("管理端创建活动失败, title={}", activityEntity.getTitle(), e);
+                status.setRollbackOnly();
+                throw new BusinessException(SystemErrorCode.SYSTEM_ERROR, "创建活动失败，请重试");
+            }
+        });
+        return ResponseDTO.ok();
+    }
+
     public void deleteDraft(Long activityId){
         doDeleteActivityTransaction(activityId);
         doDeleteActivityScheduleTransaction(activityId);
@@ -358,6 +426,13 @@ public class ActivityWithScheduleService {
 
     public Long doSaveActivityTransaction(ActivityEntity entity,PortalUserEntity portalUser){
         activityValidator.validateAdd(entity,portalUser);
+        return doSaveActivityEntityTransaction(entity);
+    }
+
+    /**
+     * 仅落库活动实体（校验由调用方前置完成），返回自增主键
+     */
+    private Long doSaveActivityEntityTransaction(ActivityEntity entity){
         transactionTemplate.executeWithoutResult(status -> {
             try {
                 if(!activityManager.save(entity)){
@@ -379,7 +454,8 @@ public class ActivityWithScheduleService {
                     throw new BusinessException(SystemErrorCode.SYSTEM_ERROR);
                 }
             }catch (Exception e){
-                log.error("doSaveActivityScheduleTransaction事务失败回滚：schedule={}",schedule);
+                log.error("doSaveActivityScheduleTransaction事务失败回滚：schedule={}",schedule,e);
+                throw new BusinessException(SystemErrorCode.SYSTEM_ERROR);
             }
         });
         // 尽力投递：新活动当天有关键时间点时立即加入缓存名单（失败不影响业务，漏投由重建/回源兜底）
@@ -485,6 +561,44 @@ public class ActivityWithScheduleService {
             }
 
         });
+    }
+
+    /**
+     * 管理端更新活动：任意时间阶段均可编辑（无审核链路权限限制）
+     * 未提交的子表单/列表按「不修改」处理；空列表表示清空；非空列表替换
+     */
+    public ResponseDTO<String> updateByAdmin(ActivityWithScheduleUpdateForm updateForm) {
+        if (updateForm == null || updateForm.getActivityUpdateForm() == null
+                || updateForm.getActivityUpdateForm().getId() == null) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "缺少活动ID");
+        }
+        ActivityUpdateForm activityUpdateForm = updateForm.getActivityUpdateForm();
+        Long activityId = activityUpdateForm.getId();
+        ActivityEntity dbActivity = activityValidator.validateActivityId(activityId);
+        // 未提交签退开关时沿用数据库现值，供时间表校验使用
+        boolean needSignOut = activityUpdateForm.getNeedSignOut() != null
+                ? activityUpdateForm.getNeedSignOut()
+                : Boolean.TRUE.equals(dbActivity.getNeedSignOut());
+
+        transactionTemplate.executeWithoutResult(status -> {
+            try {
+                doUpdateActivityTransaction(activityUpdateForm);
+                doUpdateActivityScheduleByAdmin(activityId, updateForm.getActivityScheduleUpdateForm(), needSignOut);
+                replaceCanEnrollColleges(updateForm.getCanEnrollCollegeIdList(), activityId);
+                replaceCanEnrollGrades(updateForm.getCanEnrollGradeIdList(), activityId);
+                replaceCanEnrollTribes(updateForm.getCanEnrollTribeIdList(), activityId);
+                replaceSigninManagers(updateForm.getActivitySigninManagerIdList(),
+                        dbActivity.getActivityBelongToSchoolId(), activityId);
+            } catch (BusinessException e) {
+                status.setRollbackOnly();
+                throw e;
+            } catch (Exception e) {
+                log.warn("管理端更新活动失败, activityId={}", activityId, e);
+                status.setRollbackOnly();
+                throw new BusinessException(SystemErrorCode.SYSTEM_ERROR, "更新活动失败，请重试");
+            }
+        });
+        return ResponseDTO.ok();
     }
 
     public void validateEditDraftPermission(ActivityEntity activity){
@@ -678,4 +792,160 @@ public class ActivityWithScheduleService {
         //todo 在提交未审核活动时，要同时把附件插入到activityAttachment和activityReviewAttachment
 
     }
+
+    // ==================== 管理端创建/更新辅助方法 ====================
+
+    /**
+     * 按时间表初始化活动状态，关键时间缺失时兜底为「等待报名」
+     */
+    private ActivityStatus calcInitStatus(ActivityScheduleEntity scheduleEntity) {
+        ActivityStatus status = ActivityStatus.calculate(LocalDateTime.now(),
+                scheduleEntity.getEnrollStartTime(),
+                scheduleEntity.getEnrollEndTime(),
+                scheduleEntity.getActivityStartTime(),
+                scheduleEntity.getActivityEndTime());
+        return status == null ? ActivityStatus.WAIT_ENROLL : status;
+    }
+
+    /**
+     * 管理端时间表更新：未提交的时间字段回填数据库现值后整体校验；
+     * 需要签退时签退时间必填（未提交则沿用数据库现值）；更新后尽力投递当天关键时间缓存
+     */
+    private void doUpdateActivityScheduleByAdmin(Long activityId,
+                                                 ActivityScheduleUpdateForm updateForm,
+                                                 boolean needSignOut) {
+        if (Objects.isNull(updateForm)) {
+            return;
+        }
+        // activity_schedule 主键即 activity_id（与活动ID相同）
+        ActivityScheduleEntity dbSchedule = activityScheduleManager.getById(activityId);
+        if (dbSchedule == null) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "活动时间表不存在");
+        }
+        ActivityScheduleEntity schedule = ActivityScheduleUpdateForm.convert(updateForm);
+        schedule.setActivityId(activityId);
+        // 未提交的时间字段回填数据库现值，保证整体顺序校验可执行
+        if (schedule.getEnrollStartTime() == null) {
+            schedule.setEnrollStartTime(dbSchedule.getEnrollStartTime());
+        }
+        if (schedule.getEnrollEndTime() == null) {
+            schedule.setEnrollEndTime(dbSchedule.getEnrollEndTime());
+        }
+        if (schedule.getActivityStartTime() == null) {
+            schedule.setActivityStartTime(dbSchedule.getActivityStartTime());
+        }
+        if (schedule.getActivityEndTime() == null) {
+            schedule.setActivityEndTime(dbSchedule.getActivityEndTime());
+        }
+        if (schedule.getSigninStartTime() == null) {
+            schedule.setSigninStartTime(dbSchedule.getSigninStartTime());
+        }
+        if (schedule.getSigninEndTime() == null) {
+            schedule.setSigninEndTime(dbSchedule.getSigninEndTime());
+        }
+        if (needSignOut) {
+            // 需要签退时签退时间必填：未提交则沿用数据库现值
+            if (schedule.getSignoutStartTime() == null) {
+                schedule.setSignoutStartTime(dbSchedule.getSignoutStartTime());
+            }
+            if (schedule.getSignoutEndTime() == null) {
+                schedule.setSignoutEndTime(dbSchedule.getSignoutEndTime());
+            }
+        }
+        validateScheduleOrderForAdmin(schedule, needSignOut);
+        if (!activityScheduleManager.updateById(schedule)) {
+            throw new BusinessException(SystemErrorCode.SYSTEM_ERROR);
+        }
+        // 尽力投递：时间表更新后当天有关键时间点时立即加入缓存名单
+        activityStatusCacheManager.tryAddToTodayCache(schedule);
+    }
+
+    /**
+     * 管理端时间表顺序校验：报名开始《报名结束《活动开始《活动结束《签到开始《签到结束；
+     * 需要签退时签退时间必填；签退时间填写（成对）后需晚于签到结束
+     */
+    private void validateScheduleOrderForAdmin(ActivityScheduleEntity schedule, boolean needSignOut) {
+        if (schedule.getEnrollStartTime() == null || schedule.getEnrollEndTime() == null
+                || schedule.getActivityStartTime() == null || schedule.getActivityEndTime() == null
+                || schedule.getSigninStartTime() == null || schedule.getSigninEndTime() == null) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "活动时间表不完整");
+        }
+        if (!(schedule.getEnrollStartTime().isBefore(schedule.getEnrollEndTime())
+                && schedule.getEnrollEndTime().isBefore(schedule.getActivityStartTime())
+                && schedule.getActivityStartTime().isBefore(schedule.getActivityEndTime())
+                && schedule.getActivityEndTime().isBefore(schedule.getSigninStartTime())
+                && schedule.getSigninStartTime().isBefore(schedule.getSigninEndTime()))) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "活动时间不按顺序");
+        }
+        boolean signoutAnyFilled = schedule.getSignoutStartTime() != null || schedule.getSignoutEndTime() != null;
+        boolean signoutPairFilled = schedule.getSignoutStartTime() != null && schedule.getSignoutEndTime() != null;
+        if (signoutAnyFilled && !signoutPairFilled) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "签退时间需成对填写");
+        }
+        if (needSignOut && !signoutPairFilled) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "需要签退的活动必须填写签退时间");
+        }
+        if (signoutPairFilled
+                && !(schedule.getSignoutEndTime().isAfter(schedule.getSignoutStartTime())
+                && schedule.getSignoutStartTime().isAfter(schedule.getSigninEndTime()))) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "活动时间不按顺序");
+        }
+    }
+
+    /**
+     * 报名学院范围：null 表示不修改；空列表清空；非空替换
+     */
+    private void replaceCanEnrollColleges(List<Long> collegeIdList, Long activityId) {
+        if (collegeIdList == null) {
+            return;
+        }
+        if (collegeIdList.isEmpty()) {
+            canEnrollCollegeService.doDeleteBatchTransaction(activityId);
+            return;
+        }
+        canEnrollCollegeService.doUpdateBatchTransaction(collegeIdList, activityId);
+    }
+
+    /**
+     * 报名年级范围：null 表示不修改；空列表清空；非空替换
+     */
+    private void replaceCanEnrollGrades(List<Long> gradeIdList, Long activityId) {
+        if (gradeIdList == null) {
+            return;
+        }
+        if (gradeIdList.isEmpty()) {
+            canEnrollGradeService.doDeleteBatchTransaction(activityId);
+            return;
+        }
+        canEnrollGradeService.doUpdateBatchTransaction(gradeIdList, activityId);
+    }
+
+    /**
+     * 报名部落范围：null 表示不修改；空列表清空；非空替换
+     */
+    private void replaceCanEnrollTribes(List<Long> tribeIdList, Long activityId) {
+        if (tribeIdList == null) {
+            return;
+        }
+        if (tribeIdList.isEmpty()) {
+            canEnrollTribeService.doDeleteBatchTransaction(activityId);
+            return;
+        }
+        canEnrollTribeService.doUpdateBatchTransaction(tribeIdList, activityId);
+    }
+
+    /**
+     * 签到员：null 表示不修改；空列表清空；非空替换
+     */
+    private void replaceSigninManagers(List<Long> signinManagerIdList, Long schoolId, Long activityId) {
+        if (signinManagerIdList == null) {
+            return;
+        }
+        if (signinManagerIdList.isEmpty()) {
+            signinManagerService.doDeleteBatchTransaction(activityId);
+            return;
+        }
+        signinManagerService.doUpdateBatchTransaction(signinManagerIdList, schoolId, activityId);
+    }
+
 }

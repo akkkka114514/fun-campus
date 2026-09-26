@@ -33,16 +33,19 @@ public class ActivityScheduleValidator {
         ){
             throw new BusinessException(UserErrorCode.PARAM_ERROR,"活动时间不按顺序");
         }
-        //如果选了需要签退
+        //如果选了需要签退，签退时间必须成对填写
         if(needSignOut){
             if(schedule.getSignoutStartTime()==null||schedule.getSignoutEndTime()==null){
                 throw new BusinessException(UserErrorCode.PARAM_ERROR,"选了需要签退但是签退时间为空");
             }
         }
 
-        if (!(schedule.getSignoutEndTime().isAfter(schedule.getSignoutStartTime())
-                &&schedule.getSignoutStartTime().isAfter(schedule.getSigninEndTime()))){
-            throw new BusinessException(UserErrorCode.PARAM_ERROR,"活动时间不按顺序");
+        //签退时间仅在填写时才校验顺序：不需签退（或未填写）时跳过，避免空指针
+        if(schedule.getSignoutStartTime()!=null&&schedule.getSignoutEndTime()!=null){
+            if (!(schedule.getSignoutEndTime().isAfter(schedule.getSignoutStartTime())
+                    &&schedule.getSignoutStartTime().isAfter(schedule.getSigninEndTime()))){
+                throw new BusinessException(UserErrorCode.PARAM_ERROR,"活动时间不按顺序");
+            }
         }
     }
 

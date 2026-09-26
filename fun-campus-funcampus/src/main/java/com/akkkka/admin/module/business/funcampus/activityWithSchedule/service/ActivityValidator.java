@@ -52,11 +52,13 @@ public class ActivityValidator {
     public void validateUpdate(ActivityEntity activity){
         validateActivityId(activity.getId());
         if(activity.getTitle()!=null){
-            validateActivityTitleUnique(activity.getTitle());
+            // 编辑场景排除自身，避免标题未改动时误报重复
+            validateActivityTitleUniqueExcludeSelf(activity.getTitle(), activity.getId());
         }
         if(activity.getActivityManagerId()!=null){
             Long schoolId = activityManager.getById(activity.getId()).getActivityBelongToSchoolId();
-            validateActivityManager(activity.getActivityManagerId(), schoolId);
+            // 管理端编辑链路无门户登录态，这里只校验管理员用户存在且同校
+            validateActivityManagerByAdmin(activity.getActivityManagerId(), schoolId);
         }
         if(activity.getCategoryId()!=null){
             categoryValidator.validateActivityCategory(activity.getCategoryId());
@@ -111,6 +113,75 @@ public class ActivityValidator {
 
     public void validateActivityManager(Long userId,Long belongToSchoolId){
         portalUserValidator.validateIsCurrentUserPortal();
+        PortalUserEntity portalUser = portalUserValidator.validatePortalUserId(userId);
+        portalUserValidator.validateUserInSchool(portalUser,belongToSchoolId);
+    }
+
+    /**
+     * 标题唯一性校验（排除自身）：编辑场景使用，标题未改动时不误报重复
+     *
+     * @param activityTitle  表单标题
+     * @param selfActivityId 当前活动ID
+     */
+    public void validateActivityTitleUniqueExcludeSelf(String activityTitle,Long selfActivityId){
+        Optional.ofNullable(
+                        activityManager.getOne(
+                                new LambdaQueryWrapper<ActivityEntity>()
+                                        .eq(ActivityEntity::getTitle,activityTitle)
+                                        .ne(selfActivityId!=null,ActivityEntity::getId,selfActivityId)
+                        )
+                ).filter(e->!e.getDeletedFlag())
+                .ifPresent((e)->{
+                            throw new BusinessException(UserErrorCode.PARAM_ERROR,"包含此标题的活动已存在");
+                        }
+                );
+    }
+
+    /**
+     * 管理端新增活动校验：管理端无门户登录态，归属与活动管理员只做存在性/一致性校验
+     */
+    public void validateAddByAdmin(ActivityEntity entity){
+        validateActivityBelongToByAdmin(entity);
+        validateActivityTitleUnique(entity.getTitle());
+        validateActivityManagerByAdmin(
+                entity.getActivityManagerId(),
+                entity.getActivityBelongToSchoolId());
+        categoryValidator.validateActivityCategory(entity.getCategoryId());
+    }
+
+    /**
+     * 归属校验（管理端）：学校必填且存在；组织/学院至少一个且存在；
+     * 0 表示不归属该维度（数据库 organization_id 为 NOT NULL，仅归属学院时以 0 占位）；
+     * 不校验当前用户的归属（管理端用户不属于任何 portal 组织/学院）
+     */
+    public void validateActivityBelongToByAdmin(ActivityEntity activity){
+        if(activity.getActivityBelongToSchoolId()==null){
+            throw new BusinessException(UserErrorCode.PARAM_ERROR);
+        }
+        schoolValidator.validateSchoolId(activity.getActivityBelongToSchoolId());
+
+        Long organizationId = activity.getActivityBelongToOrganizationId();
+        Long collegeId = activity.getActivityBelongToCollegeId();
+        boolean hasOrganization = organizationId!=null&&organizationId!=0L;
+        boolean hasCollege = collegeId!=null&&collegeId!=0L;
+        if(hasOrganization){
+            organizationValidator.validateOrganizationId(organizationId);
+        }else if(hasCollege){
+            collegeValidator.validateCollegeId(collegeId);
+        }else{
+            //organization id和college id不能同时为空
+            throw new BusinessException(UserErrorCode.PARAM_ERROR);
+        }
+    }
+
+    /**
+     * 活动管理员校验（管理端）：只校验用户存在且属于活动学校；
+     * 允许不指定管理员（activity_manager_id 库中可空）
+     */
+    public void validateActivityManagerByAdmin(Long userId,Long belongToSchoolId){
+        if(userId==null){
+            return;
+        }
         PortalUserEntity portalUser = portalUserValidator.validatePortalUserId(userId);
         portalUserValidator.validateUserInSchool(portalUser,belongToSchoolId);
     }

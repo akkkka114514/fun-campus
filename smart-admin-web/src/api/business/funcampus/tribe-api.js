@@ -17,6 +17,13 @@ export const tribeApi = {
   },
 
   /**
+   * 简易列表（按学校+关键字，供下拉选择）  @author  akkkka114514
+   */
+  simpleList: (schoolId, keyword) => {
+    return getRequest('/backend/tribe/simpleList', { schoolId, keyword });
+  },
+
+  /**
    * 增加  @author  akkkka114514
    */
   add: (param) => {

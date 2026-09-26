@@ -2,12 +2,16 @@ package com.akkkka.admin.module.business.funcampus.activityWithSchedule.controll
 
 import java.util.List;
 
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleAddForm;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleQueryForm;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleUpdateForm;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityWithScheduleVO;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityWithScheduleService;
 import com.akkkka.common.domain.PageResult;
@@ -42,6 +46,26 @@ public class ActivityManageController {
     @PostMapping("/activity/query")
     public ResponseDTO<PageResult<ActivityWithScheduleVO>> queryActivityWithSchedule(@RequestBody @Valid ActivityWithScheduleQueryForm queryForm) {
         return activityWithScheduleService.queryActivityWithSchedule(queryForm);
+    }
+
+    @Operation(summary = "活动详情（含时间表，编辑回显） @author akkkka114514")
+    @GetMapping("/activity/detail")
+    public ResponseDTO<ActivityWithScheduleVO> activityDetail(@RequestParam Long activityId) {
+        return ResponseDTO.ok(activityWithScheduleService.detailWithSchedule(activityId));
+    }
+
+    @Operation(summary = "添加活动 @author akkkka114514")
+    @PostMapping("/activity/add")
+    @RepeatSubmit(intervalMilliSecond = 3 * 1000)
+    public ResponseDTO<String> addActivity(@RequestBody @Valid ActivityWithScheduleAddForm addForm) {
+        return activityWithScheduleService.createByAdmin(addForm);
+    }
+
+    @Operation(summary = "更新活动 @author akkkka114514")
+    @PostMapping("/activity/update")
+    @RepeatSubmit(intervalMilliSecond = 3 * 1000)
+    public ResponseDTO<String> updateActivity(@RequestBody @Valid ActivityWithScheduleUpdateForm updateForm) {
+        return activityWithScheduleService.updateByAdmin(updateForm);
     }
 
     @Operation(summary = "删除活动 @author akkkka114514")

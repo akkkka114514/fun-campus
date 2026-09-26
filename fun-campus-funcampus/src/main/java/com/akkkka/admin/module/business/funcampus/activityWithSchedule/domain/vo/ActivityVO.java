@@ -156,6 +156,9 @@ public class ActivityVO {
     @Schema(description = "退款政策：1-报名截止前可退 2-活动开始前可退 3-不可退款")
     private Integer refundPolicy;
 
+    @Schema(description = "活动管理员和发起者ID")
+    private Long activityManagerId;
+
     @Schema(description = "活动管理员")
     private PortalUserVO activityManager;
 

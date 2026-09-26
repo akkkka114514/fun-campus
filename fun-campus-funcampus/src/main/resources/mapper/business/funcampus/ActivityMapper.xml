@@ -24,6 +24,7 @@
         activity.attachment,
         activity.category_id,
         activity.cover_img,
+        activity.activity_manager_id,
         activity.paid_flag,
         activity.price_fen,
         activity.refund_policy
@@ -72,6 +73,7 @@
             <result property="attachment" column="attachment"/>
             <result property="categoryId" column="category_id"/>
             <result property="coverImg" column="cover_img"/>
+            <result property="activityManagerId" column="activity_manager_id"/>
             <result property="paidFlag" column="paid_flag"/>
             <result property="priceFen" column="price_fen"/>
             <result property="refundPolicy" column="refund_policy"/>

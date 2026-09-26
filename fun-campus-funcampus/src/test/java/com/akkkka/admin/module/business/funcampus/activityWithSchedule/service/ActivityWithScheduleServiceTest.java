@@ -6,11 +6,16 @@ import com.akkkka.admin.module.business.funcampus.activityCanEnrollTribe.service
 import com.akkkka.admin.module.business.funcampus.activityCategory.service.ActivityCategoryService;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.manager.ActivityEnrollmentManager;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.service.ActivityEnrollmentService;
+import com.akkkka.admin.module.business.funcampus.activityOrder.constant.OrderStatus;
+import com.akkkka.admin.module.business.funcampus.activityOrder.domain.entity.ActivityOrderEntity;
+import com.akkkka.admin.module.business.funcampus.activityOrder.manager.ActivityOrderManager;
+import com.akkkka.admin.module.business.funcampus.activityOrder.service.ActivityRefundService;
 import com.akkkka.admin.module.business.funcampus.activityReviewAttachment.manager.ActivityReviewAttachmentManager;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewStage;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.manager.ActivityReviewLogManager;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.service.ActivityReviewLogService;
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.service.ActivitySigninManagerService;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.constant.ActivityStatus;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.dao.ActivityDao;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.dao.ActivityEnrollNumDao;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
@@ -37,9 +42,12 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 /**
  * 活动和时间表 组合 Service 单元测试（聚焦复杂逻辑方法）
@@ -97,6 +105,10 @@ public class ActivityWithScheduleServiceTest {
     private ActivityEnrollNumDao activityEnrollNumDao;
     @Mock
     private ActivityEnrollmentService activityEnrollmentService;
+    @Mock
+    private ActivityOrderManager activityOrderManager;
+    @Mock
+    private ActivityRefundService activityRefundService;
 
     @InjectMocks
     private ActivityWithScheduleService service;
@@ -285,5 +297,105 @@ public class ActivityWithScheduleServiceTest {
 
         assertThrows(BusinessException.class,
                 () -> service.validateEditDraftPermission(activityManagedBy(20L)));
+    }
+
+    // ---------------------------------- 活动取消 cancelActivity ----------------------------------
+
+    private ActivityEntity cancelableActivity(ActivityStatus status) {
+        ActivityEntity activity = new ActivityEntity();
+        activity.setId(7L);
+        activity.setTitle("羽毛球比赛");
+        activity.setStatus(status);
+        return activity;
+    }
+
+    private ActivityOrderEntity waitPayOrder(Long id, String orderNo) {
+        ActivityOrderEntity order = new ActivityOrderEntity();
+        order.setId(id);
+        order.setOrderNo(orderNo);
+        order.setActivityId(7L);
+        order.setUserId(20L);
+        order.setStatus(OrderStatus.WAIT_PAY);
+        return order;
+    }
+
+    @Test
+    void cancelActivity_whenAlreadyCancelled_throwParamError() {
+        when(activityValidator.validateActivityId(7L)).thenReturn(cancelableActivity(ActivityStatus.CANCELLED));
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> service.cancelActivity(7L));
+        assertTrue(ex.getMessage().contains("已取消"));
+        verify(activityRefundService, never()).refundForCanceledActivity(any());
+    }
+
+    @Test
+    void cancelActivity_whenFinished_throwParamError() {
+        when(activityValidator.validateActivityId(7L)).thenReturn(cancelableActivity(ActivityStatus.FINISHED));
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> service.cancelActivity(7L));
+        assertTrue(ex.getMessage().contains("不可取消"));
+        verify(activityRefundService, never()).refundForCanceledActivity(any());
+    }
+
+    @Test
+    void cancelActivity_whenConcurrentStatusChange_throwAndNoSideEffects() {
+        when(activityValidator.validateActivityId(7L)).thenReturn(cancelableActivity(ActivityStatus.ENROLLING));
+        // CAS 条件更新失败：状态已被定时任务/其他操作变更
+        when(activityManager.updateStatusIfMatch(7L, ActivityStatus.CANCELLED, ActivityStatus.ENROLLING))
+                .thenReturn(false);
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> service.cancelActivity(7L));
+        assertTrue(ex.getMessage().contains("取消失败"));
+        verify(activityOrderManager, never()).listWaitPayOrdersByActivity(any());
+        verify(activityRefundService, never()).refundForCanceledActivity(any());
+    }
+
+    @Test
+    void cancelActivity_success_closesWaitPayOrdersAndRefunds() {
+        when(activityValidator.validateActivityId(7L)).thenReturn(cancelableActivity(ActivityStatus.ENROLLING));
+        when(activityManager.updateStatusIfMatch(7L, ActivityStatus.CANCELLED, ActivityStatus.ENROLLING))
+                .thenReturn(true);
+        when(activityOrderManager.listWaitPayOrdersByActivity(7L))
+                .thenReturn(List.of(waitPayOrder(11L, "AO1"), waitPayOrder(12L, "AO2")));
+        when(activityOrderManager.closeIfWaitPayCas(eq(11L), any())).thenReturn(true);
+        when(activityOrderManager.closeIfWaitPayCas(eq(12L), any())).thenReturn(false);
+        when(activityEnrollNumDao.decreaseEnrollNum(7L)).thenReturn(true);
+
+        assertDoesNotThrow(() -> service.cancelActivity(7L));
+
+        verify(activityOrderManager).closeIfWaitPayCas(eq(11L), any());
+        verify(activityOrderManager).closeIfWaitPayCas(eq(12L), any());
+        // 仅关单成功的订单释放锁定名额；CAS 失败的订单已被回调/用户先行处理，跳过
+        verify(activityEnrollNumDao, times(1)).decreaseEnrollNum(7L);
+        verify(activityRefundService).refundForCanceledActivity(7L);
+    }
+
+    @Test
+    void cancelActivity_success_whenNoWaitPayOrders_stillRefunds() {
+        when(activityValidator.validateActivityId(7L)).thenReturn(cancelableActivity(ActivityStatus.ENROLLING));
+        when(activityManager.updateStatusIfMatch(7L, ActivityStatus.CANCELLED, ActivityStatus.ENROLLING))
+                .thenReturn(true);
+        when(activityOrderManager.listWaitPayOrdersByActivity(7L)).thenReturn(List.of());
+
+        assertDoesNotThrow(() -> service.cancelActivity(7L));
+
+        verify(activityOrderManager, never()).closeIfWaitPayCas(any(), any());
+        verify(activityRefundService).refundForCanceledActivity(7L);
+    }
+
+    @Test
+    void cancelActivity_whenDecreaseEnrollNumFails_stillCompletes() {
+        when(activityValidator.validateActivityId(7L)).thenReturn(cancelableActivity(ActivityStatus.ENROLLING));
+        when(activityManager.updateStatusIfMatch(7L, ActivityStatus.CANCELLED, ActivityStatus.ENROLLING))
+                .thenReturn(true);
+        when(activityOrderManager.listWaitPayOrdersByActivity(7L))
+                .thenReturn(List.of(waitPayOrder(11L, "AO1")));
+        when(activityOrderManager.closeIfWaitPayCas(eq(11L), any())).thenReturn(true);
+        // 名额释放失败仅告警，不阻断取消与退款
+        when(activityEnrollNumDao.decreaseEnrollNum(7L)).thenReturn(false);
+
+        assertDoesNotThrow(() -> service.cancelActivity(7L));
+
+        verify(activityRefundService).refundForCanceledActivity(7L);
     }
 }

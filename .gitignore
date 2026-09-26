@@ -27,4 +27,7 @@ target/
 面试冲刺计划.md
 tmp-smoke/
 
+### 本地上传目录（dev 运行时数据） ###
+data/
+
 

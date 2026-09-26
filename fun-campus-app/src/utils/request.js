@@ -90,4 +90,56 @@ export function postRaw(url, raw) {
   return request({ url, method: 'POST', data: raw });
 }
 
-export default { get, post, postRaw };
+/**
+ * 文件上传（MultipartFile）：成功 resolve 后端 ResponseDTO（data 为 FileUploadVO）
+ * - options.url: 必填，如 '/portal/file/upload'
+ * - options.formData: 附加表单字段，如 { folder: 5 }
+ */
+export function uploadFile(filePath, options = {}) {
+  const { url, name = 'file', formData = {}, timeout = 60000 } = options;
+  const token = getToken();
+  const header = {};
+  if (token) {
+    header.Authorization = 'Bearer ' + token;
+  }
+
+  return new Promise((resolve, reject) => {
+    uni.uploadFile({
+      url: API_BASE_URL + url,
+      filePath,
+      name,
+      formData,
+      header,
+      timeout,
+      success: (res) => {
+        let body = null;
+        try {
+          body = JSON.parse(res.data);
+        } catch (e) {
+          body = null;
+        }
+        if (!body || typeof body !== 'object') {
+          reject(res);
+          return;
+        }
+        if (body.code && body.code !== 1) {
+          if (LOGIN_EXPIRED_CODES.includes(body.code)) {
+            toLogin();
+            reject(body);
+            return;
+          }
+          uni.showToast({ title: body.msg || '上传失败', icon: 'none' });
+          reject(body);
+          return;
+        }
+        resolve(body);
+      },
+      fail: (err) => {
+        uni.showToast({ title: '网络连接错误', icon: 'none' });
+        reject(err);
+      },
+    });
+  });
+}
+
+export default { get, post, postRaw, uploadFile };

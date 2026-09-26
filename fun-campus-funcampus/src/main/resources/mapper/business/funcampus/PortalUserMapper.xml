@@ -89,4 +89,37 @@
             #{item}
         </foreach>
     </select>
+
+    <!-- 实践积分明细：已结束(status=4)且已签到的活动，按活动分值计分（派生自报名数据，与待办/我的活动同一数据源） -->
+    <select id="queryGradeScoreDetailList" resultType="com.akkkka.admin.module.business.funcampus.portalUser.domain.vo.GradeScoreDetailVO">
+        SELECT
+        activity.id AS activity_id,
+        activity.title AS activity_title,
+        activity.score_can_get AS score,
+        activity_schedule.activity_end_time AS finish_time
+        FROM activity_enrollment
+        INNER JOIN activity ON activity.id = activity_enrollment.activity_id AND activity.deleted_flag = 0
+        LEFT JOIN activity_schedule ON activity_schedule.activity_id = activity_enrollment.activity_id
+        WHERE activity_enrollment.user_id = #{userId}
+        AND activity_enrollment.deleted_flag = 0
+        AND activity_enrollment.sign_in_status = 1
+        AND activity.status = 4
+        ORDER BY activity_schedule.activity_end_time DESC, activity.id DESC
+    </select>
+
+    <!-- 信誉分扣分记录：已结束(status=4)但未签到的报名（爽约），分值/原因由服务层填充 -->
+    <select id="queryCreditScorePenaltyList" resultType="com.akkkka.admin.module.business.funcampus.portalUser.domain.vo.CreditScoreLogVO">
+        SELECT
+        activity.id AS activity_id,
+        activity.title AS activity_title,
+        activity_schedule.activity_end_time AS change_time
+        FROM activity_enrollment
+        INNER JOIN activity ON activity.id = activity_enrollment.activity_id AND activity.deleted_flag = 0
+        LEFT JOIN activity_schedule ON activity_schedule.activity_id = activity_enrollment.activity_id
+        WHERE activity_enrollment.user_id = #{userId}
+        AND activity_enrollment.deleted_flag = 0
+        AND activity_enrollment.sign_in_status = 0
+        AND activity.status = 4
+        ORDER BY activity_schedule.activity_end_time DESC, activity.id DESC
+    </select>
 </mapper>

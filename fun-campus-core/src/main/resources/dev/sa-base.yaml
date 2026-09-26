@@ -107,10 +107,10 @@ server:
 # 文件上传 配置
 file:
   storage:
-    mode: cloud
+    mode: local
     local:
-      upload-path: /home/smart_admin_v3/upload/   #文件上传目录
-      url-prefix:
+      upload-path: f:/ideaWorkspace/fun-campus/data/upload/   #文件上传目录
+      url-prefix: http://127.0.0.1:1024/upload/
     cloud:
       region: oss-cn-hangzhou
       endpoint: 127.0.0.1:9005

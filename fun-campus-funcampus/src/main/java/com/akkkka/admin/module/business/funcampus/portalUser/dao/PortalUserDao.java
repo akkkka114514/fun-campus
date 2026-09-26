@@ -3,6 +3,8 @@ package com.akkkka.admin.module.business.funcampus.portalUser.dao;
 import java.util.List;
 import com.akkkka.admin.module.business.funcampus.portalUser.domain.entity.PortalUserEntity;
 import com.akkkka.admin.module.business.funcampus.portalUser.domain.form.PortalUserQueryForm;
+import com.akkkka.admin.module.business.funcampus.portalUser.domain.vo.CreditScoreLogVO;
+import com.akkkka.admin.module.business.funcampus.portalUser.domain.vo.GradeScoreDetailVO;
 import com.akkkka.admin.module.business.funcampus.portalUser.domain.vo.PortalUserVO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -41,6 +43,15 @@ public interface PortalUserDao extends BaseMapper<PortalUserEntity> {
      */
     int batchUpdateDeleted(@Param("idList")List<Long> idList, @Param("deletedFlag")boolean deletedFlag);
 
+    /**
+     * 实践积分明细（已结束且已签到的活动，派生自报名数据）
+     */
+    List<GradeScoreDetailVO> queryGradeScoreDetailList(@Param("userId") Long userId);
+
+    /**
+     * 信誉分扣分记录（已结束未签到的报名，即爽约）
+     */
+    List<CreditScoreLogVO> queryCreditScorePenaltyList(@Param("userId") Long userId);
 
     Page<PortalUserVO> queryByIds(List<Long> ids);
 }

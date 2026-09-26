@@ -68,6 +68,19 @@
       }
     },
     {
+      "path": "pages/mine/score",
+      "style": {
+        "navigationBarTitleText": "我的积分",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/mine/profile",
+      "style": {
+        "navigationBarTitleText": "资料编辑"
+      }
+    },
+    {
       "path": "pages/order/pay",
       "style": {
         "navigationBarTitleText": "支付订单"

@@ -10,8 +10,6 @@
 **重要声明：本软件为独立开发，与 PU口袋校园 无任何关联。所有代码、设计均为原创，仅借鉴了校园管理系统的一般功能概念。**
 
 
-前端我实在写不下去了
-
 ## 基于前端的功能描述
 首页
 - 扫码按钮
@@ -130,15 +128,17 @@ pu签到二维码按钮
 
 | 层级 | 模块 | 状态 |
 |------|------|------|
-| 后端 | 活动管理（提交/审核/报名/签到签退/详情/倒计时/首页数据） | ✅ 已完成（接口均带 portal 前缀） |
-| 后端 | 基础数据（学校/学院/组织/前台用户/部落用户） | 🟡 接口已实现，但未适配 portal/backend 前缀，请求会被拦截 |
-| 后端 | 活动报名范围控制（学院/年级/部落） | 🟡 学院/年级接口已暴露；部落 Controller 为空壳 |
-| 后端 | 部落管理 CRUD | 🟡 Service 已实现，Controller 仅暴露 `/portal/tribe/query/simple` |
-| 管理后台前端 | 37 个业务页面（活动/基础数据/报名/审核/部落等） | ⚠️ 页面已生成，但 34 个页面 API import 失效、接口约定与后端不一致，暂无页面可完整联调（详见 Phase 0） |
-| 移动端前端 | 首页 / 我的 / 活动详情等 | ❌ 未开始 |
-| 后端 | 评论 / 收藏 / 分享 / 签到签退二维码 | ✅ 已完成（前端页面暂无） |
-| 后端 | 消息通知 / 学分认定 | ❌ 未开始 |
-| 后端+管理后台 | 活动付费参加（订单 / 支付 / 退款） | ❌ 未开始 |
+| 后端 | 活动核心链路（发布/审核/报名/签到签退/详情/倒计时/范围控制/状态自动推进） | ✅ 已完成（portal/backend 双前缀） |
+| 后端 | 基础数据（学校/学院/组织/前台用户/部落用户） | ✅ 已完成（CRUD 全量 + 双前缀适配） |
+| 后端 | 互动功能（评论 + 热门排行 / 收藏 / 分享 / 评价） | ✅ 已完成 |
+| 后端 | 消息通知（门户+后台收发、未读计数、业务节点自动站内信） | ✅ 已完成 |
+| 后端 | 学分认定（门户申请/编辑/删除 + 管理端审核） | ✅ 已完成 |
+| 后端 | 部落（列表/详情/成员/活动/加入申请+审核） | ✅ 已完成 |
+| 后端 | 活动付费链路（下单锁座 / 模拟支付回调 / 退款 / 超时关单） | ✅ 已完成（Mock 渠道） |
+| 后端 | AI 校园助手（SSE 流式问答 / 找活动 / RAG / 降级） | ✅ 已完成（学生端 App 待集成） |
+| 管理后台前端 | 37 个业务页面（活动/基础数据/报名/审核/部落等） | 🟡 import 与菜单已修复，多数页面后端就绪可联调；活动表单保存、组织干事/组织账号运营者等少数未接通 |
+| 学生端前端 | fun-campus-app（uni-app，登录/首页/详情/支付/收银台/签到码/消息/我的） | 🟡 核心页面已实现；部落为占位页，订单列表/我的活动等入口显示"开发中" |
+| 质量保障 | 单元测试 | 🟡 13 个测试类（活动/报名/审核/状态推进/登录/消息） |
 
 ---
 
@@ -148,42 +148,41 @@ pu签到二维码按钮
 
 #### 0.1 后端模块完全缺失（前端页面 + API + 菜单均已存在）
 
-- [ ] 组织干事用户（organizer-cadre）：前端有 `organizer-cadre-list/form.vue`、`organizer-cadre-api.js`（调用 `/organizationCadre/*`）、菜单 SQL（`OrganizerCadreMenu.sql`）；后端无任何模块、数据库无 `organizer_cadre` 表 —— 需建表 + 补 entity/service/controller，或确认该功能废弃并清理前端
-- [ ] 组织账号运营者（portal-organizer-user）：前端有 `portal-organization-user-list/form.vue`、`portal-organization-user-api.js`（调用 `/portalOrganizationUser/*`）；`portal_organization_user` 表已存在；后端无对应 service/controller，需补齐
+- [ ] 组织干事用户（organizer-cadre）：仍未补齐 —— 前端有 `organizer-cadre-list/form.vue`、`organizer-cadre-api.js`（调用无前缀的 `/organizationCadre/*`）、菜单已入库；后端无任何模块、数据库无 `organizer_cadre` 表 —— 需建表 + 补 entity/service/controller，或确认该功能废弃并清理前端
+- [ ] 组织账号运营者（portal-organizer-user）：仍未补齐 —— 前端有 `portal-organization-user-list/form.vue`、`portal-organization-user-api.js`（调用无前缀的 `/portalOrganizationUser/*`）；`portal_organization_user` 表已存在；后端无对应 service/controller
 
-#### 0.2 后端 Controller 为空壳（需补 CRUD 接口）
+#### 0.2 后端 Controller 为空壳（需补 CRUD 接口）—— ✅ 已全部补齐
 
 > 以下模块已有 domain / dao / manager / service 骨架，但 Controller 里没有暴露任何接口。
 
-- [ ] 活动分类管理：`ActivityCategoryController` 空壳，Service 仅有 `getNameById/getAll`；前端调用 `/activityCategory/{queryPage,add,update,delete/{id},batchDelete}`
-- [ ] 年级信息管理：`GradeInfoController` 空壳，Service 仅有 `getAll/getNameById`；前端调用 `/gradeInfo/*`
-- [ ] 活动签到管理员管理：`ActivitySigninManagerController` 空壳，Service 仅有活动创建流程用的内部批处理方法；前端调用 `/activitySigninManager/*`
-- [ ] 活动可报名部落管理：`ActivityCanEnrollTribeController` 空壳，情况同上；前端调用 `/activityCanEnrollTribe/*`
+- [✅] 活动分类管理：`ActivityCategoryController` 已补齐 CRUD（`/backend/activityCategory/{queryPage,add,update,delete/{id},batchDelete}`）
+- [✅] 年级信息管理：`GradeInfoController` 已补齐 CRUD（`/backend/gradeInfo/*`，前端已同步加前缀）
+- [✅] 活动签到管理员管理：`ActivitySigninManagerController` 已补齐 CRUD（`/backend/activitySigninManager/*`）
+- [✅] 活动可报名部落管理：`ActivityCanEnrollTribeController` 已补齐 CRUD（`/backend/activityCanEnrollTribe/*`）
 
-#### 0.3 Service 已实现、仅需暴露 Controller
+#### 0.3 Service 已实现、仅需暴露 Controller —— ✅ 已完成
 
-- [ ] 部落管理：`TribeService` 已含完整 CRUD（queryPage/add/update/batchDelete/delete），但 `TribeController` 只暴露了 `/portal/tribe/query/simple`；需按前端约定补齐 `/tribe/*`，或统一调整为 `/backend/tribe/*` 并同步前端
+- [✅] 部落管理：已拆分为 `TribeAdminController`（`/backend/tribe/*` 管理端 CRUD）+ `TribeController`（`/portal/tribe/*` 门户：queryPage/detail/member/activity/simple）+ `TribeApplicationController`（加入申请），前端 `tribe-api.js` 已同步
 
 #### 0.4 接口路径 / 方法不一致（需前后端对齐）
 
-- [ ] 活动管理：前端 `activity-api.js` 调用 `/activity/{queryPage,add,delete/{id}}`，后端实际为 `/portal/activity/{query,submit,delete(POST)}` —— 建议前端对齐后端
-- [ ] 活动时间表：前端 `activity-schedule-api.js` 调用独立 `/activitySchedule/*`，后端无此模块（时间表随 `/portal/activity/*` 组合接口一起维护）—— 需确认独立页面去留
-- [ ] 活动报名管理：前端需 `/activityEnrollment/{queryPage,add,update,delete,batchDelete}` 管理接口，后端仅有报名 + 扫码（enroll / signIn / signOut）4 个接口，管理端分页查询与 CRUD 待补
-- [ ] 活动审核日志：前端需 `/activityReviewLog/queryPage`，后端仅有 `add/update/review/initial/latest/{activityId}`
-- [ ] `activityWithSchedule` 的 `/activity/draft/submit` 仅有 TODO（触发状态机后未落库），`getReviewProposal` 方法未加 mapping 注解（疑似未完成）
+- [✅] 活动管理：前端 `activity-api.js` 已对齐 `/backend/activity/{query,delete,batchDelete}`
+- [ ] 活动时间表：前端 `activity-schedule-api.js` 仍调用无前缀的 `/activitySchedule/*`，后端仍无该独立模块（时间表随 `/portal/activity/*` 组合接口维护）—— 需确认独立页面去留
+- [✅] 活动报名管理：新增 `ActivityEnrollmentAdminController`，已提供 `/backend/activityEnrollment/{queryPage,delete,batchDelete}`，前端已同步
+- [✅] 活动审核日志：`/backend/activityReviewLog/{queryPage,add,update,review/initial,latest/{activityId}}` 已就绪
+- [ ] `activityWithSchedule.getReviewProposal` 方法仍未挂 mapping 注解（未完成）；`/portal/activity/submit` 已可正常提交（含 Validator + `submitDraft` 落库）
 
-#### 0.5 URL 前缀适配（portal / backend 双端体系）
+#### 0.5 URL 前缀适配（portal / backend 双端体系）—— ✅ 已全量适配
 
-- [ ] `AdminInterceptor` 按 URL 路径段分派用户体系，不含 `portal` 或 `backend` 段的请求会被直接拒绝；以下已实现接口的模块未适配，目前请求都会被拦截：`activityEnrollment`、`activityCanEnrollCollege`、`activityCanEnrollGrade`、`activityReviewLog`、`collegeInfo`、`organizationInfo`、`portalUser`、`schoolInfo`、`tribeUser`
-- [ ] 以下空壳模块（见 0.2）补 CRUD 接口时需一并适配前缀：`activityCategory`、`gradeInfo`、`activitySigninManager`、`activityCanEnrollTribe`
-- [ ] 已适配的参考：`activityWithSchedule` / `activityComment` / `activityFavorite` / `activityShare`（`@RequestMapping("portal")`）、`portalLogin`（`/portal/login`）
-- [ ] 前端对应 API 封装同步加前缀（管理后台统一 `/backend/*`，门户统一 `/portal/*`），`signin-qrcode.vue` 调试页依赖的 `/activityEnrollment/*` 一并归入前缀规范
+- [✅] 原 9 个未适配模块已全部改造：`activityEnrollment`（门户 + `/backend` 管理端双 Controller）、`activityCanEnrollCollege`、`activityCanEnrollGrade`、`activityReviewLog`、`collegeInfo`、`organizationInfo`、`portalUser`（`PortalUserController=/backend`、`PortalUserSelfController=/portal`）、`schoolInfo`、`tribeUser` 均带 `backend`/`portal` 段
+- [✅] 原空壳模块（见 0.2）补 CRUD 时已按 `/backend/*` 前缀实现
+- [✅] 前端 API 封装已同步：funcampus 全部 api 文件走 `/backend/*` 或 `/portal/*`（仅 0.1 的两个无后端模块与活动时间表 3 个历史 API 例外）
 
-#### 0.6 前端页面修复（技术债）
+#### 0.6 前端页面修复（技术债）—— ✅ 已全部修复
 
-- [ ] 34 个页面的 API import 路径失效：API 文件已迁移到 `src/api/business/funcampus/`，但页面仍引用旧路径（如 `/@/api/business/college-info/college-info-api`），页面加载即报错；目前仅 `activity-list` / `activity-form` / `signin-qrcode` 3 个页面用了新路径
-- [ ] 菜单 SQL 组件路径失效：`sql_script/mysql/*Menu.sql` 中 component 写的是 `/business/{module}/...`，实际文件在 `/business/funcampus/{module}/...`，需修订 SQL 或调整目录
-- [ ] `activity-enrollment-list.vue` / `activity-enrollment-form.vue` 内容重复拼接（各含 4 份 template + script），无法编译，需清理重写
+- [✅] 37/37 页面 API import 已统一为 `/@/api/business/funcampus/...`（全量扫描无旧路径残留）
+- [✅] 菜单 SQL 组件路径已修正为 `/business/funcampus/{module}/...`，并统一合并进 `sql_script/mysql/fun-campus-merged.sql`（原分散的 `*Menu.sql` 已删除）
+- [✅] `activity-enrollment-list.vue`（278 行）/ `activity-enrollment-form.vue`（125 行）已重写为单模板单脚本
 
 ---
 
@@ -212,18 +211,19 @@ pu签到二维码按钮
 > 设计约定：二维码**不绑定活动、一人一码**，内容为 `userId + token`（30s 过期，重新生成覆盖刷新，签到/签退成功后作废）。扫码者（该活动签到员）选择活动后提交，后端按**活动时间表的签到/签退时间窗口**校验当前是否可操作（状态机仅推进 0~4，5~8 由时间窗口实时判定）。
 > 接口：生成 `GET /activityEnrollment/signIn/QRCode`；扫码签到 `POST /activityEnrollment/signIn/byQRCode`；扫码签退 `POST /activityEnrollment/signOut/byQRCode`。管理后台调试页见 `signin-qrcode.vue`。
 
-#### 1.4 消息通知系统
-- [ ] 利用已有 `notice_message` / `message_group` / `chat_message` 表设计消息接口，可以改造表设计或提出新表
-- [ ] 活动状态变更通知（报名开始、即将开始、已结束）
-- [ ] 审核结果通知（报名审核通过/驳回）
-- [ ] 校内公告通知列表接口
-- [ ] 未读消息计数接口
+#### 1.4 消息通知系统 —— ✅ 已完成（活动状态通知节点在途）
+- [✅] 复用既有消息表重构消息服务：`MessageService.sendTemplateMessage`（模板化 + 群发，`MessageTemplateEnum` 多模板）；门户接口：`POST /portal/message/queryMyMessage`、`GET /portal/message/getUnreadCount`、`GET /portal/message/read/{id}`
+- [ ] 活动状态变更通知（报名开始、即将开始、已结束）—— 活动状态 Job 尚未接入站内信
+- [✅] 审核结果通知（报名审核通过/驳回 → `ActivityReviewLogService` 已发站内信）
+- [ ] 校内公告通知列表接口（门户侧；后管侧 `t_notice` 体系已有）
+- [✅] 未读消息计数接口（`GET /portal/message/getUnreadCount`）
+- [✅] 额外落地：报名结果、支付成功、退款到账、订单超时关闭 均自动发送站内信（`ActivityEnrollmentService` / `PaymentService` / `ActivityOrderTimeoutJob`）
 
-#### 1.5 学分认定模块
-- [ ] 新建学分认定申请表（`credit_application`）
-- [ ] 学分认定申请 CRUD 接口
-- [ ] 申请审核流程（待审核 → 通过/驳回）
-- [ ] 历史记录查询接口（按状态筛选）
+#### 1.5 学分认定模块 —— ✅ 已完成
+- [✅] 学分认定申请表 `credit_application`（已并入 `fun-campus-merged.sql`）
+- [✅] 门户 CRUD 接口（apply/update/delete/detail/myList/reviewer/query，待审核可编辑可删）
+- [✅] 审核流程（状态机 0 待审 → 1 通过 / 2 驳回；管理端 `/backend/creditApplication/{queryPage,review}`）
+- [✅] 历史记录查询（按状态筛选 + 详情/审核人信息）
 
 ---
 
@@ -231,31 +231,31 @@ pu签到二维码按钮
 
 > 目标：实现移动端首页和活动浏览核心功能
 
-#### 2.1 项目脚手架
-- [ ] 初始化移动端前端项目（Vue 3 + Vant 4 / uni-app）
-- [ ] 配置路由、状态管理、请求封装
-- [ ] 对接后端登录接口，完成 Token 管理
+#### 2.1 项目脚手架 —— ✅ 已完成
+- [✅] uni-app（Vue3 + Vite）项目 `fun-campus-app`，UI 用 uview-plus，状态用 pinia
+- [✅] pages.json 路由（4 tab：首页/部落/消息/我的，外加登录/详情/支付/收银台/签到码）、user store、`uni.request` promise 封装（对齐 axios 手感）
+- [✅] 对接门户登录（验证码 → 登录 → token 存储 → 失效自动踢回登录页）
 
-#### 2.2 首页
-- [ ] 首页布局：扫码按钮、搜索框、消息按钮、功能入口网格
-- [ ] 二课活动列表（本校 / 全局切换，分页加载）
-- [ ] 活动卡片展示（标题、封面、报名时间、状态标签）
-- [ ] 活动筛选功能（按分类、状态、时间筛选）
-- [ ] 搜索功能（关键词搜索 + 历史记录）
+#### 2.2 首页 —— ✅ 核心已完成
+- [✅] 首页布局：本校/全局切换、扫码入口、消息入口（未读角标）
+- [✅] 二课活动列表（本校 / 全局切换，分页 + 下拉刷新）
+- [✅] 活动卡片展示（标题、封面、时间、状态标签、价格）
+- [ ] 活动筛选功能（按分类、状态、时间筛选）—— 未做
+- [ ] 搜索功能（关键词搜索 + 历史记录）—— 未做（后端暂无关键词参数）
 
-#### 2.3 活动详情页
-- [ ] 活动基本信息展示（封面、标题、分类、实践分、组织）
-- [ ] 活动状态与阶段倒计时
-- [ ] 报名人数 / 签到人数统计
-- [ ] 报名时间段 / 活动时间段展示
-- [ ] 活动成员列表（管理员、签到员）
-- [ ] 活动附件查看（图片、文件）
-- [ ] 活动简介富文本展示
-- [ ] 报名按钮（含报名审核提示）
-- [ ] 收藏 / 取消收藏
-- [ ] 评论列表与发表评论
-- [ ] 分享功能
-- [ ] 联系活动发起人入口
+#### 2.3 活动详情页 —— ✅ 核心已完成
+- [✅] 活动基本信息展示（封面、标题、分类、实践分、报名范围提示、需审核标签）
+- [ ] 活动状态与阶段倒计时 —— 未做（后端 `remainingSeconds` 接口已就绪）
+- [✅] 报名人数 / 签到人数统计
+- [✅] 报名时间段 / 活动时间段展示
+- [✅] 活动成员列表（报名同学头像墙，前 12 位 + 总数）
+- [✅] 活动附件查看（复制链接）
+- [✅] 活动简介展示（纯文本）
+- [✅] 报名按钮（含报名审核提示、付费分流、取消报名）
+- [✅] 收藏 / 取消收藏
+- [✅] 评论列表与发表评论（回复、点赞、撤销点赞）
+- [✅] 分享功能（生成分享链接 + 分享码解析进入）
+- [ ] 联系活动发起人入口 —— 未做
 
 ---
 
@@ -263,17 +263,18 @@ pu签到二维码按钮
 
 > 目标：完成活动报名与签到签退的移动端闭环
 
-#### 3.1 报名流程
-- [ ] 活动报名接口对接（含学院/年级/部落范围校验提示）
-- [ ] 报名状态展示（已报名 / 待审核 / 已通过）
-- [ ] 取消报名功能
+#### 3.1 报名流程 —— ✅ 已完成
+- [✅] 活动报名接口对接（详情接口带学院/年级/部落范围校验结果，前端展示提示文案）
+- [✅] 报名状态展示（未报名 / 已报名 / 已签到 / 待审核，基于详情接口 `currentUserEnrollment`）
+- [✅] 取消报名（免费活动前端直调；付费活动后端拦截并引导走退款）
 
-#### 3.2 扫码签到签退
-- [ ] 扫码按钮 → 调用摄像头扫描二维码
-- [ ] 签到员端：生成签到二维码（UID + 二维码，30s 自动刷新）
-- [ ] 签到员端：选择签到/签退活动弹窗
-- [ ] 学员端：扫码后自动完成签到/签退
-- [ ] 签到/签退结果反馈提示
+#### 3.2 扫码签到签退 —— ✅ 已完成（学生亮码被扫模式）
+- [✅] 扫码按钮：App/小程序走 `uni.scanCode`、H5 降级粘贴分享链接（一期用于分享码 → 活动详情）
+- [✅] 签到员端：管理后台 `signin-qrcode.vue` 调试页（UID + 二维码，30s 自动刷新，扫码后选活动提交签到/签退）
+- [✅] 学员端：我的签到码页（个人二维码 30s 刷新，签到签退通用码）
+- [✅] 签到/签退结果反馈提示
+
+> 流程约定：学生亮码 → 签到员扫码选择活动提交 → 后端按时间窗口校验执行（非"学员扫码"模式）。
 
 ---
 
@@ -281,26 +282,26 @@ pu签到二维码按钮
 
 > 目标：实现「我的」页面及个人中心功能
 
-#### 4.1 我的页面
-- [ ] 待签到 / 待签退 / 待评价数量统计卡片
-- [ ] 实践积分 & 诚信分展示
-- [ ] 功能入口：我的活动、我的部落、我的申请、我的评价
+#### 4.1 我的页面 —— 🟡 部分完成
+- [ ] 待签到 / 待签退 / 待评价数量统计卡片 —— 未做
+- [✅] 实践学分 & 信誉分展示（`/portal/portalUser/current`）
+- [🟡] 功能入口：我的签到码已通；我的活动 / 我的订单 / 资料编辑为占位入口（"开发中"）
 
-#### 4.2 我的活动
-- [ ] 活动列表（已报名 / 已签到 / 已完成 分类 Tab）
+#### 4.2 我的活动 —— 待开发（后端已就绪）
+- [ ] 活动列表（已报名 / 已签到 / 已完成 分类 Tab）—— 后端 `POST /portal/activityEnrollment/queryMy` 已就绪
 - [ ] 点击进入活动详情
 
-#### 4.3 待办事项
+#### 4.3 待办事项 —— 待开发（后端数据已具备）
 - [ ] 待签到活动列表（一键签到入口）
 - [ ] 待签退活动列表（一键签退入口）
-- [ ] 待评价活动列表（评价表单）
+- [ ] 待评价活动列表（后端 pending/list、pending/count 接口已就绪）
 
-#### 4.4 积分详情
+#### 4.4 积分详情 —— 未开始
 - [ ] 实践积分明细列表
-- [ ] 诚信分变动记录列表
+- [ ] 信誉分变动记录列表
 
-#### 4.5 基本信息编辑
-- [ ] 上传/更换头像
+#### 4.5 基本信息编辑 —— 待开发（后端已就绪）
+- [ ] 上传/更换头像（`POST /portal/portalUser/updateProfile` + 文件上传已就绪）
 - [ ] 修改昵称
 
 ---
@@ -309,49 +310,50 @@ pu签到二维码按钮
 
 > 目标：实现二课部落的浏览、搜索、加入功能
 
-#### 5.1 部落列表
+#### 5.1 部落列表 —— 待开发（后端已就绪）
 - [ ] 本校部落列表展示（图标、标题、热度）
 - [ ] 搜索功能（关键词 + 历史记录）
 - [ ] 筛选功能（按学院、热度排序）
 
-#### 5.2 部落详情
+#### 5.2 部落详情 —— 待开发（后端已就绪）
 - [ ] 基本信息（图标、标题、归属学院/组织、热度）
 - [ ] 成员列表查看
 - [ ] 部落公告展示
 - [ ] 部落发起的活动列表
-- [ ] 评分功能
-- [ ] 收藏功能
+- [ ] 评分功能 / 收藏功能 —— 二期
 
-#### 5.3 加入部落
-- [ ] 申请加入表单（理由、兴趣特长、志愿选择、是否服从调剂）
-- [ ] 申请状态查询
+#### 5.3 加入部落 —— 后端一期已就绪（简化版：理由 + 审核）
+- [ ] 申请加入表单（一期：加入理由；`POST /portal/tribe/application/apply`）
+- [ ] 申请状态查询（`GET /portal/tribe/application/myList`）
+
+> 说明：`fun-campus-app` 部落页当前为占位页，门户接口（queryPage/detail/member/activity/application）均已就绪即可开发。
 
 ---
 
 ### Phase 6：移动端前端 — 消息 & 学分认定（优先级：中）
 
-#### 6.1 消息中心
-- [ ] 消息列表页面（活动通知、审核通知、校内公告）
-- [ ] 未读消息标记与计数
-- [ ] 校园生活关注消息
+#### 6.1 消息中心 —— ✅ 已完成
+- [✅] 消息列表页面（活动通知、审核通知、支付/退款通知；分页 + 下拉刷新）
+- [✅] 未读消息标记与计数（tabBar 角标 + 已读标记）
+- [ ] 校园生活关注消息 —— 未做（对应功能未规划）
 
-#### 6.2 学分认定
-- [ ] 历史申请记录列表（待审核 / 已通过 / 已驳回 Tab）
+#### 6.2 学分认定 —— 待开发（后端已就绪）
+- [ ] 历史申请记录列表（待审核 / 已通过 / 已驳回 Tab；`GET /portal/creditApplication/myList` 已就绪）
 - [ ] 申请详情页（标题、时间、学期、内容、审核人、状态）
 - [ ] 申请表单（标题、学期、证明材料图片上传、审核人选择）
-- [ ] 待审核状态可编辑/删除
+- [ ] 待审核状态可编辑/删除（后端已支持）
 
 ---
 
 ### Phase 7：移动端前端 — 活动日历 & 其他（优先级：低）
 
-#### 7.1 活动日历
-- [ ] 日历视图展示当天活动
+#### 7.1 活动日历 —— 待开发（后端已就绪）
+- [ ] 日历视图展示当天活动（`GET /portal/activity/calendar` 已就绪，区间 ≤62 天）
 - [ ] 全部活动列表（按日期筛选）
 
-#### 7.2 PU 签到二维码
-- [ ] 显示 UID
-- [ ] 展示个人签到二维码（30s 刷新）
+#### 7.2 PU 签到二维码 —— ✅ 已完成
+- [✅] 显示 UID / 用户信息
+- [✅] 展示个人签到二维码（30s 刷新，签到签退通用码）
 
 ---
 
@@ -359,12 +361,14 @@ pu签到二维码按钮
 
 > 目标：Phase 0 补齐后端接口与修复页面 import 后，联调并完善管理后台页面
 
-#### 8.1 待完善页面
-- [ ] 活动签到管理员管理页面：前端页面已生成，等 Phase 0.2 后端接口补齐后联调
-- [ ] 活动分类管理页面：同上
-- [ ] 活动报名范围管理（学院/年级/部落）页面：前端页面已生成，等 Phase 0.2 / 0.3 接口补齐后联调
-- [ ] 活动报名 / 审核日志 / 活动时间表页面：按 Phase 0.4 结论调整（前端对齐后端组合接口，或补后端独立接口）
-- [ ] 学分认定审核管理页面（配合 Phase 1.5）
+#### 8.1 状态与待办
+- [✅] 活动分类 / 年级信息 / 签到管理员 / 报名范围（学院、年级、部落）页面：后端 CRUD 已就绪（Phase 0.2），可直接联调
+- [✅] 活动报名关系 / 审核日志页面：后端管理接口已就绪（Phase 0.4）
+- [ ] 活动新增/编辑表单未接通：`activity-list.vue` 无新增/编辑入口，`activity-api.js` 缺 `add/update` 方法（后端提交/草稿接口已就绪）
+- [ ] 活动时间表页面：待 Phase 0.4「活动时间表」结论（独立模块去留）
+- [ ] 学分认定审核管理页面：后端已就绪（`/backend/creditApplication/{queryPage,review}`），前端页面待建
+- [ ] 付费配置与订单/退款管理页面：见 Phase 9.5
+- [ ] 组织干事用户 / 组织账号运营者页面：后端缺失（见 Phase 0.1）
 
 ---
 
@@ -446,74 +450,76 @@ CREATE TABLE `activity_refund` (
 ) COMMENT = '活动报名退款记录';
 ```
 
-- [ ] SQL 脚本统一维护在 `sql_script/mysql/fun-campus-merged.sql`（全量合并版，建库初始化唯一入口）
+- [✅] SQL 脚本统一维护在 `sql_script/mysql/fun-campus-merged.sql`（全量合并版，建库初始化唯一入口；活动/订单/退款/评价/学分认定/AI 等新表均已并入）
 
-#### 9.2 后端 — 订单与支付
+#### 9.2 后端 — 订单与支付 —— ✅ 已完成
 
-- [ ] 新建 `activityOrder` 模块（controller / service / manager / dao / domain，结构参考 `activityEnrollment`）
-- [ ] 创建订单 `POST /activityOrder/create`：校验付费活动 + 报名时间内 + 报名范围 + 无未关闭订单 → 事务内 `increaseEnrollNum` 锁座 + 写入待支付订单（`expire_time = now + 15min`）
-- [ ] 订单查重：同一用户同一活动存在「待支付 / 已支付」订单时拒绝重复下单
-- [ ] 订单号生成（时间戳 + 随机数）与订单详情、我的订单分页接口
-- [ ] 取消订单 `POST /activityOrder/cancel`：仅待支付可取消，关单并 `decreaseEnrollNum` 释放名额
-- [ ] 支付渠道抽象 `PaymentChannel`：`prepay()` 预下单、`refund()` 退款、`parsePayCallback()` / `parseRefundCallback()` 验签解析
-- [ ] 支付回调 `POST /payment/callback/{channel}`：验签 → 校验金额 → CAS 更新订单（`WHERE status = 0` 幂等）→ 写入 `activity_enrollment` 报名记录 → 发送通知
-- [ ] `MockPaymentChannel`：`prepay()` 返回「模拟收银台」链接；`parsePayCallback()` 直接解析模拟回调参数（不做验签）
-- [ ] 模拟收银台页面（dev/test 专用）：`GET /payment/mock/cashier?orderNo=xxx`，后端简易 HTML 页，含「支付成功 / 支付失败」按钮，移动端页面未开发也能全链路联调
-- [ ] 模拟支付回调：复用 `POST /payment/callback/{channel}` 入口（`channel=mock`），构造 `PayNotifyResult` 后收敛到 `handlePayNotify`；业务代码禁止 `Thread.sleep`
-- [ ] 可选延时到账：`mock.pay.callback-delay-seconds` 配置 + `TaskScheduler` 延时投递回调，模拟异步通知的不确定性
-- [ ] 获取支付参数接口（重新调起支付 / 展示收款二维码）
-- [ ] `ActivityOrderTimeoutJob`：SmartJob 扫描超时未支付订单 → 批量关单 + 释放名额（参考 `ActivityStatusUpdateJob` 写法）
+- [✅] 新建 `activityOrder` 模块（controller / service / manager / dao / domain，结构参考 `activityEnrollment`）
+- [✅] 创建订单 `POST /activityOrder/create`：校验付费活动 + 报名时间内 + 报名范围 + 无未关闭订单 → 事务内 `increaseEnrollNum` 锁座 + 写入待支付订单（`expire_time = now + 15min`）
+- [✅] 订单查重：同一用户同一活动存在「待支付 / 已支付」订单时拒绝重复下单
+- [✅] 订单号生成（`OrderNoUtil`）与订单详情、我的订单分页接口（`detail` / `query`）
+- [✅] 取消订单 `POST /activityOrder/cancel`：仅待支付可取消，关单并 `decreaseEnrollNum` 释放名额
+- [✅] 支付渠道抽象 `PaymentChannel`：`prepay()` 预下单、`refund()` 退款、`parsePayCallback()` / `parseRefundCallback()` 验签解析
+- [✅] 支付回调 `POST /payment/callback/{channel}`：验签 → 校验金额 → CAS 更新订单（`WHERE status = 0` 幂等）→ 写入 `activity_enrollment` 报名记录 → 发送通知
+- [✅] `MockPaymentChannel`：`prepay()` 返回「模拟收银台」链接；`parsePayCallback()` 直接解析模拟回调参数（不做验签）
+- [✅] 模拟收银台页面（dev/test 专用）：`GET /payment/mock/cashier?orderNo=xxx`，后端简易 HTML 页，含「支付成功 / 支付失败」按钮，移动端页面未开发也能全链路联调
+- [✅] 模拟支付回调：复用 `POST /payment/callback/{channel}` 入口（`channel=mock`），构造 `PayNotifyResult` 后收敛到 `handlePayNotify`；业务代码禁止 `Thread.sleep`
+- [✅] 可选延时到账：`MockPayCallbackConfig` 配置 + `TaskScheduler` 延时投递回调，模拟异步通知的不确定性
+- [✅] 获取支付参数接口（`prepay`，重新调起支付）
+- [✅] `ActivityOrderTimeoutJob`：SmartJob 扫描超时未支付订单 → 批量关单 + 释放名额（参考 `ActivityStatusUpdateJob` 写法）
+
+> 实际访问路径带前缀：门户为 `/portal/activityOrder/*`、`/portal/payment/*`（如 `/portal/payment/mock/cashier`）。
 
 > 订单状态机：`待支付(0) → 超时/取消 → 已关闭(2)`；`待支付(0) → 支付成功 → 已支付(1) → 申请退款 → 退款中(3) → 已退款(4)`；`退款中(3) → 渠道失败 → 退款失败(5)`（支持重试）
 >
 > Mock 支付约定：模拟的是「渠道异步回调」链路（下单 → 模拟收银台付款 → 回调入账），而不是服务端同步等待支付结果；模拟回调与真实回调汇聚到同一个 `handlePayNotify` 入口（CAS 幂等 → 写报名记录），后续接入真实渠道仅新增 `PaymentChannel` 实现类，业务代码零改动；mock 渠道与模拟收银台通过 `pay.channel=mock`（`@ConditionalOnProperty`）或 `@Profile("dev")` 注册，生产环境不存在；真实渠道暂不接入（后续需要时可用支付宝沙箱免费联调，无需商户资质）。
 
-#### 9.3 后端 — 退款
+#### 9.3 后端 — 退款 —— ✅ 主体已完成
 
-- [ ] 用户退款申请 `POST /activityOrder/refundApply`：按活动 `refund_policy` 校验（报名截止前 / 活动开始前），创建退款单并发起渠道退款
-- [ ] 退款回调 `POST /payment/callback/{channel}/refund`：更新退款单与订单状态 → 逻辑删除报名记录 + `decreaseEnrollNum` + 通知
-- [ ] 系统自动退款场景：
-  - 报名审核剔除已支付用户（`reviewEnroll` 名单筛选移除时联动）
-  - 活动取消（管理端操作对全部已支付订单批量退款）
-- [ ] 退款失败重试（SmartJob 定时重试或管理端手动重试）
+- [✅] 用户退款申请 `POST /activityOrder/refundApply`：按活动 `refund_policy` 校验（报名截止前 / 活动开始前），创建退款单并发起渠道退款
+- [✅] 退款回调 `POST /payment/callback/{channel}/refund`：更新退款单与订单状态 → 逻辑删除报名记录 + `decreaseEnrollNum` + 通知
+- [✅] 系统自动退款场景（部分）：
+  - [✅] 报名审核剔除已支付用户（`ActivityReviewLogService.reviewEnroll` → `ActivityRefundService` 系统退款，reasonType=审核未通过，不受退款政策限制）
+  - [ ] 活动取消（管理端对全部已支付订单批量退款）—— 未实现
+- [ ] 退款失败重试（SmartJob 定时重试或管理端手动重试）—— 未实现
 
-#### 9.4 与现有模块的整合点
+#### 9.4 与现有模块的整合点 —— ✅ 已完成
 
-- [ ] `enroll` 接口拦截付费活动（`paid_flag = 1` 时提示走支付流程）
-- [ ] 抽取「写入报名记录」公共逻辑供支付回调复用（免费活动 enroll 保持原逻辑）
-- [ ] `reviewEnroll` 名单变更联动退款（见 9.3）
-- [ ] 活动详情接口补充付费信息：价格、退款规则、当前用户订单状态
-- [ ] 消息通知：支付成功、退款到账、订单超时关闭（依赖 Phase 1.4，可先直接写 `notice_message`）
+- [✅] `enroll` 接口拦截付费活动（提示走支付流程，取消报名亦引导走退款）
+- [✅] 抽取「写入报名记录」公共逻辑供支付回调复用（免费活动 enroll 保持原逻辑）
+- [✅] `reviewEnroll` 名单变更联动退款（见 9.3）
+- [✅] 活动详情接口补充付费信息：价格、退款规则、当前用户订单状态（`currentUserOrder`）
+- [✅] 消息通知：支付成功、退款到账、订单超时关闭（已接入消息模板站内信）
 
-#### 9.5 管理后台前端
+#### 9.5 管理后台前端 —— 未开始（活动表单尚未接通保存）
 
 - [ ] `activity-form.vue` 增加「付费参加」开关、价格、退款规则配置
 - [ ] 订单管理页：分页查询（活动 / 状态 / 用户 / 时间筛选）、订单详情、导出 Excel
 - [ ] 退款管理页：退款单列表、失败重试
 - [ ] 活动收入统计（按活动汇总报名费）
 
-#### 9.6 移动端前端（依赖 Phase 2 脚手架）
+#### 9.6 移动端前端 —— ✅ 核心已完成
 
-- [ ] 报名按钮分流：免费「立即报名」/ 付费「立即支付」
-- [ ] 支付确认页：活动信息、金额、支付方式选择、待支付倒计时
-- [ ] 订单列表（待支付 / 已支付 / 退款 Tab）与订单详情
-- [ ] 待支付订单取消入口、退款申请入口与规则说明
+- [✅] 报名按钮分流：免费「立即报名」/ 付费「立即支付」（详情页 `onMainAction` 分流）
+- [✅] 支付确认页：金额、待支付状态、打开模拟收银台、2.5s×24 次轮询回查（60s 上限）、取消订单
+- [ ] 订单列表（待支付 / 已支付 / 退款 Tab）与订单详情 —— 后端 `query` 已就绪，App 入口暂为"开发中"占位
+- [ ] 退款申请入口与规则说明 —— 后端 `refundApply` 已就绪，App API 未封装
 
 #### 9.7 安全与幂等要点
 
-- [ ] 金额一律以服务端 `activity.price_fen` 为准，忽略前端传入金额
-- [ ] 回调验签 + CAS 幂等更新，重复回调直接返回成功
-- [ ] 订单归属校验：仅本人可查询 / 取消 / 申请退款
-- [ ] 支付、退款关键操作留痕（日志 + 订单操作记录），便于对账排查
+- [✅] 金额一律以服务端 `activity.price_fen` 为准，忽略前端传入金额（下单金额由后端计算）
+- [✅] 回调 + CAS 幂等更新，重复回调直接返回成功
+- [✅] 订单归属校验：仅本人可查询 / 取消 / 申请退款
+- [ ] 支付、退款关键操作留痕（日志已有；订单操作记录表未建）
 
 ---
 
 ### Phase 10：质量保障 & 优化（优先级：低）
 
 #### 10.1 后端
-- [ ] 补全报名接口幂等性（代码中已有 todo 标记）
-- [ ] 接口参数校验完善
-- [ ] 关键业务单元测试
+- [ ] 补全报名接口幂等性（`ActivityEnrollmentService` 仍留 `//todo做幂等` 标记）
+- [✅] 接口参数校验完善（各业务模块已具备 Form 校验 + Validator，如 `ActivityScheduleValidator`、`ActivityReviewLogValidator`、`PortalUserValidator`）
+- [✅] 关键业务单元测试（13 个测试类：评论/报名/审核日志/状态推进 Job/登录/消息等）
 - [ ] 性能优化（活动列表查询、首页数据加载）
 - [ ] 支付链路单元测试（订单状态机、回调幂等、超时关单）
 
@@ -525,19 +531,38 @@ CREATE TABLE `activity_refund` (
 
 ---
 
+### AI 校园助手（已完成）
+
+> 面向门户学生的智能问答与找活动助手。独立支撑模块 `fun-campus-support-ai`（Spring AI 1.1.8），业务侧通过端口反转接入（`ActivityQueryPort` ← `funcampus/ai/ActivityQueryPortImpl`），AI 模块不反向依赖业务模块。
+
+- 门户接口：`POST /portal/ai/chat`（SSE 流式：meta → delta → done）、`GET /portal/ai/conversation/list`、`GET /portal/ai/message/list`、`POST /portal/ai/conversation/delete`
+- 能力：
+  - 流式问答：DeepSeek `deepseek-chat`（OpenAI 兼容协议），单轮携带最多 10 条历史
+  - 找活动工具调用：`ActivityAgentTools` 按关键词/分类/时间检索活动并组织回答
+  - RAG 知识库：`ai_knowledge` 表 + 阿里百炼 `text-embedding-v3`（topK 3 / 相似度阈值 0.5 可配）
+  - 会话落库：`ai_conversation` / `ai_message`
+  - 降级设计：未配置 API Key 或开关关闭时返回降级提示流，不影响启动与其它功能
+  - 频控：每用户每日 100 次提问（Redis 计数）
+- 配置：`fun-campus.ai.*`（enabled / maxHistory / chat / embedding / rag / rateLimit）；API Key 经环境变量注入：`FUN_CAMPUS_AI_CHAT_API_KEY`（DeepSeek）、`FUN_CAMPUS_AI_EMBEDDING_API_KEY`（百炼）
+- 调试页：`http://localhost:1024/ai-chat-test.html`（后管静态页，可直接联调流式对话）
+- [ ] 学生端 App 集成（聊天页面与入口）—— 待开发
+
+---
+
 ### 技术决策备忘
 
 | 决策项 | 方案 | 备注 |
 |--------|------|------|
-| 移动端框架 | 待定（Vue3 + Vant 4 / uni-app） | 需考虑是否需要跨平台 |
-| 消息推送 | WebSocket / 轮询 | 根据实时性需求决定 |
-| 二维码方案 | 前端 Canvas 生成 + Redis Token | 30s 过期自动刷新 |
-| 双端 URL 前缀 | 门户 `/portal/*`、管理后台 `/backend/*`，由 `AdminInterceptor` 按 URL 段分派用户体系 | 9 个已实现接口的历史模块未适配前缀（见 Phase 0.5），前端 API 封装需同步调整 |
-| 文件存储 | 待定（OSS / 本地） | 头像、活动封面、证明材料 |
-| 付费占座 | 下单锁座，15 分钟未支付自动关单释放 | 复用 `increaseEnrollNum` / `decreaseEnrollNum` |
-| 支付渠道 | 抽象 `PaymentChannel` 接口，Mock 先行，真实渠道暂不接入 | 后续切换仅新增实现类（支付宝沙箱可免费联调，无需商户资质） |
-| Mock 支付 | 模拟收银台 + 模拟回调，与真实回调同一入口 | 不使用 `Thread.sleep`；可确定性复现成功 / 失败 / 关单竞态 |
+| 移动端框架 | uni-app（Vue3 + Vite）+ uview-plus + pinia | ✅ 已落地：`fun-campus-app`（H5/App/小程序多端） |
+| 消息推送 | 站内消息（复用 smart-admin 消息表）+ 未读角标轮询 | WebSocket 未引入 |
+| 二维码方案 | 后端 ZXing 生成 PNG（base64）+ Redis Token | 30s 过期自动刷新；一人一码、不绑活动 |
+| 双端 URL 前缀 | 门户 `/portal/*`、管理后台 `/backend/*`，由 `AdminInterceptor` 按 URL 段分派用户体系 | ✅ 已全量适配（Phase 0.5） |
+| 文件存储 | MinIO（本地 9005 端口，`funcampus` 桶） | 头像、活动封面、证明材料 |
+| 付费占座 | ✅ 已实现：下单锁座，15 分钟未支付自动关单释放 | 复用 `increaseEnrollNum` / `decreaseEnrollNum` |
+| 支付渠道 | `PaymentChannel` 抽象接口，Mock 渠道已实现，真实渠道暂不接入 | 后续切换仅新增实现类（支付宝沙箱可免费联调，无需商户资质） |
+| Mock 支付 | ✅ 已实现：模拟收银台 + 模拟回调，与真实回调同一入口 | 不使用 `Thread.sleep`；支持可选延时回调配置 |
 | 金额存储 | int 存「分」（`price_fen` / `amount_fen`） | 避免浮点精度误差 |
+| AI 助手 | Spring AI 1.1.8 + DeepSeek（对话）+ 阿里百炼（向量），RAG + 工具调用 + 无 Key 自动降级 | API Key 环境变量注入；频控 100 次/日/人 |
 
 ---
 

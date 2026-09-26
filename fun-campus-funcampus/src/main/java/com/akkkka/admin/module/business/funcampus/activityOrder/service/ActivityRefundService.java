@@ -45,7 +45,9 @@ import lombok.extern.slf4j.Slf4j;
  *   渠道受理失败回退为「退款失败」，支持重新申请（退款失败→退款中）；
  * - 到账以渠道异步回调为准，由 PaymentService.handleRefundNotify 统一处理（释放名额 + 通知）；
  * - 审核剔除联动：报名审核剔除的已支付订单走系统退款（reasonType=报名审核未通过），
- *   不受活动退款政策限制，由审核流程在事务提交后调用
+ *   不受活动退款政策限制，由审核流程在事务提交后调用；
+ * - 活动取消联动：管理端取消活动后对全部已支付订单走系统退款（reasonType=活动取消），
+ *   同样不受活动退款政策限制（待支付订单由超时关单任务兜底关闭）
  *
  * @Author akkkka114514
  * @Date 2026-09-24
@@ -181,7 +183,7 @@ public class ActivityRefundService {
         }
         for (ActivityOrderEntity order : paidOrders) {
             try {
-                refundRejectedOrder(order);
+                refundOrderAutomatically(order, RefundReasonType.ENROLL_REVIEW_REJECT, "报名审核未通过，系统自动退款");
             } catch (Exception e) {
                 log.error("审核剔除联动退款失败：activityId:{}，orderNo:{}", activityId, order.getOrderNo(), e);
             }
@@ -189,10 +191,32 @@ public class ActivityRefundService {
     }
 
     /**
-     * 单笔被剔除订单的系统退款：与用户申请走同一套 CAS 与退款单流程，政策校验除外
+     * 活动取消后批量系统退款（reasonType=活动取消）
+     * <p>
+     * - 仅处理已支付订单；待支付订单由超时关单任务兜底关闭，不在退款范围；
+     * - 不受活动退款政策限制（活动取消非用户意愿，费用必须退回）；
+     * - 由取消流程在状态更新成功后调用，单笔独立 try/catch，
+     *   失败仅记日志（订单将为退款失败，可在退款管理页重试）
      */
-    private void refundRejectedOrder(ActivityOrderEntity order) {
-        ActivityRefundEntity refund = buildRefund(order, RefundReasonType.ENROLL_REVIEW_REJECT, "报名审核未通过，系统自动退款");
+    public void refundForCanceledActivity(Long activityId) {
+        List<ActivityOrderEntity> paidOrders = orderManager.listPaidOrdersByActivity(activityId);
+        if (paidOrders.isEmpty()) {
+            return;
+        }
+        for (ActivityOrderEntity order : paidOrders) {
+            try {
+                refundOrderAutomatically(order, RefundReasonType.ACTIVITY_CANCEL, "活动已取消，系统自动退款");
+            } catch (Exception e) {
+                log.error("活动取消联动退款失败：activityId:{}，orderNo:{}", activityId, order.getOrderNo(), e);
+            }
+        }
+    }
+
+    /**
+     * 单笔系统自动退款：与用户申请走同一套 CAS 与退款单流程，政策校验除外
+     */
+    private void refundOrderAutomatically(ActivityOrderEntity order, RefundReasonType reasonType, String reason) {
+        ActivityRefundEntity refund = buildRefund(order, reasonType, reason);
         startRefunding(order, refund);
 
         RefundChannelResult result = paymentService.refund(order, refund);
@@ -200,7 +224,7 @@ public class ActivityRefundService {
             rollbackRefunding(order, refund);
             return;
         }
-        log.info("审核剔除联动退款已发起：orderNo:{}，refundNo:{}", order.getOrderNo(), refund.getRefundNo());
+        log.info("系统自动退款已发起：orderNo:{}，refundNo:{}，reasonType:{}", order.getOrderNo(), refund.getRefundNo(), reasonType);
     }
 
     /**

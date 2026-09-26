@@ -17,6 +17,7 @@ import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.A
 import com.akkkka.common.domain.PageResult;
 import com.akkkka.common.domain.ResponseDTO;
 import com.akkkka.module.support.repeatsubmit.annoation.RepeatSubmit;
+import cn.dev33.satoken.annotation.SaCheckPermission;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -81,5 +82,13 @@ public class ActivityManageController {
     @RepeatSubmit(intervalMilliSecond = 3 * 1000)
     public ResponseDTO<String> batchDelete(@RequestBody List<Long> ids) {
         return activityWithScheduleService.batchDelete(ids);
+    }
+
+    @Operation(summary = "取消活动（对全部已支付订单批量退款） @author akkkka114514")
+    @PostMapping("/activity/cancel")
+    @SaCheckPermission("activity:cancel")
+    @RepeatSubmit(intervalMilliSecond = 3 * 1000)
+    public ResponseDTO<String> cancelActivity(@RequestBody Long activityId) {
+        return activityWithScheduleService.cancelActivity(activityId);
     }
 }

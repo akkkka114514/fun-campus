@@ -14,7 +14,8 @@ import lombok.Getter;
  * 按维度分为两类：
  * 1. 时间阶段（0~4）：活动主线，由 ActivityStatusUpdateJob 依据时间表自动推进/回退；
  *    其中 4-已结束为时间阶段终点，不作为推进候选（防止完成后被自动回退）；
- * 2. 业务状态（9）：报名需审核时的等待审核状态，预留，当前审核流程未写入 activity.status。
+ * 2. 业务状态（8、9）：8-已取消为管理端取消活动后的终态（不参与时间推进，也不由定时任务回退）；
+ *    9-报名需审核时的等待审核状态，预留，当前审核流程未写入 activity.status。
  * <p>
  * 签到/签退不设状态值，是否开放由时间窗口实时校验（见 ActivityEnrollmentService 的签到/签退窗口校验）。
  * <p>
@@ -34,6 +35,12 @@ public enum ActivityStatus {
     ENROLL_ENDED(2, "报名结束"),
     ONGOING(3, "进行中"),
     FINISHED(4, "已结束"),
+
+    /**
+     * 业务状态：已取消（管理端取消活动后的终态，不参与时间表推进/回退；
+     * 取消时对全部已支付订单发起系统退款，见 ActivityWithScheduleService#cancelActivity）
+     */
+    CANCELLED(8, "已取消"),
 
     /**
      * 业务状态：等待审核（预留，审核流程暂未写入）
@@ -99,7 +106,7 @@ public enum ActivityStatus {
     /**
      * 待推进时间阶段 code（0~3），供定时任务查询候选活动使用：
      * 4-已结束是时间阶段终点，不作为扫描起点（防止完成后被自动回退）；
-     * 9-待审核是业务状态，同样不由时间任务驱动
+     * 8-已取消与 9-待审核是业务状态，同样不由时间任务驱动
      */
     public static List<Integer> pendingTimeLineCodes() {
         return TIME_LINE.stream()

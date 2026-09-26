@@ -8,6 +8,7 @@ import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.form
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.form.MyEnrollmentQueryForm;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.vo.ActivityEnrollmentVO;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.vo.MyEnrollmentVO;
+import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.vo.PendingSignVO;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
@@ -42,6 +43,22 @@ public interface ActivityEnrollmentDao extends BaseMapper<ActivityEnrollmentEnti
      * @return
      */
     List<MyEnrollmentVO> queryMyEnrollment(Page<?> page, @Param("userId") Long userId, @Param("queryForm") MyEnrollmentQueryForm queryForm);
+
+    /**
+     * 查询待签到活动列表（已报名 + 未签到 + 当前处于签到时间窗口内）
+     *
+     * @param userId
+     * @return
+     */
+    List<PendingSignVO> queryPendingSignInList(@Param("userId") Long userId);
+
+    /**
+     * 查询待签退活动列表（已报名 + 已签到 + 需签退 + 未签退 + 当前处于签退时间窗口内）
+     *
+     * @param userId
+     * @return
+     */
+    List<PendingSignVO> queryPendingSignOutList(@Param("userId") Long userId);
 
     /**
      * 报名记录 upsert：不存在则插入；已存在软删记录（如取消报名后重新报名）则复活并重置签到/签退状态

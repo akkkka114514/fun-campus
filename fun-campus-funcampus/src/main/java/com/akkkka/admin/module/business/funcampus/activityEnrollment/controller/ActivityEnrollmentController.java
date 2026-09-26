@@ -3,7 +3,9 @@ package com.akkkka.admin.module.business.funcampus.activityEnrollment.controller
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.form.MyEnrollmentQueryForm;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.form.QRCodeSignInForm;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.vo.MyEnrollmentVO;
+import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.vo.PendingSignVO;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.vo.SignInQRCodeVO;
+import java.util.List;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.service.ActivityEnrollmentService;
 import com.akkkka.common.domain.PageResult;
 import com.akkkka.module.support.repeatsubmit.annoation.RepeatSubmit;
@@ -77,5 +79,17 @@ public class ActivityEnrollmentController {
     public ResponseDTO<String> signOutByQRCode(@RequestBody @Valid QRCodeSignInForm form) {
         activityEnrollmentService.signOut(form.getActivityId(), form.getTargetUserId(), form.getToken());
         return ResponseDTO.ok();
+    }
+
+    @Operation(summary = "我的待签到活动列表（已报名且当前处于签到窗口内） @author akkkka114514")
+    @GetMapping("/activityEnrollment/pendingSignIn/list")
+    public ResponseDTO<List<PendingSignVO>> pendingSignInList() {
+        return ResponseDTO.ok(activityEnrollmentService.queryPendingSignInList());
+    }
+
+    @Operation(summary = "我的待签退活动列表（已签到且当前处于签退窗口内） @author akkkka114514")
+    @GetMapping("/activityEnrollment/pendingSignOut/list")
+    public ResponseDTO<List<PendingSignVO>> pendingSignOutList() {
+        return ResponseDTO.ok(activityEnrollmentService.queryPendingSignOutList());
     }
 }

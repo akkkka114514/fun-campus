@@ -25,6 +25,24 @@
       </view>
     </view>
 
+    <!-- 待办统计（点击进入待办事项页） -->
+    <view class="todo-card" @click="goTodo">
+      <view class="todo-item">
+        <text class="todo-num" :class="{ 'todo-hot': todoCounts.signIn > 0 }">{{ todoCounts.signIn }}</text>
+        <text class="todo-label">待签到</text>
+      </view>
+      <view class="score-divider" />
+      <view class="todo-item">
+        <text class="todo-num" :class="{ 'todo-hot': todoCounts.signOut > 0 }">{{ todoCounts.signOut }}</text>
+        <text class="todo-label">待签退</text>
+      </view>
+      <view class="score-divider" />
+      <view class="todo-item">
+        <text class="todo-num" :class="{ 'todo-hot': todoCounts.eval > 0 }">{{ todoCounts.eval }}</text>
+        <text class="todo-label">待评价</text>
+      </view>
+    </view>
+
     <!-- 功能菜单（fe-08 依次实现具体页面） -->
     <view class="menu-card">
       <view
@@ -43,9 +61,10 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { useUserStore } from '@/store/user';
+import { activityApi } from '@/api/activity-api';
 import { refreshMessageBadge } from '@/api/message-api';
 import { getToken } from '@/utils/auth';
 import { resolveFileUrl } from '@/utils/format';
@@ -74,13 +93,33 @@ const schoolText = computed(() => {
 
 const menuList = [
   { key: 'signinCode', text: '我的签到码', url: '/pages/signin/code' },
-  { key: 'myActivity', text: '我的活动' },
-  { key: 'myOrder', text: '我的订单' },
+  { key: 'myActivity', text: '我的活动', url: '/pages/activity/my' },
+  { key: 'myOrder', text: '我的订单', url: '/pages/order/list' },
   { key: 'profile', text: '资料编辑' },
 ];
 
 function scoreText(score) {
   return score == null ? '-' : String(Number(score));
+}
+
+// 待办数量（待签到 / 待签退 / 待评价）
+const todoCounts = ref({ signIn: 0, signOut: 0, eval: 0 });
+
+async function refreshTodoCounts() {
+  const [r1, r2, r3] = await Promise.allSettled([
+    activityApi.queryPendingSignInList(),
+    activityApi.queryPendingSignOutList(),
+    activityApi.queryPendingEvaluationCount(),
+  ]);
+  todoCounts.value = {
+    signIn: r1.status === 'fulfilled' ? (r1.value.data || []).length : 0,
+    signOut: r2.status === 'fulfilled' ? (r2.value.data || []).length : 0,
+    eval: r3.status === 'fulfilled' ? Number(r3.value.data) || 0 : 0,
+  };
+}
+
+function goTodo() {
+  uni.navigateTo({ url: '/pages/mine/todo' });
 }
 
 function onMenuClick(menu) {
@@ -111,6 +150,7 @@ onShow(() => {
     return;
   }
   refreshMessageBadge();
+  refreshTodoCounts();
   // 每次进入强制刷新用户信息（失败时请求层会统一处理）
   userStore.fetchUserInfo(true).catch(() => {});
 });
@@ -203,6 +243,37 @@ onShow(() => {
   width: 1rpx;
   background: #f0f1f3;
   margin: 8rpx 0;
+}
+
+.todo-card {
+  display: flex;
+  background: $fc-card-bg;
+  border-radius: 20rpx;
+  margin-top: 24rpx;
+  padding: 32rpx 0;
+}
+
+.todo-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.todo-num {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: $fc-text-main;
+}
+
+.todo-hot {
+  color: $fc-price;
+}
+
+.todo-label {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: $fc-text-sub;
 }
 
 .menu-card {

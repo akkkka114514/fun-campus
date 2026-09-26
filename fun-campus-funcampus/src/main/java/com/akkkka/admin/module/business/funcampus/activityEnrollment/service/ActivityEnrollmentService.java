@@ -15,6 +15,7 @@ import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.form
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.form.MyEnrollmentQueryForm;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.vo.ActivityEnrollmentVO;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.vo.MyEnrollmentVO;
+import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.vo.PendingSignVO;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.manager.ActivityEnrollmentManager;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.dto.EnrollersChangeDTO;
 import com.akkkka.admin.module.business.funcampus.activitySigninManager.service.ActivitySigninManagerService;
@@ -238,6 +239,20 @@ public class ActivityEnrollmentService {
         Page<MyEnrollmentVO> page = new Page<>(queryForm.getPageNum(), queryForm.getPageSize());
         List<MyEnrollmentVO> list = activityEnrollmentDao.queryMyEnrollment(page, userId, queryForm);
         return SmartPageUtil.convert2PageResult(page, list);
+    }
+
+    /**
+     * 查询我的待签到活动列表（已报名 + 未签到 + 当前处于签到窗口内）
+     */
+    public List<PendingSignVO> queryPendingSignInList() {
+        return activityEnrollmentDao.queryPendingSignInList(getCurrentPortalUserId());
+    }
+
+    /**
+     * 查询我的待签退活动列表（已报名 + 已签到 + 需签退 + 未签退 + 当前处于签退窗口内）
+     */
+    public List<PendingSignVO> queryPendingSignOutList() {
+        return activityEnrollmentDao.queryPendingSignOutList(getCurrentPortalUserId());
     }
 
     /**

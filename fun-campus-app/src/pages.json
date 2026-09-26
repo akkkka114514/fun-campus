@@ -48,9 +48,36 @@
       }
     },
     {
+      "path": "pages/activity/my",
+      "style": {
+        "navigationBarTitleText": "我的活动",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/activity/evaluate",
+      "style": {
+        "navigationBarTitleText": "活动评价"
+      }
+    },
+    {
+      "path": "pages/mine/todo",
+      "style": {
+        "navigationBarTitleText": "待办事项",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
       "path": "pages/order/pay",
       "style": {
         "navigationBarTitleText": "支付订单"
+      }
+    },
+    {
+      "path": "pages/order/list",
+      "style": {
+        "navigationBarTitleText": "我的订单",
+        "enablePullDownRefresh": true
       }
     },
     {

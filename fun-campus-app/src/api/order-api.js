@@ -24,6 +24,16 @@ export const orderApi = {
   cancel(orderNo) {
     return post('/portal/activityOrder/cancel?orderNo=' + encodeURIComponent(orderNo), {});
   },
+
+  // 我的订单分页：{ pageNum, pageSize, status? } → PageResult（list 字段，仅本人订单）
+  queryMyOrders(form) {
+    return post('/portal/activityOrder/query', form);
+  },
+
+  // 申请退款（仅已支付/退款失败可申请；按活动退款政策校验，到账以渠道回调为准）→ refundNo
+  refundApply(orderNo, reason) {
+    return post('/portal/activityOrder/refundApply', { orderNo, reason: reason || '' });
+  },
 };
 
 export default orderApi;

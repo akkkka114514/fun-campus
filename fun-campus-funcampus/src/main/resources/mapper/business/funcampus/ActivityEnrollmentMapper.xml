@@ -62,7 +62,60 @@
         <if test="queryForm.signInStatus != null">
             AND activity_enrollment.sign_in_status = #{queryForm.signInStatus}
         </if>
+        <if test="queryForm.activityStatus != null">
+            AND activity.status = #{queryForm.activityStatus}
+        </if>
         ORDER BY activity_enrollment.create_time DESC
+    </select>
+
+    <!-- 待签到活动列表：已报名 + 未签到 + 当前处于签到窗口内（与 signIn/byQRCode 校验链一致，不限制活动状态） -->
+    <select id="queryPendingSignInList" resultType="com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.vo.PendingSignVO">
+        SELECT
+            activity.id AS activity_id,
+            activity.title AS activity_title,
+            activity.position,
+            activity_schedule.signin_start_time AS window_start_time,
+            activity_schedule.signin_end_time AS window_end_time,
+            activity_schedule.activity_start_time,
+            activity_schedule.activity_end_time
+        FROM activity_enrollment
+        INNER JOIN activity ON activity.id = activity_enrollment.activity_id
+            AND activity.deleted_flag = 0
+        INNER JOIN activity_schedule ON activity_schedule.activity_id = activity_enrollment.activity_id
+        WHERE activity_enrollment.user_id = #{userId}
+          AND activity_enrollment.deleted_flag = 0
+          AND activity_enrollment.sign_in_status = 0
+          AND activity_schedule.signin_start_time IS NOT NULL
+          AND activity_schedule.signin_end_time IS NOT NULL
+          AND NOW() >= activity_schedule.signin_start_time
+          AND NOW() &lt; activity_schedule.signin_end_time
+        ORDER BY activity_schedule.signin_end_time ASC
+    </select>
+
+    <!-- 待签退活动列表：已报名 + 已签到 + 已开启签退 + 未签退 + 当前处于签退窗口内（与 signOut/byQRCode 校验链一致） -->
+    <select id="queryPendingSignOutList" resultType="com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.vo.PendingSignVO">
+        SELECT
+            activity.id AS activity_id,
+            activity.title AS activity_title,
+            activity.position,
+            activity_schedule.signout_start_time AS window_start_time,
+            activity_schedule.signout_end_time AS window_end_time,
+            activity_schedule.activity_start_time,
+            activity_schedule.activity_end_time
+        FROM activity_enrollment
+        INNER JOIN activity ON activity.id = activity_enrollment.activity_id
+            AND activity.deleted_flag = 0
+            AND activity.need_sign_out = 1
+        INNER JOIN activity_schedule ON activity_schedule.activity_id = activity_enrollment.activity_id
+        WHERE activity_enrollment.user_id = #{userId}
+          AND activity_enrollment.deleted_flag = 0
+          AND activity_enrollment.sign_in_status = 1
+          AND activity_enrollment.sign_out_status = 0
+          AND activity_schedule.signout_start_time IS NOT NULL
+          AND activity_schedule.signout_end_time IS NOT NULL
+          AND NOW() >= activity_schedule.signout_start_time
+          AND NOW() &lt; activity_schedule.signout_end_time
+        ORDER BY activity_schedule.signout_end_time ASC
     </select>
 
     <update id="updateDeleted">

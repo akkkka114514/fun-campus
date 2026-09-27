@@ -1,12 +1,5 @@
 # Fun Campus
 
-<p align="center">
-  <img src="https://img.shields.io/badge/SmartAdmin-Framework-blue" alt="SmartAdmin Framework">
-  <img src="https://img.shields.io/badge/Spring%20Boot-3.5.4-brightgreen" alt="Spring Boot 3.5.4">
-  <img src="https://img.shields.io/badge/Vue-3.4.27-brightgreen" alt="Vue 3.4.27">
-</p>
-
-
 **重要声明：本软件为独立开发，与 PU口袋校园 无任何关联。所有代码、设计均为原创，仅借鉴了校园管理系统的一般功能概念。**
 
 

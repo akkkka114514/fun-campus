@@ -14,11 +14,13 @@ import org.springframework.transaction.support.TransactionTemplate;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.entity.ActivityEnrollmentEntity;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.manager.ActivityEnrollmentManager;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.service.ActivityEnrollmentService;
+import com.akkkka.admin.module.business.funcampus.activityOrder.constant.OrderLogAction;
 import com.akkkka.admin.module.business.funcampus.activityOrder.constant.OrderStatus;
 import com.akkkka.admin.module.business.funcampus.activityOrder.domain.entity.ActivityOrderEntity;
 import com.akkkka.admin.module.business.funcampus.activityOrder.domain.entity.ActivityRefundEntity;
 import com.akkkka.admin.module.business.funcampus.activityOrder.manager.ActivityOrderManager;
 import com.akkkka.admin.module.business.funcampus.activityOrder.manager.ActivityRefundManager;
+import com.akkkka.admin.module.business.funcampus.activityOrder.service.ActivityOrderLogService;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.dao.ActivityEnrollNumDao;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
@@ -80,6 +82,8 @@ public class PaymentService implements PaymentNotifyHandler {
 
     private final MessageService messageService;
 
+    private final ActivityOrderLogService orderLogService;
+
     /**
      * 预下单：使用当前启用的渠道生成支付参数（mock 渠道返回模拟收银台链接）
      */
@@ -113,10 +117,6 @@ public class PaymentService implements PaymentNotifyHandler {
      */
     @Override
     public void handlePayNotify(PayNotifyResult notifyResult) {
-        if (!notifyResult.isSuccess()) {
-            log.info("支付失败回调，不改变订单状态：orderNo:{}，原因:{}", notifyResult.getOrderNo(), notifyResult.getFailReason());
-            return;
-        }
         if (notifyResult.getOrderNo() == null) {
             log.warn("支付回调缺少订单号，忽略");
             return;
@@ -124,6 +124,12 @@ public class PaymentService implements PaymentNotifyHandler {
         ActivityOrderEntity order = orderManager.getByOrderNo(notifyResult.getOrderNo());
         if (order == null) {
             log.error("支付回调订单不存在：orderNo:{}", notifyResult.getOrderNo());
+            return;
+        }
+        if (!notifyResult.isSuccess()) {
+            log.info("支付失败回调，不改变订单状态：orderNo:{}，原因:{}", notifyResult.getOrderNo(), notifyResult.getFailReason());
+            orderLogService.recordSystem(order, OrderLogAction.PAY_FAILED,
+                    "渠道支付失败回调：" + Objects.toString(notifyResult.getFailReason(), "原因未知"));
             return;
         }
         // 金额校验：一律以服务端订单金额为准，回调金额不一致拒绝入账
@@ -149,6 +155,8 @@ public class PaymentService implements PaymentNotifyHandler {
         if (handled[0]) {
             log.info("支付回调处理成功：orderNo:{}，activityId:{}，userId:{}",
                     order.getOrderNo(), order.getActivityId(), order.getUserId());
+            orderLogService.recordSystem(order, OrderLogAction.PAY_SUCCESS,
+                    "支付成功，渠道单号：" + Objects.toString(notifyResult.getChannelOrderNo(), "") + "，金额 " + fenToYuan(order.getAmountFen()) + " 元");
             sendPaySuccessMessage(order);
             return;
         }
@@ -163,6 +171,7 @@ public class PaymentService implements PaymentNotifyHandler {
             // 竞态：关单任务先赢，但渠道侧资金已入账 → 现实中需触发退款补偿，人工介入
             log.error("支付回调晚于关单：资金已入账但订单已关闭，需退款补偿！orderNo:{}，userId:{}",
                     order.getOrderNo(), order.getUserId());
+            orderLogService.recordSystem(order, OrderLogAction.PAY_AFTER_CLOSE, "支付回调晚于关单，资金已入账，需人工退款补偿");
         } else if (latestStatus == OrderStatus.REFUNDING || latestStatus == OrderStatus.REFUNDED
                 || latestStatus == OrderStatus.REFUND_FAILED) {
             log.warn("支付回调到达时订单已进入退款流程：orderNo:{}，status:{}", order.getOrderNo(), latestStatus);
@@ -226,7 +235,11 @@ public class PaymentService implements PaymentNotifyHandler {
         }
         log.info("退款回调处理完成：refundNo:{}，success:{}，orderNo:{}", refund.getRefundNo(), notifyResult.isSuccess(), order.getOrderNo());
         if (notifyResult.isSuccess()) {
+            orderLogService.recordSystem(order, OrderLogAction.REFUND_SUCCESS,
+                    "退款到账，渠道退款单号：" + Objects.toString(notifyResult.getChannelRefundNo(), "") + "，金额 " + fenToYuan(order.getAmountFen()) + " 元");
             sendRefundSuccessMessage(order);
+        } else {
+            orderLogService.recordSystem(order, OrderLogAction.REFUND_FAILED, "渠道退款失败回调，订单已回退为退款失败");
         }
     }
 

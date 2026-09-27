@@ -2928,7 +2928,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- ----------------------------------------------------------------------------
 -- =====================================================================
 -- Fun Campus Phase 9：活动付费参加（订单 / 支付 / 退款）
--- 内容：activity 付费配置字段、activity_order、activity_refund、订单超时关单任务
+-- 内容：activity 付费配置字段、activity_order、activity_refund、activity_order_log、订单超时关单任务
 -- 说明：脚本仅需执行一次；执行前请备份数据库
 -- Date: 2026-09-24
 -- =====================================================================
@@ -2994,7 +2994,27 @@ CREATE TABLE `activity_refund` (
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '活动报名退款记录' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
--- 4. t_smart_job 注册订单超时关单任务
+-- 4. activity_order_log 活动订单操作记录（支付/退款关键操作留痕）
+-- ----------------------------
+DROP TABLE IF EXISTS `activity_order_log`;
+CREATE TABLE `activity_order_log` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `order_id` bigint NOT NULL COMMENT '订单id',
+  `order_no` varchar(32) NOT NULL COMMENT '订单号',
+  `action` tinyint NOT NULL COMMENT '操作类型：1-创建订单 2-支付成功 3-支付失败回调 4-支付回调晚于关单 5-关闭订单 6-发起退款申请 7-退款成功 8-退款失败 9-管理端重试退款',
+  `operator_type` tinyint NOT NULL COMMENT '操作人类型：1-门户用户 2-管理端用户 3-系统',
+  `operator_id` bigint NULL COMMENT '操作人id（系统操作为空）',
+  `detail` varchar(500) NULL COMMENT '操作详情',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted_flag` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否已删除',
+  PRIMARY KEY (`id`) USING BTREE,
+  KEY `idx_order_no`(`order_no`) USING BTREE,
+  KEY `idx_order_id`(`order_id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '活动订单操作记录' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- 5. t_smart_job 注册订单超时关单任务
 --    扫描超时未支付订单：CAS 关单（待支付→已关闭）+ 释放名额；
 --    与支付回调抢同一个 CAS（where status=待支付），谁先成功谁生效
 -- ----------------------------

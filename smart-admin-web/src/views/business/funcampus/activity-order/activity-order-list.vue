@@ -123,6 +123,18 @@
             <a-descriptions-item label="关闭时间">{{ currentRecord.closeTime || '—' }}</a-descriptions-item>
             <a-descriptions-item label="创建时间">{{ currentRecord.createTime || '—' }}</a-descriptions-item>
         </a-descriptions>
+        <a-divider orientation="left" class="order-log-divider">操作记录</a-divider>
+        <a-timeline v-if="logList.length" class="order-log-timeline">
+            <a-timeline-item v-for="log in logList" :key="log.id" :color="logColor(log.action)">
+                <div class="order-log-action">
+                    <a-tag :color="logColor(log.action)">{{ log.actionName }}</a-tag>
+                    <span class="order-log-operator">{{ log.operatorName }}</span>
+                </div>
+                <div class="order-log-detail">{{ log.detail || '—' }}</div>
+                <div class="order-log-time">{{ log.createTime }}</div>
+            </a-timeline-item>
+        </a-timeline>
+        <a-empty v-else description="暂无操作记录" :image="false" />
     </a-modal>
     <!---------- 订单详情弹窗 end ----------->
 </template>
@@ -147,6 +159,9 @@
     const STATUS_TAG_COLOR = { 0: 'orange', 1: 'green', 2: 'default', 3: 'blue', 4: 'purple', 5: 'red' };
     const STATUS_NAME = { 0: '待支付', 1: '已支付', 2: '已关闭', 3: '退款中', 4: '已退款', 5: '退款失败' };
     const PAY_CHANNEL_NAME = { 1: '微信', 2: '支付宝', 3: 'Mock' };
+    // 操作类型配色（logList.action）：1-创建 2-支付成功 3-支付失败回调 4-支付回调晚于关单 5-关闭
+    // 6-发起退款申请 7-退款成功 8-退款失败 9-管理端重试退款
+    const LOG_ACTION_COLOR = { 1: 'blue', 2: 'green', 3: 'red', 4: 'red', 5: 'gray', 6: 'blue', 7: 'green', 8: 'red', 9: 'orange' };
 
     function statusTagColor(status) {
         return STATUS_TAG_COLOR[status] || 'default';
@@ -158,6 +173,10 @@
 
     function payChannelName(payChannel) {
         return PAY_CHANNEL_NAME[payChannel] || '—';
+    }
+
+    function logColor(action) {
+        return LOG_ACTION_COLOR[action] || 'gray';
     }
 
     // 金额分转元展示
@@ -286,18 +305,47 @@
 
     // 当前查看的记录
     const currentRecord = ref({});
+    // 操作记录时间线（详情接口返回 logList：action/actionName/operatorName/detail/createTime）
+    const logList = ref([]);
     // 弹窗可见性
     const detailModalVisible = ref(false);
 
     // 打开详情：先展示行数据，再拉取最新详情覆盖
     async function openDetail(record) {
         currentRecord.value = { ...record };
+        logList.value = [];
         detailModalVisible.value = true;
         try {
             const res = await activityOrderApi.detail(record.orderNo);
             currentRecord.value = res.data;
+            logList.value = res.data.logList || [];
         } catch (e) {
             smartSentry.captureError(e);
         }
     }
 </script>
+
+<style lang="less" scoped>
+    .order-log-divider {
+        margin: 16px 0 12px;
+        color: rgba(0, 0, 0, 0.85);
+        font-weight: 500;
+    }
+
+    .order-log-timeline {
+        padding-top: 4px;
+    }
+
+    .order-log-operator {
+        color: rgba(0, 0, 0, 0.65);
+    }
+
+    .order-log-detail {
+        color: rgba(0, 0, 0, 0.65);
+    }
+
+    .order-log-time {
+        color: rgba(0, 0, 0, 0.45);
+        font-size: 12px;
+    }
+</style>

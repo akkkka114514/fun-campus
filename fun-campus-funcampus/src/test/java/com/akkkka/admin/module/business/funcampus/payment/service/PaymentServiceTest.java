@@ -4,12 +4,14 @@ import com.akkkka.admin.module.business.funcampus.MybatisPlusTestRegistry;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.entity.ActivityEnrollmentEntity;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.manager.ActivityEnrollmentManager;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.service.ActivityEnrollmentService;
+import com.akkkka.admin.module.business.funcampus.activityOrder.constant.OrderLogAction;
 import com.akkkka.admin.module.business.funcampus.activityOrder.constant.OrderStatus;
 import com.akkkka.admin.module.business.funcampus.activityOrder.constant.RefundStatus;
 import com.akkkka.admin.module.business.funcampus.activityOrder.domain.entity.ActivityOrderEntity;
 import com.akkkka.admin.module.business.funcampus.activityOrder.domain.entity.ActivityRefundEntity;
 import com.akkkka.admin.module.business.funcampus.activityOrder.manager.ActivityOrderManager;
 import com.akkkka.admin.module.business.funcampus.activityOrder.manager.ActivityRefundManager;
+import com.akkkka.admin.module.business.funcampus.activityOrder.service.ActivityOrderLogService;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.dao.ActivityEnrollNumDao;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
@@ -37,6 +39,7 @@ import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -76,6 +79,8 @@ public class PaymentServiceTest {
     private ActivityManager activityManager;
     @Mock
     private MessageService messageService;
+    @Mock
+    private ActivityOrderLogService orderLogService;
 
     @InjectMocks
     private PaymentService service;
@@ -142,14 +147,18 @@ public class PaymentServiceTest {
     // ---------------------------------- 支付回调 handlePayNotify ----------------------------------
 
     @Test
-    void handlePayNotify_whenChannelResultFail_ignore() {
+    void handlePayNotify_whenChannelResultFail_ignoreStateChangeAndRecordsLog() {
+        when(orderManager.getByOrderNo("AO202609260001")).thenReturn(order(9L, 20L, OrderStatus.WAIT_PAY, 150));
         PayNotifyResult notify = successPayNotify(150);
         notify.setSuccess(false);
         notify.setFailReason("余额不足");
 
         service.handlePayNotify(notify);
 
-        verify(orderManager, never()).getByOrderNo(any());
+        // 失败回调：不改订单状态、不写报名，仅追加留痕
+        verify(orderManager, never()).markPaidCas(any(), any(), any(), any());
+        verify(enrollmentService, never()).saveEnrollmentRecord(any(), any());
+        verify(orderLogService).recordSystem(any(), eq(OrderLogAction.PAY_FAILED), anyString());
     }
 
     @Test
@@ -213,6 +222,7 @@ public class PaymentServiceTest {
         assertEquals(20L, form.getReceiverUserId());
         assertEquals(7L, form.getDataId());
         assertEquals("羽毛球比赛", form.getContentParam().get("activityTitle"));
+        verify(orderLogService).recordSystem(any(), eq(OrderLogAction.PAY_SUCCESS), anyString());
     }
 
     @Test
@@ -257,6 +267,7 @@ public class PaymentServiceTest {
         verify(orderManager).getById(9L);
         verify(enrollmentService, never()).saveEnrollmentRecord(any(), any());
         verify(messageService, never()).sendTemplateMessage(any());
+        verify(orderLogService).recordSystem(any(), eq(OrderLogAction.PAY_AFTER_CLOSE), anyString());
     }
 
     @Test
@@ -376,6 +387,7 @@ public class PaymentServiceTest {
         assertDoesNotThrow(() -> service.handleRefundNotify(refundNotify(true, LocalDateTime.now())));
 
         verify(messageService).sendTemplateMessage(any());
+        verify(orderLogService).recordSystem(any(), eq(OrderLogAction.REFUND_SUCCESS), anyString());
     }
 
     @Test
@@ -390,9 +402,10 @@ public class PaymentServiceTest {
 
         verify(refundManager).markFailedCas(1L);
         verify(orderManager).markRefundFailedCas(9L);
-        // 失败不释放名额、不通知到账
+        // 失败不释放名额、不通知到账，仅追加留痕
         verify(activityEnrollNumDao, never()).decreaseEnrollNum(any());
         verify(messageService, never()).sendTemplateMessage(any());
+        verify(orderLogService).recordSystem(any(), eq(OrderLogAction.REFUND_FAILED), anyString());
     }
 
     @Test

@@ -9,6 +9,7 @@ import com.akkkka.admin.module.business.funcampus.activityEnrollment.service.Act
 import com.akkkka.admin.module.business.funcampus.activityOrder.constant.OrderStatus;
 import com.akkkka.admin.module.business.funcampus.activityOrder.domain.entity.ActivityOrderEntity;
 import com.akkkka.admin.module.business.funcampus.activityOrder.manager.ActivityOrderManager;
+import com.akkkka.admin.module.business.funcampus.activityOrder.service.ActivityOrderLogService;
 import com.akkkka.admin.module.business.funcampus.activityOrder.service.ActivityRefundService;
 import com.akkkka.admin.module.business.funcampus.activityReviewAttachment.manager.ActivityReviewAttachmentManager;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.constant.ActivityReviewStage;
@@ -109,6 +110,8 @@ public class ActivityWithScheduleServiceTest {
     private ActivityOrderManager activityOrderManager;
     @Mock
     private ActivityRefundService activityRefundService;
+    @Mock
+    private ActivityOrderLogService orderLogService;
 
     @InjectMocks
     private ActivityWithScheduleService service;

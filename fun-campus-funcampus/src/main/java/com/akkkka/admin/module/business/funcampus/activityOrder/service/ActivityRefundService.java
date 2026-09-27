@@ -7,6 +7,7 @@ import java.util.Objects;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.akkkka.admin.module.business.funcampus.activityOrder.constant.OrderLogAction;
 import com.akkkka.admin.module.business.funcampus.activityOrder.constant.OrderStatus;
 import com.akkkka.admin.module.business.funcampus.activityOrder.constant.RefundPolicy;
 import com.akkkka.admin.module.business.funcampus.activityOrder.constant.RefundReasonType;
@@ -70,6 +71,8 @@ public class ActivityRefundService {
 
     private final PaymentService paymentService;
 
+    private final ActivityOrderLogService orderLogService;
+
     /**
      * 用户申请退款
      * <p>
@@ -96,11 +99,14 @@ public class ActivityRefundService {
         String reason = form.getReason() == null || form.getReason().isBlank() ? "用户申请退款" : form.getReason();
         ActivityRefundEntity refund = buildRefund(order, RefundReasonType.USER_APPLY, reason);
         startRefunding(order, refund);
+        orderLogService.recordPortalUser(order, OrderLogAction.REFUND_APPLY, userId,
+                "用户申请退款".equals(reason) ? "用户申请退款" : "用户申请退款：" + reason);
 
         // 事务提交后向渠道发起退款：受理成功不代表到账，最终以异步回调为准
         RefundChannelResult result = requestChannelRefund(order, refund);
         if (result == null || !result.isAccepted()) {
             rollbackRefunding(order, refund);
+            orderLogService.recordSystem(order, OrderLogAction.REFUND_FAILED, "渠道退款受理失败，订单已回退为退款失败");
             throw new BusinessException(SystemErrorCode.SYSTEM_ERROR, "渠道退款受理失败，请稍后重试");
         }
         log.info("退款申请成功：orderNo:{}，refundNo:{}，amountFen:{}", order.getOrderNo(), refund.getRefundNo(), refund.getAmountFen());
@@ -156,10 +162,12 @@ public class ActivityRefundService {
         }
         ActivityRefundEntity retryRefund = buildRefund(order, originRefund.getReasonType(), retryReason);
         startRefunding(order, retryRefund);
+        orderLogService.recordAdminUser(order, OrderLogAction.REFUND_RETRY, "管理端重试退款（原退款单 " + refundNo + "）");
 
         RefundChannelResult result = requestChannelRefund(order, retryRefund);
         if (result == null || !result.isAccepted()) {
             rollbackRefunding(order, retryRefund);
+            orderLogService.recordSystem(order, OrderLogAction.REFUND_FAILED, "渠道退款受理失败，订单已回退为退款失败");
             throw new BusinessException(SystemErrorCode.SYSTEM_ERROR, "渠道退款受理失败，请稍后重试");
         }
         log.info("管理端退款重试成功：orderNo:{}，originRefundNo:{}，refundNo:{}",
@@ -218,10 +226,12 @@ public class ActivityRefundService {
     private void refundOrderAutomatically(ActivityOrderEntity order, RefundReasonType reasonType, String reason) {
         ActivityRefundEntity refund = buildRefund(order, reasonType, reason);
         startRefunding(order, refund);
+        orderLogService.recordSystem(order, OrderLogAction.REFUND_APPLY, reason);
 
         RefundChannelResult result = requestChannelRefund(order, refund);
         if (result == null || !result.isAccepted()) {
             rollbackRefunding(order, refund);
+            orderLogService.recordSystem(order, OrderLogAction.REFUND_FAILED, "渠道退款受理失败，订单已回退为退款失败");
             return;
         }
         log.info("系统自动退款已发起：orderNo:{}，refundNo:{}，reasonType:{}", order.getOrderNo(), refund.getRefundNo(), reasonType);

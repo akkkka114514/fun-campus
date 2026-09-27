@@ -240,4 +240,58 @@
         where notice_id = #{noticeId}
     </update>
 
+    <!-- ================================== 通知公告【门户用户查看】相关 ================================== -->
+    <!-- 门户用户无后台用户体系：可见性收敛为全员可见（all_visible_flag=true）且已发布（publish_time < now()） -->
+    <select id="queryPortalNotice" resultType="com.akkkka.admin.module.system.notice.domain.vo.PortalNoticeVO">
+        select
+        t_notice.notice_id,
+        t_notice.title,
+        t_notice.notice_type_id,
+        t_notice.publish_time,
+        t_notice.source,
+        t_notice.author,
+        t_notice.document_number,
+        t_notice.page_view_count,
+        t_notice_type.notice_type_name
+        from t_notice
+        left join t_notice_type on t_notice.notice_type_id = t_notice_type.notice_type_id
+        <where>
+            t_notice.all_visible_flag = true
+            and t_notice.deleted_flag = false
+            and t_notice.publish_time &lt; now()
+            <if test="query.noticeTypeId != null">
+                AND t_notice.notice_type_id = #{query.noticeTypeId}
+            </if>
+            <if test="query.keywords != null and query.keywords !=''">
+                AND ( INSTR(t_notice.title,#{query.keywords})
+                OR INSTR(t_notice.author,#{query.keywords})
+                OR INSTR(t_notice.source,#{query.keywords})
+                )
+            </if>
+        </where>
+        order by t_notice.publish_time desc, t_notice.notice_id desc
+    </select>
+
+    <select id="getPortalNoticeById" resultType="com.akkkka.admin.module.system.notice.domain.vo.PortalNoticeDetailVO">
+        select
+        t_notice.notice_id,
+        t_notice.title,
+        t_notice.notice_type_id,
+        t_notice.publish_time,
+        t_notice.content_text,
+        t_notice.content_html,
+        t_notice.attachment,
+        t_notice.page_view_count,
+        t_notice.source,
+        t_notice.author,
+        t_notice.document_number,
+        t_notice_type.notice_type_name
+        from t_notice
+        left join t_notice_type on t_notice.notice_type_id = t_notice_type.notice_type_id
+        where t_notice.notice_id = #{noticeId}
+        and t_notice.all_visible_flag = true
+        and t_notice.deleted_flag = false
+        and t_notice.publish_time &lt; now()
+    </select>
+
 </mapper>

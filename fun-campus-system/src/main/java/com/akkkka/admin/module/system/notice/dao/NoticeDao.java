@@ -7,8 +7,11 @@ import com.akkkka.admin.module.system.notice.domain.form.NoticeBackendUserQueryF
 import com.akkkka.admin.module.system.notice.domain.form.NoticeQueryForm;
 import com.akkkka.admin.module.system.notice.domain.form.NoticeViewRecordQueryForm;
 import com.akkkka.admin.module.system.notice.domain.form.NoticeVisibleRangeForm;
+import com.akkkka.admin.module.system.notice.domain.form.PortalNoticeQueryForm;
 import com.akkkka.admin.module.system.notice.domain.vo.NoticeBackendUserVO;
 import com.akkkka.admin.module.system.notice.domain.vo.NoticeVO;
+import com.akkkka.admin.module.system.notice.domain.vo.PortalNoticeDetailVO;
+import com.akkkka.admin.module.system.notice.domain.vo.PortalNoticeVO;
 import com.akkkka.admin.module.system.notice.domain.vo.NoticeViewRecordVO;
 import com.akkkka.admin.module.system.notice.domain.vo.NoticeVisibleRangeVO;
 import org.apache.ibatis.annotations.Mapper;
@@ -115,5 +118,18 @@ public interface NoticeDao extends BaseMapper<NoticeEntity> {
      */
     void updateViewCount(@Param("noticeId")Long noticeId,@Param("pageViewCountIncrement") Integer pageViewCountIncrement, @Param("userViewCountIncrement")Integer userViewCountIncrement);
 
+    // ================================= 通知公告【门户用户查看】 相关  =================================
+
+    /**
+     * 门户分页查询 全员可见且已发布 的通知公告
+     *
+     */
+    List<PortalNoticeVO> queryPortalNotice(Page<?> page, @Param("query") PortalNoticeQueryForm queryForm);
+
+    /**
+     * 查询 门户用户可见 的通知公告详情（全员可见且已发布）
+     *
+     */
+    PortalNoticeDetailVO getPortalNoticeById(@Param("noticeId") Long noticeId);
 
 }

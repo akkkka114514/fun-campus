@@ -166,7 +166,7 @@ pu签到二维码按钮
 - [ ] 活动时间表：前端 `activity-schedule-api.js` 仍调用无前缀的 `/activitySchedule/*`，后端仍无该独立模块（时间表随 `/portal/activity/*` 组合接口维护）—— 需确认独立页面去留
 - [✅] 活动报名管理：新增 `ActivityEnrollmentAdminController`，已提供 `/backend/activityEnrollment/{queryPage,delete,batchDelete}`，前端已同步
 - [✅] 活动审核日志：`/backend/activityReviewLog/{queryPage,add,update,review/initial,latest/{activityId}}` 已就绪
-- [ ] `activityWithSchedule.getReviewProposal` 方法仍未挂 mapping 注解（未完成）；`/portal/activity/submit` 已可正常提交（含 Validator + `submitDraft` 落库）
+- [✅] `activityWithSchedule.getReviewProposal` 已挂 `GET /portal/activity/reviewProposal?activityId=`，修正原 `@PathParam`（WebSocket 错误注解）误用、补齐 `reviewLogVO` 组装与活动不存在校验（2026-09-27 冒烟：有审核日志/无审核日志/不存在活动三场景均通过）；`/portal/activity/submit` 已可正常提交（含 Validator + `submitDraft` 落库）
 
 #### 0.5 URL 前缀适配（portal / backend 双端体系）—— ✅ 已全量适配
 

@@ -6,6 +6,12 @@ export const activityApi = {
     return get('/portal/activity/detail', { activityId });
   },
 
+  // 活动阶段倒计时：{ currentPhase, nextPhase, nextPhaseStartTime, remainingSeconds（-1=已结束） }
+  // 阶段点序列：报名开始 → 报名结束 → 活动开始 → 活动结束 → 签到开始 → 签到结束 → 签退开始 → 签退结束
+  phaseCountdown(activityId) {
+    return get('/portal/activity/countdown', { activityId });
+  },
+
   // 我的报名分页查询（PageParam：pageNum + pageSize；signInStatus?true-已签到 false-未签到，activityStatus?活动状态 4-已结束；均不传查全部）
   queryMyEnrollments(form) {
     return post('/portal/activityEnrollment/queryMy', form);

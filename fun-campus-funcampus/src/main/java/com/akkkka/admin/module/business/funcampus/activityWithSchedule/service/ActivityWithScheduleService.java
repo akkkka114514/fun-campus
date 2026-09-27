@@ -779,8 +779,12 @@ public class ActivityWithScheduleService {
             return vo;
         }
 
-        // 活动已全部结束
-        if (!now.isBefore(phaseTimes[phaseTimes.length - 1])) {
+        // 活动已全部结束（签退时间可能未配置为 null，取最后一个非 null 的阶段时间判断，避免 NPE）
+        int lastNonNullIdx = phaseTimes.length - 1;
+        while (lastNonNullIdx > 0 && phaseTimes[lastNonNullIdx] == null) {
+            lastNonNullIdx--;
+        }
+        if (!now.isBefore(phaseTimes[lastNonNullIdx])) {
             vo.setCurrentPhase("已结束");
             vo.setNextPhase(null);
             vo.setNextPhaseStartTime(null);

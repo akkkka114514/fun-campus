@@ -238,6 +238,39 @@ public class ActivityWithScheduleServiceTest {
         assertEquals(-1L, vo.getRemainingSeconds());
     }
 
+    @Test
+    void phaseCountdown_whenSignoutNotConfiguredAndLastPhasePassed_currentPhaseFinished() {
+        // 线上实际数据形态：signout_start/end 未配置为 null，签到结束已在过去
+        // 应取最后一个非 null 阶段（签到结束）判断已结束，而不是 NPE
+        LocalDateTime now = LocalDateTime.now();
+        ActivityScheduleEntity schedule = scheduleFrom(now.minusHours(8));
+        schedule.setSignoutStartTime(null);
+        schedule.setSignoutEndTime(null);
+        when(activityScheduleManager.getById(1L)).thenReturn(schedule);
+
+        ActivityPhaseCountdownVO vo = service.phaseCountdown(1L);
+
+        assertEquals("已结束", vo.getCurrentPhase());
+        assertNull(vo.getNextPhase());
+        assertEquals(-1L, vo.getRemainingSeconds());
+    }
+
+    @Test
+    void phaseCountdown_whenSignoutNotConfiguredAndInSigninPeriod_continueToSigninEnd() {
+        // signout 为 null 不影响中段阶段：now 处于签到窗口内 → nextPhase="签到结束"
+        LocalDateTime now = LocalDateTime.now();
+        ActivityScheduleEntity schedule = scheduleFrom(now.minusHours(4).minusMinutes(30));
+        schedule.setSignoutStartTime(null);
+        schedule.setSignoutEndTime(null);
+        when(activityScheduleManager.getById(1L)).thenReturn(schedule);
+
+        ActivityPhaseCountdownVO vo = service.phaseCountdown(1L);
+
+        assertEquals("签到开始", vo.getCurrentPhase());
+        assertEquals("签到结束", vo.getNextPhase());
+        assertTrue(Math.abs(vo.getRemainingSeconds() - Duration.ofMinutes(30).getSeconds()) < 5);
+    }
+
     // ---------------------------------- 草稿编辑权限 validateEditDraftPermission ----------------------------------
 
     private ActivityEntity activityManagedBy(Long managerId) {

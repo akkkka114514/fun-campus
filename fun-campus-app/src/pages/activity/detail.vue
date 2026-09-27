@@ -30,6 +30,12 @@
           <view v-if="activity.categoryName" class="tag">{{ activity.categoryName }}</view>
         </view>
 
+        <!-- 阶段倒计时（当前阶段 + 距下一阶段剩余时间） -->
+        <view v-if="countdown" class="countdown-bar" :class="{ 'countdown-bar--done': countdownDone }">
+          <view class="countdown-phase">{{ countdownPhaseText }}</view>
+          <text v-if="!countdownDone" class="countdown-text">距{{ countdown.nextPhase }}还有 {{ countdownTimeText }}</text>
+        </view>
+
         <view class="info-rows">
           <view class="info-row">
             <text class="info-label">活动时间</text>
@@ -185,7 +191,7 @@
 
 <script setup>
 import { computed, ref } from 'vue';
-import { onLoad, onShow, onPullDownRefresh } from '@dcloudio/uni-app';
+import { onLoad, onShow, onHide, onUnload, onPullDownRefresh } from '@dcloudio/uni-app';
 import { activityApi } from '@/api/activity-api';
 import { orderApi } from '@/api/order-api';
 import { useUserStore } from '@/store/user';
@@ -316,6 +322,104 @@ function requireLogin() {
   uni.showToast({ title: '请先登录', icon: 'none' });
   setTimeout(() => uni.navigateTo({ url: '/pages/login/login' }), 300);
   return false;
+}
+
+// ===== 阶段倒计时 =====
+// 后端返回：currentPhase 当前阶段点 / nextPhase 下一阶段点 / remainingSeconds 距下一阶段秒数（-1=已结束）
+const countdown = ref(null);
+const remainSeconds = ref(-1);
+let tickTimer = null;
+let countdownRefreshing = false;
+let zeroRetryDelay = 0;
+
+// 阶段点名称 → 更自然的展示文案（未命中时显示原文）
+const PHASE_LABEL = {
+  未开始: '报名未开始',
+  报名开始: '报名中',
+  报名结束: '待活动开始',
+  活动开始: '活动进行中',
+  活动结束: '待签到',
+  签到开始: '签到中',
+  签到结束: '待签退',
+  签退开始: '签退中',
+};
+
+const countdownDone = computed(() => {
+  const c = countdown.value;
+  return !c || Number(c.remainingSeconds) < 0 || !c.nextPhase;
+});
+
+const countdownPhaseText = computed(() => {
+  const c = countdown.value;
+  if (!c) return '';
+  return PHASE_LABEL[c.currentPhase] || c.currentPhase || '';
+});
+
+const countdownTimeText = computed(() => formatCountdown(remainSeconds.value));
+
+// 秒 → 'X天X时X分' / 'X时X分X秒' / 'X分X秒' / 'X秒'
+function formatCountdown(total) {
+  const s = Math.max(0, Math.floor(Number(total) || 0));
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (d > 0) return `${d}天${h}时${m}分`;
+  if (h > 0) return `${h}时${m}分${sec}秒`;
+  if (m > 0) return `${m}分${sec}秒`;
+  return `${sec}秒`;
+}
+
+async function loadCountdown() {
+  if (!activityId.value) return false;
+  try {
+    const { data } = await activityApi.phaseCountdown(activityId.value);
+    countdown.value = data || null;
+    remainSeconds.value = Number(data?.remainingSeconds ?? -1);
+    return true;
+  } catch (e) {
+    // 倒计时加载失败不阻塞页面，由 tick 重试
+    return false;
+  }
+}
+
+function stopTick() {
+  if (tickTimer) {
+    clearInterval(tickTimer);
+    tickTimer = null;
+  }
+}
+
+// 本地每秒递减；归零时重新拉取下一阶段（防并发锁 + 失败冷却 5 秒）
+function startTick() {
+  stopTick();
+  if (remainSeconds.value < 0) return;
+  tickTimer = setInterval(async () => {
+    if (remainSeconds.value < 0) {
+      stopTick();
+      return;
+    }
+    if (remainSeconds.value > 0) {
+      remainSeconds.value -= 1;
+      return;
+    }
+    if (countdownRefreshing) return;
+    if (zeroRetryDelay > 0) {
+      zeroRetryDelay -= 1;
+      return;
+    }
+    countdownRefreshing = true;
+    try {
+      const ok = await loadCountdown();
+      if (remainSeconds.value < 0) {
+        stopTick();
+      } else if (!ok || remainSeconds.value === 0) {
+        zeroRetryDelay = 5;
+      }
+    } finally {
+      countdownRefreshing = false;
+    }
+  }, 1000);
 }
 
 // ===== 主按钮：报名 / 取消 / 付费 =====
@@ -557,18 +661,30 @@ onLoad((options) => {
   loadDetail();
   loadFavorite();
   loadComments(true);
+  loadCountdown().then(startTick);
 });
 
 // 从支付页等页面返回时刷新（订单与报名状态可能已变化；首次加载由 onLoad 负责）
 onShow(() => {
   if (detail.value) {
     loadDetail();
+    loadCountdown().then(startTick);
   }
 });
 
 onPullDownRefresh(async () => {
-  await Promise.all([loadDetail(), loadFavorite(), loadComments(true)]);
+  await Promise.all([loadDetail(), loadFavorite(), loadComments(true), loadCountdown()]);
+  startTick();
   uni.stopPullDownRefresh();
+});
+
+// 页面隐藏/卸载时停止本地倒计时，避免后台空跑
+onHide(() => {
+  stopTick();
+});
+
+onUnload(() => {
+  stopTick();
 });
 </script>
 
@@ -694,6 +810,42 @@ onPullDownRefresh(async () => {
 .tag--score {
   background: rgba(60, 124, 255, 0.1);
   color: $fc-primary;
+}
+
+/* 阶段倒计时 */
+.countdown-bar {
+  display: flex;
+  align-items: center;
+  margin-top: 20rpx;
+  padding: 16rpx 20rpx;
+  border-radius: 12rpx;
+  background: rgba(60, 124, 255, 0.08);
+}
+
+.countdown-phase {
+  flex-shrink: 0;
+  padding: 6rpx 16rpx;
+  border-radius: 8rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+  color: #ffffff;
+  background: $fc-primary;
+}
+
+.countdown-text {
+  flex: 1;
+  margin-left: 16rpx;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: $fc-primary;
+}
+
+.countdown-bar--done {
+  background: #f5f6f8;
+}
+
+.countdown-bar--done .countdown-phase {
+  background: #c3cbd8;
 }
 
 .info-rows {

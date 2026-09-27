@@ -43,6 +43,11 @@ export const activityApi = {
     return get(`/portal/activity/share/resolve/${token}`);
   },
 
+  // 活动日历：{ startDate, endDate (YYYY-MM-DD，区间 ≤62 天), activeActivityPage 1-本校 2-全局 }
+  calendar(params) {
+    return get('/portal/activity/calendar', params);
+  },
+
   // 签到/签退二维码（30 秒过期，重新请求即刷新；码内容 userId+token，由签到员扫）
   signInQrCode() {
     return get('/portal/activityEnrollment/signIn/QRCode');

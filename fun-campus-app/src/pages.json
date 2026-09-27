@@ -18,7 +18,21 @@
     {
       "path": "pages/tribe/tribe",
       "style": {
-        "navigationBarTitleText": "部落"
+        "navigationBarTitleText": "部落",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/tribe/detail",
+      "style": {
+        "navigationBarTitleText": "部落详情",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/tribe/my-application",
+      "style": {
+        "navigationBarTitleText": "我的申请"
       }
     },
     {
@@ -58,6 +72,32 @@
       "path": "pages/activity/evaluate",
       "style": {
         "navigationBarTitleText": "活动评价"
+      }
+    },
+    {
+      "path": "pages/calendar/calendar",
+      "style": {
+        "navigationBarTitleText": "活动日历",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/credit/list",
+      "style": {
+        "navigationBarTitleText": "学分认定",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/credit/detail",
+      "style": {
+        "navigationBarTitleText": "申请详情"
+      }
+    },
+    {
+      "path": "pages/credit/form",
+      "style": {
+        "navigationBarTitleText": "学分认定申请"
       }
     },
     {

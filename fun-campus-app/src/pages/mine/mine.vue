@@ -95,6 +95,7 @@ const menuList = [
   { key: 'signinCode', text: '我的签到码', url: '/pages/signin/code' },
   { key: 'myActivity', text: '我的活动', url: '/pages/activity/my' },
   { key: 'myOrder', text: '我的订单', url: '/pages/order/list' },
+  { key: 'credit', text: '学分认定', url: '/pages/credit/list' },
   { key: 'profile', text: '资料编辑', url: '/pages/mine/profile' },
 ];
 

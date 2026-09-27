@@ -1,6 +1,6 @@
 <template>
   <view class="home-page">
-    <!-- 顶部栏：本校/全局切换 + 扫码/消息入口 -->
+    <!-- 顶部栏：本校/全局切换 + 日历/扫码/消息入口 -->
     <view class="home-toolbar">
       <view class="home-tabs">
         <view
@@ -19,6 +19,9 @@
         </view>
       </view>
       <view class="home-actions">
+        <view class="home-action" @click="goCalendar">
+          <u-icon name="calendar" size="22" color="#303133" />
+        </view>
         <view class="home-action" @click="onScan">
           <u-icon name="scan" size="22" color="#303133" />
         </view>
@@ -188,6 +191,10 @@ function goDetail(item) {
 
 function goMessage() {
   uni.switchTab({ url: '/pages/message/message' });
+}
+
+function goCalendar() {
+  uni.navigateTo({ url: '/pages/calendar/calendar' });
 }
 
 function onScan() {

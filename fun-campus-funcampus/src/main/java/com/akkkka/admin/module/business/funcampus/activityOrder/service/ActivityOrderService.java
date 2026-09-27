@@ -1,9 +1,14 @@
 package com.akkkka.admin.module.business.funcampus.activityOrder.service;
 
+import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -11,8 +16,11 @@ import com.akkkka.admin.module.business.funcampus.activityEnrollment.service.Act
 import com.akkkka.admin.module.business.funcampus.activityOrder.constant.OrderStatus;
 import com.akkkka.admin.module.business.funcampus.activityOrder.domain.entity.ActivityOrderEntity;
 import com.akkkka.admin.module.business.funcampus.activityOrder.domain.form.ActivityOrderQueryForm;
+import com.akkkka.admin.module.business.funcampus.activityOrder.domain.form.ActivityRevenueQueryForm;
 import com.akkkka.admin.module.business.funcampus.activityOrder.domain.vo.ActivityOrderCreateVO;
+import com.akkkka.admin.module.business.funcampus.activityOrder.domain.vo.ActivityOrderExportVO;
 import com.akkkka.admin.module.business.funcampus.activityOrder.domain.vo.ActivityOrderVO;
+import com.akkkka.admin.module.business.funcampus.activityOrder.domain.vo.ActivityRevenueStatisticsVO;
 import com.akkkka.admin.module.business.funcampus.activityOrder.manager.ActivityOrderManager;
 import com.akkkka.admin.module.business.funcampus.activityOrder.util.OrderNoUtil;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.constant.ActivityStatus;
@@ -20,6 +28,7 @@ import com.akkkka.admin.module.business.funcampus.activityWithSchedule.dao.Activ
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityValidator;
+import com.akkkka.admin.module.business.funcampus.payment.constant.PayChannelEnum;
 import com.akkkka.admin.module.business.funcampus.payment.service.PaymentService;
 import com.akkkka.admin.module.business.funcampus.portalUser.domain.entity.PortalUserEntity;
 import com.akkkka.admin.module.business.funcampus.portalUser.manager.PortalUserManager;
@@ -29,8 +38,10 @@ import com.akkkka.common.domain.PageResult;
 import com.akkkka.common.domain.RequestUser;
 import com.akkkka.common.enumeration.UserTypeEnum;
 import com.akkkka.common.exception.BusinessException;
+import com.akkkka.common.util.SmartExcelUtil;
 import com.akkkka.common.util.SmartPageUtil;
 import com.akkkka.common.util.SmartRequestUtil;
+import com.akkkka.common.util.SmartStringUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
 import lombok.AllArgsConstructor;
@@ -57,6 +68,21 @@ public class ActivityOrderService {
      * 待支付订单有效期（分钟）：超时由关单任务关闭并释放名额
      */
     private static final int PAY_EXPIRE_MINUTES = 15;
+
+    /**
+     * 导出 Excel 条数上限：超限提示缩小筛选范围，避免大结果集写文件占用过多内存
+     */
+    private static final int EXPORT_MAX_COUNT = 10000;
+
+    /**
+     * 导出文件名时间格式
+     */
+    private static final DateTimeFormatter FILE_NAME_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+
+    /**
+     * 导出时间字段格式
+     */
+    private static final DateTimeFormatter EXPORT_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final ActivityValidator activityValidator;
 
@@ -208,6 +234,34 @@ public class ActivityOrderService {
     }
 
     /**
+     * 管理端导出订单 Excel（导出当前筛选条件下的订单，上限 {@link #EXPORT_MAX_COUNT} 条）
+     */
+    public void exportExcel(ActivityOrderQueryForm queryForm, HttpServletResponse response) throws IOException {
+        // 复用列表同一套查询：limit+1 探测超限；导出场景无需 count 查询
+        Page<ActivityOrderVO> page = new Page<>(1, EXPORT_MAX_COUNT + 1);
+        page.setSearchCount(false);
+        List<ActivityOrderVO> list = orderManager.getBaseMapper().queryPageForAdmin(page, queryForm);
+        if (list.size() > EXPORT_MAX_COUNT) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR,
+                    "导出数据量超过 " + EXPORT_MAX_COUNT + " 条，请缩小筛选范围后重试");
+        }
+        List<ActivityOrderExportVO> exportList = list.stream().map(this::convertToExportVO).collect(Collectors.toList());
+        String fileName = "活动订单_" + LocalDateTime.now().format(FILE_NAME_TIME_FORMATTER) + ".xlsx";
+        SmartExcelUtil.exportExcel(response, fileName, "订单列表", ActivityOrderExportVO.class, exportList);
+        log.info("管理端导出订单 Excel：条数:{}，筛选条件:{}", list.size(), queryForm);
+    }
+
+    /**
+     * 活动收入统计：按活动汇总曾支付成功订单与成功退款（管理端）
+     * <p>
+     * 口径：报名费只计「曾支付成功」订单（已支付/退款中/已退款/退款失败）；
+     * 退款只计这些订单中成功的退款单，净收入 = 报名费 - 退款（报表内部自洽）；时间范围按订单支付时间过滤
+     */
+    public List<ActivityRevenueStatisticsVO> statisticsByActivity(ActivityRevenueQueryForm queryForm) {
+        return orderManager.getBaseMapper().statisticsByActivity(queryForm);
+    }
+
+    /**
      * 管理端订单详情（不限用户；补充下单用户与渠道订单号）
      */
     public ActivityOrderVO detailForAdmin(String orderNo) {
@@ -283,6 +337,34 @@ public class ActivityOrderService {
         vo.setCloseTime(order.getCloseTime());
         vo.setCreateTime(order.getCreateTime());
         return vo;
+    }
+
+    /**
+     * 订单 VO 转导出 VO：补齐文本化字段（金额元/状态/渠道/时间字符串）
+     */
+    private ActivityOrderExportVO convertToExportVO(ActivityOrderVO vo) {
+        ActivityOrderExportVO exportVO = new ActivityOrderExportVO();
+        exportVO.setOrderNo(vo.getOrderNo());
+        exportVO.setActivityTitle(vo.getActivityTitle());
+        exportVO.setUsername(SmartStringUtil.isEmpty(vo.getUsername()) ? "用户#" + vo.getUserId() : vo.getUsername());
+        exportVO.setAmountYuan(vo.getAmountFen() == null ? "" : BigDecimal.valueOf(vo.getAmountFen()).movePointLeft(2).toPlainString());
+        OrderStatus orderStatus = OrderStatus.fromCode(vo.getStatus());
+        exportVO.setStatusName(orderStatus == null ? "" : orderStatus.getLabel());
+        PayChannelEnum payChannel = PayChannelEnum.fromCode(vo.getPayChannel());
+        exportVO.setPayChannelName(payChannel == null ? "" : payChannel.getLabel());
+        exportVO.setChannelOrderNo(vo.getChannelOrderNo());
+        exportVO.setPayTime(formatTime(vo.getPayTime()));
+        exportVO.setExpireTime(formatTime(vo.getExpireTime()));
+        exportVO.setCloseTime(formatTime(vo.getCloseTime()));
+        exportVO.setCreateTime(formatTime(vo.getCreateTime()));
+        return exportVO;
+    }
+
+    /**
+     * 导出时间字段格式化：空值输出空字符串
+     */
+    private String formatTime(LocalDateTime time) {
+        return time == null ? "" : time.format(EXPORT_TIME_FORMATTER);
     }
 
     /**

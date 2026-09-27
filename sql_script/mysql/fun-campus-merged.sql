@@ -2765,6 +2765,12 @@ VALUES (2, NOW(), NOW(), 0, 2, 'college_reviewer_1', '$argon2id$v=19$m=16384,t=2
 INSERT INTO `backend_user` (`id`, `update_time`, `create_time`, `deleted_flag`, `role_id`, `username`, `password`, `disabled_flag`, `email`, `school_id`, `college_id`, `organization_id`, `can_review`)
 VALUES (3, NOW(), NOW(), 0, 2, 'org_reviewer_1', '$argon2id$v=19$m=16384,t=2,p=1$test$testhash', 0, 'orgreviewer1@lyut.edu.cn', 1, NULL, 1, 1);
 
+-- 新增审核人账号的后台角色关联
+-- 说明：管理端权限运行时读取 t_role_user 关联表（LoginManager.getUserPermission → selectRoleByBackendUserId），
+--       缺失关联会导致角色列表为空、@SaCheckPermission 接口一律返回 30005 无权限
+INSERT INTO `t_role_user` (`id`, `role_id`, `user_id`, `update_time`, `create_time`) VALUES (342, 2, 2, NOW(), NOW());
+INSERT INTO `t_role_user` (`id`, `role_id`, `user_id`, `update_time`, `create_time`) VALUES (343, 2, 3, NOW(), NOW());
+
 -- ----------------------------
 -- 10. activity 活动（更新已有记录 + 新增）
 -- ----------------------------
@@ -3674,4 +3680,44 @@ SELECT t_menu.menu_id INTO @cancel_btn_menu_id FROM t_menu WHERE t_menu.menu_nam
 # 关联到角色（1-admin 管理端管理员；2-organization 组织账号），否则接口无权限
 INSERT INTO t_role_menu ( role_id, menu_id, create_time, update_time )
 VALUES ( 1, @cancel_btn_menu_id, NOW(), NOW() ), ( 2, @cancel_btn_menu_id, NOW(), NOW() );
+
+-- ----------------------------------------------------------------------------
+-- 来源文件: ActivityRevenueMenu.sql —— 订单导出按钮 + 活动收入统计菜单与权限（t_menu）
+-- ----------------------------------------------------------------------------
+
+# 订单管理菜单下的「导出」按钮（按钮本身不参与侧边栏渲染，仅作为权限点，对应 @SaCheckPermission("activityOrder:export")）
+SET @order_menu_id = NULL;
+SELECT t_menu.menu_id INTO @order_menu_id FROM t_menu WHERE t_menu.menu_name = '订单管理' AND t_menu.parent_id = 301 AND t_menu.deleted_flag = 0;
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '导出', 3, @order_menu_id, false, false, true, false, 1, 'activityOrder:export', 'activityOrder:export', @order_menu_id, 1 );
+
+SET @order_export_btn_menu_id = NULL;
+SELECT t_menu.menu_id INTO @order_export_btn_menu_id FROM t_menu WHERE t_menu.menu_name = '导出' AND t_menu.parent_id = @order_menu_id AND t_menu.deleted_flag = 0;
+
+# 活动收入统计菜单（与前端 /views/business/funcampus/activity-order/activity-revenue-statistics.vue 对应）
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, path, component, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, create_user_id )
+VALUES ( '活动收入统计', 2, 301, '/activity-revenue/list', '/business/funcampus/activity-order/activity-revenue-statistics.vue', false, false, true, false, 1, 1 );
+
+SET @revenue_menu_id = NULL;
+SELECT t_menu.menu_id INTO @revenue_menu_id FROM t_menu WHERE t_menu.menu_name = '活动收入统计' AND t_menu.parent_id = 301 AND t_menu.deleted_flag = 0;
+
+INSERT INTO t_menu ( menu_name, menu_type, parent_id, frame_flag, cache_flag, visible_flag, disabled_flag, perms_type, api_perms, web_perms, context_menu_id, create_user_id )
+VALUES ( '查询', 3, @revenue_menu_id, false, false, true, false, 1, 'activityRevenue:query', 'activityRevenue:query', @revenue_menu_id, 1 );
+
+# 活动收入统计菜单排序（排在退款管理 220 之后）
+UPDATE t_menu SET sort = 230 WHERE menu_name = '活动收入统计' AND parent_id = 301 AND deleted_flag = 0;
+
+# 菜单与按钮权限关联到角色（1-admin 管理端管理员；2-organization 组织账号），否则菜单不显示、接口无权限
+INSERT INTO t_role_menu ( role_id, menu_id, create_time, update_time )
+VALUES ( 1, @order_export_btn_menu_id, NOW(), NOW() ), ( 2, @order_export_btn_menu_id, NOW(), NOW() );
+
+INSERT INTO t_role_menu ( role_id, menu_id, create_time, update_time )
+VALUES ( 1, @revenue_menu_id, NOW(), NOW() ), ( 2, @revenue_menu_id, NOW(), NOW() );
+
+INSERT INTO t_role_menu ( role_id, menu_id, create_time, update_time )
+SELECT 1, t_menu.menu_id, NOW(), NOW() FROM t_menu WHERE t_menu.parent_id = @revenue_menu_id AND t_menu.deleted_flag = 0;
+
+INSERT INTO t_role_menu ( role_id, menu_id, create_time, update_time )
+SELECT 2, t_menu.menu_id, NOW(), NOW() FROM t_menu WHERE t_menu.parent_id = @revenue_menu_id AND t_menu.deleted_flag = 0;
 

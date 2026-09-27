@@ -1,9 +1,14 @@
 package com.akkkka.admin.module.business.funcampus.activityOrder.controller;
 
+import java.io.IOException;
+import java.util.List;
+
 import com.akkkka.admin.module.business.funcampus.activityOrder.domain.form.ActivityOrderQueryForm;
 import com.akkkka.admin.module.business.funcampus.activityOrder.domain.form.ActivityRefundQueryForm;
+import com.akkkka.admin.module.business.funcampus.activityOrder.domain.form.ActivityRevenueQueryForm;
 import com.akkkka.admin.module.business.funcampus.activityOrder.domain.vo.ActivityOrderVO;
 import com.akkkka.admin.module.business.funcampus.activityOrder.domain.vo.ActivityRefundVO;
+import com.akkkka.admin.module.business.funcampus.activityOrder.domain.vo.ActivityRevenueStatisticsVO;
 import com.akkkka.admin.module.business.funcampus.activityOrder.service.ActivityOrderService;
 import com.akkkka.admin.module.business.funcampus.activityOrder.service.ActivityRefundService;
 import com.akkkka.common.domain.PageResult;
@@ -19,6 +24,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
 /**
@@ -55,6 +61,20 @@ public class ActivityOrderAdminController {
     @SaCheckPermission("activityOrder:query")
     public ResponseDTO<ActivityOrderVO> detail(@RequestParam String orderNo) {
         return ResponseDTO.ok(activityOrderService.detailForAdmin(orderNo));
+    }
+
+    @Operation(summary = "订单导出 Excel（管理端，导出当前筛选条件） @author akkkka114514")
+    @PostMapping("/activityOrder/exportExcel")
+    @SaCheckPermission("activityOrder:export")
+    public void exportExcel(@RequestBody @Valid ActivityOrderQueryForm queryForm, HttpServletResponse response) throws IOException {
+        activityOrderService.exportExcel(queryForm, response);
+    }
+
+    @Operation(summary = "活动收入统计（按活动汇总报名费） @author akkkka114514")
+    @PostMapping("/activityOrder/statisticsByActivity")
+    @SaCheckPermission("activityRevenue:query")
+    public ResponseDTO<List<ActivityRevenueStatisticsVO>> statisticsByActivity(@RequestBody ActivityRevenueQueryForm queryForm) {
+        return ResponseDTO.ok(activityOrderService.statisticsByActivity(queryForm));
     }
 
     @Operation(summary = "退款单分页查询（管理端全量） @author akkkka114514")

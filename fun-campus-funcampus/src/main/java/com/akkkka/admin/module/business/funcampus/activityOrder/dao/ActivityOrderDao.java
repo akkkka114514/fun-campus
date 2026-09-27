@@ -4,7 +4,9 @@ import java.util.List;
 
 import com.akkkka.admin.module.business.funcampus.activityOrder.domain.entity.ActivityOrderEntity;
 import com.akkkka.admin.module.business.funcampus.activityOrder.domain.form.ActivityOrderQueryForm;
+import com.akkkka.admin.module.business.funcampus.activityOrder.domain.form.ActivityRevenueQueryForm;
 import com.akkkka.admin.module.business.funcampus.activityOrder.domain.vo.ActivityOrderVO;
+import com.akkkka.admin.module.business.funcampus.activityOrder.domain.vo.ActivityRevenueStatisticsVO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Mapper;
@@ -39,5 +41,13 @@ public interface ActivityOrderDao extends BaseMapper<ActivityOrderEntity> {
      * @return 订单列表
      */
     List<ActivityOrderVO> queryPageForAdmin(Page page, @Param("queryForm") ActivityOrderQueryForm queryForm);
+
+    /**
+     * 活动收入统计：按活动汇总曾支付成功订单与成功退款（管理端）
+     *
+     * @param queryForm 支付时间范围条件
+     * @return 按活动聚合的统计列表（报名费总额倒序）
+     */
+    List<ActivityRevenueStatisticsVO> statisticsByActivity(@Param("queryForm") ActivityRevenueQueryForm queryForm);
 
 }

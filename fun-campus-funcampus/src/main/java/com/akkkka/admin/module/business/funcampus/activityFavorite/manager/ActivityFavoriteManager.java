@@ -25,6 +25,15 @@ public class ActivityFavoriteManager extends ServiceImpl<ActivityFavoriteDao, Ac
                 .eq(ActivityFavoriteEntity::getDeletedFlag, false);
     }
 
+    /**
+     * 按活动查询收藏记录（未删除），供状态变更通知取收藏用户列表
+     */
+    public LambdaQueryWrapper<ActivityFavoriteEntity> qwByActivityId(Long activityId) {
+        return Wrappers.lambdaQuery(ActivityFavoriteEntity.class)
+                .eq(ActivityFavoriteEntity::getActivityId, activityId)
+                .eq(ActivityFavoriteEntity::getDeletedFlag, false);
+    }
+
     public LambdaQueryWrapper<ActivityFavoriteEntity> qwByUserId(Long userId) {
         return Wrappers.lambdaQuery(ActivityFavoriteEntity.class)
                 .eq(ActivityFavoriteEntity::getUserId, userId)

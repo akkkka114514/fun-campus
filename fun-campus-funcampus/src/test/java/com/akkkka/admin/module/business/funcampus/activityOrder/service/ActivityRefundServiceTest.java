@@ -64,6 +64,8 @@ public class ActivityRefundServiceTest {
     private TransactionTemplate transactionTemplate;
     @Mock
     private PaymentService paymentService;
+    @Mock
+    private ActivityOrderLogService orderLogService;
 
     @InjectMocks
     private ActivityRefundService service;

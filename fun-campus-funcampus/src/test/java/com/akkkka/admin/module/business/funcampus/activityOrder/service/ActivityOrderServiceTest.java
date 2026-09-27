@@ -1,9 +1,12 @@
 package com.akkkka.admin.module.business.funcampus.activityOrder.service;
 
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.service.ActivityEnrollmentValidator;
+import com.akkkka.admin.module.business.funcampus.activityOrder.constant.OrderLogAction;
 import com.akkkka.admin.module.business.funcampus.activityOrder.constant.OrderStatus;
 import com.akkkka.admin.module.business.funcampus.activityOrder.domain.entity.ActivityOrderEntity;
 import com.akkkka.admin.module.business.funcampus.activityOrder.domain.vo.ActivityOrderCreateVO;
+import com.akkkka.admin.module.business.funcampus.activityOrder.domain.vo.ActivityOrderLogVO;
+import com.akkkka.admin.module.business.funcampus.activityOrder.domain.vo.ActivityOrderVO;
 import com.akkkka.admin.module.business.funcampus.activityOrder.manager.ActivityOrderManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.constant.ActivityStatus;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.dao.ActivityEnrollNumDao;
@@ -71,6 +74,8 @@ public class ActivityOrderServiceTest {
     private TransactionTemplate transactionTemplate;
     @Mock
     private PaymentService paymentService;
+    @Mock
+    private ActivityOrderLogService orderLogService;
 
     @InjectMocks
     private ActivityOrderService service;
@@ -390,5 +395,30 @@ public class ActivityOrderServiceTest {
         assertTrue(ex.getMessage().contains("已支付成功"));
         verify(activityEnrollNumDao, never()).decreaseEnrollNum(any());
         verify(paymentService, never()).prepay(any());
+    }
+
+    // ---------------------------------- 管理端详情 detailForAdmin ----------------------------------
+
+    @Test
+    void detailForAdmin_returnsOrderWithUsernameChannelNoAndLogList() {
+        ActivityOrderEntity order = order(1L, "AO1", OrderStatus.PAID, 20L);
+        order.setChannelOrderNo("MOCKPAY1");
+        when(orderManager.getByOrderNo("AO1")).thenReturn(order);
+        PortalUserEntity portalUser = new PortalUserEntity();
+        portalUser.setUsername("student20");
+        when(portalUserManager.getById(20L)).thenReturn(portalUser);
+        when(activityManager.getById(7L)).thenReturn(activity(ActivityStatus.ENROLLING, true, 150));
+        ActivityOrderLogVO logVO = new ActivityOrderLogVO();
+        logVO.setAction(OrderLogAction.CREATE.getCode());
+        logVO.setActionName("创建订单");
+        when(orderLogService.listByOrderNo("AO1")).thenReturn(List.of(logVO));
+
+        ActivityOrderVO vo = service.detailForAdmin("AO1");
+
+        assertEquals("student20", vo.getUsername());
+        assertEquals("MOCKPAY1", vo.getChannelOrderNo());
+        assertEquals(1, vo.getLogList().size());
+        assertEquals("创建订单", vo.getLogList().get(0).getActionName());
+        verify(orderLogService).listByOrderNo("AO1");
     }
 }

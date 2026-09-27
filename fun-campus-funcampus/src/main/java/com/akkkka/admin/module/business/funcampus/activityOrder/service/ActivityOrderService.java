@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.service.ActivityEnrollmentValidator;
+import com.akkkka.admin.module.business.funcampus.activityOrder.constant.OrderLogAction;
 import com.akkkka.admin.module.business.funcampus.activityOrder.constant.OrderStatus;
 import com.akkkka.admin.module.business.funcampus.activityOrder.domain.entity.ActivityOrderEntity;
 import com.akkkka.admin.module.business.funcampus.activityOrder.domain.form.ActivityOrderQueryForm;
@@ -102,6 +103,8 @@ public class ActivityOrderService {
 
     private final PaymentService paymentService;
 
+    private final ActivityOrderLogService orderLogService;
+
     /**
      * 创建订单（付费活动下单锁座）
      * <p>
@@ -156,6 +159,8 @@ public class ActivityOrderService {
         });
 
         // 事务提交后再向渠道预下单：渠道调用不属于数据库事务，避免长事务占用连接
+        orderLogService.recordPortalUser(order, OrderLogAction.CREATE, userId,
+                "创建订单，金额 " + fenToYuan(amountFen) + " 元，支付截止 " + order.getExpireTime().format(EXPORT_TIME_FORMATTER));
         log.info("付费活动下单成功：orderNo:{}，activityId:{}，userId:{}，amountFen:{}",
                 order.getOrderNo(), activityId, userId, amountFen);
         return buildCreateVO(order, paymentService.prepay(order).getCashierUrl());
@@ -186,6 +191,7 @@ public class ActivityOrderService {
             }
         });
         log.info("订单已取消：orderNo:{}，userId:{}", orderNo, userId);
+        orderLogService.recordPortalUser(order, OrderLogAction.CLOSE, userId, "用户主动取消订单，释放锁定的名额");
     }
 
     /**
@@ -274,6 +280,8 @@ public class ActivityOrderService {
         vo.setChannelOrderNo(order.getChannelOrderNo());
         PortalUserEntity portalUser = portalUserManager.getById(order.getUserId());
         vo.setUsername(portalUser == null ? null : portalUser.getUsername());
+        // 操作记录时间线（下单/支付/退款关键节点留痕）
+        vo.setLogList(orderLogService.listByOrderNo(orderNo));
         return vo;
     }
 
@@ -303,15 +311,20 @@ public class ActivityOrderService {
      * 立即关闭已超时订单并释放名额（与关单任务/支付回调同一 CAS 互斥）
      */
     private void closeExpiredOrder(ActivityOrderEntity order) {
+        boolean[] closed = {false};
         transactionTemplate.executeWithoutResult(status -> {
             if (!orderManager.closeIfWaitPayCas(order.getId(), LocalDateTime.now())) {
                 // 已被支付回调或关单任务抢先处理，跳过
                 return;
             }
+            closed[0] = true;
             if (!activityEnrollNumDao.decreaseEnrollNum(order.getActivityId())) {
                 log.warn("超时关单释放名额失败：orderNo:{}", order.getOrderNo());
             }
         });
+        if (closed[0]) {
+            orderLogService.recordSystem(order, OrderLogAction.CLOSE, "订单超时未支付，系统自动关闭");
+        }
     }
 
     private ActivityOrderCreateVO buildCreateVO(ActivityOrderEntity order, String cashierUrl) {
@@ -365,6 +378,13 @@ public class ActivityOrderService {
      */
     private String formatTime(LocalDateTime time) {
         return time == null ? "" : time.format(EXPORT_TIME_FORMATTER);
+    }
+
+    /**
+     * 分转元展示（如 23920 → 239.20）
+     */
+    private String fenToYuan(Integer fen) {
+        return fen == null ? "0.00" : BigDecimal.valueOf(fen).movePointLeft(2).toPlainString();
     }
 
     /**

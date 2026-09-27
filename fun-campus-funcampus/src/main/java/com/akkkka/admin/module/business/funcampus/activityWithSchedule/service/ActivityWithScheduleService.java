@@ -8,9 +8,11 @@ import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.enti
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.vo.MyEnrollmentStatusVO;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.manager.ActivityEnrollmentManager;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.service.ActivityEnrollmentService;
+import com.akkkka.admin.module.business.funcampus.activityOrder.constant.OrderLogAction;
 import com.akkkka.admin.module.business.funcampus.activityOrder.domain.entity.ActivityOrderEntity;
 import com.akkkka.admin.module.business.funcampus.activityOrder.domain.vo.ActivityOrderVO;
 import com.akkkka.admin.module.business.funcampus.activityOrder.manager.ActivityOrderManager;
+import com.akkkka.admin.module.business.funcampus.activityOrder.service.ActivityOrderLogService;
 import com.akkkka.admin.module.business.funcampus.activityOrder.service.ActivityRefundService;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.dao.ActivityEnrollNumDao;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEnrollNum;
@@ -105,6 +107,7 @@ public class ActivityWithScheduleService {
     private ActivityStatusCacheManager activityStatusCacheManager;
     private ActivityOrderManager activityOrderManager;
     private ActivityRefundService activityRefundService;
+    private ActivityOrderLogService orderLogService;
 
     /**
      * 活动详情页
@@ -342,6 +345,7 @@ public class ActivityWithScheduleService {
                 // CAS 失败：订单已被支付回调/用户取消先行处理，跳过
                 continue;
             }
+            orderLogService.recordAdminUser(order, OrderLogAction.CLOSE, "活动已取消，关闭待支付订单");
             if (!activityEnrollNumDao.decreaseEnrollNum(activityId)) {
                 log.warn("活动取消关单释放名额失败：activityId={}，orderNo={}", activityId, order.getOrderNo());
             }

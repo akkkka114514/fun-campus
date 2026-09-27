@@ -9,8 +9,10 @@ import java.util.Objects;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.akkkka.admin.module.business.funcampus.activityOrder.constant.OrderLogAction;
 import com.akkkka.admin.module.business.funcampus.activityOrder.domain.entity.ActivityOrderEntity;
 import com.akkkka.admin.module.business.funcampus.activityOrder.manager.ActivityOrderManager;
+import com.akkkka.admin.module.business.funcampus.activityOrder.service.ActivityOrderLogService;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.dao.ActivityEnrollNumDao;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
@@ -48,6 +50,9 @@ public class ActivityOrderTimeoutJob implements SmartJob {
     private ActivityOrderManager orderManager;
 
     @Resource
+    private ActivityOrderLogService orderLogService;
+
+    @Resource
     private ActivityEnrollNumDao activityEnrollNumDao;
 
     @Resource
@@ -79,6 +84,7 @@ public class ActivityOrderTimeoutJob implements SmartJob {
             try {
                 if (closeTimeoutOrder(order)) {
                     closed++;
+                    orderLogService.recordSystem(order, OrderLogAction.CLOSE, "订单超时未支付，系统自动关闭");
                     sendTimeoutMessage(order);
                 } else {
                     // 支付回调/用户取消抢先处理，跳过

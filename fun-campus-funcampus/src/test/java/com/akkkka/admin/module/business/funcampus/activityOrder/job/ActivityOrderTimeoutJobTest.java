@@ -3,6 +3,7 @@ package com.akkkka.admin.module.business.funcampus.activityOrder.job;
 import com.akkkka.admin.module.business.funcampus.activityOrder.constant.OrderStatus;
 import com.akkkka.admin.module.business.funcampus.activityOrder.domain.entity.ActivityOrderEntity;
 import com.akkkka.admin.module.business.funcampus.activityOrder.manager.ActivityOrderManager;
+import com.akkkka.admin.module.business.funcampus.activityOrder.service.ActivityOrderLogService;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.dao.ActivityEnrollNumDao;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
@@ -49,6 +50,8 @@ public class ActivityOrderTimeoutJobTest {
     private ActivityManager activityManager;
     @Mock
     private MessageService messageService;
+    @Mock
+    private ActivityOrderLogService orderLogService;
 
     @InjectMocks
     private ActivityOrderTimeoutJob job;

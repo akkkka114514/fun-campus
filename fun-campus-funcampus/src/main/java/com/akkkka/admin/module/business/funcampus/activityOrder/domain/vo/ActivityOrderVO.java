@@ -1,6 +1,7 @@
 package com.akkkka.admin.module.business.funcampus.activityOrder.domain.vo;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -54,4 +55,7 @@ public class ActivityOrderVO {
 
     @Schema(description = "创建时间")
     private LocalDateTime createTime;
+
+    @Schema(description = "操作记录时间线（仅管理端订单详情返回）")
+    private List<ActivityOrderLogVO> logList;
 }

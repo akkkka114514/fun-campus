@@ -144,6 +144,12 @@
       "style": {
         "navigationBarTitleText": "我的签到码"
       }
+    },
+    {
+      "path": "pages/notice/notice-detail",
+      "style": {
+        "navigationBarTitleText": "公告详情"
+      }
     }
   ],
   "tabBar": {

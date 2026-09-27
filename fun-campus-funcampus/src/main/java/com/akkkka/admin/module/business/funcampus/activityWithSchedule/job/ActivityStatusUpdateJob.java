@@ -6,6 +6,7 @@ import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.en
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityScheduleManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityStatusCacheManager;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityStatusNoticeService;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityWithScheduleService;
 import com.akkkka.module.support.job.core.SmartJob;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -48,6 +49,9 @@ public class ActivityStatusUpdateJob implements SmartJob {
 
     @Resource
     private ActivityWithScheduleService activityWithScheduleService;
+
+    @Resource
+    private ActivityStatusNoticeService activityStatusNoticeService;
 
     /**
      * 执行活动状态更新
@@ -99,6 +103,8 @@ public class ActivityStatusUpdateJob implements SmartJob {
                     handled = activityManager.updateStatusIfMatch(activity.getId(), expectedStatus, currentStatus);
                     if (handled) {
                         advanced++;
+                        // 前进成功后发送节点站内信（服务内部失败仅日志，不影响推进与消费确认）
+                        activityStatusNoticeService.notifyStatusAdvanced(activity, expectedStatus);
                     } else {
                         skipped++;
                     }

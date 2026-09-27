@@ -6,6 +6,7 @@ import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.en
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityScheduleManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityStatusCacheManager;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityStatusNoticeService;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityWithScheduleService;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import org.junit.jupiter.api.Test;
@@ -21,13 +22,14 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
  * 活动状态更新任务 单元测试
  * <p>
  * 覆盖：当天关键活动名单消费、状态前进步进（0~4 时间边界）、时间表后调时的状态倒退（回退 + 清报名）、
- * 并发条件更新失败跳过、消费确认（移出名单）、单条异常隔离。
+ * 并发条件更新失败跳过、消费确认（移出名单）、单条异常隔离、前进成功后的站内信通知触发。
  * <p>
  * 说明：任务内部以 {@link LocalDateTime#now()} 判定当前时刻，因此本类所有时间表均以
  * 运行时真实当前时间为锚点构造相对窗口（偏移量 >= 1 小时），保证任意时刻执行结果确定。
@@ -46,6 +48,8 @@ public class ActivityStatusUpdateJobTest {
     private ActivityScheduleManager activityScheduleManager;
     @Mock
     private ActivityWithScheduleService activityWithScheduleService;
+    @Mock
+    private ActivityStatusNoticeService activityStatusNoticeService;
 
     @InjectMocks
     private ActivityStatusUpdateJob job;
@@ -147,6 +151,8 @@ public class ActivityStatusUpdateJobTest {
         String result = job.run(null);
 
         verify(activityManager).updateStatusIfMatch(1L, ActivityStatus.FINISHED, ActivityStatus.ONGOING);
+        // 前进成功后触发对应节点站内信
+        verify(activityStatusNoticeService).notifyStatusAdvanced(any(ActivityEntity.class), eq(ActivityStatus.FINISHED));
         verify(activityStatusCacheManager).removeFromTodayCache(1L);
         assertTrue(result.contains("前进1个"));
         assertTrue(result.contains("移出名单1个"));
@@ -163,6 +169,7 @@ public class ActivityStatusUpdateJobTest {
 
         verify(activityManager, never()).updateStatusIfMatch(anyLong(), any(), any());
         verify(activityWithScheduleService, never()).retreatActivityStatusTransaction(anyLong(), any(), any());
+        verify(activityStatusNoticeService, never()).notifyStatusAdvanced(any(), any());
         verify(activityStatusCacheManager).removeFromTodayCache(1L);
         assertTrue(result.contains("前进0个"));
         assertTrue(result.contains("倒退0个"));
@@ -184,6 +191,8 @@ public class ActivityStatusUpdateJobTest {
         verify(activityWithScheduleService).retreatActivityStatusTransaction(
                 1L, ActivityStatus.ONGOING, ActivityStatus.WAIT_ENROLL);
         verify(activityManager, never()).updateStatusIfMatch(anyLong(), any(), any());
+        // 状态倒退不发送通知
+        verify(activityStatusNoticeService, never()).notifyStatusAdvanced(any(), any());
         verify(activityStatusCacheManager, never()).removeFromTodayCache(anyLong());
         assertTrue(result.contains("倒退1个"));
         assertTrue(result.contains("移出名单0个"));
@@ -229,6 +238,7 @@ public class ActivityStatusUpdateJobTest {
         String result = job.run(null);
 
         // 倒退条件不满足（状态被并发修改）：跳过且保留在名单，下轮重试
+        verify(activityStatusNoticeService, never()).notifyStatusAdvanced(any(), any());
         verify(activityStatusCacheManager, never()).removeFromTodayCache(anyLong());
         assertTrue(result.contains("跳过1个"));
         assertTrue(result.contains("移出名单0个"));
@@ -243,7 +253,8 @@ public class ActivityStatusUpdateJobTest {
 
         String result = job.run(null);
 
-        // 条件更新失败（状态被并发修改）：跳过且保留在名单，下轮重试
+        // 条件更新失败（状态被并发修改）：跳过且保留在名单，下轮重试；未推进不发送通知
+        verify(activityStatusNoticeService, never()).notifyStatusAdvanced(any(), any());
         verify(activityStatusCacheManager, never()).removeFromTodayCache(anyLong());
         assertTrue(result.contains("跳过1个"));
         assertTrue(result.contains("移出名单0个"));
@@ -260,6 +271,8 @@ public class ActivityStatusUpdateJobTest {
 
         String result = job.run(null);
 
+        // 前进成功即发送通知，与是否移出名单无关
+        verify(activityStatusNoticeService).notifyStatusAdvanced(any(ActivityEntity.class), eq(ActivityStatus.FINISHED));
         verify(activityStatusCacheManager, never()).removeFromTodayCache(anyLong());
         assertTrue(result.contains("前进1个"));
         assertTrue(result.contains("移出名单0个"));
@@ -281,6 +294,8 @@ public class ActivityStatusUpdateJobTest {
 
         // 活动1更新抛异常计入跳过，活动2仍被正常推进
         verify(activityManager).updateStatusIfMatch(2L, ActivityStatus.FINISHED, ActivityStatus.ONGOING);
+        // 仅推进成功的活动2触发通知
+        verify(activityStatusNoticeService).notifyStatusAdvanced(any(ActivityEntity.class), eq(ActivityStatus.FINISHED));
         verify(activityStatusCacheManager, never()).removeFromTodayCache(1L);
         verify(activityStatusCacheManager).removeFromTodayCache(2L);
         assertTrue(result.contains("跳过1个"));
@@ -331,5 +346,10 @@ public class ActivityStatusUpdateJobTest {
         verify(activityManager).updateStatusIfMatch(2L, ActivityStatus.ENROLL_ENDED, ActivityStatus.ENROLLING);
         verify(activityManager).updateStatusIfMatch(3L, ActivityStatus.ONGOING, ActivityStatus.ENROLL_ENDED);
         verify(activityManager).updateStatusIfMatch(4L, ActivityStatus.FINISHED, ActivityStatus.ONGOING);
+        // 每个前进活动均按目标节点触发一次通知（报名结束节点由通知服务内部判定不发送）
+        verify(activityStatusNoticeService).notifyStatusAdvanced(any(ActivityEntity.class), eq(ActivityStatus.ENROLLING));
+        verify(activityStatusNoticeService).notifyStatusAdvanced(any(ActivityEntity.class), eq(ActivityStatus.ENROLL_ENDED));
+        verify(activityStatusNoticeService).notifyStatusAdvanced(any(ActivityEntity.class), eq(ActivityStatus.ONGOING));
+        verify(activityStatusNoticeService).notifyStatusAdvanced(any(ActivityEntity.class), eq(ActivityStatus.FINISHED));
     }
 }

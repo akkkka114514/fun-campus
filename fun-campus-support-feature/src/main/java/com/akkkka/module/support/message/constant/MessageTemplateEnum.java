@@ -54,6 +54,21 @@ public enum MessageTemplateEnum implements BaseEnum {
      */
     ACTIVITY_REFUND_SUCCESS(2006, "退款已到账", MessageTypeEnum.MAIL, "您报名的活动【${activityTitle}】报名费【${amount}】元已退款到账。"),
 
+    /**
+     * 活动开始报名：状态推进到「报名中」后通知收藏该活动的学生
+     */
+    ACTIVITY_ENROLL_START(2007, "活动开始报名", MessageTypeEnum.MAIL, "您收藏的活动【${activityTitle}】已开始报名，快来报名吧。"),
+
+    /**
+     * 活动即将开始：状态推进到「进行中」后通知有效报名的学生
+     */
+    ACTIVITY_ABOUT_TO_START(2008, "活动即将开始", MessageTypeEnum.MAIL, "您报名的活动【${activityTitle}】即将开始，请准时参加。"),
+
+    /**
+     * 活动已结束：状态推进到「已结束」后通知有效报名的学生
+     */
+    ACTIVITY_FINISHED(2009, "活动已结束", MessageTypeEnum.MAIL, "您报名的活动【${activityTitle}】已结束，感谢您的参与。"),
+
     ;
 
     private final Integer value;

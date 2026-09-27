@@ -13,6 +13,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Update;
 
 /**
  * 活动报名关系 Dao
@@ -61,15 +62,28 @@ public interface ActivityEnrollmentDao extends BaseMapper<ActivityEnrollmentEnti
     List<PendingSignVO> queryPendingSignOutList(@Param("userId") Long userId);
 
     /**
-     * 报名记录 upsert：不存在则插入；已存在软删记录（如取消报名后重新报名）则复活并重置签到/签退状态
+     * 抢占式插入报名记录（报名幂等核心之一）：INSERT IGNORE
      * <p>
-     * activity_enrollment 以 (activity_id, user_id) 为复合主键，取消报名为逻辑删除，
-     * 直接 insert 会主键冲突，因此统一走 ON DUPLICATE KEY UPDATE。
+     * activity_enrollment 以 (activity_id, user_id) 为复合主键；
+     * 主键冲突（并发重复报名 / 已有记录含软删）时不报错、返回 0，由调用方决定走复活还是判重复。
+     *
+     * @return 1=本次调用插入成功（抢到报名权）；0=记录已存在（含软删）
      */
-    @Insert("INSERT INTO activity_enrollment (activity_id, user_id, sign_in_status, sign_out_status, create_time, update_time, deleted_flag) "
-            + "VALUES (#{activityId}, #{userId}, false, false, NOW(), NOW(), false) "
-            + "ON DUPLICATE KEY UPDATE deleted_flag = false, sign_in_status = false, sign_out_status = false, update_time = NOW()")
-    int upsertEnrollment(@Param("activityId") Long activityId, @Param("userId") Long userId);
+    @Insert("INSERT IGNORE INTO activity_enrollment (activity_id, user_id, sign_in_status, sign_out_status, create_time, update_time, deleted_flag) "
+            + "VALUES (#{activityId}, #{userId}, false, false, NOW(), NOW(), false)")
+    int insertIgnoreEnrollment(@Param("activityId") Long activityId, @Param("userId") Long userId);
+
+    /**
+     * 复活已取消（逻辑删除）的报名记录（报名幂等核心之二）：条件更新
+     * <p>
+     * 仅 deleted_flag = true 时生效（CAS 风格）：并发重复报名时只有一个请求能复活成功，
+     * 失败方据此判定「请勿重复报名」，并重置签到/签退状态。
+     *
+     * @return 1=本次调用完成复活（抢到报名权）；0=无软删记录（有效报名已存在或从未报名）
+     */
+    @Update("UPDATE activity_enrollment SET deleted_flag = false, sign_in_status = false, sign_out_status = false, update_time = NOW() "
+            + "WHERE activity_id = #{activityId} AND user_id = #{userId} AND deleted_flag = true")
+    int reviveEnrollment(@Param("activityId") Long activityId, @Param("userId") Long userId);
 
     /**
      * 更新删除状态

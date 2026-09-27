@@ -34,6 +34,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -55,7 +56,8 @@ import static org.mockito.Mockito.*;
 /**
  * 活动报名 Service 单元测试
  * <p>
- * 覆盖：报名事务流程（人数上限、插入失败）、签到二维码生成（30s 过期、刷新覆盖）、
+ * 覆盖：报名事务流程（抢占式幂等、并发重复拦截、取消后复活、满员回滚）、
+ * 支付成功写报名（INSERT IGNORE / 复活软删记录 / 重复回调跳过）、签到二维码生成（30s 过期、刷新覆盖）、
  * 扫码签到/签退（token 过期、签到/签退时间窗口、needSignOut、重复签到/签退、未签到签退）、
  * 报名人员差集转换、报名列表标记
  *
@@ -123,11 +125,15 @@ public class ActivityEnrollmentServiceTest {
         SmartRequestUtil.remove();
     }
 
-    /** 让事务模板真正执行传入的消费逻辑 */
+    /** 本次事务的回滚状态 mock（runTransactionNow 执行时生成，供回滚断言使用） */
+    private TransactionStatus txStatus;
+
+    /** 让事务模板真正执行传入的消费逻辑，并记录事务状态便于断言「是否要求回滚」 */
     private void runTransactionNow() {
         doAnswer(invocation -> {
             Consumer<TransactionStatus> consumer = invocation.getArgument(0);
-            consumer.accept(mock(TransactionStatus.class));
+            txStatus = mock(TransactionStatus.class);
+            consumer.accept(txStatus);
             return null;
         }).when(transactionTemplate).executeWithoutResult(any());
     }
@@ -215,42 +221,95 @@ public class ActivityEnrollmentServiceTest {
     }
 
     @Test
-    void enroll_whenEnrollNumFull_throwAndNotInsert() {
+    void enroll_whenEnrollNumFull_throwAndRollback() {
         setPortalUser(12L);
         when(activityValidator.validateActivityId(7L)).thenReturn(activityWithStatus(ActivityStatus.ENROLLING));
         runTransactionNow();
+        when(activityEnrollmentDao.insertIgnoreEnrollment(7L, 12L)).thenReturn(1);
         when(activityEnrollNumDao.increaseEnrollNum(7L)).thenReturn(false);
 
         BusinessException ex = assertThrows(BusinessException.class, () -> service.enroll(7L));
         assertTrue(ex.getMessage().contains("活动报名人数已满"));
-        verify(activityEnrollmentDao, never()).upsertEnrollment(any(), any());
+        // 抢占到的报名记录随事务回滚一并撤销（占座失败不留有效报名）
+        verify(txStatus).setRollbackOnly();
     }
 
     @Test
-    void enroll_whenInsertFails_throw() {
+    void enroll_whenConcurrentDuplicate_throwAndNoSeatTaken() {
         setPortalUser(12L);
         when(activityValidator.validateActivityId(7L)).thenReturn(activityWithStatus(ActivityStatus.ENROLLING));
         runTransactionNow();
-        when(activityEnrollNumDao.increaseEnrollNum(7L)).thenReturn(true);
-        when(activityEnrollmentDao.upsertEnrollment(7L, 12L)).thenReturn(0);
+        // 并发重复报名：另一请求已抢先落库有效记录，插入与复活均未命中
+        when(activityEnrollmentDao.insertIgnoreEnrollment(7L, 12L)).thenReturn(0);
+        when(activityEnrollmentDao.reviveEnrollment(7L, 12L)).thenReturn(0);
 
         BusinessException ex = assertThrows(BusinessException.class, () -> service.enroll(7L));
-        assertTrue(ex.getMessage().contains("报名失败"));
+        assertTrue(ex.getMessage().contains("请勿重复报名"));
+        // 幂等保证：被拦截的重复请求不再占用名额
+        verify(activityEnrollNumDao, never()).increaseEnrollNum(any());
     }
 
     @Test
-    void enroll_whenAllValid_insertEnrollment() {
+    void enroll_whenAllValid_acquireThenTakeSeat() {
         setPortalUser(12L);
         when(activityValidator.validateActivityId(7L)).thenReturn(activityWithStatus(ActivityStatus.ENROLLING));
         when(portalUserManager.getById(12L)).thenReturn(portalUserEntity(12L));
         runTransactionNow();
+        when(activityEnrollmentDao.insertIgnoreEnrollment(7L, 12L)).thenReturn(1);
         when(activityEnrollNumDao.increaseEnrollNum(7L)).thenReturn(true);
-        when(activityEnrollmentDao.upsertEnrollment(7L, 12L)).thenReturn(1);
 
         assertDoesNotThrow(() -> service.enroll(7L));
+        // 幂等顺序：先抢占报名记录（INSERT IGNORE），抢到后才占座
+        InOrder inOrder = inOrder(activityEnrollmentDao, activityEnrollNumDao);
+        inOrder.verify(activityEnrollmentDao).insertIgnoreEnrollment(7L, 12L);
+        inOrder.verify(activityEnrollNumDao).increaseEnrollNum(7L);
+        // 插入已成功，无需再走复活分支
+        verify(activityEnrollmentDao, never()).reviveEnrollment(any(), any());
+    }
+
+    @Test
+    void enroll_whenCancelledBefore_reviveAndTakeSeat() {
+        setPortalUser(12L);
+        when(activityValidator.validateActivityId(7L)).thenReturn(activityWithStatus(ActivityStatus.ENROLLING));
+        when(portalUserManager.getById(12L)).thenReturn(portalUserEntity(12L));
+        runTransactionNow();
+        // 取消后重新报名：INSERT IGNORE 因主键冲突返回 0，复活软删记录成功后方可占座
+        when(activityEnrollmentDao.insertIgnoreEnrollment(7L, 12L)).thenReturn(0);
+        when(activityEnrollmentDao.reviveEnrollment(7L, 12L)).thenReturn(1);
+        when(activityEnrollNumDao.increaseEnrollNum(7L)).thenReturn(true);
+
+        assertDoesNotThrow(() -> service.enroll(7L));
+        verify(activityEnrollmentDao).reviveEnrollment(7L, 12L);
         verify(activityEnrollNumDao).increaseEnrollNum(7L);
-        // 报名记录以 upsert 落库：取消过报名的场景会复活原记录，签到状态/删除标记在 SQL 内处理
-        verify(activityEnrollmentDao).upsertEnrollment(7L, 12L);
+    }
+
+    // ---------------------- 支付成功写报名 saveEnrollmentRecord ----------------------
+
+    @Test
+    void saveEnrollmentRecord_whenNew_insertIgnoreSuccess() {
+        when(activityEnrollmentDao.insertIgnoreEnrollment(7L, 12L)).thenReturn(1);
+
+        assertDoesNotThrow(() -> service.saveEnrollmentRecord(7L, 12L));
+        // 插入成功即写入完成，无需再走复活分支
+        verify(activityEnrollmentDao, never()).reviveEnrollment(any(), any());
+    }
+
+    @Test
+    void saveEnrollmentRecord_whenRefundThenPaidAgain_reviveDeletedRecord() {
+        when(activityEnrollmentDao.insertIgnoreEnrollment(7L, 12L)).thenReturn(0);
+        when(activityEnrollmentDao.reviveEnrollment(7L, 12L)).thenReturn(1);
+
+        assertDoesNotThrow(() -> service.saveEnrollmentRecord(7L, 12L));
+        verify(activityEnrollmentDao).reviveEnrollment(7L, 12L);
+    }
+
+    @Test
+    void saveEnrollmentRecord_whenDuplicateCallback_skipWithoutError() {
+        when(activityEnrollmentDao.insertIgnoreEnrollment(7L, 12L)).thenReturn(0);
+        when(activityEnrollmentDao.reviveEnrollment(7L, 12L)).thenReturn(0);
+
+        // 重复回调：有效报名已存在，直接跳过且不抛异常
+        assertDoesNotThrow(() -> service.saveEnrollmentRecord(7L, 12L));
     }
 
     // ------------------------------ 报名结果站内信 ------------------------------
@@ -264,7 +323,7 @@ public class ActivityEnrollmentServiceTest {
         when(portalUserManager.getById(12L)).thenReturn(portalUserEntity(12L));
         runTransactionNow();
         when(activityEnrollNumDao.increaseEnrollNum(7L)).thenReturn(true);
-        when(activityEnrollmentDao.upsertEnrollment(7L, 12L)).thenReturn(1);
+        when(activityEnrollmentDao.insertIgnoreEnrollment(7L, 12L)).thenReturn(1);
         when(activityManager.getById(7L)).thenReturn(activity);
 
         service.enroll(7L);
@@ -286,6 +345,8 @@ public class ActivityEnrollmentServiceTest {
         activity.setTitle("迎新晚会");
         when(activityValidator.validateActivityId(7L)).thenReturn(activity);
         runTransactionNow();
+        // 先抢占报名记录成功，占座时人数已满
+        when(activityEnrollmentDao.insertIgnoreEnrollment(7L, 12L)).thenReturn(1);
         when(activityEnrollNumDao.increaseEnrollNum(7L)).thenReturn(false);
         when(activityManager.getById(7L)).thenReturn(activity);
 
@@ -308,13 +369,13 @@ public class ActivityEnrollmentServiceTest {
         when(portalUserManager.getById(12L)).thenReturn(portalUserEntity(12L));
         runTransactionNow();
         when(activityEnrollNumDao.increaseEnrollNum(7L)).thenReturn(true);
-        when(activityEnrollmentDao.upsertEnrollment(7L, 12L)).thenReturn(1);
+        when(activityEnrollmentDao.insertIgnoreEnrollment(7L, 12L)).thenReturn(1);
         when(activityManager.getById(7L)).thenReturn(activity);
         doThrow(new RuntimeException("消息服务不可用")).when(messageService).sendTemplateMessage(any(MessageTemplateSendForm.class));
 
         // 站内信发送失败不影响报名成功
         assertDoesNotThrow(() -> service.enroll(7L));
-        verify(activityEnrollmentDao).upsertEnrollment(7L, 12L);
+        verify(activityEnrollmentDao).insertIgnoreEnrollment(7L, 12L);
     }
 
     // ---------------------------------- 签到二维码 ----------------------------------

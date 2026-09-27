@@ -43,7 +43,6 @@ import com.akkkka.common.util.SmartRequestUtil;
 import com.akkkka.module.support.message.constant.MessageTemplateEnum;
 import com.akkkka.module.support.message.domain.MessageTemplateSendForm;
 import com.akkkka.module.support.message.service.MessageService;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -109,7 +108,6 @@ public class ActivityEnrollmentService {
 
     public void enroll(Long activityId){
         RequestUser requestUser = SmartRequestUtil.getRequestUser();
-        //todo做幂等
         if(requestUser == null || requestUser.getUserType()!= UserTypeEnum.PORTAL_USER){
             throw new BusinessException(UserErrorCode.PARAM_ERROR, "用户类型错误");
         }
@@ -127,6 +125,9 @@ public class ActivityEnrollmentService {
 
     /**
      * 报名主流程：校验活动状态与用户资格，事务内落库（失败时抛出 BusinessException）
+     * <p>
+     * 幂等：事务内先抢占报名记录（INSERT IGNORE / 条件复活软删记录），抢占成功者才占座；
+     * 并发重复请求在 (activity_id, user_id) 复合主键上被拦截，保证名额只占一次
      */
     private void doEnroll(Long activityId, Long userId){
         ActivityEntity activity = activityValidator.validateActivityId(activityId);
@@ -141,21 +142,25 @@ public class ActivityEnrollmentService {
         portalUserValidator.validateUserCanEnrollCollege(activityId,portalUser);
         portalUserValidator.validateUserCanEnrollGrade(activityId,portalUser);
         portalUserValidator.validateUserCanEnrollTribe(activityId,portalUser);
+        // 预检查快速失败；并发窗口内的重复报名由事务内「抢占报名记录」兜底
         enrollmentDomainService.validateEnrollmentDuplicate(activityId,userId);
 
         transactionTemplate.executeWithoutResult(status -> {
-            // 尝试增加报名人数，如果达到上限则返回false
+            // 幂等：先抢占报名记录 —— 新报名走 INSERT IGNORE，取消后重新报名复活软删记录；
+            // 并发重复请求在 (activity_id, user_id) 复合主键上被拦截，只有一个请求能抢占成功，名额不会被重复占用
+            boolean acquired = activityEnrollmentDao.insertIgnoreEnrollment(activityId, userId) == 1
+                    || activityEnrollmentDao.reviveEnrollment(activityId, userId) == 1;
+            if (!acquired) {
+                log.warn("ActivityEnrollmentService.enroll failed: duplicate enroll, activityId={}, userId={}", activityId, userId);
+                status.setRollbackOnly();
+                throw new BusinessException(UserErrorCode.PARAM_ERROR, "请勿重复报名");
+            }
+
+            // 抢占成功后占座；满员则整体回滚（抢占的报名记录一并撤销）
             if (!activityEnrollNumDao.increaseEnrollNum(activityId)) {
                 log.warn("ActivityEnrollmentService.enroll failed: activity enrollment full, activityId={}", activityId);
                 status.setRollbackOnly();
                 throw new BusinessException(UserErrorCode.PARAM_ERROR, "活动报名人数已满");
-            }
-
-            // 如果增加报名人数成功，则写入报名记录（取消过报名的情况会复活原记录）
-            if (activityEnrollmentDao.upsertEnrollment(activityId, userId) == 0) {
-                log.error("ActivityEnrollmentService.enroll failed: failed to insert enrollment record, activityId={}", activityId);
-                status.setRollbackOnly();
-                throw new BusinessException(UserErrorCode.PARAM_ERROR, "报名失败");
             }
 
             log.info("ActivityEnrollmentService.enroll success: new enrollment completed, activityId={}, userId={}", activityId, userId);
@@ -165,26 +170,22 @@ public class ActivityEnrollmentService {
     /**
      * 支付成功后写入报名记录（供支付回调链路调用，免费报名不经过此方法）
      * <p>
-     * - 幂等：已存在有效报名记录时直接返回（重复回调不会重复插入）；
+     * - 幂等：抢占式写入 —— 新报名 INSERT IGNORE 成功，或退款后重新支付时复活软删记录；
+     *   两者都未命中说明有效报名已存在（重复回调），直接跳过；
      * - 名额在下单时已通过 increaseEnrollNum 锁定，此处不再占座；
      * - 报名成功站内信由支付成功通知（ACTIVITY_ORDER_PAID）承担，不在本方法发送。
      */
     public void saveEnrollmentRecord(Long activityId, Long userId){
-        boolean exists = activityEnrollmentManager.exists(
-                Wrappers.lambdaQuery(ActivityEnrollmentEntity.class)
-                        .eq(ActivityEnrollmentEntity::getActivityId, activityId)
-                        .eq(ActivityEnrollmentEntity::getUserId, userId)
-                        .eq(ActivityEnrollmentEntity::getDeletedFlag, false));
-        if (exists) {
-            log.info("saveEnrollmentRecord skip: enrollment already exists, activityId={}, userId={}", activityId, userId);
+        if (activityEnrollmentDao.insertIgnoreEnrollment(activityId, userId) == 1) {
+            log.info("saveEnrollmentRecord success: activityId={}, userId={}", activityId, userId);
             return;
         }
-
-        if (activityEnrollmentDao.upsertEnrollment(activityId, userId) == 0) {
-            log.error("saveEnrollmentRecord failed: upsert error, activityId={}, userId={}", activityId, userId);
-            throw new BusinessException(UserErrorCode.PARAM_ERROR, "写报名记录失败");
+        // 退款链路会逻辑删除报名记录：重新支付成功时复活原记录（重置签到/签退状态）
+        if (activityEnrollmentDao.reviveEnrollment(activityId, userId) == 1) {
+            log.info("saveEnrollmentRecord success (revived): activityId={}, userId={}", activityId, userId);
+            return;
         }
-        log.info("saveEnrollmentRecord success: activityId={}, userId={}", activityId, userId);
+        log.info("saveEnrollmentRecord skip: enrollment already exists, activityId={}, userId={}", activityId, userId);
     }
 
     /**

@@ -119,9 +119,10 @@ CREATE TABLE `activity_enrollment`  (
   `activity_id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
   `user_id` bigint NOT NULL,
   `sign_in_status` bit(1) NOT NULL COMMENT '1-》是，0-》否',
+  `sign_out_status` bit(1) DEFAULT b'0' COMMENT '是否已签退',
   `create_time` timestamp NOT NULL,
   `update_time` timestamp NOT NULL,
-  `deleted` bit(1) NOT NULL,
+  `deleted_flag` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否已删除',
   PRIMARY KEY (`activity_id`, `user_id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 

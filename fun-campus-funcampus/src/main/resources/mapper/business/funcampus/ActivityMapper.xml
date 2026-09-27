@@ -160,13 +160,33 @@
         WHERE activity.id = #{id}
     </select>
 
+    <!-- 首页活动列表可选筛选：分类 / 状态 / 未来时间范围（status 缺省时保持"未开始+报名中"）；timeRange 基于活动开始时间、从今天0点起算未来 N 天 -->
+    <sql id="index_activity_filters">
+        <if test="categoryId != null">
+            AND activity.category_id = #{categoryId}
+        </if>
+        <choose>
+            <when test="status != null">
+                AND activity.status = #{status}
+            </when>
+            <otherwise>
+                AND (activity.status = 0 OR activity.status = 1)
+            </otherwise>
+        </choose>
+        <if test="timeRange != null">
+            AND activity_schedule.activity_start_time &gt;= CURDATE()
+            AND activity_schedule.activity_start_time &lt; DATE_ADD(CURDATE(), INTERVAL #{timeRange} DAY)
+        </if>
+    </sql>
+
     <select id="notStartAndPendingEnrollActivityGlobal" resultMap="ActivityWithScheduleVO">
         SELECT
         <include refid="base_columns"/>,
         <include refid="schedule_columns"/>
         <include refid="base_from"/>
-        WHERE (activity.status = 0 OR activity.status = 1)
-          AND activity.deleted_flag = 0
+        WHERE activity.deleted_flag = 0
+        <include refid="index_activity_filters"/>
+        ORDER BY activity_schedule.activity_start_time ASC, activity.id DESC
     </select>
 
     <select id="notStartAndPendingEnrollActivity" resultMap="ActivityWithScheduleVO">
@@ -174,9 +194,10 @@
         <include refid="base_columns"/>,
         <include refid="schedule_columns"/>
         <include refid="base_from"/>
-        WHERE (activity.status = 0 OR activity.status = 1)
-          AND activity.deleted_flag = 0
+        WHERE activity.deleted_flag = 0
+        <include refid="index_activity_filters"/>
           AND activity.activity_belong_to_school_id = #{schoolId}
+        ORDER BY activity_schedule.activity_start_time ASC, activity.id DESC
     </select>
 
     <!-- 活动日历：按日期区间查询活动（活动时间与区间有重叠即命中，状态排除待审核） -->

@@ -41,9 +41,15 @@ public interface ActivityDao extends BaseMapper<ActivityEntity> {
 
     ActivityWithScheduleVO getActivityWithScheduleById(Long id);
 
-    Page<ActivityWithScheduleVO> notStartAndPendingEnrollActivityGlobal(Page<?> page);
+    Page<ActivityWithScheduleVO> notStartAndPendingEnrollActivityGlobal(Page<?> page,
+                                                                          @Param("categoryId") Long categoryId,
+                                                                          @Param("status") Integer status,
+                                                                          @Param("timeRange") Integer timeRange);
 
-    Page<ActivityWithScheduleVO> notStartAndPendingEnrollActivity(Page<?> page, Long schoolId);
+    Page<ActivityWithScheduleVO> notStartAndPendingEnrollActivity(Page<?> page, Long schoolId,
+                                                                  @Param("categoryId") Long categoryId,
+                                                                  @Param("status") Integer status,
+                                                                  @Param("timeRange") Integer timeRange);
 
     /**
      * 活动日历：按日期区间查询活动（活动时间与区间有重叠即命中）

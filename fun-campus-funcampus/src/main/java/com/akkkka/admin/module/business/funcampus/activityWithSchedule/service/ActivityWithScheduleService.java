@@ -685,7 +685,8 @@ public class ActivityWithScheduleService {
 
     }
 
-    public Page<ActivityWithScheduleVO> notStartAndPendingEnrollActivityPage(Long pageNum, Long pageSize){
+    public Page<ActivityWithScheduleVO> notStartAndPendingEnrollActivityPage(Long pageNum, Long pageSize,
+            Long categoryId, Integer status, Integer timeRange){
         Page<ActivityWithScheduleVO> page = new Page<>(pageNum, pageSize);
         Long userId = SmartRequestUtil.getRequestUserId();
         PortalUserEntity portalUserEntity =portalUserManager.getById(userId);
@@ -693,7 +694,7 @@ public class ActivityWithScheduleService {
             throw new BusinessException(UnexpectedErrorCode.BUSINESS_HANDING, "用户不存在");
         }
         Long schoolId = portalUserEntity.getSchoolId();
-        return activityDao.notStartAndPendingEnrollActivity(page,schoolId);
+        return activityDao.notStartAndPendingEnrollActivity(page,schoolId, categoryId, status, timeRange);
     }
 
     /**

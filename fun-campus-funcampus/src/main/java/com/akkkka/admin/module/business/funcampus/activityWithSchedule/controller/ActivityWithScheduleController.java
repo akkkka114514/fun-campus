@@ -19,6 +19,7 @@ import com.akkkka.admin.module.business.funcampus.activityCategory.service.Activ
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.entity.ActivityReviewLogEntity;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.service.ActivityReviewLogService;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.service.ActivityReviewLogValidator;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.constant.ActivityStatus;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.constant.IndexActivityPageConst;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.dao.ActivityDao;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
@@ -49,6 +50,7 @@ import com.akkkka.admin.module.business.funcampus.portalUser.domain.vo.PortalUse
 import com.akkkka.admin.module.system.backendUser.service.BackendUserService;
 import com.akkkka.admin.module.system.backendUser.service.BackendUserValidator;
 import com.akkkka.common.code.UserErrorCode;
+import com.akkkka.common.domain.IdNameVO;
 import com.akkkka.common.domain.PageResult;
 import com.akkkka.common.domain.ResponseDTO;
 import com.akkkka.common.util.SmartRequestUtil;
@@ -158,7 +160,10 @@ public class ActivityWithScheduleController {
     @Operation(summary = "首页活动列表 @author akkkka114514")
     @GetMapping("/homeData")
     public ResponseDTO<IndexActivityVO> index(@RequestParam Integer activeActivityPage,
-            @RequestParam Long pageNum, @RequestParam Long pageSize) {
+            @RequestParam Long pageNum, @RequestParam Long pageSize,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Integer status,
+            @RequestParam(required = false) Integer timeRange) {
         if(activeActivityPage == null){
             return ResponseDTO.error(UserErrorCode.PARAM_ERROR);
         }
@@ -169,19 +174,36 @@ public class ActivityWithScheduleController {
         if(pageNum == null || pageNum < 1|| pageSize == null || pageSize < 1){
             return ResponseDTO.error(UserErrorCode.PARAM_ERROR);
         }
+        // 筛选参数校验：status 仅允许时间阶段（0~4，不含 8-已取消 / 9-待审核）；timeRange 仅允许 1/7/30（基于活动开始时间的未来天数）
+        ActivityStatus filterStatus = ActivityStatus.fromCode(status);
+        if(status != null && (filterStatus == null || !filterStatus.isTimeDriven())){
+            return ResponseDTO.error(UserErrorCode.PARAM_ERROR);
+        }
+        if(timeRange != null && timeRange != 1 && timeRange != 7 && timeRange != 30){
+            return ResponseDTO.error(UserErrorCode.PARAM_ERROR);
+        }
+        if(categoryId != null && categoryId < 1){
+            return ResponseDTO.error(UserErrorCode.PARAM_ERROR);
+        }
         Page<ActivityWithScheduleVO> mySchoolActivities;
         Page<ActivityWithScheduleVO> globalActivities;
         if(activeActivityPage.equals(IndexActivityPageConst.MY_SCHOOL_ACTIVITY)){
-            mySchoolActivities = activityWithScheduleService.notStartAndPendingEnrollActivityPage(pageNum, pageSize);
-            globalActivities = activityDao.notStartAndPendingEnrollActivityGlobal(new Page<>(1L, pageSize));
+            mySchoolActivities = activityWithScheduleService.notStartAndPendingEnrollActivityPage(pageNum, pageSize, categoryId, status, timeRange);
+            globalActivities = activityDao.notStartAndPendingEnrollActivityGlobal(new Page<>(1L, pageSize), categoryId, status, timeRange);
         }else {
-            mySchoolActivities = activityWithScheduleService.notStartAndPendingEnrollActivityPage(1L, pageSize);
-            globalActivities = activityDao.notStartAndPendingEnrollActivityGlobal(new Page<>(pageNum, pageSize));
+            mySchoolActivities = activityWithScheduleService.notStartAndPendingEnrollActivityPage(1L, pageSize, categoryId, status, timeRange);
+            globalActivities = activityDao.notStartAndPendingEnrollActivityGlobal(new Page<>(pageNum, pageSize), categoryId, status, timeRange);
         }
         IndexActivityVO indexActivityVO = new IndexActivityVO();
         indexActivityVO.setMySchoolActivities(mySchoolActivities);
         indexActivityVO.setGlobalActivities(globalActivities);
         return ResponseDTO.ok(indexActivityVO);
+    }
+
+    @Operation(summary = "活动分类列表（首页筛选用） @author akkkka114514")
+    @GetMapping("/activity/category/list")
+    public ResponseDTO<List<IdNameVO>> categoryList() {
+        return ResponseDTO.ok(activityCategoryService.getAll());
     }
 
     @Operation(summary = "活动日历（按日期区间查询活动，1-本校 2-全局） @author akkkka114514")

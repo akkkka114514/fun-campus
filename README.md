@@ -369,7 +369,6 @@ pu签到二维码按钮
 - [ ] 活动时间表页面：待 Phase 0.4「活动时间表」结论（独立模块去留）
 - [✅] 学分认定审核管理页面已接通：新建 `credit-application-list.vue`（状态/关键词筛选、详情与审核弹窗、证明材料图片预览）；菜单与按钮权限已入库并关联 admin/organization 角色（顺带修复 org_reviewer_1 悬空角色引用 3→2）
 - [✅] 付费配置与订单/退款管理页面：已接通（见 Phase 9.5）
-- [ ] 组织干事用户 / 组织账号运营者页面：后端缺失（见 Phase 0.1）
 
 ---
 
@@ -492,14 +491,14 @@ CREATE TABLE `activity_refund` (
 - [✅] 活动详情接口补充付费信息：价格、退款规则、当前用户订单状态（`currentUserOrder`）
 - [✅] 消息通知：支付成功、退款到账、订单超时关闭（已接入消息模板站内信）
 
-#### 9.5 管理后台前端 —— 🟡 部分完成
+#### 9.5 管理后台前端 —— ✅ 已完成
 
 - [✅] `activity-form.vue` 已接入「付费参加」开关、价格（表单按元录入、提交换算为分）、退款规则配置（随活动表单接通一并完成）
 - [✅] 订单管理页已接通：新建 `activity-order-list.vue`（状态 / 关键词[订单号/活动标题/用户名] / 时间范围筛选、订单详情弹窗）；后端新增 `ActivityOrderAdminController`（`POST /backend/activityOrder/queryPage`、`GET /backend/activityOrder/detail`，联表带出活动标题与下单用户名）；菜单与按钮权限已入库并关联 admin/organization 角色
 - [✅] 退款管理页已接通：新建 `activity-refund-list.vue`（退款单列表 + 失败重试）；后端新增 `POST /backend/activityOrder/refundQueryPage` 与 `POST /backend/activityOrder/refundRetry`（重试=校验原单失败状态后新建退款单重走渠道受理，保留原单凭证）；菜单与按钮权限已入库并关联角色
 - [✅] 活动管理页「取消活动」已接通：行操作新增「取消活动」按钮（已结束/已取消隐藏）+ 二次确认弹窗（提示将批量退款），取消成功后列表刷新，状态经字典 `ACTIVITY_STATUS` 显示为「已取消」；字典值与按钮权限（`activity:cancel`）已入库并关联 admin/organization 角色
-- [ ] 订单导出 Excel —— 未做
-- [ ] 活动收入统计（按活动汇总报名费）
+- [✅] 订单导出 Excel 已接通：订单管理页新增「导出 Excel」按钮（按当前筛选条件导出）；后端新增 `POST /backend/activityOrder/exportExcel`（FastExcel 导出，上限 1 万条、超限提示缩小范围；11 列：订单号 / 活动标题 / 下单用户 / 订单金额（元）/ 订单状态 / 支付渠道 / 渠道订单号 / 支付时间 / 支付截止时间 / 关闭时间 / 创建时间）；按钮权限 `activityOrder:export` 已入库并关联 admin/organization 角色（2026-09-27 接口冒烟：xlsx 文件头、Content-Disposition 下载文件名、解压后中文列头与数据行均验证通过）
+- [✅] 活动收入统计已接通：新建 `activity-revenue-statistics.vue`（按支付时间范围筛选；汇总卡片【报名费总额 / 退款总额 / 净收入】+ 按活动明细表）；后端新增 `POST /backend/activityOrder/statisticsByActivity`（口径：报名费按曾支付成功订单【状态 1/3/4/5】汇总，退款只计其中的成功退款单，净收入 = 报名费 - 退款）；菜单与权限 `activityRevenue:query` 已入库并关联角色（2026-09-27 接口冒烟：净收入公式逐行成立、时间范围筛选、组织角色账号可访问均通过）
 
 #### 9.6 移动端前端 —— ✅ 核心已完成
 

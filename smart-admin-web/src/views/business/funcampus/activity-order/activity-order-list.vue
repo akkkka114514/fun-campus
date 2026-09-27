@@ -40,7 +40,13 @@
         <!---------- 表格操作行 begin ----------->
         <a-row class="smart-table-btn-block">
             <div class="smart-table-operate-block">
-                <span>付费报名订单全量查询；退款失败订单可在「退款管理」中重试</span>
+                <a-button size="small" @click="onExport" v-privilege="'activityOrder:export'">
+                    <template #icon>
+                        <DownloadOutlined />
+                    </template>
+                    导出 Excel
+                </a-button>
+                <span class="smart-margin-left10">付费报名订单全量查询；退款失败订单可在「退款管理」中重试</span>
             </div>
             <div class="smart-table-setting-block">
                 <TableOperator v-model="columns" :tableId="null" :refresh="queryData" />
@@ -267,6 +273,11 @@
         } finally {
             tableLoading.value = false;
         }
+    }
+
+    // 导出 Excel：按当前筛选条件导出（后端上限 1 万条，超限提示缩小范围）
+    function onExport() {
+        activityOrderApi.exportExcel({ ...queryForm });
     }
 
     onMounted(queryData);

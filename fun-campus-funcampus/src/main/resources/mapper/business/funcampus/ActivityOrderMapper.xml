@@ -71,4 +71,55 @@
         ORDER BY activity_order.id DESC
     </select>
 
+    <!-- 活动收入统计：按活动汇总曾支付成功订单与成功退款（管理端） -->
+    <!-- 口径：报名费只计「曾支付成功」订单（status 1/3/4/5）；退款只计这些订单中成功的退款单（status=1），
+         净收入 = 报名费 - 退款，报表内部自洽；时间范围按订单支付时间过滤 -->
+    <select id="statisticsByActivity" resultType="com.akkkka.admin.module.business.funcampus.activityOrder.domain.vo.ActivityRevenueStatisticsVO">
+        SELECT
+            t.activity_id,
+            activity.title AS activity_title,
+            t.paid_order_count,
+            t.paid_amount_fen,
+            COALESCE(r.refund_order_count, 0) AS refund_order_count,
+            COALESCE(r.refund_amount_fen, 0) AS refund_amount_fen,
+            t.paid_amount_fen - COALESCE(r.refund_amount_fen, 0) AS net_amount_fen
+        FROM (
+            SELECT
+                activity_order.activity_id,
+                COUNT(*) AS paid_order_count,
+                SUM(activity_order.amount_fen) AS paid_amount_fen
+            FROM activity_order
+            WHERE activity_order.deleted_flag = 0
+              AND activity_order.status IN (1, 3, 4, 5)
+            <if test="queryForm.beginPayTime != null">
+                AND activity_order.pay_time &gt;= #{queryForm.beginPayTime}
+            </if>
+            <if test="queryForm.endPayTime != null">
+                AND activity_order.pay_time &lt;= #{queryForm.endPayTime}
+            </if>
+            GROUP BY activity_order.activity_id
+        ) t
+        LEFT JOIN (
+            SELECT
+                activity_order.activity_id,
+                COUNT(*) AS refund_order_count,
+                SUM(activity_refund.amount_fen) AS refund_amount_fen
+            FROM activity_refund
+            INNER JOIN activity_order ON activity_order.id = activity_refund.order_id
+            WHERE activity_refund.deleted_flag = 0
+              AND activity_refund.status = 1
+              AND activity_order.deleted_flag = 0
+              AND activity_order.status IN (1, 3, 4, 5)
+            <if test="queryForm.beginPayTime != null">
+                AND activity_order.pay_time &gt;= #{queryForm.beginPayTime}
+            </if>
+            <if test="queryForm.endPayTime != null">
+                AND activity_order.pay_time &lt;= #{queryForm.endPayTime}
+            </if>
+            GROUP BY activity_order.activity_id
+        ) r ON r.activity_id = t.activity_id
+        LEFT JOIN activity ON activity.id = t.activity_id
+        ORDER BY t.paid_amount_fen DESC
+    </select>
+
 </mapper>

@@ -17,6 +17,7 @@ import com.akkkka.admin.module.business.funcampus.activityCanEnrollGrade.service
 import com.akkkka.admin.module.business.funcampus.activityCanEnrollTribe.service.ActivityCanEnrollTribeService;
 import com.akkkka.admin.module.business.funcampus.activityCategory.service.ActivityCategoryService;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.entity.ActivityReviewLogEntity;
+import com.akkkka.admin.module.business.funcampus.activityReviewLog.domain.vo.ActivityReviewLogVO;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.service.ActivityReviewLogService;
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.service.ActivityReviewLogValidator;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.constant.ActivityStatus;
@@ -61,7 +62,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
-import jakarta.websocket.server.PathParam;
 
 /**
  * 活动和时间表 组合控制器
@@ -272,11 +272,16 @@ public class ActivityWithScheduleController {
         return ResponseDTO.ok();
     }
 
-    public ResponseDTO<ActivityReviewProposalVO> getReviewProposal(@PathParam("activityId") Long activityId) {
+    @Operation(summary = "获取待审核活动编辑提案（编辑待审核活动时回显数据） @author akkkka114514")
+    @GetMapping("/activity/reviewProposal")
+    public ResponseDTO<ActivityReviewProposalVO> getReviewProposal(@RequestParam Long activityId) {
         ActivityReviewProposalVO result = new ActivityReviewProposalVO();
 
         // 获取活动实体
         ActivityEntity activity = activityManager.getById(activityId);
+        if (activity == null) {
+            return ResponseDTO.error(UserErrorCode.PARAM_ERROR);
+        }
         ActivityVO activityVO = new ActivityVO();
         activityVO.setId(activity.getId());
         activityVO.setTitle(activity.getTitle());
@@ -327,8 +332,22 @@ public class ActivityWithScheduleController {
         scheduleVO.setSignoutEndTime(schedule.getSignoutEndTime());
         result.setScheduleVO(scheduleVO);
 
-        // 查询当前审核阶段的审核日志
+        // 查询当前审核阶段的审核日志（可能不存在，如尚未进入审核流程）
         ActivityReviewLogEntity reviewLog = reviewLogService.getLatestReviewLog(activityId);
+        if (reviewLog != null) {
+            ActivityReviewLogVO reviewLogVO = new ActivityReviewLogVO();
+            reviewLogVO.setId(reviewLog.getId());
+            reviewLogVO.setActivityId(reviewLog.getActivityId());
+            reviewLogVO.setReviewerId(reviewLog.getReviewerId());
+            reviewLogVO.setReviewerName(reviewLog.getReviewerName());
+            reviewLogVO.setReviewStage(reviewLog.getReviewStage() != null ? reviewLog.getReviewStage().getOrder() : null);
+            reviewLogVO.setAction(reviewLog.getAction() != null ? reviewLog.getAction().ordinal() : null);
+            reviewLogVO.setRejectReason(reviewLog.getRejectReason());
+            reviewLogVO.setCheckRemark(reviewLog.getCheckRemark());
+            reviewLogVO.setCreateTime(reviewLog.getCreateTime());
+            reviewLogVO.setDeletedFlag(reviewLog.getDeletedFlag());
+            result.setReviewLogVO(reviewLogVO);
+        }
 
         result.setCanEnrollCollege(collegeService.listIdNameByActivityId(activityId));
         result.setCanEnrollTribe(tribeService.getIdNameByActivityId(activityId));

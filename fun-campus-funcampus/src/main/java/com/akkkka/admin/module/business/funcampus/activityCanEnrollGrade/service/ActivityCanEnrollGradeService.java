@@ -134,6 +134,10 @@ public class ActivityCanEnrollGradeService {
                         .eq(ActivityCanEnrollGradeEntity::getActivityId, activityId)
                         .eq(ActivityCanEnrollGradeEntity::getDeletedFlag,false);
                 List<ActivityCanEnrollGradeEntity> list = canEnrollGradeManager.list(qw);
+                // 空集合调用 updateBatchById 返回 false，会误报系统错误；无配置行本就无需删除
+                if(list.isEmpty()){
+                    return;
+                }
                 for(ActivityCanEnrollGradeEntity e:list){
                     e.setDeletedFlag(true);
                 }

@@ -2,6 +2,7 @@ package com.akkkka.admin.module.business.funcampus.activityReviewLog.service;
 
 import com.akkkka.admin.module.business.funcampus.MybatisPlusTestRegistry;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.domain.entity.ActivityEnrollmentEntity;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.manager.ActivityEnrollmentManager;
 import com.akkkka.admin.module.business.funcampus.activityEnrollment.service.ActivityEnrollmentService;
@@ -267,15 +268,17 @@ public class ActivityReviewLogServiceTest {
         ActivityReviewLogEntity curLog = reviewLog(1L, 7L, ActivityReviewStage.CONTENT_CHECK, null, 2L);
         stubDoReviewChain(curLog, nextForm);
         runTransactionNow();
-        when(activityReviewLogManager.update(any())).thenReturn(true);
+        // 生产实现为两参 update(实体, wrapper)：实体提供 SET 内容，wrapper 仅按主键定位
+        when(activityReviewLogManager.update(any(ActivityReviewLogEntity.class), any(LambdaUpdateWrapper.class))).thenReturn(true);
         when(activityReviewLogManager.save(any())).thenReturn(true);
 
         service.check(curForm, nextForm);
 
-        // 旧日志补上 action
-        ArgumentCaptor<com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper> updateCaptor =
-                ArgumentCaptor.forClass(com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper.class);
-        verify(activityReviewLogManager).update(updateCaptor.capture());
+        // 旧日志补上 action：两参 update（实体携带 action，wrapper 仅按主键定位）
+        ArgumentCaptor<ActivityReviewLogEntity> updateCaptor = ArgumentCaptor.forClass(ActivityReviewLogEntity.class);
+        verify(activityReviewLogManager).update(updateCaptor.capture(), any(LambdaUpdateWrapper.class));
+        assertEquals(1L, updateCaptor.getValue().getId());
+        assertEquals(ActivityReviewEvent.CHECK_PASS, updateCaptor.getValue().getAction());
         // 追加下一阶段日志
         ArgumentCaptor<ActivityReviewLogEntity> saveCaptor = ArgumentCaptor.forClass(ActivityReviewLogEntity.class);
         verify(activityReviewLogManager).save(saveCaptor.capture());
@@ -364,7 +367,8 @@ public class ActivityReviewLogServiceTest {
         // 当前阶段为报名审核：跳过 doReviewTransaction 中的活动/后台用户强校验
         stubDoReviewChain(reviewLog(1L, 7L, ActivityReviewStage.ENROLLMENT_REVIEW, null, 2L), nextForm);
         runTransactionNow();
-        when(activityReviewLogManager.update(any())).thenReturn(true);
+        // 生产实现为两参 update(实体, wrapper)：实体提供 SET 内容，wrapper 仅按主键定位
+        when(activityReviewLogManager.update(any(ActivityReviewLogEntity.class), any(LambdaUpdateWrapper.class))).thenReturn(true);
         when(activityReviewLogManager.save(any())).thenReturn(true);
 
         service.passFinalReview(curForm, nextForm, withScheduleUpdate);
@@ -400,7 +404,8 @@ public class ActivityReviewLogServiceTest {
         when(enrollmentManager.saveBatch(any())).thenReturn(true);
         stubDoReviewChain(reviewLog(1L, 7L, ActivityReviewStage.ENROLLMENT_REVIEW, null, 2L), nextForm);
         runTransactionNow();
-        when(activityReviewLogManager.update(any())).thenReturn(true);
+        // 生产实现为两参 update(实体, wrapper)：实体提供 SET 内容，wrapper 仅按主键定位
+        when(activityReviewLogManager.update(any(ActivityReviewLogEntity.class), any(LambdaUpdateWrapper.class))).thenReturn(true);
         when(activityReviewLogManager.save(any())).thenReturn(true);
 
         service.passFinalReview(curForm, nextForm, null);
@@ -518,7 +523,8 @@ public class ActivityReviewLogServiceTest {
         ActivityReviewLogAddForm nextForm = nextReviewAddForm(7L, ActivityReviewStage.COMPLETION_REVIEW);
         stubDoReviewChain(reviewLog(1L, 7L, ActivityReviewStage.ENROLLMENT_REVIEW, null, 2L), nextForm);
         runTransactionNow();
-        when(activityReviewLogManager.update(any())).thenReturn(true);
+        // 生产实现为两参 update(实体, wrapper)：实体提供 SET 内容，wrapper 仅按主键定位
+        when(activityReviewLogManager.update(any(ActivityReviewLogEntity.class), any(LambdaUpdateWrapper.class))).thenReturn(true);
         when(activityReviewLogManager.save(any())).thenReturn(true);
 
         service.reviewEnroll(curForm, nextForm, null);
@@ -568,7 +574,8 @@ public class ActivityReviewLogServiceTest {
         when(enrollmentManager.saveBatch(any())).thenReturn(true);
         stubDoReviewChain(reviewLog(1L, 7L, ActivityReviewStage.ENROLLMENT_REVIEW, null, 2L), nextForm);
         runTransactionNow();
-        when(activityReviewLogManager.update(any())).thenReturn(true);
+        // 生产实现为两参 update(实体, wrapper)：实体提供 SET 内容，wrapper 仅按主键定位
+        when(activityReviewLogManager.update(any(ActivityReviewLogEntity.class), any(LambdaUpdateWrapper.class))).thenReturn(true);
         when(activityReviewLogManager.save(any())).thenReturn(true);
 
         ActivityEntity activity7 = activity(7L, 2L, false);

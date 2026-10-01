@@ -159,7 +159,11 @@ public class ActivityReviewLogService {
         reviewLogValidator.validateCurrentReviewStage(curReviewEntity.getActivityId(), curReviewEntity.getReviewStage());
         reviewLogValidator.validateNextReviewStage(curReviewEntity.getActivityId(),nextReview.getReviewStage());
         reviewLogValidator.validateReviewAction(curReviewEntity.getReviewStage(),currentReview.getAction());
-        LambdaUpdateWrapper<ActivityReviewLogEntity> uw = new LambdaUpdateWrapper<>(ActivityReviewLogUpdateForm.convert(currentReview));
+        // 更新内容来自实体非 null 字段，WHERE 仅按主键定位；
+        // 不能 new LambdaUpdateWrapper<>(实体)：实体会整体变成 WHERE 条件且 SET 缺失，导致 UPDATE 语句非法
+        ActivityReviewLogEntity toUpdate = ActivityReviewLogUpdateForm.convert(currentReview);
+        LambdaUpdateWrapper<ActivityReviewLogEntity> uw = new LambdaUpdateWrapper<>();
+        uw.eq(ActivityReviewLogEntity::getId, toUpdate.getId());
 
 
         if(!Objects.equals(curReviewEntity.getReviewStage(),
@@ -172,7 +176,7 @@ public class ActivityReviewLogService {
         ActivityReviewLogEntity toAdd = ActivityReviewLogAddForm.convert(nextReview);
         transactionTemplate.executeWithoutResult(status -> {
             try{
-                if(!activityReviewLogManager.update(uw)){
+                if(!activityReviewLogManager.update(toUpdate, uw)){
                     throw new BusinessException(SystemErrorCode.SYSTEM_ERROR);
                 }
                 if(!activityReviewLogManager.save(toAdd)){

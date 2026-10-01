@@ -136,6 +136,10 @@ public class ActivityCanEnrollTribeService {
                         .eq(ActivityCanEnrollTribeEntity::getActivityId, activityId)
                         .eq(ActivityCanEnrollTribeEntity::getDeletedFlag,false);
                 List<ActivityCanEnrollTribeEntity> list = canEnrollTribeManager.list(qw);
+                // 空集合调用 updateBatchById 返回 false，会误报系统错误；无配置行本就无需删除
+                if(list.isEmpty()){
+                    return;
+                }
                 for(ActivityCanEnrollTribeEntity e:list){
                     e.setDeletedFlag(true);
                 }

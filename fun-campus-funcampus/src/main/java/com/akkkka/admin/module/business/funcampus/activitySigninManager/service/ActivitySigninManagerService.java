@@ -118,6 +118,10 @@ public class ActivitySigninManagerService {
                         .eq(ActivitySigninManagerEntity::getActivityId, activityId)
                         .eq(ActivitySigninManagerEntity::getDeletedFlag,false);
                 List<ActivitySigninManagerEntity> list = signinManagerManager.list(qw);
+                // 空集合调用 updateBatchById 返回 false，会误报系统错误；无配置行本就无需删除
+                if(list.isEmpty()){
+                    return;
+                }
                 for(ActivitySigninManagerEntity e:list){
                     e.setDeletedFlag(true);
                 }

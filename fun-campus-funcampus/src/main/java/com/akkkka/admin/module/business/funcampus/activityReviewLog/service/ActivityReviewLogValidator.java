@@ -40,12 +40,12 @@ public class ActivityReviewLogValidator {
     }
 
     public void validateCurrentReviewStage(Long activityId,ActivityReviewStage currentReviewStage){
+        // 注意：不能只 select(action)，阶段进行中时该列为 NULL，MyBatis 会把全 NULL 行映射为 null 实体，误判"该阶段不存在"
         ActivityReviewLogEntity reviewLog = reviewLogManager.getOne(
                 Wrappers.lambdaQuery(ActivityReviewLogEntity.class)
                         .eq(ActivityReviewLogEntity::getActivityId,activityId)
                         .eq(ActivityReviewLogEntity::getDeletedFlag,false)
                         .eq(ActivityReviewLogEntity::getReviewStage,currentReviewStage)
-                        .select(ActivityReviewLogEntity::getAction)
         );
         if(reviewLog==null){
             throw new BusinessException(UserErrorCode.PARAM_ERROR,

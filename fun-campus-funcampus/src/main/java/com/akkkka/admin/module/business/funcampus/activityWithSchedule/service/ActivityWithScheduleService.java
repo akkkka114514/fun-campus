@@ -822,7 +822,6 @@ public class ActivityWithScheduleService {
     //活动完结申请
     //attachment:完结证明材料
     //TODO 添加未审核活动时可能要上传复数附件
-    //TODO 把审核流程重写成责任链加策略模式
     public void endActivityProposal(
             Long reviewLogId,
             List<String> fileKeys){

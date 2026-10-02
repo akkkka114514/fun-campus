@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import com.akkkka.admin.module.business.funcampus.activityOrder.constant.RefundReasonType;
 import com.akkkka.admin.module.business.funcampus.activityOrder.constant.RefundStatus;
+import com.akkkka.module.support.pay.port.PayRefundView;
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -22,7 +23,7 @@ import lombok.Data;
 
 @Data
 @TableName("activity_refund")
-public class ActivityRefundEntity {
+public class ActivityRefundEntity implements PayRefundView {
 
     /**
      * 主键

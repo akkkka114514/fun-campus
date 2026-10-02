@@ -12,12 +12,13 @@ import com.akkkka.admin.module.business.funcampus.activityOrder.service.Activity
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.constant.ActivityStatus;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityScheduleEntity;
-import com.akkkka.admin.module.business.funcampus.payment.constant.PayChannelEnum;
-import com.akkkka.admin.module.business.funcampus.payment.domain.dto.PayNotifyResult;
-import com.akkkka.admin.module.business.funcampus.payment.domain.dto.RefundNotifyResult;
-import com.akkkka.admin.module.business.funcampus.payment.service.PaymentService;
 import com.akkkka.admin.module.business.funcampus.portalUser.domain.entity.PortalUserEntity;
 import com.akkkka.common.exception.BusinessException;
+import com.akkkka.module.support.pay.channel.MockChannelLedger;
+import com.akkkka.module.support.pay.constant.PayChannelEnum;
+import com.akkkka.module.support.pay.domain.dto.PayNotifyResult;
+import com.akkkka.module.support.pay.domain.dto.RefundNotifyResult;
+import com.akkkka.module.support.pay.service.PaymentService;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -60,6 +61,9 @@ class PaidActivityFlowIntegrationTest extends BaseIntegrationTest {
     @Resource
     private PaymentService paymentService;
 
+    @Resource
+    private MockChannelLedger mockChannelLedger;
+
     private PortalUserEntity buyer;
 
     private ActivityEntity paidActivity;
@@ -84,7 +88,12 @@ class PaidActivityFlowIntegrationTest extends BaseIntegrationTest {
         assertNotNull(createVO.getOrderNo());
         assertEquals(PRICE_FEN, createVO.getAmountFen());
         assertNotNull(createVO.getCashierUrl(), "应返回收银台跳转链接");
-        assertTrue(createVO.getCashierUrl().contains(createVO.getOrderNo()));
+        // 收银台链接携带渠道预支付单号（prepayId），渠道簿可据此定位回本订单
+        String cashierUrl = createVO.getCashierUrl();
+        assertTrue(cashierUrl.startsWith("/portal/payment/mock/cashier?prepayId="), "收银台链接应携带渠道预支付单号");
+        MockChannelLedger.MockPrepayOrder prepayOrder = mockChannelLedger.getByPrepayId(cashierUrl.substring(cashierUrl.indexOf('=') + 1));
+        assertNotNull(prepayOrder, "渠道簿应存在该预支付单");
+        assertEquals(createVO.getOrderNo(), prepayOrder.getOrderNo());
 
         ActivityOrderEntity order = activityOrderManager.getByOrderNo(createVO.getOrderNo());
         assertNotNull(order);

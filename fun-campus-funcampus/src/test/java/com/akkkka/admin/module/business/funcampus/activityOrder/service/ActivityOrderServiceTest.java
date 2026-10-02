@@ -13,10 +13,6 @@ import com.akkkka.admin.module.business.funcampus.activityWithSchedule.dao.Activ
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityValidator;
-import com.akkkka.admin.module.business.funcampus.payment.domain.dto.PayPrepayResult;
-import com.akkkka.admin.module.business.funcampus.payment.domain.entity.PayeeAccountEntity;
-import com.akkkka.admin.module.business.funcampus.payment.service.PayeeAccountService;
-import com.akkkka.admin.module.business.funcampus.payment.service.PaymentService;
 import com.akkkka.admin.module.business.funcampus.portalLogin.domain.RequestPortalUser;
 import com.akkkka.admin.module.business.funcampus.portalUser.domain.entity.PortalUserEntity;
 import com.akkkka.admin.module.business.funcampus.portalUser.manager.PortalUserManager;
@@ -25,6 +21,10 @@ import com.akkkka.common.code.UserErrorCode;
 import com.akkkka.common.enumeration.UserTypeEnum;
 import com.akkkka.common.exception.BusinessException;
 import com.akkkka.common.util.SmartRequestUtil;
+import com.akkkka.module.support.pay.domain.dto.PayPrepayResult;
+import com.akkkka.module.support.pay.domain.entity.PayeeAccountEntity;
+import com.akkkka.module.support.pay.service.PayeeAccountService;
+import com.akkkka.module.support.pay.service.PaymentService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -142,7 +142,7 @@ public class ActivityOrderServiceTest {
         when(portalUserManager.getById(20L)).thenReturn(new PortalUserEntity());
         when(orderManager.listActiveOrders(7L, 20L)).thenReturn(List.of());
         // 收款方解析：仅金额校验通过后的用例会走到，lenient 避免价格未配置用例报多余打桩
-        lenient().when(payeeAccountService.resolvePayee(any())).thenReturn(payeeAccount());
+        lenient().when(payeeAccountService.resolvePayee(any(), any(), any())).thenReturn(payeeAccount());
     }
 
     // ---------------------------------- 下单 createOrder ----------------------------------
@@ -390,7 +390,7 @@ public class ActivityOrderServiceTest {
         order.setExpireTime(LocalDateTime.now().plusMinutes(10));
         when(orderManager.getByOrderNo("AO1")).thenReturn(order);
         when(activityManager.getById(7L)).thenReturn(activity(ActivityStatus.ENROLLING, true, 150));
-        when(payeeAccountService.resolvePayee(any())).thenReturn(payeeAccount());
+        when(payeeAccountService.resolvePayee(any(), any(), any())).thenReturn(payeeAccount());
         PayPrepayResult prepayResult = new PayPrepayResult();
         prepayResult.setCashierUrl("/portal/payment/mock/cashier?orderNo=AO1");
         when(paymentService.prepay(order)).thenReturn(prepayResult);

@@ -1,0 +1,47 @@
+package com.akkkka.module.support.pay.domain.dto;
+
+import com.akkkka.module.support.pay.constant.PayChannelEnum;
+import io.swagger.v3.oas.annotations.media.Schema;
+
+import lombok.Data;
+
+/**
+ * 支付回调解析结果
+ * <p>
+ * 由各渠道 PaymentChannel.parsePayCallback 验签解析后产出，
+ * 统一收敛到 PaymentService.handlePayNotify 处理（mock 与真实渠道同一入口）
+ *
+ * author:akkkka114514
+ * create at 2026-09-24
+ */
+@Data
+public class PayNotifyResult {
+
+    /** 渠道 */
+    @Schema(description = "渠道")
+    private PayChannelEnum channel;
+
+    /** 商户订单号 */
+    @Schema(description = "商户订单号")
+    private String orderNo;
+
+    /** 渠道订单号 */
+    @Schema(description = "渠道订单号")
+    private String channelOrderNo;
+
+    /** 支付金额（分），用于与订单金额比对，防止金额篡改 */
+    @Schema(description = "支付金额（分），用于与订单金额比对，防止金额篡改")
+    private Integer amountFen;
+
+    /** 支付是否成功 */
+    @Schema(description = "支付是否成功")
+    private boolean success;
+
+    /** 失败原因（success=false 时有值） */
+    @Schema(description = "失败原因（success=false 时有值）")
+    private String failReason;
+
+    /** 回调验签是否失败（true 时回调入口直接应答 FAIL 拒绝，不进入业务处理：防伪造/防重放/渠道无预支付单） */
+    @Schema(description = "回调验签是否失败（true 时不进入业务处理，回调入口直接拒绝）")
+    private boolean verifyFailed;
+}

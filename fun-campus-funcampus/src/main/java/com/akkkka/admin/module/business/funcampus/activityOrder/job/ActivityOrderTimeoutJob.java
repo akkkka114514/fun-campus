@@ -16,14 +16,14 @@ import com.akkkka.admin.module.business.funcampus.activityOrder.service.Activity
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.dao.ActivityEnrollNumDao;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
-import com.akkkka.admin.module.business.funcampus.payment.domain.dto.PayNotifyResult;
-import com.akkkka.admin.module.business.funcampus.payment.domain.dto.PayQueryResult;
-import com.akkkka.admin.module.business.funcampus.payment.service.PaymentService;
 import com.akkkka.common.enumeration.UserTypeEnum;
 import com.akkkka.module.support.job.core.SmartJob;
 import com.akkkka.module.support.message.constant.MessageTemplateEnum;
 import com.akkkka.module.support.message.domain.MessageTemplateSendForm;
 import com.akkkka.module.support.message.service.MessageService;
+import com.akkkka.module.support.pay.domain.dto.PayNotifyResult;
+import com.akkkka.module.support.pay.domain.dto.PayQueryResult;
+import com.akkkka.module.support.pay.service.PaymentService;
 
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;

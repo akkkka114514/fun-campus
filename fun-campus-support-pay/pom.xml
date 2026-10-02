@@ -1,0 +1,35 @@
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.akkkka</groupId>
+        <artifactId>fun-campus-parent</artifactId>
+        <version>3.0.0</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>fun-campus-support-pay</artifactId>
+    <version>3.0.0</version>
+
+    <name>fun-campus-support-pay</name>
+
+    <description>支付支撑模块：渠道仿真（Mock 渠道/验签/预支付单/异步投递）+ 回调编排 + 收款账户（多主体收款）</description>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>com.akkkka</groupId>
+            <artifactId>fun-campus-core</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+
+        <!-- 站内信：支付成功/退款到账通知 -->
+        <dependency>
+            <groupId>com.akkkka</groupId>
+            <artifactId>fun-campus-support-feature</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+
+    </dependencies>
+
+</project>

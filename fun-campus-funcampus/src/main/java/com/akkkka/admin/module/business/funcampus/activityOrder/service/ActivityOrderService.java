@@ -29,10 +29,6 @@ import com.akkkka.admin.module.business.funcampus.activityWithSchedule.dao.Activ
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityValidator;
-import com.akkkka.admin.module.business.funcampus.payment.constant.PayChannelEnum;
-import com.akkkka.admin.module.business.funcampus.payment.domain.entity.PayeeAccountEntity;
-import com.akkkka.admin.module.business.funcampus.payment.service.PayeeAccountService;
-import com.akkkka.admin.module.business.funcampus.payment.service.PaymentService;
 import com.akkkka.admin.module.business.funcampus.portalUser.domain.entity.PortalUserEntity;
 import com.akkkka.admin.module.business.funcampus.portalUser.manager.PortalUserManager;
 import com.akkkka.admin.module.business.funcampus.portalUser.service.PortalUserValidator;
@@ -45,6 +41,10 @@ import com.akkkka.common.util.SmartExcelUtil;
 import com.akkkka.common.util.SmartPageUtil;
 import com.akkkka.common.util.SmartRequestUtil;
 import com.akkkka.common.util.SmartStringUtil;
+import com.akkkka.module.support.pay.constant.PayChannelEnum;
+import com.akkkka.module.support.pay.domain.entity.PayeeAccountEntity;
+import com.akkkka.module.support.pay.service.PayeeAccountService;
+import com.akkkka.module.support.pay.service.PaymentService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
 import lombok.AllArgsConstructor;
@@ -142,7 +142,7 @@ public class ActivityOrderService {
         }
 
         // 收款方解析：按活动归属（组织→学院→学校）解析收款商户号，未开户/停用直接拒绝下单
-        PayeeAccountEntity payee = payeeAccountService.resolvePayee(activity);
+        PayeeAccountEntity payee = resolvePayee(activity);
 
         ActivityOrderEntity order = new ActivityOrderEntity();
         order.setOrderNo(OrderNoUtil.generate(OrderNoUtil.ORDER_PREFIX));
@@ -243,10 +243,18 @@ public class ActivityOrderService {
         if (activity == null) {
             throw new BusinessException(UserErrorCode.PARAM_ERROR, "订单关联活动不存在");
         }
-        PayeeAccountEntity payee = payeeAccountService.resolvePayee(activity);
+        PayeeAccountEntity payee = resolvePayee(activity);
         order.setPayeeAccountNo(payee.getPayeeNo());
         order.setPayeeName(payee.getOwnerName());
         orderManager.updateById(order);
+    }
+
+    /**
+     * 按活动归属解析收款方（支付模块入参为三归属字段，不依赖活动实体）
+     */
+    private PayeeAccountEntity resolvePayee(ActivityEntity activity) {
+        return payeeAccountService.resolvePayee(activity.getActivityBelongToOrganizationId(),
+                activity.getActivityBelongToCollegeId(), activity.getActivityBelongToSchoolId());
     }
 
     /**

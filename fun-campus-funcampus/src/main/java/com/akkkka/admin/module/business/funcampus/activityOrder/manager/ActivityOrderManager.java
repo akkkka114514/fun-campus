@@ -6,7 +6,7 @@ import java.util.List;
 import com.akkkka.admin.module.business.funcampus.activityOrder.constant.OrderStatus;
 import com.akkkka.admin.module.business.funcampus.activityOrder.dao.ActivityOrderDao;
 import com.akkkka.admin.module.business.funcampus.activityOrder.domain.entity.ActivityOrderEntity;
-import com.akkkka.admin.module.business.funcampus.payment.constant.PayChannelEnum;
+import com.akkkka.module.support.pay.constant.PayChannelEnum;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;

@@ -54,6 +54,13 @@
             <version>3.0.0</version>
         </dependency>
 
+        <!-- 支付支撑：渠道/回调编排（PaymentOrderPort 等端口实现侧） -->
+        <dependency>
+            <groupId>com.akkkka</groupId>
+            <artifactId>fun-campus-support-pay</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+
         <!-- 二维码生成：签到二维码 -->
         <dependency>
             <groupId>com.google.zxing</groupId>

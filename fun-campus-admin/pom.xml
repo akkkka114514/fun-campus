@@ -60,6 +60,13 @@
             <version>3.0.0</version>
         </dependency>
 
+        <!-- 支付支撑：集成测试直接装配支付链路（渠道/回调/收款账户） -->
+        <dependency>
+            <groupId>com.akkkka</groupId>
+            <artifactId>fun-campus-support-pay</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+
     </dependencies>
 
     <build>

@@ -60,13 +60,27 @@ public class ActivityOrderLogService {
     }
 
     /**
+     * 系统操作留痕（跨模块端口调用：只记订单主键与单号，不反查订单实体）
+     */
+    public void recordSystem(Long orderId, String orderNo, OrderLogAction action, String detail) {
+        saveLog(orderId, orderNo, action, OrderLogOperatorType.SYSTEM, null, detail);
+    }
+
+    /**
      * 统一落库入口：留痕失败仅告警，不阻断主流程
      */
     public void record(ActivityOrderEntity order, OrderLogAction action, OrderLogOperatorType operatorType, Long operatorId, String detail) {
+        saveLog(order.getId(), order.getOrderNo(), action, operatorType, operatorId, detail);
+    }
+
+    /**
+     * 落库实现：留痕失败仅告警，不阻断主流程
+     */
+    private void saveLog(Long orderId, String orderNo, OrderLogAction action, OrderLogOperatorType operatorType, Long operatorId, String detail) {
         try {
             ActivityOrderLogEntity logEntity = new ActivityOrderLogEntity();
-            logEntity.setOrderId(order.getId());
-            logEntity.setOrderNo(order.getOrderNo());
+            logEntity.setOrderId(orderId);
+            logEntity.setOrderNo(orderNo);
             logEntity.setAction(action);
             logEntity.setOperatorType(operatorType);
             logEntity.setOperatorId(operatorId);
@@ -74,7 +88,7 @@ public class ActivityOrderLogService {
             logEntity.setDeletedFlag(false);
             orderLogManager.save(logEntity);
         } catch (Exception e) {
-            log.warn("订单操作留痕失败：orderNo:{}，action:{}", order.getOrderNo(), action, e);
+            log.warn("订单操作留痕失败：orderNo:{}，action:{}", orderNo, action, e);
         }
     }
 

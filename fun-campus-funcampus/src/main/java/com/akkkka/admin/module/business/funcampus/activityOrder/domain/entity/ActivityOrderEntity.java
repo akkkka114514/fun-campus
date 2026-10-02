@@ -3,7 +3,8 @@ package com.akkkka.admin.module.business.funcampus.activityOrder.domain.entity;
 import java.time.LocalDateTime;
 
 import com.akkkka.admin.module.business.funcampus.activityOrder.constant.OrderStatus;
-import com.akkkka.admin.module.business.funcampus.payment.constant.PayChannelEnum;
+import com.akkkka.module.support.pay.constant.PayChannelEnum;
+import com.akkkka.module.support.pay.port.PayOrderView;
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -22,7 +23,7 @@ import lombok.Data;
 
 @Data
 @TableName("activity_order")
-public class ActivityOrderEntity {
+public class ActivityOrderEntity implements PayOrderView {
 
     /**
      * 主键
@@ -108,4 +109,33 @@ public class ActivityOrderEntity {
      * 是否已删除
      */
     private Boolean deletedFlag;
+
+    /**
+     * 以下为 PayOrderView 端口适配：支付模块只消费语义结果，不依赖 OrderStatus 枚举
+     */
+    @Override
+    public boolean isWaitPay() {
+        return status == OrderStatus.WAIT_PAY;
+    }
+
+    @Override
+    public boolean isPaid() {
+        return status == OrderStatus.PAID;
+    }
+
+    @Override
+    public boolean isClosed() {
+        return status == OrderStatus.CLOSED;
+    }
+
+    @Override
+    public boolean isInRefundFlow() {
+        return status == OrderStatus.REFUNDING || status == OrderStatus.REFUNDED
+                || status == OrderStatus.REFUND_FAILED;
+    }
+
+    @Override
+    public String getStatusText() {
+        return status == null ? null : status.getLabel();
+    }
 }

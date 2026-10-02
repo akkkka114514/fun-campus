@@ -28,6 +28,7 @@ import com.akkkka.admin.module.business.funcampus.payment.channel.PaymentChannel
 import com.akkkka.admin.module.business.funcampus.payment.constant.PayChannelEnum;
 import com.akkkka.admin.module.business.funcampus.payment.domain.dto.PayNotifyResult;
 import com.akkkka.admin.module.business.funcampus.payment.domain.dto.PayPrepayResult;
+import com.akkkka.admin.module.business.funcampus.payment.domain.dto.PayQueryResult;
 import com.akkkka.admin.module.business.funcampus.payment.domain.dto.RefundChannelResult;
 import com.akkkka.admin.module.business.funcampus.payment.domain.dto.RefundNotifyResult;
 import com.akkkka.common.code.SystemErrorCode;
@@ -93,12 +94,20 @@ public class PaymentService implements PaymentNotifyHandler {
     }
 
     /**
+     * 主动查单：向订单所属渠道查询真实支付结果（超时关单任务关单前确认使用）
+     */
+    public PayQueryResult queryPay(ActivityOrderEntity order) {
+        PaymentChannel channel = requireChannel(resolveOrderChannel(order));
+        return channel.queryPay(order);
+    }
+
+    /**
      * 发起渠道退款：受理成功不代表到账，最终以渠道异步回调为准
      *
      * @return 渠道受理结果（accepted=false 时调用方需回滚订单状态）
      */
     public RefundChannelResult refund(ActivityOrderEntity order, ActivityRefundEntity refund) {
-        PaymentChannel channel = requireChannel(resolveRefundChannel(order));
+        PaymentChannel channel = requireChannel(resolveOrderChannel(order));
         return channel.refund(order, refund);
     }
 
@@ -262,9 +271,9 @@ public class PaymentService implements PaymentNotifyHandler {
     }
 
     /**
-     * 解析退款渠道：优先原路退回（订单支付时记录的渠道），兜底当前启用渠道
+     * 解析订单所属渠道：优先订单支付时记录的渠道（退款原路退回/查单均使用同一渠道），兜底当前启用渠道
      */
-    private PayChannelEnum resolveRefundChannel(ActivityOrderEntity order) {
+    private PayChannelEnum resolveOrderChannel(ActivityOrderEntity order) {
         if (order.getPayChannel() != null) {
             return order.getPayChannel();
         }

@@ -7,6 +7,7 @@ import com.akkkka.admin.module.business.funcampus.activityOrder.domain.entity.Ac
 import com.akkkka.admin.module.business.funcampus.payment.constant.PayChannelEnum;
 import com.akkkka.admin.module.business.funcampus.payment.domain.dto.PayNotifyResult;
 import com.akkkka.admin.module.business.funcampus.payment.domain.dto.PayPrepayResult;
+import com.akkkka.admin.module.business.funcampus.payment.domain.dto.PayQueryResult;
 import com.akkkka.admin.module.business.funcampus.payment.domain.dto.RefundChannelResult;
 import com.akkkka.admin.module.business.funcampus.payment.domain.dto.RefundNotifyResult;
 
@@ -38,12 +39,22 @@ public interface PaymentChannel {
     RefundChannelResult refund(ActivityOrderEntity order, ActivityRefundEntity refund);
 
     /**
-     * 验签并解析支付回调参数（mock 渠道不做验签）
+     * 主动查单：向渠道查询订单真实支付结果
+     * <p>
+     * 超时关单任务在关单前调用（回调可能丢失）：
+     * 渠道已支付 → 走回调同一入账路径补偿；确认未支付 → 才允许关单，
+     * 避免"资金已入账但订单被关闭"的不一致
+     */
+    PayQueryResult queryPay(ActivityOrderEntity order);
+
+    /**
+     * 验签并解析支付回调参数；验签失败（或渠道侧校验不通过）时置 verifyFailed=true，
+     * 由回调入口直接拒绝，不进入业务处理
      */
     PayNotifyResult parsePayCallback(Map<String, String> params);
 
     /**
-     * 验签并解析退款回调参数（mock 渠道不做验签）
+     * 验签并解析退款回调参数（退款回调仅渠道服务器内部投递，mock 渠道不做验签）
      */
     RefundNotifyResult parseRefundCallback(Map<String, String> params);
 }

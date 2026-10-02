@@ -40,4 +40,8 @@ public class PayNotifyResult {
     /** 失败原因（success=false 时有值） */
     @Schema(description = "失败原因（success=false 时有值）")
     private String failReason;
+
+    /** 回调验签是否失败（true 时回调入口直接应答 FAIL 拒绝，不进入业务处理：防伪造/防重放/渠道无预支付单） */
+    @Schema(description = "回调验签是否失败（true 时不进入业务处理，回调入口直接拒绝）")
+    private boolean verifyFailed;
 }

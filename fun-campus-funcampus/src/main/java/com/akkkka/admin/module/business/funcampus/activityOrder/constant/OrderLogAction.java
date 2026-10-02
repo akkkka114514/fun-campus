@@ -25,7 +25,8 @@ public enum OrderLogAction {
     REFUND_APPLY(6, "发起退款申请"),
     REFUND_SUCCESS(7, "退款成功"),
     REFUND_FAILED(8, "退款失败"),
-    REFUND_RETRY(9, "管理端重试退款");
+    REFUND_RETRY(9, "管理端重试退款"),
+    QUERY_COMPENSATE(10, "查单补偿入账");
 
     @EnumValue
     private final int code;

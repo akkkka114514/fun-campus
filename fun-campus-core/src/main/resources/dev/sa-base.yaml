@@ -161,8 +161,19 @@ pay:
   # 启用的支付渠道：mock / wechat / alipay
   channel: mock
   mock:
-    # 模拟渠道异步退款通知的延时投递秒数（0=立即投递）
+    # 模拟渠道异步通知的首次投递延时秒数（0=立即投递）
     callback-delay-seconds: 1
+    # 渠道回调签名密钥（HMAC-SHA256，模拟真实渠道验签机制）
+    sign-secret: fun-campus-mock-pay-secret
+    # 回调时间戳容忍窗口（秒），超出视为重放攻击拒绝
+    timestamp-tolerance-seconds: 300
+    # 严格校验预支付单：渠道侧无预支付单/未支付的「支付成功」回调直接拒绝
+    # （压测等直连回调场景可临时改为 false 放行）
+    strict-prepay-check: true
+    # 渠道异步通知总投递次数（>1 时未收到成功应答会按间隔重投）
+    deliver-times: 1
+    # 渠道重投间隔（秒）
+    retry-delay-seconds: 5
 
 # sa-token 配置
 sa-token:

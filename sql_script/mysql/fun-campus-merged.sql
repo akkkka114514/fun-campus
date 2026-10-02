@@ -3002,7 +3002,7 @@ CREATE TABLE `activity_order_log` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
   `order_id` bigint NOT NULL COMMENT '订单id',
   `order_no` varchar(32) NOT NULL COMMENT '订单号',
-  `action` tinyint NOT NULL COMMENT '操作类型：1-创建订单 2-支付成功 3-支付失败回调 4-支付回调晚于关单 5-关闭订单 6-发起退款申请 7-退款成功 8-退款失败 9-管理端重试退款',
+  `action` tinyint NOT NULL COMMENT '操作类型：1-创建订单 2-支付成功 3-支付失败回调 4-支付回调晚于关单 5-关闭订单 6-发起退款申请 7-退款成功 8-退款失败 9-管理端重试退款 10-查单补偿入账',
   `operator_type` tinyint NOT NULL COMMENT '操作人类型：1-门户用户 2-管理端用户 3-系统',
   `operator_id` bigint NULL COMMENT '操作人id（系统操作为空）',
   `detail` varchar(500) NULL COMMENT '操作详情',

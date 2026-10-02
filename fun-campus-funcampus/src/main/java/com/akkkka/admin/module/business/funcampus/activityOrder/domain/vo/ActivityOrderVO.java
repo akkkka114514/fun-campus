@@ -35,6 +35,9 @@ public class ActivityOrderVO {
     @Schema(description = "订单金额（分）")
     private Integer amountFen;
 
+    @Schema(description = "收款方名称（活动归属主体：组织/学院/学校）")
+    private String payeeName;
+
     @Schema(description = "订单状态：0-待支付 1-已支付 2-已关闭 3-退款中 4-已退款 5-退款失败")
     private Integer status;
 

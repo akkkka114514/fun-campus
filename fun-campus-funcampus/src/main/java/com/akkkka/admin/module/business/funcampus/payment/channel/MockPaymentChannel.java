@@ -27,13 +27,16 @@ import lombok.extern.slf4j.Slf4j;
  * Mock 支付渠道（仅 pay.channel=mock 时注册，生产环境不存在）
  * <p>
  * 按真实渠道的行为模型仿真，而不是简单的「点按钮改状态」：
- * - 预支付单：prepay 时渠道侧生成 prepay_id 并落簿（同订单重复 prepay 幂等返回同一预支付单）；
+ * - 预支付单：prepay 时渠道侧生成 prepay_id 并落簿（含收款商户号，即 mch_id 语义；
+ *   同订单重复 prepay 幂等返回同一预支付单）；
  * - 异步回调：用户收银台点击后由渠道受理，调度线程异步投递回调（延时/重投由 MockChannelCallbackClient 负责），
  *   与真实渠道收敛到同一处理入口 POST /portal/payment/callback/mock；
  * - 验签：回调必须携带 HMAC-SHA256 签名与时间戳（防伪造、防重放）；
  * - 渠道侧校验：渠道簿无预支付单、或预支付单未支付的「支付成功」回调一律拒绝；
+ *   回调商户号与预支付单不一致同样拒绝（防串户伪造）；
  * - 查单：支持主动查单（超时关单任务关单前确认使用）；
- * - 退款：受理成功后由调度线程延时投递退款回调（模拟渠道稍后通知），不使用 Thread.sleep
+ * - 退款：受理成功后由调度线程延时投递退款回调（模拟渠道稍后通知），不使用 Thread.sleep；
+ *   退款商户号必须与原收款商户一致（渠道簿可对照时，与真实渠道「原路退回」一致）
  *
  * @Author akkkka114514
  * @Date 2026-09-24
@@ -86,8 +89,10 @@ public class MockPaymentChannel implements PaymentChannel {
 
     @Override
     public PayPrepayResult prepay(ActivityOrderEntity order) {
-        // 渠道侧真实下单：生成（或复用）预支付单，同订单重复 prepay 返回同一 prepay_id
-        MockChannelLedger.MockPrepayOrder prepay = channelLedger.createPrepay(order.getOrderNo(), order.getAmountFen());
+        // 渠道侧真实下单：生成（或复用）预支付单，同订单重复 prepay 返回同一 prepay_id；
+        // 收款商户号（活动归属解析而来）同步落渠道簿，后续回调必须与之匹配
+        MockChannelLedger.MockPrepayOrder prepay = channelLedger.createPrepay(
+                order.getOrderNo(), order.getAmountFen(), order.getPayeeAccountNo());
         PayPrepayResult result = new PayPrepayResult();
         result.setChannel(PayChannelEnum.MOCK);
         result.setCashierUrl(MOCK_CASHIER_URL + prepay.getPrepayId());
@@ -96,6 +101,20 @@ public class MockPaymentChannel implements PaymentChannel {
 
     @Override
     public RefundChannelResult refund(ActivityOrderEntity order, ActivityRefundEntity refund) {
+        // 原路退回约束：渠道簿存在该订单记录时，退款商户号必须与收款商户号一致（防串户退款）；
+        // 渠道簿为内存存储、重启即清空，开发环境查不到记录时降级放行，避免退款被环境限制卡死
+        MockChannelLedger.MockPrepayOrder prepay = channelLedger.getByOrderNo(order.getOrderNo());
+        if (prepay == null) {
+            log.warn("渠道簿无该订单支付记录（重启/归档），跳过原商户校验：orderNo:{}", order.getOrderNo());
+        } else if (prepay.getPayeeAccountNo() != null && order.getPayeeAccountNo() != null
+                && !prepay.getPayeeAccountNo().equals(order.getPayeeAccountNo())) {
+            log.warn("退款商户号与收款商户号不一致，渠道拒绝原路退回：orderNo:{}，收款商户号:{}，退款商户号:{}",
+                    order.getOrderNo(), prepay.getPayeeAccountNo(), order.getPayeeAccountNo());
+            RefundChannelResult rejected = new RefundChannelResult();
+            rejected.setAccepted(false);
+            rejected.setFailReason("退款商户号与收款商户号不一致，渠道拒绝原路退回");
+            return rejected;
+        }
         RefundChannelResult result = new RefundChannelResult();
         result.setAccepted(true);
         result.setChannelRefundNo("MOCKRF" + refund.getRefundNo());
@@ -128,11 +147,12 @@ public class MockPaymentChannel implements PaymentChannel {
 
     /**
      * 验签并解析渠道回调
-     * 参数：orderNo、amountFen、payStatus=SUCCESS/FAIL、channelOrderNo、timestamp、sign
+     * 参数：orderNo、amountFen、payStatus=SUCCESS/FAIL、channelOrderNo、payeeAccountNo、timestamp、sign
      * <p>
-     * 三道校验：①HMAC 验签+时间戳窗口（防伪造/防重放）；
+     * 四道校验：①HMAC 验签+时间戳窗口（防伪造/防重放）；
      * ②渠道簿必须存在该订单的预支付单（未经 prepay 的订单渠道不会产生支付）；
-     * ③「支付成功」回调要求渠道簿已支付（渠道侧未支付的成功回调来源不可信）
+     * ③回调商户号必须与预支付单一致（防串户）；
+     * ④「支付成功」回调要求渠道簿已支付（渠道侧未支付的成功回调来源不可信）
      */
     @Override
     public PayNotifyResult parsePayCallback(Map<String, String> params) {
@@ -176,7 +196,15 @@ public class MockPaymentChannel implements PaymentChannel {
             result.setChannelOrderNo(CHANNEL_ORDER_NO_FALLBACK_PREFIX + result.getOrderNo());
             return result;
         }
-        // ③ 渠道侧支付状态校验
+        // ③ 商户号一致性校验（防串户）：回调商户号必须与预支付单一致
+        String payeeAccountNo = params.get("payeeAccountNo");
+        if (payeeAccountNo == null || !payeeAccountNo.equals(prepay.getPayeeAccountNo())) {
+            result.setSuccess(false);
+            result.setVerifyFailed(true);
+            result.setFailReason("回调商户号与预支付单不一致");
+            return result;
+        }
+        // ④ 渠道侧支付状态校验
         if (prepay.getPayTime() == null) {
             result.setSuccess(false);
             result.setVerifyFailed(true);

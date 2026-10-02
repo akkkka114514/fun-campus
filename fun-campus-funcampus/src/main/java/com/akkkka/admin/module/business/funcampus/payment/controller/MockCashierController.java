@@ -28,7 +28,8 @@ import jakarta.annotation.Resource;
  * - 渠道受理（/accept）：用户点击支付结果后先由"渠道"受理（标记渠道侧支付状态），
  *   再由渠道调度线程异步投递回调到统一入口 /portal/payment/callback/mock（带签名、支持重投），
  *   浏览器不再直接提交回调，与真实"渠道服务器发通知"的链路对齐；
- * - 支持模拟「支付成功但回调丢失」：只标记渠道侧已支付、不投递通知，用于演示超时查单补偿
+ * - 支持模拟「支付成功但回调丢失」：只标记渠道侧已支付、不投递通知，用于演示超时查单补偿；
+ * - 收银台展示收款方（活动归属主体与收款商户号，即真实渠道的 mch_id 语义）
  *
  * @Author akkkka114514
  * @Date 2026-09-24
@@ -77,7 +78,8 @@ public class MockCashierController {
         if (order.getStatus() != OrderStatus.WAIT_PAY) {
             return simplePage("订单不可支付", "当前订单状态：" + order.getStatus().getLabel() + "，请返回订单详情页");
         }
-        return cashierPage(prepay.getPrepayId(), order.getOrderNo(), order.getAmountFen());
+        return cashierPage(prepay.getPrepayId(), order.getOrderNo(), order.getAmountFen(),
+                order.getPayeeName(), order.getPayeeAccountNo());
     }
 
     @Operation(summary = "模拟渠道受理支付结果 @author akkkka114514")
@@ -108,7 +110,7 @@ public class MockCashierController {
             return simplePage("渠道已受理", "该预支付单已完成支付，请勿重复操作，可返回订单详情页查看结果");
         }
         callbackClient.deliverPayNotify(order.getOrderNo(), order.getAmountFen(), true,
-                prepay.getChannelOrderNo(), callbackDelaySeconds);
+                prepay.getChannelOrderNo(), prepay.getPayeeAccountNo(), callbackDelaySeconds);
         return simplePage("支付成功（模拟）",
                 "模拟渠道已受理支付成功<br>"
                         + "异步通知将在 " + callbackDelaySeconds + " 秒后投递给平台（未获成功应答会自动重投）<br>"
@@ -120,7 +122,7 @@ public class MockCashierController {
      */
     private String acceptPayFail(MockChannelLedger.MockPrepayOrder prepay, ActivityOrderEntity order) {
         callbackClient.deliverPayNotify(order.getOrderNo(), order.getAmountFen(), false,
-                null, callbackDelaySeconds);
+                null, prepay.getPayeeAccountNo(), callbackDelaySeconds);
         return simplePage("支付失败（模拟）",
                 "模拟渠道已通知平台支付失败<br>订单保持待支付，您可以在订单超时前重新支付");
     }
@@ -139,10 +141,13 @@ public class MockCashierController {
     }
 
     /**
-     * 收银台页面：三个按钮分别模拟「支付成功 / 支付失败 / 支付成功但回调丢失」
+     * 收银台页面：三个按钮分别模拟「支付成功 / 支付失败 / 支付成功但回调丢失」；
+     * 展示收款方（活动归属主体）与收款商户号，与真实收银台一致
      */
-    private String cashierPage(String prepayId, String orderNo, Integer amountFen) {
+    private String cashierPage(String prepayId, String orderNo, Integer amountFen, String payeeName, String payeeAccountNo) {
         String amount = BigDecimal.valueOf(amountFen).movePointLeft(2).toPlainString();
+        String payeeText = (payeeName == null ? "未指定" : payeeName)
+                + (payeeAccountNo == null ? "" : "（" + payeeAccountNo + "）");
         return "<!DOCTYPE html>"
                 + "<html lang=\"zh-CN\"><head><meta charset=\"UTF-8\">"
                 + "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
@@ -150,6 +155,7 @@ public class MockCashierController {
                 + "body{font-family:-apple-system,'Segoe UI',sans-serif;display:flex;justify-content:center;padding-top:60px;background:#f5f6f8;}"
                 + ".card{background:#fff;border-radius:12px;padding:32px 48px;box-shadow:0 4px 16px rgba(0,0,0,.08);text-align:center;}"
                 + ".amount{font-size:32px;color:#e64545;font-weight:bold;margin:16px 0;}"
+                + ".payee{color:#666;font-size:13px;margin-top:6px;}"
                 + "button{border:none;border-radius:6px;padding:10px 28px;font-size:16px;cursor:pointer;margin:0 8px;}"
                 + ".ok{background:#07c160;color:#fff;}.fail{background:#eee;color:#333;}"
                 + ".lost{background:#fff3e0;color:#b26a00;font-size:13px;padding:8px 18px;}"
@@ -158,6 +164,7 @@ public class MockCashierController {
                 + "</style></head><body><div class=\"card\">"
                 + "<h2>模拟收银台</h2>"
                 + "<div>订单号：" + orderNo + "</div>"
+                + "<div class=\"payee\">收款方：" + payeeText + "</div>"
                 + "<div class=\"amount\">¥" + amount + "</div>"
                 + "<form method=\"post\" action=\"/portal/payment/mock/accept\" style=\"display:inline\">"
                 + hiddenInputs(prepayId, "SUCCESS")

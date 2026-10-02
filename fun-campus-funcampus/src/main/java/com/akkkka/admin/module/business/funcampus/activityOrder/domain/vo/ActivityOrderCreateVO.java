@@ -22,6 +22,9 @@ public class ActivityOrderCreateVO {
     @Schema(description = "订单金额（分）")
     private Integer amountFen;
 
+    @Schema(description = "收款方名称（活动归属主体：组织/学院/学校）")
+    private String payeeName;
+
     @Schema(description = "支付截止时间")
     private LocalDateTime expireTime;
 

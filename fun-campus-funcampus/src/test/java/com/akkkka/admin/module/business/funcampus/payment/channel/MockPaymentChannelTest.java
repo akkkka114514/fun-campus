@@ -13,18 +13,21 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.akkkka.admin.module.business.funcampus.activityOrder.domain.entity.ActivityOrderEntity;
+import com.akkkka.admin.module.business.funcampus.activityOrder.domain.entity.ActivityRefundEntity;
 import com.akkkka.admin.module.business.funcampus.payment.domain.dto.PayNotifyResult;
 import com.akkkka.admin.module.business.funcampus.payment.domain.dto.PayPrepayResult;
 import com.akkkka.admin.module.business.funcampus.payment.domain.dto.PayQueryResult;
+import com.akkkka.admin.module.business.funcampus.payment.domain.dto.RefundChannelResult;
 import com.akkkka.admin.module.business.funcampus.payment.service.PaymentNotifyHandler;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Mock 支付渠道 单元测试（预支付单幂等 / 回调验签 / 渠道簿校验 / 主动查单）
+ * Mock 支付渠道 单元测试（预支付单幂等 / 回调验签 / 渠道簿校验 / 商户号一致性 / 退款原商户 / 主动查单）
  * <p>
  * 覆盖：prepay 返回带 prepayId 的收银台链接且幂等；验签失败、渠道无预支付单、
- * 渠道侧未支付的成功回调均置 verifyFailed 拒绝；渠道簿已支付时回调通过并带渠道流水号；
+ * 渠道侧未支付的成功回调均置 verifyFailed 拒绝；回调商户号与预支付单不一致（含缺失）同样拒绝；
+ * 渠道簿已支付时回调通过并带渠道流水号；退款商户号与原收款不一致时拒绝受理；
  * 查单三态（渠道无此单/未支付/已支付）
  *
  * @Author akkkka114514
@@ -58,14 +61,22 @@ public class MockPaymentChannelTest {
         order.setActivityId(7L);
         order.setUserId(20L);
         order.setAmountFen(100);
+        order.setPayeeAccountNo("MCH1000001");
         return order;
     }
 
     private Map<String, String> callbackParams(String orderNo, String payStatus) {
+        return callbackParams(orderNo, payStatus, "MCH1000001");
+    }
+
+    private Map<String, String> callbackParams(String orderNo, String payStatus, String payeeAccountNo) {
         Map<String, String> params = new HashMap<>();
         params.put("orderNo", orderNo);
         params.put("amountFen", "100");
         params.put("payStatus", payStatus);
+        if (payeeAccountNo != null) {
+            params.put("payeeAccountNo", payeeAccountNo);
+        }
         params.put("timestamp", String.valueOf(System.currentTimeMillis()));
         params.put("sign", signer.sign(params));
         return params;
@@ -141,6 +152,73 @@ public class MockPaymentChannelTest {
 
         assertFalse(result.isVerifyFailed());
         assertFalse(result.isSuccess());
+    }
+
+    @Test
+    void parsePayCallback_whenPayeeMismatch_verifyFailed() {
+        String prepayId = extractPrepayId(channel.prepay(order()));
+        ledger.markPaid(prepayId);
+
+        // 合法签名但商户号被换成另一主体（串户伪造）：与渠道簿预支付单比对后拒绝
+        PayNotifyResult result = channel.parsePayCallback(callbackParams("AO1", "SUCCESS", "MCH2000001"));
+
+        assertTrue(result.isVerifyFailed());
+        assertEquals("回调商户号与预支付单不一致", result.getFailReason());
+    }
+
+    @Test
+    void parsePayCallback_whenPayeeMissing_verifyFailed() {
+        String prepayId = extractPrepayId(channel.prepay(order()));
+        ledger.markPaid(prepayId);
+
+        // 缺商户号的成功回调（真实渠道回调必带 mch_id）：同样拒绝
+        PayNotifyResult result = channel.parsePayCallback(callbackParams("AO1", "SUCCESS", null));
+
+        assertTrue(result.isVerifyFailed());
+        assertEquals("回调商户号与预支付单不一致", result.getFailReason());
+    }
+
+    // ---------------------------------- refund ----------------------------------
+
+    @Test
+    void refund_whenPayeeMismatch_rejected() {
+        String prepayId = extractPrepayId(channel.prepay(order()));
+        ledger.markPaid(prepayId);
+
+        // 退款商户号与渠道簿收款商户号不一致：渠道拒绝原路退回
+        ActivityOrderEntity mismatched = order();
+        mismatched.setPayeeAccountNo("MCH2000001");
+        ActivityRefundEntity refund = new ActivityRefundEntity();
+        refund.setRefundNo("RF1");
+
+        RefundChannelResult result = channel.refund(mismatched, refund);
+
+        assertFalse(result.isAccepted());
+        assertEquals("退款商户号与收款商户号不一致，渠道拒绝原路退回", result.getFailReason());
+    }
+
+    @Test
+    void refund_whenPayeeConsistent_accepted() {
+        String prepayId = extractPrepayId(channel.prepay(order()));
+        ledger.markPaid(prepayId);
+        ActivityRefundEntity refund = new ActivityRefundEntity();
+        refund.setRefundNo("RF1");
+
+        RefundChannelResult result = channel.refund(order(), refund);
+
+        assertTrue(result.isAccepted());
+        assertEquals("MOCKRFRF1", result.getChannelRefundNo());
+    }
+
+    @Test
+    void refund_whenLedgerMissing_acceptedByDegrade() {
+        // 渠道簿无记录（开发环境服务重启后清空）：降级放行，不阻塞退款
+        ActivityRefundEntity refund = new ActivityRefundEntity();
+        refund.setRefundNo("RF1");
+
+        RefundChannelResult result = channel.refund(order(), refund);
+
+        assertTrue(result.isAccepted());
     }
 
     // ---------------------------------- queryPay ----------------------------------

@@ -14,6 +14,8 @@ import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.en
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityValidator;
 import com.akkkka.admin.module.business.funcampus.payment.domain.dto.PayPrepayResult;
+import com.akkkka.admin.module.business.funcampus.payment.domain.entity.PayeeAccountEntity;
+import com.akkkka.admin.module.business.funcampus.payment.service.PayeeAccountService;
 import com.akkkka.admin.module.business.funcampus.payment.service.PaymentService;
 import com.akkkka.admin.module.business.funcampus.portalLogin.domain.RequestPortalUser;
 import com.akkkka.admin.module.business.funcampus.portalUser.domain.entity.PortalUserEntity;
@@ -46,9 +48,9 @@ import static org.mockito.Mockito.*;
 /**
  * 活动报名订单 Service 单元测试
  * <p>
- * 覆盖：付费活动下单（校验顺序、锁座事务、金额以服务端为准）、
+ * 覆盖：付费活动下单（校验顺序、锁座事务、金额以服务端为准、收款方落单）、
  * 用户取消订单（归属校验、幂等、CAS 失败与释放名额）、
- * 重新支付（过期立即关单、与支付回调抢同一 CAS 的竞态分支）
+ * 重新支付（过期立即关单、与支付回调抢同一 CAS 的竞态分支、历史订单收款方回填）
  *
  * @Author akkkka114514
  * @Date 2026-09-26
@@ -74,6 +76,8 @@ public class ActivityOrderServiceTest {
     private TransactionTemplate transactionTemplate;
     @Mock
     private PaymentService paymentService;
+    @Mock
+    private PayeeAccountService payeeAccountService;
     @Mock
     private ActivityOrderLogService orderLogService;
 
@@ -120,7 +124,16 @@ public class ActivityOrderServiceTest {
         order.setUserId(userId);
         order.setAmountFen(150);
         order.setStatus(status);
+        order.setPayeeAccountNo("MCH1000001");
+        order.setPayeeName("洛阳理工学院");
         return order;
+    }
+
+    private PayeeAccountEntity payeeAccount() {
+        PayeeAccountEntity account = new PayeeAccountEntity();
+        account.setPayeeNo("MCH1000001");
+        account.setOwnerName("洛阳理工学院");
+        return account;
     }
 
     /** 走完「付费校验 → 报名范围 → 查重 → 无进行中订单」的前置链路 */
@@ -128,6 +141,8 @@ public class ActivityOrderServiceTest {
         when(activityValidator.validateActivityId(7L)).thenReturn(activity);
         when(portalUserManager.getById(20L)).thenReturn(new PortalUserEntity());
         when(orderManager.listActiveOrders(7L, 20L)).thenReturn(List.of());
+        // 收款方解析：仅金额校验通过后的用例会走到，lenient 避免价格未配置用例报多余打桩
+        lenient().when(payeeAccountService.resolvePayee(any())).thenReturn(payeeAccount());
     }
 
     // ---------------------------------- 下单 createOrder ----------------------------------
@@ -247,6 +262,9 @@ public class ActivityOrderServiceTest {
         assertEquals(150, saved.getAmountFen());
         assertEquals(20L, saved.getUserId());
         assertEquals(7L, saved.getActivityId());
+        assertEquals("MCH1000001", saved.getPayeeAccountNo());
+        assertEquals("洛阳理工学院", saved.getPayeeName());
+        assertEquals("洛阳理工学院", vo.getPayeeName());
         assertFalse(saved.getDeletedFlag());
         assertNotNull(saved.getOrderNo());
         assertTrue(saved.getOrderNo().startsWith("AO"));
@@ -360,6 +378,30 @@ public class ActivityOrderServiceTest {
 
         assertEquals("/portal/payment/mock/cashier?orderNo=AO1", vo.getCashierUrl());
         assertEquals(150, vo.getAmountFen());
+        assertEquals("洛阳理工学院", vo.getPayeeName());
+    }
+
+    @Test
+    void prepay_whenPayeeMissing_backfillsFromActivityAndUpdates() {
+        setPortalUser(20L);
+        ActivityOrderEntity order = order(1L, "AO1", OrderStatus.WAIT_PAY, 20L);
+        order.setPayeeAccountNo(null);
+        order.setPayeeName(null);
+        order.setExpireTime(LocalDateTime.now().plusMinutes(10));
+        when(orderManager.getByOrderNo("AO1")).thenReturn(order);
+        when(activityManager.getById(7L)).thenReturn(activity(ActivityStatus.ENROLLING, true, 150));
+        when(payeeAccountService.resolvePayee(any())).thenReturn(payeeAccount());
+        PayPrepayResult prepayResult = new PayPrepayResult();
+        prepayResult.setCashierUrl("/portal/payment/mock/cashier?orderNo=AO1");
+        when(paymentService.prepay(order)).thenReturn(prepayResult);
+
+        ActivityOrderCreateVO vo = service.prepay("AO1");
+
+        // 历史订单（收款方机制上线前创建）：按活动归属补解析收款方并回填落单
+        assertEquals("MCH1000001", order.getPayeeAccountNo());
+        assertEquals("洛阳理工学院", order.getPayeeName());
+        verify(orderManager).updateById(order);
+        assertEquals("洛阳理工学院", vo.getPayeeName());
     }
 
     @Test

@@ -34,31 +34,35 @@ public class ActivityOrderExportVO {
     @ExcelProperty(value = "订单金额（元）", order = 3)
     private String amountYuan;
 
+    @Schema(description = "收款方")
+    @ExcelProperty(value = "收款方", order = 4)
+    private String payeeName;
+
     @Schema(description = "订单状态")
-    @ExcelProperty(value = "订单状态", order = 4)
+    @ExcelProperty(value = "订单状态", order = 5)
     private String statusName;
 
     @Schema(description = "支付渠道")
-    @ExcelProperty(value = "支付渠道", order = 5)
+    @ExcelProperty(value = "支付渠道", order = 6)
     private String payChannelName;
 
     @Schema(description = "渠道订单号")
-    @ExcelProperty(value = "渠道订单号", order = 6)
+    @ExcelProperty(value = "渠道订单号", order = 7)
     private String channelOrderNo;
 
     @Schema(description = "支付时间")
-    @ExcelProperty(value = "支付时间", order = 7)
+    @ExcelProperty(value = "支付时间", order = 8)
     private String payTime;
 
     @Schema(description = "支付截止时间")
-    @ExcelProperty(value = "支付截止时间", order = 8)
+    @ExcelProperty(value = "支付截止时间", order = 9)
     private String expireTime;
 
     @Schema(description = "关闭时间")
-    @ExcelProperty(value = "关闭时间", order = 9)
+    @ExcelProperty(value = "关闭时间", order = 10)
     private String closeTime;
 
     @Schema(description = "创建时间")
-    @ExcelProperty(value = "创建时间", order = 10)
+    @ExcelProperty(value = "创建时间", order = 11)
     private String createTime;
 }

@@ -24,7 +24,8 @@ import lombok.extern.slf4j.Slf4j;
  * <p>
  * 真实渠道的回调由渠道服务器发起（而非用户浏览器直接提交），未收到平台成功应答会按策略重投；
  * 本类用调度线程 + HTTP 自调模拟该行为，让链路与真实渠道完全对齐：
- * - 投递目标：平台回调统一入口 POST /portal/payment/callback/mock（带 HMAC 签名与时间戳）；
+ * - 投递目标：平台回调统一入口 POST /portal/payment/callback/mock（带 HMAC 签名与时间戳，
+ *   并携带渠道簿记录的收款商户号，平台侧校验防串户）；
  * - 首次投递延时 pay.mock.callback-delay-seconds；应答非 SUCCESS 时按 pay.mock.retry-delay-seconds
  *   间隔重投，总投递次数 pay.mock.deliver-times，多次失败后转人工对账（日志告警）；
  * - 每次投递重新生成时间戳与签名（与真实渠道「重试即重新签名」一致）
@@ -81,16 +82,20 @@ public class MockChannelCallbackClient {
      * @param amountFen       金额（分）
      * @param success         支付是否成功（构造 payStatus=SUCCESS/FAIL 通知）
      * @param channelOrderNo  渠道流水号（支付成功时有值）
+     * @param payeeAccountNo  收款商户号（预支付单记录，与真实渠道回调必带 mch_id 一致）
      * @param firstDelaySeconds 首次投递延时（秒）
      */
     public void deliverPayNotify(String orderNo, Integer amountFen, boolean success,
-                                 String channelOrderNo, long firstDelaySeconds) {
+                                 String channelOrderNo, String payeeAccountNo, long firstDelaySeconds) {
         Map<String, String> params = new LinkedHashMap<>();
         params.put("orderNo", orderNo);
         params.put("amountFen", String.valueOf(amountFen));
         params.put("payStatus", success ? "SUCCESS" : "FAIL");
         if (channelOrderNo != null) {
             params.put("channelOrderNo", channelOrderNo);
+        }
+        if (payeeAccountNo != null) {
+            params.put("payeeAccountNo", payeeAccountNo);
         }
         long delay = Math.max(firstDelaySeconds, 0);
         mockPayCallbackScheduler.schedule(() -> attemptDeliver(1, params), Instant.now().plusSeconds(delay));

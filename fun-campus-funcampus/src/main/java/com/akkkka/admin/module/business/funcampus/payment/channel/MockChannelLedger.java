@@ -14,10 +14,11 @@ import lombok.Data;
  * Mock 渠道订单簿（渠道侧预支付单存储）
  * <p>
  * 模拟真实渠道的「预支付单」体系：
- * - prepay 时渠道侧生成 prepay_id 并落簿；同一订单重复 prepay 返回同一预支付单（与真实渠道语义一致）；
+ * - prepay 时渠道侧生成 prepay_id 并落簿（含收款商户号，即 mch_id 语义）；同一订单重复 prepay 返回同一预支付单；
  * - 用户在收银台完成支付后，渠道簿标记已支付并生成渠道流水号；
  * - 回调与查单都以渠道簿为准：没有预支付单、或预支付单未支付的订单，
- *   渠道侧不可能给出「支付成功」的结论（防伪造的第二道闸）
+ *   渠道侧不可能给出「支付成功」的结论（防伪造的第二道闸）；
+ *   回调商户号与预支付单不一致同样拒绝（防串户）
  * <p>
  * 仅 mock 渠道注册；内存存储、重启即清空（开发环境语义）
  *
@@ -39,13 +40,16 @@ public class MockChannelLedger {
 
     /**
      * 创建/获取渠道预支付单：同订单重复 prepay 幂等返回同一预支付单
+     *
+     * @param payeeAccountNo 收款商户号（下单时按活动归属解析，渠道侧落簿）
      */
-    public MockPrepayOrder createPrepay(String orderNo, Integer amountFen) {
+    public MockPrepayOrder createPrepay(String orderNo, Integer amountFen, String payeeAccountNo) {
         return prepayByOrderNo.computeIfAbsent(orderNo, key -> {
             MockPrepayOrder prepay = new MockPrepayOrder();
             prepay.setPrepayId(PREPAY_ID_PREFIX + UUID.randomUUID().toString().replace("-", ""));
             prepay.setOrderNo(key);
             prepay.setAmountFen(amountFen);
+            prepay.setPayeeAccountNo(payeeAccountNo);
             prepay.setCreateTime(LocalDateTime.now());
             prepayById.put(prepay.getPrepayId(), prepay);
             return prepay;
@@ -94,6 +98,9 @@ public class MockChannelLedger {
 
         /** 订单金额快照（分） */
         private Integer amountFen;
+
+        /** 收款商户号（prepay 时按活动归属解析传入，回调需与之一致） */
+        private String payeeAccountNo;
 
         /** 预支付单创建时间 */
         private LocalDateTime createTime;

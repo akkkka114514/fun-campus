@@ -53,6 +53,16 @@ public class ActivityOrderEntity {
     private Integer amountFen;
 
     /**
+     * 收款商户号（下单时按活动归属解析；退款按原收款商户原路退回）
+     */
+    private String payeeAccountNo;
+
+    /**
+     * 收款方名称快照（活动归属主体：组织/学院/学校）
+     */
+    private String payeeName;
+
+    /**
      * 状态：0-待支付 1-已支付 2-已关闭 3-退款中 4-已退款 5-退款失败
      */
     private OrderStatus status;

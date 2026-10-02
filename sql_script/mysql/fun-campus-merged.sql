@@ -2955,6 +2955,8 @@ CREATE TABLE `activity_order` (
   `activity_id` bigint NOT NULL COMMENT '活动id',
   `user_id` bigint NOT NULL COMMENT '报名用户id',
   `amount_fen` int NOT NULL COMMENT '订单金额（分）',
+  `payee_account_no` varchar(64) NULL COMMENT '收款商户号（下单时按活动归属解析）',
+  `payee_name` varchar(255) NULL COMMENT '收款方名称快照',
   `status` tinyint NOT NULL DEFAULT 0 COMMENT '状态：0-待支付 1-已支付 2-已关闭 3-退款中 4-已退款 5-退款失败',
   `pay_channel` tinyint NULL COMMENT '支付渠道：1-微信 2-支付宝 3-Mock',
   `channel_order_no` varchar(64) NULL COMMENT '渠道订单号',
@@ -3027,6 +3029,59 @@ VALUES
    '扫描超时未支付订单：CAS 关单（待支付->已关闭）+ 释放名额；与支付回调抢同一个 CAS，谁先成功谁生效', 0, '管理员', NOW(), NOW());
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+-- ----------------------------------------------------------------------------
+-- 来源文件: PayeeAccountMerchant.sql —— Phase 10 收款方商户账户（多主体收款）
+-- ----------------------------------------------------------------------------
+-- =====================================================================
+-- Fun Campus Phase 10：收款方商户账户（多主体收款）
+-- 内容：payee_account 收款账户表、activity_order 收款方字段、存量主体开户
+-- 说明：脚本仅需执行一次；执行前请备份数据库
+-- Date: 2026-10-02
+-- =====================================================================
+
+SET NAMES utf8mb4;
+
+-- ----------------------------
+-- 1. payee_account 收款账户表（模拟渠道侧的商户号 mch_id：钱收给谁）
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `payee_account` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `owner_type` tinyint NOT NULL COMMENT '收款主体类型：1-学校 2-学院 3-组织',
+  `owner_id` bigint NOT NULL COMMENT '主体id（school_info/college_info/organization_info）',
+  `owner_name` varchar(255) NOT NULL COMMENT '主体名称（开户时快照，展示用）',
+  `payee_no` varchar(64) NOT NULL COMMENT '收款商户号（模拟渠道商户号，真实渠道对应 mch_id）',
+  `status` tinyint NOT NULL DEFAULT 1 COMMENT '状态：0-停用 1-启用',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted_flag` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否已删除',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `uk_owner`(`owner_type`, `owner_id`) USING BTREE,
+  UNIQUE KEY `uk_payee_no`(`payee_no`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '收款账户（模拟渠道商户号）' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- 2. activity_order 新增收款方字段
+--    下单时按活动归属（组织→学院→学校）解析收款商户号落单；
+--    退款必须按原收款商户原路退回（与真实渠道一致）
+-- ----------------------------
+ALTER TABLE `activity_order`
+  ADD COLUMN `payee_account_no` varchar(64) NULL COMMENT '收款商户号（下单时按活动归属解析）' AFTER `amount_fen`,
+  ADD COLUMN `payee_name` varchar(255) NULL COMMENT '收款方名称快照' AFTER `payee_account_no`;
+
+-- ----------------------------
+-- 3. 存量主体开户（覆盖现有付费活动归属：学校/组织/学院各一个）
+--    商户号规则：MCH + 主体类型 + 6位零填充主体id，如 MCH1000001
+--    未开户的主体不能收费：新建付费活动挂到未开户主体时下单会被拒绝
+-- ----------------------------
+INSERT IGNORE INTO `payee_account` (`owner_type`, `owner_id`, `owner_name`, `payee_no`, `status`, `create_time`, `update_time`, `deleted_flag`)
+SELECT 1, `id`, `name`, CONCAT('MCH1', LPAD(`id`, 6, '0')), 1, NOW(), NOW(), b'0' FROM `school_info` WHERE `id` = 1;
+
+INSERT IGNORE INTO `payee_account` (`owner_type`, `owner_id`, `owner_name`, `payee_no`, `status`, `create_time`, `update_time`, `deleted_flag`)
+SELECT 2, `id`, `name`, CONCAT('MCH2', LPAD(`id`, 6, '0')), 1, NOW(), NOW(), b'0' FROM `college_info` WHERE `id` = 1;
+
+INSERT IGNORE INTO `payee_account` (`owner_type`, `owner_id`, `owner_name`, `payee_no`, `status`, `create_time`, `update_time`, `deleted_flag`)
+SELECT 3, `id`, `name`, CONCAT('MCH3', LPAD(`id`, 6, '0')), 1, NOW(), NOW(), b'0' FROM `organization_info` WHERE `id` = 1;
 
 -- ----------------------------------------------------------------------------
 -- 来源文件: ActivityCanEnrollCollegeMenu.sql —— 菜单与按钮权限数据（t_menu）

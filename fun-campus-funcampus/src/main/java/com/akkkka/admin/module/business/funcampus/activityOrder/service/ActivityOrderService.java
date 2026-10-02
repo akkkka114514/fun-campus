@@ -30,6 +30,8 @@ import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.en
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityValidator;
 import com.akkkka.admin.module.business.funcampus.payment.constant.PayChannelEnum;
+import com.akkkka.admin.module.business.funcampus.payment.domain.entity.PayeeAccountEntity;
+import com.akkkka.admin.module.business.funcampus.payment.service.PayeeAccountService;
 import com.akkkka.admin.module.business.funcampus.payment.service.PaymentService;
 import com.akkkka.admin.module.business.funcampus.portalUser.domain.entity.PortalUserEntity;
 import com.akkkka.admin.module.business.funcampus.portalUser.manager.PortalUserManager;
@@ -103,6 +105,8 @@ public class ActivityOrderService {
 
     private final PaymentService paymentService;
 
+    private final PayeeAccountService payeeAccountService;
+
     private final ActivityOrderLogService orderLogService;
 
     /**
@@ -137,11 +141,16 @@ public class ActivityOrderService {
             throw new BusinessException(UserErrorCode.PARAM_ERROR, "活动报名费未配置");
         }
 
+        // 收款方解析：按活动归属（组织→学院→学校）解析收款商户号，未开户/停用直接拒绝下单
+        PayeeAccountEntity payee = payeeAccountService.resolvePayee(activity);
+
         ActivityOrderEntity order = new ActivityOrderEntity();
         order.setOrderNo(OrderNoUtil.generate(OrderNoUtil.ORDER_PREFIX));
         order.setActivityId(activityId);
         order.setUserId(userId);
         order.setAmountFen(amountFen);
+        order.setPayeeAccountNo(payee.getPayeeNo());
+        order.setPayeeName(payee.getOwnerName());
         order.setStatus(OrderStatus.WAIT_PAY);
         order.setExpireTime(LocalDateTime.now().plusMinutes(PAY_EXPIRE_MINUTES));
         order.setDeletedFlag(false);
@@ -160,9 +169,10 @@ public class ActivityOrderService {
 
         // 事务提交后再向渠道预下单：渠道调用不属于数据库事务，避免长事务占用连接
         orderLogService.recordPortalUser(order, OrderLogAction.CREATE, userId,
-                "创建订单，金额 " + fenToYuan(amountFen) + " 元，支付截止 " + order.getExpireTime().format(EXPORT_TIME_FORMATTER));
-        log.info("付费活动下单成功：orderNo:{}，activityId:{}，userId:{}，amountFen:{}",
-                order.getOrderNo(), activityId, userId, amountFen);
+                "创建订单，金额 " + fenToYuan(amountFen) + " 元，收款方 " + payee.getOwnerName()
+                        + "，支付截止 " + order.getExpireTime().format(EXPORT_TIME_FORMATTER));
+        log.info("付费活动下单成功：orderNo:{}，activityId:{}，userId:{}，amountFen:{}，payee:{}",
+                order.getOrderNo(), activityId, userId, amountFen, payee.getPayeeNo());
         return buildCreateVO(order, paymentService.prepay(order).getCashierUrl());
     }
 
@@ -217,7 +227,26 @@ public class ActivityOrderService {
             }
             throw new BusinessException(UserErrorCode.PARAM_ERROR, "订单已超时关闭，请重新下单");
         }
+        backfillPayeeIfAbsent(order);
         return buildCreateVO(order, paymentService.prepay(order).getCashierUrl());
+    }
+
+    /**
+     * 历史订单（收款方机制上线前创建）回填收款方：
+     * 补解析后落单，保证渠道侧预支付单与退款校验有商户上下文
+     */
+    private void backfillPayeeIfAbsent(ActivityOrderEntity order) {
+        if (order.getPayeeAccountNo() != null) {
+            return;
+        }
+        ActivityEntity activity = activityManager.getById(order.getActivityId());
+        if (activity == null) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "订单关联活动不存在");
+        }
+        PayeeAccountEntity payee = payeeAccountService.resolvePayee(activity);
+        order.setPayeeAccountNo(payee.getPayeeNo());
+        order.setPayeeName(payee.getOwnerName());
+        orderManager.updateById(order);
     }
 
     /**
@@ -331,6 +360,7 @@ public class ActivityOrderService {
         ActivityOrderCreateVO vo = new ActivityOrderCreateVO();
         vo.setOrderNo(order.getOrderNo());
         vo.setAmountFen(order.getAmountFen());
+        vo.setPayeeName(order.getPayeeName());
         vo.setExpireTime(order.getExpireTime());
         vo.setCashierUrl(cashierUrl);
         return vo;
@@ -343,6 +373,7 @@ public class ActivityOrderService {
         ActivityEntity activity = activityManager.getById(order.getActivityId());
         vo.setActivityTitle(activity == null ? null : activity.getTitle());
         vo.setAmountFen(order.getAmountFen());
+        vo.setPayeeName(order.getPayeeName());
         vo.setStatus(order.getStatus() == null ? null : order.getStatus().getCode());
         vo.setPayChannel(order.getPayChannel() == null ? null : order.getPayChannel().getCode());
         vo.setPayTime(order.getPayTime());
@@ -361,6 +392,7 @@ public class ActivityOrderService {
         exportVO.setActivityTitle(vo.getActivityTitle());
         exportVO.setUsername(SmartStringUtil.isEmpty(vo.getUsername()) ? "用户#" + vo.getUserId() : vo.getUsername());
         exportVO.setAmountYuan(vo.getAmountFen() == null ? "" : BigDecimal.valueOf(vo.getAmountFen()).movePointLeft(2).toPlainString());
+        exportVO.setPayeeName(vo.getPayeeName());
         OrderStatus orderStatus = OrderStatus.fromCode(vo.getStatus());
         exportVO.setStatusName(orderStatus == null ? "" : orderStatus.getLabel());
         PayChannelEnum payChannel = PayChannelEnum.fromCode(vo.getPayChannel());

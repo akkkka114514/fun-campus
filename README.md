@@ -453,7 +453,7 @@ CREATE TABLE `activity_refund` (
 - [✅] 取消订单 `POST /activityOrder/cancel`：仅待支付可取消，关单并 `decreaseEnrollNum` 释放名额
 - [✅] 支付渠道抽象 `PaymentChannel`：`prepay()` 预下单、`refund()` 退款、`parsePayCallback()` / `parseRefundCallback()` 验签解析
 - [✅] 支付回调 `POST /payment/callback/{channel}`：验签 → 校验金额 → CAS 更新订单（`WHERE status = 0` 幂等）→ 写入 `activity_enrollment` 报名记录 → 发送通知
-- [✅] `MockPaymentChannel`：`prepay()` 返回「模拟收银台」链接；`parsePayCallback()` 直接解析模拟回调参数（不做验签）
+- [✅] `MockPaymentChannel`：`prepay()` 返回「模拟收银台」链接；支付/退款回调统一验签（HMAC-SHA256 + 时间戳窗口，防伪造/防重放），验签失败应答 FAIL 不进入业务处理
 - [✅] 模拟收银台页面（dev/test 专用）：`GET /payment/mock/cashier?orderNo=xxx`，后端简易 HTML 页，含「支付成功 / 支付失败」按钮，移动端页面未开发也能全链路联调
 - [✅] 模拟支付回调：复用 `POST /payment/callback/{channel}` 入口（`channel=mock`），构造 `PayNotifyResult` 后收敛到 `handlePayNotify`；业务代码禁止 `Thread.sleep`
 - [✅] 可选延时到账：`MockPayCallbackConfig` 配置 + `TaskScheduler` 延时投递回调，模拟异步通知的不确定性
@@ -469,7 +469,7 @@ CREATE TABLE `activity_refund` (
 #### 9.3 后端 — 退款 —— ✅ 主体已完成
 
 - [✅] 用户退款申请 `POST /activityOrder/refundApply`：按活动 `refund_policy` 校验（报名截止前 / 活动开始前），创建退款单并发起渠道退款
-- [✅] 退款回调 `POST /payment/callback/{channel}/refund`：更新退款单与订单状态 → 逻辑删除报名记录 + `decreaseEnrollNum` + 通知
+- [✅] 退款回调 `POST /payment/callback/{channel}/refund`：验签 → 更新退款单与订单状态 → 逻辑删除报名记录 + `decreaseEnrollNum` + 通知（mock 渠道由调度线程签名 HTTP 投递，与支付回调同一投递机制：带签名与时间戳、未获成功应答自动重投）
 - [✅] 系统自动退款场景：
   - [✅] 报名审核剔除已支付用户（`ActivityReviewLogService.reviewEnroll` → `ActivityRefundService` 系统退款，reasonType=审核未通过，不受退款政策限制）
   - [✅] 活动取消（管理端对全部已支付订单批量退款）：活动状态置为「已取消」(8，业务状态不参与时间表推进)；入口 `POST /backend/activity/cancel`（权限点 `activity:cancel`，CAS 状态更新防并发），退款 reasonType=活动取消；待支付订单在取消时立即 CAS 关单并释放名额（防止取消后继续完成支付，在途支付由支付回调「回调晚于关单」补偿日志兜底），退款失败可在退款管理页重试

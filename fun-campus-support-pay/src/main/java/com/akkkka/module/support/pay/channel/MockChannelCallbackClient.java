@@ -24,8 +24,9 @@ import lombok.extern.slf4j.Slf4j;
  * <p>
  * 真实渠道的回调由渠道服务器发起（而非用户浏览器直接提交），未收到平台成功应答会按策略重投；
  * 本类用调度线程 + HTTP 自调模拟该行为，让链路与真实渠道完全对齐：
- * - 投递目标：平台回调统一入口 POST /portal/payment/callback/mock（带 HMAC 签名与时间戳，
- *   并携带渠道簿记录的收款商户号，平台侧校验防串户）；
+ * - 投递目标：平台回调统一入口（支付 POST /portal/payment/callback/mock，
+ *   退款 POST /portal/payment/callback/mock/refund）；报文统一带 HMAC 签名与时间戳，
+ *   支付回调并携带渠道簿记录的收款商户号（平台侧校验防串户）；
  * - 首次投递延时 pay.mock.callback-delay-seconds；应答非 SUCCESS 时按 pay.mock.retry-delay-seconds
  *   间隔重投，总投递次数 pay.mock.deliver-times，多次失败后转人工对账（日志告警）；
  * - 每次投递重新生成时间戳与签名（与真实渠道「重试即重新签名」一致）
@@ -41,7 +42,9 @@ import lombok.extern.slf4j.Slf4j;
 @ConditionalOnProperty(name = "pay.channel", havingValue = "mock")
 public class MockChannelCallbackClient {
 
-    private static final String CALLBACK_PATH = "/portal/payment/callback/mock";
+    private static final String PAY_CALLBACK_PATH = "/portal/payment/callback/mock";
+
+    private static final String REFUND_CALLBACK_PATH = "/portal/payment/callback/mock/refund";
 
     /**
      * 平台回调入口基地址（默认本机服务端口，模拟渠道服务器访问平台）
@@ -98,15 +101,38 @@ public class MockChannelCallbackClient {
             params.put("payeeAccountNo", payeeAccountNo);
         }
         long delay = Math.max(firstDelaySeconds, 0);
-        mockPayCallbackScheduler.schedule(() -> attemptDeliver(1, params), Instant.now().plusSeconds(delay));
+        mockPayCallbackScheduler.schedule(() -> attemptDeliver(1, PAY_CALLBACK_PATH, orderNo, params),
+                Instant.now().plusSeconds(delay));
         log.info("Mock渠道回调已排队投递：orderNo:{}，payStatus:{}，首次延时:{}秒，最大投递:{}次",
                 orderNo, params.get("payStatus"), delay, deliverTimes);
     }
 
     /**
+     * 投递退款回调（与支付回调同一投递机制：带签名与时间戳、未获成功应答按配置重投）
+     *
+     * @param refundNo          商户退款单号
+     * @param success           退款是否成功（构造 refundStatus=SUCCESS/FAIL 通知）
+     * @param channelRefundNo   渠道退款单号（退款成功时有值）
+     * @param firstDelaySeconds 首次投递延时（秒）
+     */
+    public void deliverRefundNotify(String refundNo, boolean success, String channelRefundNo, long firstDelaySeconds) {
+        Map<String, String> params = new LinkedHashMap<>();
+        params.put("refundNo", refundNo);
+        params.put("refundStatus", success ? "SUCCESS" : "FAIL");
+        if (channelRefundNo != null) {
+            params.put("channelRefundNo", channelRefundNo);
+        }
+        long delay = Math.max(firstDelaySeconds, 0);
+        mockPayCallbackScheduler.schedule(() -> attemptDeliver(1, REFUND_CALLBACK_PATH, refundNo, params),
+                Instant.now().plusSeconds(delay));
+        log.info("Mock渠道退款回调已排队投递：refundNo:{}，refundStatus:{}，首次延时:{}秒，最大投递:{}次",
+                refundNo, params.get("refundStatus"), delay, deliverTimes);
+    }
+
+    /**
      * 执行第 attempt 次投递：应答非 SUCCESS 视为投递失败，按配置重投
      */
-    private void attemptDeliver(int attempt, Map<String, String> bizParams) {
+    private void attemptDeliver(int attempt, String callbackPath, String bizNo, Map<String, String> bizParams) {
         Map<String, String> params = new LinkedHashMap<>(bizParams);
         params.put("timestamp", String.valueOf(System.currentTimeMillis()));
         params.put("sign", paySigner.sign(params));
@@ -115,7 +141,7 @@ public class MockChannelCallbackClient {
         String error = null;
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(platformBaseUrl + CALLBACK_PATH))
+                    .uri(URI.create(platformBaseUrl + callbackPath))
                     .timeout(Duration.ofSeconds(10))
                     .header("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8")
                     .POST(HttpRequest.BodyPublishers.ofString(toFormBody(params), StandardCharsets.UTF_8))
@@ -127,17 +153,17 @@ public class MockChannelCallbackClient {
         }
 
         if (isAckSuccess(ack)) {
-            log.info("Mock渠道回调投递成功：第{}次，orderNo:{}，应答:{}", attempt, params.get("orderNo"), ack.trim());
+            log.info("Mock渠道回调投递成功：第{}次，单号:{}，应答:{}", attempt, bizNo, ack.trim());
             return;
         }
-        log.warn("Mock渠道回调投递未获成功应答：第{}次，orderNo:{}，应答:{}，异常:{}",
-                attempt, params.get("orderNo"), ack, error);
+        log.warn("Mock渠道回调投递未获成功应答：第{}次，单号:{}，应答:{}，异常:{}",
+                attempt, bizNo, ack, error);
         if (attempt < deliverTimes) {
-            mockPayCallbackScheduler.schedule(() -> attemptDeliver(attempt + 1, bizParams),
+            mockPayCallbackScheduler.schedule(() -> attemptDeliver(attempt + 1, callbackPath, bizNo, bizParams),
                     Instant.now().plusSeconds(Math.max(retryDelaySeconds, 0)));
         } else {
             // 真实渠道多次重投失败后转日终对账/人工处理，这里同样保留明确告警
-            log.error("Mock渠道回调投递最终失败，需对账补偿：orderNo:{}，共投递{}次", params.get("orderNo"), attempt);
+            log.error("Mock渠道回调投递最终失败，需对账补偿：单号:{}，共投递{}次", bizNo, attempt);
         }
     }
 

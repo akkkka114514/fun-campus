@@ -53,7 +53,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @AllArgsConstructor
-public class PaymentService implements PaymentNotifyHandler {
+public class PaymentService {
 
     /**
      * 当前启用的支付渠道标识（如 mock；生产环境配置真实渠道）
@@ -112,7 +112,6 @@ public class PaymentService implements PaymentNotifyHandler {
      * 流程：金额校验 → CAS 更新订单（待支付→已支付）→ 写报名记录 → 通知；
      * CAS 失败时按订单当前状态区分：重复回调（幂等）、回调晚于关单（需退款补偿）
      */
-    @Override
     public void handlePayNotify(PayNotifyResult notifyResult) {
         if (notifyResult.getOrderNo() == null) {
             log.warn("支付回调缺少订单号，忽略");
@@ -183,7 +182,6 @@ public class PaymentService implements PaymentNotifyHandler {
      * 流程：退款单 CAS（退款中→成功）→ 订单 CAS（退款中→已退款）→ 逻辑删除报名记录 + 释放名额 → 通知；
      * 失败回调：退款单标失败 + 订单退款中→退款失败（支持重新申请）
      */
-    @Override
     public void handleRefundNotify(RefundNotifyResult notifyResult) {
         if (notifyResult.getRefundNo() == null) {
             log.warn("退款回调缺少退款单号，忽略");

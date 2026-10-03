@@ -1,14 +1,10 @@
 package com.akkkka.module.support.pay.channel;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Map;
 
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Component;
 
 import com.akkkka.module.support.pay.constant.PayChannelEnum;
@@ -19,7 +15,6 @@ import com.akkkka.module.support.pay.domain.dto.RefundChannelResult;
 import com.akkkka.module.support.pay.domain.dto.RefundNotifyResult;
 import com.akkkka.module.support.pay.port.PayOrderView;
 import com.akkkka.module.support.pay.port.PayRefundView;
-import com.akkkka.module.support.pay.service.PaymentNotifyHandler;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -35,7 +30,8 @@ import lombok.extern.slf4j.Slf4j;
  * - 渠道侧校验：渠道簿无预支付单、或预支付单未支付的「支付成功」回调一律拒绝；
  *   回调商户号与预支付单不一致同样拒绝（防串户伪造）；
  * - 查单：支持主动查单（超时关单任务关单前确认使用）；
- * - 退款：受理成功后由调度线程延时投递退款回调（模拟渠道稍后通知），不使用 Thread.sleep；
+ * - 退款：受理成功后由调度线程延时 HTTP 投递退款回调（与支付回调同一投递机制：带签名、
+ *   未获成功应答按配置重投，模拟渠道稍后通知），不使用 Thread.sleep；
  *   退款商户号必须与原收款商户一致（渠道簿可对照时，与真实渠道「原路退回」一致）
  *
  * @Author akkkka114514
@@ -52,13 +48,11 @@ public class MockPaymentChannel implements PaymentChannel {
     /** 无预支付单时的渠道流水兜底前缀（strict-prepay-check=false 的直连回调场景） */
     private static final String CHANNEL_ORDER_NO_FALLBACK_PREFIX = "MOCKPAY";
 
-    private final ObjectProvider<PaymentNotifyHandler> notifyHandlerProvider;
+    private final MockChannelCallbackClient callbackClient;
 
     private final MockChannelLedger channelLedger;
 
     private final MockPaySigner paySigner;
-
-    private final TaskScheduler mockPayCallbackScheduler;
 
     /**
      * 模拟渠道回调延时（秒）：0 表示立即投递，模拟异步通知到达的不确定性
@@ -72,14 +66,12 @@ public class MockPaymentChannel implements PaymentChannel {
     @Value("${pay.mock.strict-prepay-check:true}")
     private boolean strictPrepayCheck;
 
-    public MockPaymentChannel(ObjectProvider<PaymentNotifyHandler> notifyHandlerProvider,
+    public MockPaymentChannel(MockChannelCallbackClient callbackClient,
                               MockChannelLedger channelLedger,
-                              MockPaySigner paySigner,
-                              @Qualifier("mockPayCallbackScheduler") TaskScheduler mockPayCallbackScheduler) {
-        this.notifyHandlerProvider = notifyHandlerProvider;
+                              MockPaySigner paySigner) {
+        this.callbackClient = callbackClient;
         this.channelLedger = channelLedger;
         this.paySigner = paySigner;
-        this.mockPayCallbackScheduler = mockPayCallbackScheduler;
     }
 
     @Override
@@ -119,27 +111,9 @@ public class MockPaymentChannel implements PaymentChannel {
         result.setAccepted(true);
         result.setChannelRefundNo("MOCKRF" + refund.getRefundNo());
 
-        // 模拟渠道异步退款通知：调度线程延时投递，不阻塞业务请求线程
-        RefundNotifyResult notifyResult = new RefundNotifyResult();
-        notifyResult.setChannel(PayChannelEnum.MOCK);
-        notifyResult.setRefundNo(refund.getRefundNo());
-        notifyResult.setChannelRefundNo(result.getChannelRefundNo());
-        notifyResult.setSuccess(true);
-        notifyResult.setRefundTime(LocalDateTime.now());
-
-        Runnable deliver = () -> {
-            try {
-                notifyHandlerProvider.getObject().handleRefundNotify(notifyResult);
-            } catch (Exception e) {
-                log.error("Mock退款回调投递处理失败，refundNo:{}", refund.getRefundNo(), e);
-            }
-        };
-        if (callbackDelaySeconds <= 0) {
-            // 立即投递：仍交由调度线程执行，不阻塞业务请求线程
-            mockPayCallbackScheduler.schedule(deliver, Instant.now());
-        } else {
-            mockPayCallbackScheduler.schedule(deliver, Instant.now().plusSeconds(callbackDelaySeconds));
-        }
+        // 模拟渠道异步退款通知：调度线程延时 HTTP 投递（带签名 + 未获成功应答按配置重投），
+        // 与支付回调同一机制；不阻塞业务请求线程
+        callbackClient.deliverRefundNotify(refund.getRefundNo(), true, result.getChannelRefundNo(), callbackDelaySeconds);
         log.info("Mock渠道受理退款成功，refundNo:{}，channelRefundNo:{}，延时回调:{}秒",
                 refund.getRefundNo(), result.getChannelRefundNo(), callbackDelaySeconds);
         return result;
@@ -243,18 +217,40 @@ public class MockPaymentChannel implements PaymentChannel {
     }
 
     /**
-     * 解析模拟退款回调参数（mock 渠道不做验签）
-     * 参数：refundNo、refundStatus=SUCCESS/FAIL
+     * 验签并解析退款回调
+     * 参数：refundNo、refundStatus=SUCCESS/FAIL、channelRefundNo、timestamp、sign
+     * <p>
+     * 与支付回调同一套防护：HMAC 验签 + 时间戳窗口（防伪造/防重放）
      */
     @Override
     public RefundNotifyResult parseRefundCallback(Map<String, String> params) {
         RefundNotifyResult result = new RefundNotifyResult();
         result.setChannel(PayChannelEnum.MOCK);
-        result.setRefundNo(params.get("refundNo"));
+
+        // ① 验签 + 时间戳窗口
+        String verifyError = paySigner.verify(params);
+        if (verifyError != null) {
+            result.setVerifyFailed(true);
+            result.setFailReason(verifyError);
+            return result;
+        }
+
+        // ② 报文完整性：退款回调必须携带退款单号
+        String refundNo = params.get("refundNo");
+        if (refundNo == null || refundNo.isBlank()) {
+            result.setVerifyFailed(true);
+            result.setFailReason("退款回调缺少退款单号");
+            return result;
+        }
+        result.setRefundNo(refundNo);
+
         boolean success = "SUCCESS".equalsIgnoreCase(params.get("refundStatus"));
         result.setSuccess(success);
         if (success) {
-            result.setChannelRefundNo("MOCKRF" + params.get("refundNo"));
+            String channelRefundNo = params.get("channelRefundNo");
+            result.setChannelRefundNo(channelRefundNo == null || channelRefundNo.isBlank()
+                    ? "MOCKRF" + refundNo
+                    : channelRefundNo);
             result.setRefundTime(LocalDateTime.now());
         } else {
             result.setFailReason("模拟渠道退款失败");

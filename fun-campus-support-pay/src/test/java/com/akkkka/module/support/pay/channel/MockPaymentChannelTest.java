@@ -8,26 +8,26 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.scheduling.TaskScheduler;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.akkkka.module.support.pay.domain.dto.PayNotifyResult;
 import com.akkkka.module.support.pay.domain.dto.PayPrepayResult;
 import com.akkkka.module.support.pay.domain.dto.PayQueryResult;
 import com.akkkka.module.support.pay.domain.dto.RefundChannelResult;
+import com.akkkka.module.support.pay.domain.dto.RefundNotifyResult;
 import com.akkkka.module.support.pay.port.StubOrderView;
 import com.akkkka.module.support.pay.port.StubRefundView;
-import com.akkkka.module.support.pay.service.PaymentNotifyHandler;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.verify;
 
 /**
- * Mock 支付渠道 单元测试（预支付单幂等 / 回调验签 / 渠道簿校验 / 商户号一致性 / 退款原商户 / 主动查单）
+ * Mock 支付渠道 单元测试（预支付单幂等 / 支付回调验签 / 退款回调验签 / 渠道簿校验 / 商户号一致性 / 退款原商户 / 主动查单）
  * <p>
  * 覆盖：prepay 返回带 prepayId 的收银台链接且幂等；验签失败、渠道无预支付单、
  * 渠道侧未支付的成功回调均置 verifyFailed 拒绝；回调商户号与预支付单不一致（含缺失）同样拒绝；
- * 渠道簿已支付时回调通过并带渠道流水号；退款商户号与原收款不一致时拒绝受理；
+ * 渠道簿已支付时回调通过并带渠道流水号；退款商户号与原收款不一致时拒绝受理，
+ * 受理成功后投递签名退款回调；退款回调与支付同一套验签（篡改/缺单号拒绝，合法签名解析通过）；
  * 查单三态（渠道无此单/未支付/已支付）
  * <p>
  * 依赖倒置后订单/退款单以端口视图（StubOrderView / StubRefundView）注入，不依赖业务实体
@@ -39,9 +39,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class MockPaymentChannelTest {
 
     @Mock
-    private ObjectProvider<PaymentNotifyHandler> notifyHandlerProvider;
-    @Mock
-    private TaskScheduler mockPayCallbackScheduler;
+    private MockChannelCallbackClient callbackClient;
 
     private MockChannelLedger ledger;
     private MockPaySigner signer;
@@ -53,7 +51,7 @@ public class MockPaymentChannelTest {
         signer = new MockPaySigner();
         ReflectionTestUtils.setField(signer, "signSecret", "test-secret");
         ReflectionTestUtils.setField(signer, "timestampToleranceSeconds", 300L);
-        channel = new MockPaymentChannel(notifyHandlerProvider, ledger, signer, mockPayCallbackScheduler);
+        channel = new MockPaymentChannel(callbackClient, ledger, signer);
         ReflectionTestUtils.setField(channel, "strictPrepayCheck", true);
     }
 
@@ -87,6 +85,16 @@ public class MockPaymentChannelTest {
     private String extractPrepayId(PayPrepayResult prepay) {
         String url = prepay.getCashierUrl();
         return url.substring(url.indexOf('=') + 1);
+    }
+
+    private Map<String, String> refundCallbackParams(String refundNo, String refundStatus) {
+        Map<String, String> params = new HashMap<>();
+        params.put("refundNo", refundNo);
+        params.put("refundStatus", refundStatus);
+        params.put("channelRefundNo", "MOCKRF" + refundNo);
+        params.put("timestamp", String.valueOf(System.currentTimeMillis()));
+        params.put("sign", signer.sign(params));
+        return params;
     }
 
     // ---------------------------------- prepay ----------------------------------
@@ -210,6 +218,8 @@ public class MockPaymentChannelTest {
 
         assertTrue(result.isAccepted());
         assertEquals("MOCKRFRF1", result.getChannelRefundNo());
+        // 受理成功后由渠道调度线程签名 HTTP 投递退款回调（与支付回调同一投递机制）
+        verify(callbackClient).deliverRefundNotify("RF1", true, "MOCKRFRF1", 0L);
     }
 
     @Test
@@ -221,6 +231,52 @@ public class MockPaymentChannelTest {
         RefundChannelResult result = channel.refund(order(), refund);
 
         assertTrue(result.isAccepted());
+        verify(callbackClient).deliverRefundNotify("RF1", true, "MOCKRFRF1", 0L);
+    }
+
+    // ---------------------------------- parseRefundCallback ----------------------------------
+
+    @Test
+    void parseRefundCallback_whenSignTampered_verifyFailed() {
+        Map<String, String> params = refundCallbackParams("RF1", "SUCCESS");
+        // 签名后篡改退款状态（伪造退款结果）：验签必须失败
+        params.put("refundStatus", "FAIL");
+
+        RefundNotifyResult result = channel.parseRefundCallback(params);
+
+        assertTrue(result.isVerifyFailed());
+        assertEquals("签名校验失败", result.getFailReason());
+    }
+
+    @Test
+    void parseRefundCallback_whenRefundNoMissing_verifyFailed() {
+        Map<String, String> params = refundCallbackParams("RF1", "SUCCESS");
+        params.remove("refundNo");
+        params.put("sign", signer.sign(params));
+
+        RefundNotifyResult result = channel.parseRefundCallback(params);
+
+        assertTrue(result.isVerifyFailed());
+        assertEquals("退款回调缺少退款单号", result.getFailReason());
+    }
+
+    @Test
+    void parseRefundCallback_whenSuccess_passesWithChannelRefundNo() {
+        RefundNotifyResult result = channel.parseRefundCallback(refundCallbackParams("RF1", "SUCCESS"));
+
+        assertFalse(result.isVerifyFailed());
+        assertTrue(result.isSuccess());
+        assertEquals("MOCKRFRF1", result.getChannelRefundNo());
+        assertNotNull(result.getRefundTime());
+    }
+
+    @Test
+    void parseRefundCallback_whenFail_passes() {
+        // 合法签名的失败退款通知：解析通过（退款单标失败，订单回退退款失败）
+        RefundNotifyResult result = channel.parseRefundCallback(refundCallbackParams("RF1", "FAIL"));
+
+        assertFalse(result.isVerifyFailed());
+        assertFalse(result.isSuccess());
     }
 
     // ---------------------------------- queryPay ----------------------------------

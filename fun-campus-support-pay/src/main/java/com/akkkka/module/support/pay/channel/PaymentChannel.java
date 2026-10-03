@@ -57,7 +57,8 @@ public interface PaymentChannel {
     PayNotifyResult parsePayCallback(Map<String, String> params);
 
     /**
-     * 验签并解析退款回调参数（退款回调仅渠道服务器内部投递，mock 渠道不做验签）
+     * 验签并解析退款回调参数；验签失败（或报文缺关键字段）时置 verifyFailed=true，
+     * 由回调入口直接拒绝，不进入业务处理
      */
     RefundNotifyResult parseRefundCallback(Map<String, String> params);
 }

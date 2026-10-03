@@ -71,6 +71,11 @@ public class PaymentCallbackController {
         }
         PaymentChannel paymentChannel = paymentService.getChannel(channelEnum);
         RefundNotifyResult notifyResult = paymentChannel.parseRefundCallback(params);
+        if (notifyResult.isVerifyFailed()) {
+            // 验签失败/时间戳超窗/报文缺单号：拒绝处理，应答非 SUCCESS（渠道会按策略重投/转对账）
+            log.warn("退款回调被拒绝：channel:{}，原因:{}，params:{}", channel, notifyResult.getFailReason(), params);
+            return "FAIL";
+        }
         paymentService.handleRefundNotify(notifyResult);
         return "SUCCESS";
     }

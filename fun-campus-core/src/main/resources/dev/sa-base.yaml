@@ -5,10 +5,10 @@ spring:
     username: root
     password: Qw020829@qazwsx
     driver-class-name: com.p6spy.engine.spy.P6SpyDriver
-    initial-size: 2
-    min-idle: 2
-    max-active: 10
-    max-wait: 60000
+    initial-size: 10
+    min-idle: 10
+    max-active: 50
+    max-wait: 3000
     time-between-eviction-runs-millis: 60000
     min-evictable-idle-time-millis: 300000
     filters: stat
@@ -30,10 +30,10 @@ spring:
       timeout: 10000ms
       lettuce:
         pool:
-          max-active: 5
-          min-idle: 1
-          max-idle: 3
-          max-wait: 30000ms
+          max-active: 50
+          min-idle: 5
+          max-idle: 20
+          max-wait: 3000ms
   # 邮件，置以SSL的方式发送, 这个需要使用这种方式并且端口是465
   mail:
     host: smtp.163.com
@@ -95,10 +95,20 @@ management:
     mail:
       enabled: false
 
-# tomcat 配置，主要用于 配置 访问日志（便于将来排查错误）
+# tomcat 配置：并发参数调优 + 访问日志（便于将来排查错误）
 server:
   tomcat:
     basedir: ${project.log-directory}/tomcat-logs
+    # 工作线程池：真正处理请求的线程数上限（默认 200）
+    threads:
+      max: 500
+      min-spare: 50
+    # accept 队列长度：内核握手完成但未 accept 的连接排队位（默认 100）
+    accept-count: 1000
+    # 同时保持的连接数上限，需大于突发并发连接数（NIO 默认 8192）
+    max-connections: 20000
+    # 空闲连接（keep-alive 等待中）超时，快速释放连接槽位
+    connection-timeout: 5s
     accesslog:
       enabled: true
       max-days: 7

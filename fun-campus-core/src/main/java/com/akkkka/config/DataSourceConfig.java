@@ -118,7 +118,10 @@ public class DataSourceConfig {
             druidDataSource.setFilters(filters);
             ArrayList<Filter> arrayList = new ArrayList<>();
             StatFilter statFilter = new StatFilter();
-            statFilter.setMergeSql(true);
+            // 注意：mergeSql=true 会让每条 SQL 都走 Druid 参数化流程（SQLDialect 构造时每次去 classpath 读 druid.properties），
+            // 在 fat jar 运行下该资源查找会命中 Spring Boot UrlJarFiles$Cache 全局锁，高并发时全部工作线程互相阻塞（实测 50 并发下 46/51 线程卡在该锁上）。
+            // 关闭后仅影响 /druid 统计页的 SQL 模板归并展示，不影响功能与慢 SQL 记录。
+            statFilter.setMergeSql(false);
             statFilter.setSlowSqlMillis(1000);
             statFilter.setLogSlowSql(true);
             arrayList.add(statFilter);

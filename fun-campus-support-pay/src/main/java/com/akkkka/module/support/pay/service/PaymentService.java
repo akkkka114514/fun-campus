@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.akkkka.module.support.pay.channel.ChannelCallGuard;
 import com.akkkka.module.support.pay.channel.PaymentChannel;
 import com.akkkka.module.support.pay.constant.PayChannelEnum;
 import com.akkkka.module.support.pay.constant.PayLogAction;
@@ -63,6 +64,8 @@ public class PaymentService {
 
     private final ObjectProvider<PaymentChannel> channelProvider;
 
+    private final ChannelCallGuard channelCallGuard;
+
     private final TransactionTemplate transactionTemplate;
 
     private final PaymentOrderPort orderPort;
@@ -75,28 +78,34 @@ public class PaymentService {
 
     /**
      * 预下单：使用当前启用的渠道生成支付参数（mock 渠道返回模拟收银台链接）
+     * <p>
+     * 经熔断守卫调用：渠道连续失败熔断期间快速失败，不让请求线程干等渠道超时
      */
     public PayPrepayResult prepay(PayOrderView order) {
         PaymentChannel channel = requireActiveChannel();
-        return channel.prepay(order);
+        return channelCallGuard.call(channel.channel(), "prepay", () -> channel.prepay(order));
     }
 
     /**
      * 主动查单：向订单所属渠道查询真实支付结果（超时关单任务关单前确认使用）
+     * <p>
+     * 经熔断守卫调用：熔断打开时快速失败，关单任务按"查单失败"跳过本轮（保守不关单）
      */
     public PayQueryResult queryPay(PayOrderView order) {
         PaymentChannel channel = requireChannel(resolveOrderChannel(order));
-        return channel.queryPay(order);
+        return channelCallGuard.call(channel.channel(), "queryPay", () -> channel.queryPay(order));
     }
 
     /**
      * 发起渠道退款：受理成功不代表到账，最终以渠道异步回调为准
+     * <p>
+     * 经熔断守卫调用：熔断打开时受理失败，调用方按既有异常兜底回滚退款单
      *
      * @return 渠道受理结果（accepted=false 时调用方需回滚订单状态）
      */
     public RefundChannelResult refund(PayOrderView order, PayRefundView refund) {
         PaymentChannel channel = requireChannel(resolveOrderChannel(order));
-        return channel.refund(order, refund);
+        return channelCallGuard.call(channel.channel(), "refund", () -> channel.refund(order, refund));
     }
 
     /**

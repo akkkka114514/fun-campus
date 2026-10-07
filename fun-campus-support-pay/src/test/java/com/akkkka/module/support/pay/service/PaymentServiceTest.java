@@ -13,6 +13,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.akkkka.module.support.pay.channel.ChannelCallGuard;
 import com.akkkka.module.support.pay.channel.PaymentChannel;
 import com.akkkka.module.support.pay.constant.PayChannelEnum;
 import com.akkkka.module.support.pay.constant.PayLogAction;
@@ -62,6 +63,9 @@ public class PaymentServiceTest {
     private PaymentBusinessPort businessPort;
     @Mock
     private MessageService messageService;
+
+    @Mock
+    private ChannelCallGuard channelCallGuard;
 
     @InjectMocks
     private PaymentService service;

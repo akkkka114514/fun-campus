@@ -21,6 +21,7 @@ import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -109,8 +110,40 @@ public class GlobalExceptionHandler {
     @ResponseBody
     @ExceptionHandler(Throwable.class)
     public ResponseDTO<?> errorHandler(Throwable e) {
+        // 客户端主动断开连接（如客户端超时/取消）不是应用错误：仅记一行 warn，
+        // 若记录完整堆栈会在高并发断连时产生海量日志（实测 10k 压测下 45 秒写满 100MB），拖垮磁盘 IO
+        if (isClientDisconnect(e)) {
+            log.warn("客户端已断开连接,URL:{}", getCurrentRequestUrl());
+            return ResponseDTO.error(SystemErrorCode.SYSTEM_ERROR);
+        }
         log.error("捕获全局异常,URL:{}", getCurrentRequestUrl(), e);
         return ResponseDTO.error(SystemErrorCode.SYSTEM_ERROR, systemEnvironment.isProd() ? null : e.toString());
+    }
+
+    /**
+     * 判断异常链中是否存在"客户端断开连接"类异常
+     * （ClientAbortException / AsyncRequestNotUsableException，或 Broken pipe / 连接中止 的 IOException）
+     */
+    private boolean isClientDisconnect(Throwable e) {
+        while (e != null) {
+            String className = e.getClass().getName();
+            if ("org.apache.catalina.connector.ClientAbortException".equals(className)
+                    || "org.springframework.web.context.request.async.AsyncRequestNotUsableException".equals(className)) {
+                return true;
+            }
+            if (e instanceof IOException) {
+                String msg = e.getMessage();
+                if (msg != null && (msg.contains("Broken pipe") || msg.contains("Connection reset")
+                        || msg.contains("中止") || msg.contains("aborted by the software"))) {
+                    return true;
+                }
+            }
+            if (e.getCause() == e) {
+                break;
+            }
+            e = e.getCause();
+        }
+        return false;
     }
 
     /**

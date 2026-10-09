@@ -1,6 +1,7 @@
 package com.akkkka.module.support.pay.channel;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -22,9 +23,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.verify;
 
 /**
- * Mock 支付渠道 单元测试（预支付单幂等 / 支付回调验签 / 退款回调验签 / 渠道簿校验 / 商户号一致性 / 退款原商户 / 主动查单）
+ * Mock 支付渠道 单元测试（预支付单幂等 / 出站商户请求签名 / 支付回调验签 / 退款回调验签 / 渠道簿校验 / 商户号一致性 / 退款原商户 / 主动查单）
  * <p>
- * 覆盖：prepay 返回带 prepayId 的收银台链接且幂等；验签失败、渠道无预支付单、
+ * 覆盖：prepay 返回带 prepayId 的收银台链接且幂等；出站请求（下单/查单/退款）携带商户签名，
+ * 篡改/缺失时渠道拒绝受理（退款以 accepted=false 拒绝）；验签失败、渠道无预支付单、
  * 渠道侧未支付的成功回调均置 verifyFailed 拒绝；回调商户号与预支付单不一致（含缺失）同样拒绝；
  * 渠道簿已支付时回调通过并带渠道流水号；退款商户号与原收款不一致时拒绝受理，
  * 受理成功后投递签名退款回调；退款回调与支付同一套验签（篡改/缺单号拒绝，合法签名解析通过）；
@@ -43,6 +45,7 @@ public class MockPaymentChannelTest {
 
     private MockChannelLedger ledger;
     private MockPaySigner signer;
+    private MockMerchantSigner merchantSigner;
     private MockPaymentChannel channel;
 
     @BeforeEach
@@ -51,7 +54,10 @@ public class MockPaymentChannelTest {
         signer = new MockPaySigner();
         ReflectionTestUtils.setField(signer, "signSecret", "test-secret");
         ReflectionTestUtils.setField(signer, "timestampToleranceSeconds", 300L);
-        channel = new MockPaymentChannel(callbackClient, ledger, signer);
+        merchantSigner = new MockMerchantSigner();
+        ReflectionTestUtils.setField(merchantSigner, "merchantSignSecret", "test-merchant-secret");
+        ReflectionTestUtils.setField(merchantSigner, "timestampToleranceSeconds", 300L);
+        channel = new MockPaymentChannel(callbackClient, ledger, signer, merchantSigner);
         ReflectionTestUtils.setField(channel, "strictPrepayCheck", true);
     }
 
@@ -106,6 +112,73 @@ public class MockPaymentChannelTest {
 
         assertTrue(first.getCashierUrl().startsWith("/portal/payment/mock/cashier?prepayId="));
         assertEquals(first.getCashierUrl(), second.getCashierUrl());
+    }
+
+    // ---------------------------------- 出站商户请求签名（渠道受理前验签） ----------------------------------
+
+    private Map<String, String> merchantRequest(String operation) {
+        Map<String, String> request = new LinkedHashMap<>();
+        request.put("orderNo", "AO1");
+        request.put("amountFen", "100");
+        request.put("payeeAccountNo", "MCH1000001");
+        request.put("operation", operation);
+        request.put("timestamp", String.valueOf(System.currentTimeMillis()));
+        request.put("sign", merchantSigner.sign(request));
+        return request;
+    }
+
+    @Test
+    void handlePrepayRequest_whenMerchantSignValid_accepted() {
+        // 合法商户签名请求：渠道验签通过后受理，返回带 prepayId 的收银台链接
+        PayPrepayResult result = channel.handlePrepayRequest(order(), merchantRequest("prepay"));
+
+        assertTrue(result.getCashierUrl().startsWith("/portal/payment/mock/cashier?prepayId="));
+    }
+
+    @Test
+    void handlePrepayRequest_whenMerchantSignTampered_rejected() {
+        Map<String, String> request = merchantRequest("prepay");
+        // 签名后篡改金额（伪造下单请求的典型攻击面）：渠道验签失败拒绝受理
+        request.put("amountFen", "1");
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> channel.handlePrepayRequest(order(), request));
+        assertTrue(ex.getMessage().contains("商户请求验签失败"));
+    }
+
+    @Test
+    void handlePrepayRequest_whenMerchantSignMissing_rejected() {
+        Map<String, String> request = merchantRequest("prepay");
+        request.remove("sign");
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> channel.handlePrepayRequest(order(), request));
+        assertTrue(ex.getMessage().contains("签名缺失"));
+    }
+
+    @Test
+    void handleQueryRequest_whenMerchantSignTampered_rejected() {
+        Map<String, String> request = merchantRequest("queryPay");
+        // 签名后把订单号篡改指向另一笔订单：查单验签失败拒绝受理（不得误报 paid=false）
+        request.put("orderNo", "AO-FORGED");
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> channel.handleQueryRequest(order(), request));
+        assertTrue(ex.getMessage().contains("商户请求验签失败"));
+    }
+
+    @Test
+    void handleRefundRequest_whenMerchantSignTampered_rejected() {
+        StubRefundView refund = new StubRefundView();
+        refund.setRefundNo("RF1");
+        Map<String, String> request = merchantRequest("refund");
+        // 签名后篡改退款单号：退款验签失败以 accepted=false 拒绝受理
+        request.put("refundNo", "RF-FORGED");
+
+        RefundChannelResult result = channel.handleRefundRequest(order(), refund, request);
+
+        assertFalse(result.isAccepted());
+        assertTrue(result.getFailReason().contains("商户请求验签失败"));
     }
 
     // ---------------------------------- parsePayCallback ----------------------------------

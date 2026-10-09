@@ -155,7 +155,9 @@ pay:
     callback-delay-seconds: 1
     # 渠道回调签名密钥（HMAC-SHA256，模拟真实渠道验签机制）
     sign-secret: fun-campus-mock-pay-secret
-    # 回调时间戳容忍窗口（秒），超出视为重放攻击拒绝
+    # 商户请求签名密钥（HMAC-SHA256，模拟真实渠道下商户私钥对出站请求签名）
+    merchant-sign-secret: fun-campus-mock-merchant-secret
+    # 签名时间戳容忍窗口（秒），超出视为重放攻击拒绝（回调与出站请求共用）
     timestamp-tolerance-seconds: 300
     # 严格校验预支付单：渠道侧无预支付单/未支付的「支付成功」回调直接拒绝
     # （压测等直连回调场景可临时改为 false 放行）

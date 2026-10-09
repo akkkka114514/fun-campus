@@ -1,0 +1,29 @@
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.akkkka</groupId>
+        <artifactId>fun-campus-parent</artifactId>
+        <version>3.0.0</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>fun-campus-support-pay-mock</artifactId>
+    <version>3.0.0</version>
+
+    <name>fun-campus-support-pay-mock</name>
+
+    <description>模拟第三方支付平台模块：Mock 渠道实现（预支付单/收银台/商户与渠道双向签名验签/异步回调投递），仅 pay.channel=mock 时装配；生产环境替换为真实渠道实现模块即可，核心支付模块无感知</description>
+
+    <dependencies>
+
+        <!-- 渠道侧实现依赖核心支付模块（接口/DTO/端口视图），方向单向：核心模块不反向依赖本模块 -->
+        <dependency>
+            <groupId>com.akkkka</groupId>
+            <artifactId>fun-campus-support-pay</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+
+    </dependencies>
+
+</project>

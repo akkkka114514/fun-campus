@@ -16,6 +16,7 @@
         <module>fun-campus-support-feature</module>
         <module>fun-campus-support-ai</module>
         <module>fun-campus-support-pay</module>
+        <module>fun-campus-support-pay-mock</module>
         <module>fun-campus-system</module>
         <module>fun-campus-funcampus</module>
         <module>fun-campus-admin</module>

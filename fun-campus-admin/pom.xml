@@ -67,6 +67,13 @@
             <version>3.0.0</version>
         </dependency>
 
+        <!-- 模拟第三方支付平台（Mock 渠道实现，pay.channel=mock 时装配） -->
+        <dependency>
+            <groupId>com.akkkka</groupId>
+            <artifactId>fun-campus-support-pay-mock</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+
     </dependencies>
 
     <build>

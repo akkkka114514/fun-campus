@@ -16,8 +16,8 @@ import com.akkkka.module.support.pay.domain.dto.PayPrepayResult;
 import com.akkkka.module.support.pay.domain.dto.PayQueryResult;
 import com.akkkka.module.support.pay.domain.dto.RefundChannelResult;
 import com.akkkka.module.support.pay.domain.dto.RefundNotifyResult;
-import com.akkkka.module.support.pay.port.StubOrderView;
-import com.akkkka.module.support.pay.port.StubRefundView;
+import com.akkkka.module.support.pay.mocktest.StubOrderView;
+import com.akkkka.module.support.pay.mocktest.StubRefundView;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.verify;

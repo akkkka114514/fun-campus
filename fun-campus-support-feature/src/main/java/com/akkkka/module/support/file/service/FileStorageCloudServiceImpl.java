@@ -19,20 +19,16 @@ import com.akkkka.module.support.file.domain.vo.FileMetadataVO;
 import com.akkkka.module.support.file.domain.vo.FileUploadVO;
 import com.akkkka.module.support.file.domain.vo.FileVO;
 import com.akkkka.module.support.redis.RedisService;
+import com.akkkka.module.support.securityprotect.service.Level3ProtectConfigService;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.core.ResponseBytes;
-import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.*;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
@@ -48,6 +44,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 云计算 实现
@@ -76,8 +73,25 @@ public class FileStorageCloudServiceImpl implements IFileStorageService {
      */
     private static final String USER_METADATA_FILE_SIZE = "file-size";
 
+    /**
+     * 预签名上传 URL 有效期
+     */
+    private static final Duration PRESIGN_URL_EXPIRE = Duration.ofHours(1);
+
+    /**
+     * 预签名直传允许的文件扩展名：与 SecurityFileService 的 MIME 白名单同口径
+     * （中转上传由 Tika 嗅探内容防伪装；直传无法嗅探内容，先按扩展名做第一道拦截）
+     */
+    private static final Set<String> PRESIGN_ALLOWED_EXTENSIONS = Set.of(
+            "jpg", "jpeg", "png", "gif", "bmp",
+            "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "csv", "txt", "json", "zip", "7z",
+            "mp3", "wav", "mp4", "mov", "avi");
+
     @Resource
     private S3Client s3Client;
+
+    @Resource
+    private S3Presigner s3Presigner;
 
     @Resource
     private FileConfig cloudConfig;
@@ -87,6 +101,9 @@ public class FileStorageCloudServiceImpl implements IFileStorageService {
 
     @Resource
     private FileDao fileDao;
+
+    @Resource
+    private Level3ProtectConfigService level3ProtectConfigService;
 
     @Override
     public ResponseDTO<FileUploadVO> upload(MultipartFile file, String path) {
@@ -176,9 +193,7 @@ public class FileStorageCloudServiceImpl implements IFileStorageService {
             GetObjectRequest getUrlRequest = GetObjectRequest.builder().bucket(cloudConfig.getBucketName()).key(fileKey).build();
             GetObjectPresignRequest getObjectPresignRequest = GetObjectPresignRequest.builder().signatureDuration(Duration.ofSeconds(cloudConfig.getPrivateUrlExpireSeconds())).getObjectRequest(getUrlRequest).build();
 
-            S3Presigner presigner = S3Presigner.builder().region(Region.of(cloudConfig.getRegion())).build();
-
-            PresignedGetObjectRequest presignedGetObjectRequest = presigner.presignGetObject(getObjectPresignRequest);
+            PresignedGetObjectRequest presignedGetObjectRequest = s3Presigner.presignGetObject(getObjectPresignRequest);
             String url = presignedGetObjectRequest.url().toString();
             fileVO.setFileUrl(url);
             redisService.set(fileRedisKey, fileVO, cloudConfig.getPrivateUrlExpireSeconds() - 5);
@@ -207,15 +222,20 @@ public class FileStorageCloudServiceImpl implements IFileStorageService {
             Long fileSize = StringUtils.isBlank(fileSizeStr) ? null : Long.valueOf(fileSizeStr);
             metadataDTO.setFileSize(fileSize);
         }
+        if (metadataDTO == null) {
+            // 直传文件没有自定义元数据：用对象 key 与 head 信息兜底，避免下载时空指针
+            metadataDTO = new FileMetadataVO();
+            metadataDTO.setFileName(StringUtils.substringAfterLast(key, "/"));
+            metadataDTO.setFileFormat(FilenameUtils.getExtension(key));
+            metadataDTO.setFileSize(headObjectResponse.contentLength());
+        }
 
-        //获取oss对象
+        // 流式拉取（延迟读取，不再整体载入内存），返回的流由调用方负责关闭
         GetObjectRequest getObjectRequest = GetObjectRequest.builder().bucket(cloudConfig.getBucketName()).key(key).build();
-        ResponseBytes<GetObjectResponse> s3ClientObject = s3Client.getObject(getObjectRequest, ResponseTransformer.toBytes());
+        ResponseInputStream<GetObjectResponse> objectStream = s3Client.getObject(getObjectRequest, ResponseTransformer.toInputStream());
 
-        // 输入流转换为字节流
-        byte[] buffer = s3ClientObject.asByteArray();
         FileDownloadVO fileDownloadVO = new FileDownloadVO();
-        fileDownloadVO.setData(buffer);
+        fileDownloadVO.setData(objectStream);
         fileDownloadVO.setMetadata(metadataDTO);
         return ResponseDTO.ok(fileDownloadVO);
     }
@@ -251,60 +271,39 @@ public class FileStorageCloudServiceImpl implements IFileStorageService {
 
     /**
      * 生成预签名上传 URL
+     * ps：上传目标桶固定为配置主桶，不由调用方指定，避免越权写入其他桶
      */
-    public ResponseDTO<Map<String, Object>> generatePresignedUploadUrl(String originalFileName, String path, String bucket) {
+    public ResponseDTO<Map<String, Object>> generatePresignedUploadUrl(String originalFileName, String path) {
         try {
-            // 构建文件 key
+            // 构建文件 key（扩展名先做白名单拦截：直传无法嗅探文件内容，防止伪装扩展名上传可执行脚本等）
             String fileType = FilenameUtils.getExtension(originalFileName);
+            if (SmartStringUtil.isEmpty(fileType) || !PRESIGN_ALLOWED_EXTENSIONS.contains(fileType.toLowerCase())) {
+                return ResponseDTO.userErrorParam("不支持的文件类型：" + fileType);
+            }
+            fileType = fileType.toLowerCase();
             String uuid = IdUtil.fastSimpleUUID();
             String time = LocalDateTimeUtil.format(LocalDateTime.now(), DatePattern.PURE_DATETIME_FORMATTER);
             String fileKey = path + uuid + "_" + time + "." + fileType;
 
-            if(!bucketExists(bucket)){
-                return ResponseDTO.error(UserErrorCode.PARAM_ERROR,"不存在该bucket");
-            }
             // 根据路径确定 ACL 权限
             ObjectCannedACL acl = this.getACL(path);
 
-            // 创建预签名上传请求
-            S3Presigner.Builder presignerBuilder = S3Presigner.builder()
-                    .region(Region.of(cloudConfig.getRegion()))
-                    .credentialsProvider(
-                            StaticCredentialsProvider.create(
-                                    AwsBasicCredentials.create(cloudConfig.getAccessKey(), cloudConfig.getSecretKey())))
-                    .serviceConfiguration(S3Configuration.builder()
-                            .pathStyleAccessEnabled(true)
-                            .chunkedEncodingEnabled(false)
-                            .build());
-            
-            // 如果配置了端点，则使用它
-            if (StringUtils.isNotBlank(cloudConfig.getEndpoint())) {
-                String endpointUrl = cloudConfig.getEndpoint();
-                // 确保端点URL格式正确
-                if (!endpointUrl.startsWith("http://") && !endpointUrl.startsWith("https://")) {
-                    endpointUrl = "http://" + endpointUrl;
-                }
-                presignerBuilder.endpointOverride(java.net.URI.create(endpointUrl));
-            }
-            
-            S3Presigner presigner = presignerBuilder.build();
-
             // 设置上传策略
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
-                    .bucket(bucket)
+                    .bucket(cloudConfig.getBucketName())
                     .key(fileKey)
                     .acl(acl)
                     .build();
 
-            // 生成预签名上传 URL，有效期1小时
+            // 生成预签名上传 URL
             PutObjectPresignRequest presignRequest =
                     PutObjectPresignRequest.builder()
-                            .signatureDuration(Duration.ofHours(1))
+                            .signatureDuration(PRESIGN_URL_EXPIRE)
                             .putObjectRequest(putObjectRequest)
                             .build();
 
             PresignedPutObjectRequest presignedRequest =
-                    presigner.presignPutObject(presignRequest);
+                    s3Presigner.presignPutObject(presignRequest);
             log.debug("上传minio预签名request header：{}",
                     presignedRequest.httpRequest().headers().toString());
 
@@ -322,35 +321,30 @@ public class FileStorageCloudServiceImpl implements IFileStorageService {
             return ResponseDTO.error(SystemErrorCode.SYSTEM_ERROR, "生成预签名上传URL失败: " + e.getMessage());
         }
     }
-    public boolean bucketExists(String bucketName) {
-        try {
-            s3Client.headBucket(HeadBucketRequest.builder()
-                    .bucket(bucketName)
-                    .build());
-            return true;
-        } catch (NoSuchBucketException e) {
-            log.debug("Bucket [{}] 不存在", bucketName);
-            return false;
-        } catch (SdkClientException e) {
-            log.error("连接MinIO服务失败: {}", e.getMessage());
-            return false;
-        }
-    }
 
-    public void  validateFileKey(String bucket, String objectKey) {
+    /**
+     * 校验 fileKey 在存储侧真实存在且大小未超限
+     * ps：固定校验配置主桶；大小上限与中转上传的 SecurityFileService 同口径
+     */
+    public void validateFileKey(String fileKey) {
+        HeadObjectResponse response;
         try {
             HeadObjectRequest request = HeadObjectRequest.builder()
-                    .bucket(bucket)
-                    .key(objectKey)
+                    .bucket(cloudConfig.getBucketName())
+                    .key(fileKey)
                     .build();
-
-            HeadObjectResponse response = s3Client.headObject(request);
+            response = s3Client.headObject(request);
             // 如果能成功返回，说明对象存在
         } catch (NoSuchKeyException e) {
-            throw new BusinessException(UserErrorCode.PARAM_ERROR,"根据file key，文件不存在");
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "根据file key，文件不存在");
         } catch (Exception e) {
             // 其他错误：网络、权限、bucket 不存在等
             throw new RuntimeException("Error validating file key: " + e.getMessage(), e);
+        }
+
+        long maxSizeMb = level3ProtectConfigService.getMaxUploadFileSizeMb();
+        if (maxSizeMb > 0 && response.contentLength() != null && response.contentLength() > maxSizeMb * 1024 * 1024) {
+            throw new BusinessException(UserErrorCode.PARAM_ERROR, "文件大小超过限制：" + maxSizeMb + " mb");
         }
     }
 }

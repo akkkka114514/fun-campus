@@ -36,6 +36,7 @@ public interface IFileStorageService {
 
     /**
      * 流式下载（名称为原文件）
+     * ps：返回的文件流由调用方负责关闭
      *
      * @param key
      * @return

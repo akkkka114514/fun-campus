@@ -15,7 +15,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.util.FileCopyUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -141,6 +140,7 @@ public class FileStorageLocalServiceImpl implements IFileStorageService {
 
     /**
      * 文件下载
+     * ps：返回的文件流由调用方负责关闭
      *
      * @param fileKey
      * @return
@@ -149,13 +149,11 @@ public class FileStorageLocalServiceImpl implements IFileStorageService {
     public ResponseDTO<FileDownloadVO> download(String fileKey) {
         String filePath = uploadPath + fileKey;
         File localFile = new File(filePath);
-        InputStream in = null;
         try {
-            in = Files.newInputStream(localFile.toPath());
-            // 输入流转换为字节流
-            byte[] buffer = FileCopyUtils.copyToByteArray(in);
+            // 流式打开（不再整体载入内存），由调用方负责关闭
+            InputStream in = Files.newInputStream(localFile.toPath());
             FileDownloadVO fileDownloadVO = new FileDownloadVO();
-            fileDownloadVO.setData(buffer);
+            fileDownloadVO.setData(in);
 
             FileMetadataVO fileMetadataDTO = new FileMetadataVO();
             fileMetadataDTO.setFileName(localFile.getName());
@@ -167,15 +165,6 @@ public class FileStorageLocalServiceImpl implements IFileStorageService {
         } catch (IOException e) {
             log.error("文件下载-发生异常：", e);
             return ResponseDTO.error(SystemErrorCode.SYSTEM_ERROR, "文件下载失败");
-        } finally {
-            try {
-                // 关闭输入流
-                if (in != null) {
-                    in.close();
-                }
-            } catch (IOException e) {
-                log.error("文件下载-发生异常：", e);
-            }
         }
     }
 

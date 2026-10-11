@@ -3,6 +3,8 @@ package com.akkkka.module.support.file.domain.vo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.io.InputStream;
+
 /**
  * 文件下载
  *
@@ -16,10 +18,10 @@ import lombok.Data;
 public class FileDownloadVO {
 
     /**
-     * 文件字节数据
+     * 文件数据流（调用方负责关闭，避免大文件整体载入内存）
      */
-    @Schema(description = "文件字节数据")
-    private byte[] data;
+    @Schema(description = "文件数据流")
+    private InputStream data;
 
     /**
      * 文件元数据

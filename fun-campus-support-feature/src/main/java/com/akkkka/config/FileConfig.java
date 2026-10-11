@@ -15,6 +15,7 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 import java.net.URI;
 
@@ -76,6 +77,27 @@ public class FileConfig implements WebMvcConfigurer {
     public S3Client initAmazonS3() {
         return S3Client.builder()
                 .region(Region.AWS_GLOBAL)
+                .endpointOverride(URI.create((urlPrefix.startsWith(HTTPS) ? HTTPS : HTTP) + endpoint))
+                .credentialsProvider(
+                        StaticCredentialsProvider.create(
+                                AwsBasicCredentials.create(accessKey, secretKey)))
+                .serviceConfiguration(S3Configuration.builder()
+                        .pathStyleAccessEnabled(true)
+                        .chunkedEncodingEnabled(false)
+                        .build())
+                .build();
+    }
+
+    /**
+     * 初始化 预签名器（线程安全，单例复用）：私有文件下载 URL、前端直传上传 URL 均由它签发
+     *
+     * @return
+     */
+    @Bean
+    @ConditionalOnProperty(prefix = "file.storage", name = {"mode"}, havingValue = MODE_CLOUD)
+    public S3Presigner initS3Presigner() {
+        return S3Presigner.builder()
+                .region(Region.of(region))
                 .endpointOverride(URI.create((urlPrefix.startsWith(HTTPS) ? HTTPS : HTTP) + endpoint))
                 .credentialsProvider(
                         StaticCredentialsProvider.create(

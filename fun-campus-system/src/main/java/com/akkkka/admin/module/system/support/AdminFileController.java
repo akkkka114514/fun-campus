@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * 文件服务
@@ -76,8 +77,10 @@ public class AdminFileController extends SupportBaseController {
         FileDownloadVO fileDownloadVO = downloadFileResult.getData();
         // 设置下载消息头
         SmartResponseUtil.setDownloadFileHeader(response, fileDownloadVO.getMetadata().getFileName(), fileDownloadVO.getMetadata().getFileSize());
-        // 下载
-        response.getOutputStream().write(fileDownloadVO.getData());
+        // 下载（流式写出，避免大文件整体载入内存）
+        try (InputStream in = fileDownloadVO.getData()) {
+            in.transferTo(response.getOutputStream());
+        }
     }
 
 }

@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 
 /**
@@ -66,8 +67,10 @@ public class FileController extends SupportBaseController {
         FileDownloadVO fileDownloadVO = downloadFileResult.getData();
         // 设置下载消息头
         SmartResponseUtil.setDownloadFileHeader(response, fileDownloadVO.getMetadata().getFileName(), fileDownloadVO.getMetadata().getFileSize());
-        // 下载
-        response.getOutputStream().write(fileDownloadVO.getData());
+        // 下载（流式写出，避免大文件整体载入内存）
+        try (InputStream in = fileDownloadVO.getData()) {
+            in.transferTo(response.getOutputStream());
+        }
     }
 
 /**
@@ -77,9 +80,9 @@ public class FileController extends SupportBaseController {
  * @author akkkka114514
  */
     @Operation(summary = "生成文件预签名url @author akkkka114514",
-                description = "通过预签名url上传headers必须只包含Host和x-amz-acl")
+                description = "通过预签名url上传headers必须只包含Host和x-amz-acl；上传目标桶由后端固定，无需传参")
     @GetMapping("/file/uploadUrl/presign")
-    public ResponseDTO<Map<String, Object>> generatePresignedUploadUrl(@RequestParam String originalFileName, @RequestParam Integer folderType,@RequestParam String bucket) {
-        return fileService.generatePresignedUploadUrl(originalFileName, folderType,bucket);
+    public ResponseDTO<Map<String, Object>> generatePresignedUploadUrl(@RequestParam String originalFileName, @RequestParam Integer folderType) {
+        return fileService.generatePresignedUploadUrl(originalFileName, folderType);
     }
 }

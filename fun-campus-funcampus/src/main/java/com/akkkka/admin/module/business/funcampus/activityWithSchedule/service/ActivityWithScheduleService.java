@@ -838,7 +838,7 @@ public class ActivityWithScheduleService {
         }
         List<ActivityReviewAttachmentEntity> reviewAttachments=new LinkedList<>();
         fileKeys.forEach((fileKey)->{
-            fileService.validateFileKey(fileKey,"fun-campus-attachment");
+            fileService.validateFileKey(fileKey);
             ActivityReviewAttachmentEntity ra = new ActivityReviewAttachmentEntity();
             ra.setReviewLogId(reviewLogId);
             ra.setFileKey(fileKey);

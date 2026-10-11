@@ -210,12 +210,13 @@ public class FileService {
 
     /**
      * 生成预签名上传 URL
+     * ps：上传目标桶由后端固定，不接受调用方指定
      *
      * @param originalFileName
      * @param folderType
      * @return
      */
-    public ResponseDTO<Map<String, Object>> generatePresignedUploadUrl(String originalFileName, Integer folderType,String bucket) {
+    public ResponseDTO<Map<String, Object>> generatePresignedUploadUrl(String originalFileName, Integer folderType) {
         FileFolderTypeEnum folderTypeEnum = SmartEnumUtil.getEnumByValue(folderType, FileFolderTypeEnum.class);
         if (null == folderTypeEnum) {
             return ResponseDTO.userErrorParam("文件夹错误");
@@ -225,22 +226,23 @@ public class FileService {
             return ResponseDTO.userErrorParam("原始文件名不能为空");
         }
 
-        if (StringUtils.isBlank(bucket)){
-            return ResponseDTO.userErrorParam("minio桶名不能为空");
-        }
         // local 存储模式无云服务，不支持预签名上传
         if (fileStorageCloudServiceImpl == null) {
             return ResponseDTO.userErrorParam("当前文件存储模式不支持预签名上传");
         }
         // 调用底层存储服务生成预签名上传 URL
-        return fileStorageCloudServiceImpl.generatePresignedUploadUrl(originalFileName, folderTypeEnum.getFolder(),bucket);
+        return fileStorageCloudServiceImpl.generatePresignedUploadUrl(originalFileName, folderTypeEnum.getFolder());
     }
-    public void validateFileKey(String fileKey,String bucket){
+
+    /**
+     * 校验 fileKey 在存储侧真实存在（且未超过大小上限）
+     */
+    public void validateFileKey(String fileKey) {
         // local 存储模式无云服务，跳过云侧文件归属校验
         if (fileStorageCloudServiceImpl == null) {
             return;
         }
-        fileStorageCloudServiceImpl.validateFileKey(fileKey,bucket);
+        fileStorageCloudServiceImpl.validateFileKey(fileKey);
     }
 
 }

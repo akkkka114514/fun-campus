@@ -58,7 +58,7 @@ flowchart TB
     ADMIN --> FUNC
     ADMIN --> SYS
     FUNC --> PAY
-    PAY -. 生产替换 .-> MOCK
+    PAY -.->|生产环境替换| MOCK
     FUNC --> AI
     FUNC --> FEAT
     FUNC --> BASE

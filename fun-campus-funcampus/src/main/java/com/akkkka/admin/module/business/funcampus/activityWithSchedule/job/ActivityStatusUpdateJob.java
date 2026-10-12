@@ -6,6 +6,7 @@ import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.en
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityScheduleManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityStatusCacheManager;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.IndexActivityCacheManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityStatusNoticeService;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityWithScheduleService;
 import com.akkkka.module.support.job.core.SmartJob;
@@ -52,6 +53,9 @@ public class ActivityStatusUpdateJob implements SmartJob {
 
     @Resource
     private ActivityStatusNoticeService activityStatusNoticeService;
+
+    @Resource
+    private IndexActivityCacheManager indexActivityCacheManager;
 
     /**
      * 执行活动状态更新
@@ -129,6 +133,11 @@ public class ActivityStatusUpdateJob implements SmartJob {
                 log.error("活动状态更新失败，activityId={}", activity.getId(), e);
                 skipped++;
             }
+        }
+
+        if (advanced > 0) {
+            // 状态推进改变首页列表内容（状态筛选/排序均受影响），整体失效首页缓存
+            indexActivityCacheManager.evictAll();
         }
 
         return String.format("活动状态更新完成：前进%d个，倒退%d个，跳过%d个，移出名单%d个",

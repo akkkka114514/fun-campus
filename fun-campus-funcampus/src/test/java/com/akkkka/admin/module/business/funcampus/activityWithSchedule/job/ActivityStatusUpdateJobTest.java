@@ -6,6 +6,7 @@ import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.en
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityScheduleManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityStatusCacheManager;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.IndexActivityCacheManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityStatusNoticeService;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.service.ActivityWithScheduleService;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
@@ -50,6 +51,8 @@ public class ActivityStatusUpdateJobTest {
     private ActivityWithScheduleService activityWithScheduleService;
     @Mock
     private ActivityStatusNoticeService activityStatusNoticeService;
+    @Mock
+    private IndexActivityCacheManager indexActivityCacheManager;
 
     @InjectMocks
     private ActivityStatusUpdateJob job;
@@ -153,6 +156,8 @@ public class ActivityStatusUpdateJobTest {
         verify(activityManager).updateStatusIfMatch(1L, ActivityStatus.FINISHED, ActivityStatus.ONGOING);
         // 前进成功后触发对应节点站内信
         verify(activityStatusNoticeService).notifyStatusAdvanced(any(ActivityEntity.class), eq(ActivityStatus.FINISHED));
+        // 状态推进后整体失效首页缓存
+        verify(indexActivityCacheManager).evictAll();
         verify(activityStatusCacheManager).removeFromTodayCache(1L);
         assertTrue(result.contains("前进1个"));
         assertTrue(result.contains("移出名单1个"));
@@ -170,6 +175,8 @@ public class ActivityStatusUpdateJobTest {
         verify(activityManager, never()).updateStatusIfMatch(anyLong(), any(), any());
         verify(activityWithScheduleService, never()).retreatActivityStatusTransaction(anyLong(), any(), any());
         verify(activityStatusNoticeService, never()).notifyStatusAdvanced(any(), any());
+        // 无推进/倒退时不失效首页缓存
+        verify(indexActivityCacheManager, never()).evictAll();
         verify(activityStatusCacheManager).removeFromTodayCache(1L);
         assertTrue(result.contains("前进0个"));
         assertTrue(result.contains("倒退0个"));

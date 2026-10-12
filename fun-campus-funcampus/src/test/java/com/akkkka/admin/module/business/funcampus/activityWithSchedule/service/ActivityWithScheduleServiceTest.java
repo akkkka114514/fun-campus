@@ -24,6 +24,7 @@ import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.en
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo.ActivityPhaseCountdownVO;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityScheduleManager;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.IndexActivityCacheManager;
 import com.akkkka.admin.module.business.funcampus.collegeInfo.service.CollegeInfoService;
 import com.akkkka.admin.module.business.funcampus.organizationInfo.service.OrganizationInfoService;
 import com.akkkka.admin.module.business.funcampus.portalLogin.domain.RequestPortalUser;
@@ -112,6 +113,8 @@ public class ActivityWithScheduleServiceTest {
     private ActivityRefundService activityRefundService;
     @Mock
     private ActivityOrderLogService orderLogService;
+    @Mock
+    private IndexActivityCacheManager indexActivityCacheManager;
 
     @InjectMocks
     private ActivityWithScheduleService service;
@@ -384,6 +387,8 @@ public class ActivityWithScheduleServiceTest {
         assertTrue(ex.getMessage().contains("取消失败"));
         verify(activityOrderManager, never()).listWaitPayOrdersByActivity(any());
         verify(activityRefundService, never()).refundForCanceledActivity(any());
+        // 状态未变更：不失效首页缓存
+        verify(indexActivityCacheManager, never()).evictAll();
     }
 
     @Test
@@ -404,6 +409,8 @@ public class ActivityWithScheduleServiceTest {
         // 仅关单成功的订单释放锁定名额；CAS 失败的订单已被回调/用户先行处理，跳过
         verify(activityEnrollNumDao, times(1)).decreaseEnrollNum(7L);
         verify(activityRefundService).refundForCanceledActivity(7L);
+        // 状态变更成功后失效首页缓存
+        verify(indexActivityCacheManager).evictAll();
     }
 
     @Test

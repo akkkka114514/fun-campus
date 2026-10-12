@@ -22,7 +22,6 @@ import com.akkkka.admin.module.business.funcampus.activityReviewLog.service.Acti
 import com.akkkka.admin.module.business.funcampus.activityReviewLog.service.ActivityReviewLogValidator;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.constant.ActivityStatus;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.constant.IndexActivityPageConst;
-import com.akkkka.admin.module.business.funcampus.activityWithSchedule.dao.ActivityDao;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityEntity;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.entity.ActivityScheduleEntity;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.form.ActivityWithScheduleAddForm;
@@ -108,8 +107,6 @@ public class ActivityWithScheduleController {
     private ActivityScheduleManager activityScheduleManager;
     @Resource
     private PortalUserManager portalUserManager;
-    @Resource
-    private ActivityDao activityDao;
     
     @Operation(summary = "添加活动和时间表 @author akkkka114514")
     @PostMapping("/activity/draft/submit")
@@ -189,10 +186,10 @@ public class ActivityWithScheduleController {
         Page<ActivityWithScheduleVO> globalActivities;
         if(activeActivityPage.equals(IndexActivityPageConst.MY_SCHOOL_ACTIVITY)){
             mySchoolActivities = activityWithScheduleService.notStartAndPendingEnrollActivityPage(pageNum, pageSize, categoryId, status, timeRange);
-            globalActivities = activityDao.notStartAndPendingEnrollActivityGlobal(new Page<>(1L, pageSize), categoryId, status, timeRange);
+            globalActivities = activityWithScheduleService.notStartAndPendingEnrollActivityPageGlobal(1L, pageSize, categoryId, status, timeRange);
         }else {
             mySchoolActivities = activityWithScheduleService.notStartAndPendingEnrollActivityPage(1L, pageSize, categoryId, status, timeRange);
-            globalActivities = activityDao.notStartAndPendingEnrollActivityGlobal(new Page<>(pageNum, pageSize), categoryId, status, timeRange);
+            globalActivities = activityWithScheduleService.notStartAndPendingEnrollActivityPageGlobal(pageNum, pageSize, categoryId, status, timeRange);
         }
         IndexActivityVO indexActivityVO = new IndexActivityVO();
         indexActivityVO.setMySchoolActivities(mySchoolActivities);

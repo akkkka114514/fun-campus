@@ -3797,3 +3797,36 @@ SELECT 1, t_menu.menu_id, NOW(), NOW() FROM t_menu WHERE t_menu.parent_id = @rev
 INSERT INTO t_role_menu ( role_id, menu_id, create_time, update_time )
 SELECT 2, t_menu.menu_id, NOW(), NOW() FROM t_menu WHERE t_menu.parent_id = @revenue_menu_id AND t_menu.deleted_flag = 0;
 
+-- ----------------------------------------------------------------------------
+-- 来源文件: ActivityIndexOptimize.sql —— 索引优化（压测诊断后补齐，2026-10-12）
+-- 背景: EXPLAIN 诊断发现登录/首页列表/我的报名等热点查询缺索引（全表扫描 + filesort），
+--       本组索引对应明确的查询模式：等值列在前、范围/排序列在后。
+-- 注意: 本组为增量 DDL（ADD INDEX 非幂等，重复执行前需先确认索引不存在）。
+-- ----------------------------------------------------------------------------
+
+# portal_user 登录/找回密码：WHERE username = ?（username 已确认无重复）
+ALTER TABLE `portal_user` ADD UNIQUE INDEX `uk_username` (`username`);
+# portal_user 管理端按手机号筛选
+ALTER TABLE `portal_user` ADD INDEX `idx_phone` (`phone`);
+
+# activity_enrollment 用户维度查询（我的报名/待签到/待签退/积分明细/信誉分/评价）
+# 原 PK(activity_id, user_id) 无法支持 user_id 前缀查询，queryMyEnrollment 等为全表扫描
+ALTER TABLE `activity_enrollment` ADD INDEX `idx_user_deleted_time` (`user_id`, `deleted_flag`, `create_time`);
+
+# activity 首页本校列表：WHERE school_id=? AND status IN (0,1) AND deleted_flag=0
+ALTER TABLE `activity` ADD INDEX `idx_school_status_deleted` (`activity_belong_to_school_id`, `status`, `deleted_flag`);
+# activity 首页分类筛选：AND category_id=?
+ALTER TABLE `activity` ADD INDEX `idx_category` (`category_id`);
+
+# activity_schedule 首页按活动开始时间排序/未来 N 天筛选
+ALTER TABLE `activity_schedule` ADD INDEX `idx_activity_start_time` (`activity_start_time`);
+
+# activity_order 我的订单：WHERE user_id=? AND deleted_flag=0 ORDER BY id DESC
+ALTER TABLE `activity_order` ADD INDEX `idx_user_deleted` (`user_id`, `deleted_flag`);
+
+# activity_refund 退款单按用户筛选：WHERE user_id=? AND deleted_flag=0
+ALTER TABLE `activity_refund` ADD INDEX `idx_user_deleted` (`user_id`, `deleted_flag`);
+
+# backend_user 管理端登录：WHERE username = ?（username 已确认无重复）
+ALTER TABLE `backend_user` ADD UNIQUE INDEX `uk_username` (`username`);
+

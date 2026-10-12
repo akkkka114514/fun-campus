@@ -10,12 +10,12 @@
         AND activity_enroll_num.enroll_num &lt; activity.enroll_num_limit;
     </update>
 
+    <!-- 释放名额：纯单表更新，无需 JOIN activity（条件和赋值都不依赖主表）——避免释放路径额外持有 activity 主表行锁 -->
     <update id="decreaseEnrollNum">
         update activity_enroll_num
-        LEFT JOIN activity ON activity.id = activity_enroll_num.activity_id
         set enroll_num = enroll_num - 1
         where activity_id = #{activityId}
-        AND activity_enroll_num.enroll_num &gt; 0;
+        AND enroll_num &gt; 0;
     </update>
 
     <update id="resetEnrollNum">

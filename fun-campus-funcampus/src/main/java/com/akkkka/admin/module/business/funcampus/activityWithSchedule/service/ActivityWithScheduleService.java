@@ -38,6 +38,7 @@ import com.akkkka.admin.module.business.funcampus.activityWithSchedule.domain.vo
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityScheduleManager;
 import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.ActivityStatusCacheManager;
+import com.akkkka.admin.module.business.funcampus.activityWithSchedule.manager.IndexActivityCacheManager;
 
 import com.akkkka.admin.module.business.funcampus.portalLogin.domain.RequestPortalUser;
 import com.akkkka.admin.module.business.funcampus.portalUser.domain.entity.PortalUserEntity;
@@ -105,6 +106,7 @@ public class ActivityWithScheduleService {
     private ActivityEnrollNumDao activityEnrollNumDao;
     private ActivityEnrollmentService activityEnrollmentService;
     private ActivityStatusCacheManager activityStatusCacheManager;
+    private IndexActivityCacheManager indexActivityCacheManager;
     private ActivityOrderManager activityOrderManager;
     private ActivityRefundService activityRefundService;
     private ActivityOrderLogService orderLogService;
@@ -283,7 +285,7 @@ public class ActivityWithScheduleService {
      * @return 是否完成倒退
      */
     public boolean retreatActivityStatusTransaction(Long activityId, ActivityStatus currentStatus, ActivityStatus expectedStatus) {
-        return Boolean.TRUE.equals(transactionTemplate.execute(status -> {
+        boolean retreated = Boolean.TRUE.equals(transactionTemplate.execute(status -> {
             if (!activityManager.updateStatusIfMatch(activityId, expectedStatus, currentStatus)) {
                 return false;
             }
@@ -299,6 +301,11 @@ public class ActivityWithScheduleService {
                     activityId, currentStatus, expectedStatus);
             return true;
         }));
+        if (retreated) {
+            // 事务提交后失效首页缓存（状态回退后重新进入报名窗口，列表内容已变化）
+            indexActivityCacheManager.evictAll();
+        }
+        return retreated;
     }
 
     /**
@@ -322,6 +329,8 @@ public class ActivityWithScheduleService {
             throw new BusinessException(UserErrorCode.PARAM_ERROR, "活动状态已变更，取消失败，请刷新后重试");
         }
         log.info("管理端取消活动成功：activityId={}，原状态={}", activityId, currentStatus);
+        // 状态已变更（首页列表内容变化），立即失效首页缓存
+        indexActivityCacheManager.evictAll();
         // 状态更新成功后依次处理存量订单：先关待支付，再退已支付
         closeWaitPayOrdersForCancel(activityId);
         activityRefundService.refundForCanceledActivity(activityId);
@@ -427,6 +436,8 @@ public class ActivityWithScheduleService {
                 status.setRollbackOnly();
             }
         });
+        // 新活动提交后可能立即进入首页可见状态（未开始/报名中），整体失效首页缓存
+        indexActivityCacheManager.evictAll();
     }
 
     /**
@@ -479,6 +490,8 @@ public class ActivityWithScheduleService {
         canEnrollGradeService.doDeleteBatchTransaction(activityId);
         canEnrollTribeService.doDeleteBatchTransaction(activityId);
         signinManagerService.doDeleteBatchTransaction(activityId);
+        // 删除后整体失效首页缓存
+        indexActivityCacheManager.evictAll();
     }
 
     public Long doSaveActivityTransaction(ActivityEntity entity,PortalUserEntity portalUser){
@@ -618,6 +631,8 @@ public class ActivityWithScheduleService {
             }
 
         });
+        // 内容/时间表/报名范围变更后整体失效首页缓存（事务提交后）
+        indexActivityCacheManager.evictAll();
     }
 
     /**
@@ -655,6 +670,8 @@ public class ActivityWithScheduleService {
                 throw new BusinessException(SystemErrorCode.SYSTEM_ERROR, "更新活动失败，请重试");
             }
         });
+        // 管理端更新后整体失效首页缓存（事务提交后）
+        indexActivityCacheManager.evictAll();
         return ResponseDTO.ok();
     }
 
@@ -687,14 +704,24 @@ public class ActivityWithScheduleService {
 
     public Page<ActivityWithScheduleVO> notStartAndPendingEnrollActivityPage(Long pageNum, Long pageSize,
             Long categoryId, Integer status, Integer timeRange){
-        Page<ActivityWithScheduleVO> page = new Page<>(pageNum, pageSize);
         Long userId = SmartRequestUtil.getRequestUserId();
         PortalUserEntity portalUserEntity =portalUserManager.getById(userId);
         if(portalUserEntity==null||portalUserEntity.getDeletedFlag()) {
             throw new BusinessException(UnexpectedErrorCode.BUSINESS_HANDING, "用户不存在");
         }
         Long schoolId = portalUserEntity.getSchoolId();
-        return activityDao.notStartAndPendingEnrollActivity(page,schoolId, categoryId, status, timeRange);
+        // 首页高频读：缓存只做加速，未命中回源查库并回填；本校维度按 schoolId 隔离
+        return indexActivityCacheManager.getOrLoad("school:" + schoolId, pageNum, pageSize, categoryId, status, timeRange,
+                () -> activityDao.notStartAndPendingEnrollActivity(new Page<>(pageNum, pageSize), schoolId, categoryId, status, timeRange));
+    }
+
+    /**
+     * 首页全局活动列表（跨校）：带首页缓存，范围与筛选参数完全一致的请求共用一份数据
+     */
+    public Page<ActivityWithScheduleVO> notStartAndPendingEnrollActivityPageGlobal(Long pageNum, Long pageSize,
+            Long categoryId, Integer status, Integer timeRange){
+        return indexActivityCacheManager.getOrLoad("global", pageNum, pageSize, categoryId, status, timeRange,
+                () -> activityDao.notStartAndPendingEnrollActivityGlobal(new Page<>(pageNum, pageSize), categoryId, status, timeRange));
     }
 
     /**
